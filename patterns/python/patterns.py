@@ -44,8 +44,6 @@ def patterns():
     PlotTime = PlotStep  #(d)
     #  Timesteps
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
 
     while Time <= EndTime:
 
@@ -75,13 +73,11 @@ def patterns():
         popO = popO + (drO + (NetO / (DeltaX * DeltaY))) * dT
         popP = popP + (drP + (NetP / (DeltaX * DeltaY))) * dT
 
-        Time = Time + dT;
+        Time = Time + dT
 
-        PlotTime = PlotTime - dT;
+        PlotTime = PlotTime - dT
         if PlotTime <= 0:
-            plt.imshow(popP);
+            plt.imshow(popP)
             plt.colorbar()
-            #plt.show()
-            fig.canvas.draw()
-            fig.canvas.flush_events()
+            plt.show()
 patterns()
