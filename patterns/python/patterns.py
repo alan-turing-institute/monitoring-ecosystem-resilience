@@ -2,6 +2,8 @@ from config import *
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+import matplotlib.animation as animation
+
 
 
 def patterns():
@@ -44,7 +46,7 @@ def patterns():
     PlotTime = PlotStep  #(d)
     #  Timesteps
 
-
+    snapshots = []
     while Time <= EndTime:
 
         # Reaction
@@ -77,7 +79,32 @@ def patterns():
 
         PlotTime = PlotTime - dT
         if PlotTime <= 0:
-            plt.imshow(popP)
-            plt.colorbar()
-            plt.show()
+            snapshots.append(popP)
+
+    # create figure
+    fig = plt.figure(figsize=(8, 8))
+
+    # plot initial figure
+    im = plt.imshow(snapshots[0], vmax=5.5,vmin=4.5)
+    plt.colorbar()
+
+    # animation function
+    def animate_func(i):
+        if i % fps == 0:
+            print('.', end='')
+        im.set_array(snapshots[i])
+        return [im]
+
+    fps = len(snapshots)
+
+    # run animation
+    anim = animation.FuncAnimation(
+        fig,
+        animate_func,
+    )
+    anim.save('test_anim.html', fps=fps*1000, extra_args=['-vcodec', 'libx264'])
+
+    print('Done!')
+    plt.show()
+
 patterns()
