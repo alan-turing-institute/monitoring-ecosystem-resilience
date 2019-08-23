@@ -1,7 +1,17 @@
 #!/usr/bin/env python
 
 """
-Script to download images from Google Earth Engine
+Script to download images from Google Earth Engine.
+
+You need to have the earthengine-api installed
+```
+ pip install earthengine-api
+```
+and before running the script, from the command-line, do:
+```
+ earthengine authenticate
+```
+and follow the instructions there.
 """
 
 
@@ -50,7 +60,7 @@ def download_and_unzip(url, output_file):
 
 
 def download_image(image_collection, # name
-                   coords,   # (long, lat)
+                   coords,   # (long, lat) or [(long,lat),...,...,...]
                    size, # in m
                    bands, # []
                    start_date, # 'yyyy-mm-dd'
@@ -82,3 +92,37 @@ def download_image(image_collection, # name
              'scale': 10}
         )
         return url
+
+
+def main():
+    """
+    use command line arguments to choose images.
+    """
+    parser = argparse.ArgumentParser(description="download from EE")
+    parser.add_argument("--image_coll",help="image collection",
+                        default="LANDSAT/LC08/C01/T1_SR")
+    parser.add_argument("--start_date",help="YYYY-MM-DD",
+                        default="2014-02-10")
+    parser.add_argument("--end_date",help="YYYY-MM-DD",
+                        default="2014-02-20")
+    parser.add_argument("--coords_point",help="'lat,long'")
+    parser.add_argument("--coords_rect",help="'lat1,long1,lat2,long2,...,...'")
+    parser.add_argument("--bands",help="string containing comma-separated list",
+                        default="B8")
+    parser.add_argument("--output_dir",help="output directory",
+                        default=".")
+    parser.add_argument("--output_name",help="base of output filename",
+                      default="gee_img")
+    args = parser.parse_args()
+    if args.coords_point and args.coords_rect:
+      raise RuntimeError("Need to specify ONE of --coords_point or coords_rect")
+    if args.coords_point:
+      coords = [float(x) for x in args.coords_point.split(",")]
+    elif args.coords_rect:
+      coords_all = [float(x) for x in args.coords_rect.split(",")]
+      coords = [ [coords_all[2*i],coords_all[2*i+1]] for i in range(int(len(coords_all)/2))]
+    print("coords are {}".format(coords))
+
+
+if __name__ == "__main__":
+    main()
