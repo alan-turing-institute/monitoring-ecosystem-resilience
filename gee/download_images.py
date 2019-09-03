@@ -24,15 +24,15 @@ from zipfile import ZipFile
 import ee
 ee.Initialize()
 
-
 # Cloud masking function.
 def mask_cloud_l8(image):
-  cloudShadowBitMask = ee.Number(2).pow(3).int()
-  cloudsBitMask = ee.Number(2).pow(5).int()
-  qa = image.select('pixel_qa')
-  mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0).And(
-    qa.bitwiseAnd(cloudsBitMask).eq(0))
-  return image.updateMask(mask).select(bands).divide(10000)
+
+    cloudShadowBitMask = ee.Number(2).pow(3).int()
+    cloudsBitMask = ee.Number(2).pow(5).int()
+    qa = image.select('pixel_qa')
+    mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0).And(
+        qa.bitwiseAnd(cloudsBitMask).eq(0))
+    return image.updateMask(mask).select(bands).divide(10000)
 
 
 def construct_region_string(point):
@@ -71,9 +71,11 @@ def download_image(image_collection, # name
     Download specified image to output directory
     """
     image_coll = ee.ImageCollection(image_collection)
-#    point = ee.Geometry.Point(coords)
-    rect = ee.Geometry.Rectangle(coords)
-    dataset = image_coll.filterBounds(rect)\
+    if len(coords) == 2:
+      geom = ee.Geometry.Point(coords)
+    else:
+      geom = ee.Geometry.Rectangle(coords)
+    dataset = image_coll.filterBounds(geom)\
     .filterDate(start_date, end_date)
     selectors = bands
     dataset = dataset.select(selectors)
@@ -81,7 +83,7 @@ def download_image(image_collection, # name
     print("Size of data list is {}".format(data.size().getInfo()))
     if not region:
         region = construct_region_string(coords)
-
+    urls = []
     for i in range(data.size().getInfo()):
         image = ee.Image(data.get(i));
         image = image.select(bands)
@@ -89,9 +91,38 @@ def download_image(image_collection, # name
 
         url = image.getDownloadURL(
             {'region': region,
-             'scale': 10}
+             'scale': size}
         )
-        return url
+        urls.append(url)
+    return urls
+
+
+def sanity_check_args(args):
+    """
+    Check that the user has set a self-consistent set of arguments.
+    """
+    if args.coords_point and args.coords_rect:
+      raise RuntimeError("Need to specify ONE of --coords_point or coords_rect")
+    if (args.coords_point or args.coords_rect) and args.input_coords_file:
+      raise RuntimeError("Specify EITHER an input_coords_file OR coords_point or coords_rect")
+
+
+def process_input_file(filename,
+                       start_date,
+                       end_date,
+                       image_coll,
+                       bands,
+                       output_dir,
+                       output_name):
+    """
+    Loop through an input file with one set of coordinates per line
+    """
+    if not os.path.exists(filename):
+        raise RuntimeError("Input file {} does not exist".format(filename))
+    infile = open(filename,"r")
+    for line in infile.readlines():
+        coords_all = [float(x) for x in args.coords_rect.split(",")]
+    pass
 
 
 def main():
@@ -113,15 +144,30 @@ def main():
                         default=".")
     parser.add_argument("--output_name",help="base of output filename",
                       default="gee_img")
+    parser.add_argument("--input_coords_file",help="text file with coordinates, one per line")
     args = parser.parse_args()
-    if args.coords_point and args.coords_rect:
-      raise RuntimeError("Need to specify ONE of --coords_point or coords_rect")
+    sanity_check_args(args)
+
+    image_coll = args.image_coll
+    start_date = args.start_date
+    end_date = args.end_date
+    output_dir = args.output_dir
+    output_name = args.output_name
+    bands = args.bands.split(",")
+
     if args.coords_point:
       coords = [float(x) for x in args.coords_point.split(",")]
     elif args.coords_rect:
       coords_all = [float(x) for x in args.coords_rect.split(",")]
       coords = [ [coords_all[2*i],coords_all[2*i+1]] for i in range(int(len(coords_all)/2))]
-    print("coords are {}".format(coords))
+    if args.input_coords_file:
+        process_input_file(args.input_coords_file,
+                           image_coll,
+                           start_date,
+                           end_date,
+                           bands,
+                           output_dir,
+                           output_name)
 
 
 if __name__ == "__main__":
