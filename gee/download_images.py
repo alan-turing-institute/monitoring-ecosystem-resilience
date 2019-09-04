@@ -21,8 +21,59 @@ import requests
 import argparse
 from zipfile import ZipFile
 
+from PIL import Image
+
 import ee
 ee.Initialize()
+
+def scale_tif(input_filebase, bands=["B4","B3","B2"]):
+    """
+    Read tif files in "I" mode - one per specified band, and rescale and combine
+    pixel values to r,g,b values betweek 0 and 255 in a combined output image.
+    """
+
+    band_dict = {"r": {"band": bands[0],
+                       "min_val": sys.maxsize,
+                       "max_val": -1*sys.maxsize,
+                       "pix_vals": []},
+                 "g": {"band": bands[1],
+                       "min_val": sys.maxsize,
+                       "max_val": -1*sys.maxsize,
+                       "pix_vals": []},
+                 "b": {"band": bands[2],
+                       "min_val": sys.maxsize,
+                       "max_val": -1*sys.maxsize,
+                       "pix_vals": []}
+                }
+
+    for col in band_dict.keys():
+        im = Image.open(input_filebase+"."+band_dict[col]["band"]+".tif")
+        pix = im.load()
+        ## find the minimum and maximum pixel values in the original scale
+        for ix in range(im.size[0]):
+            for iy in range(im.size[1]):
+                if pix[ix,iy]> band_dict[col]["max_val"]:
+                    band_dict[col]["max_val"]= pix[ix,iy]
+                elif pix[ix,iy] < band_dict[col]["min_val"]:
+                    band_dict[col]["min_val"] = pix[ix,iy]
+        band_dict[col]["pix_vals"] = pix
+    # Take the overall max of the three bands to be the value to scale down with.
+    overall_max = max((band_dict[col]["max_val"] for col in ["r","g","b"]))
+    print("{},{} {},{} {},{}".format(band_dict["r"]["max_val"],band_dict["r"]["min_val"],
+                                     band_dict["g"]["max_val"],band_dict["g"]["min_val"],
+                                     band_dict["b"]["max_val"],band_dict["b"]["min_val"]))
+    # create a new image where we will fill RGB pixel values from 0 to 255
+    get_pix_val = lambda ix, iy, col: \
+        max(0, int(band_dict[col]["pix_vals"][ix,iy] * 255/ \
+#                   band_dict[col]["max_val"]
+                   overall_max
+        ))
+    new_img = Image.new("RGB", im.size)
+    for ix in range(im.size[0]):
+        for iy in range(im.size[1]):
+            new_img.putpixel((ix,iy), tuple(get_pix_val(ix,iy,col) for col in ["r","g","b"]))
+    return new_img
+
 
 # Cloud masking function.
 def mask_cloud_l8(image):
@@ -48,7 +99,7 @@ def construct_region_string(point):
     return str([[left,top],[right,top],[right,bottom],[left,bottom]])
 
 
-def download_and_unzip(url, output_file):
+def download_and_unzip(url, output_tmpdir):
     r = requests.get(url)
     if not r.status_code == 200:
         print(" HTTP Error!")
@@ -66,6 +117,7 @@ def download_image(image_collection, # name
                    start_date, # 'yyyy-mm-dd'
                    end_date, # 'yyyy-mm-dd'
                    output_dir,
+                   output_name,
                    region=None):
     """
     Download specified image to output directory
@@ -133,9 +185,9 @@ def main():
     parser.add_argument("--image_coll",help="image collection",
                         default="LANDSAT/LC08/C01/T1_SR")
     parser.add_argument("--start_date",help="YYYY-MM-DD",
-                        default="2014-02-10")
+                        default="2016-01-01")
     parser.add_argument("--end_date",help="YYYY-MM-DD",
-                        default="2014-02-20")
+                        default="2016-06-30")
     parser.add_argument("--coords_point",help="'lat,long'")
     parser.add_argument("--coords_rect",help="'lat1,long1,lat2,long2,...,...'")
     parser.add_argument("--bands",help="string containing comma-separated list",
