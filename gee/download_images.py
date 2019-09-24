@@ -24,12 +24,10 @@ individual set of coordinates as a command line argument, then:
 * Combine tif files for individual bands into one output file
 
 Needs a relatively recent version of pillow (fork of PIL):
+```
 pip install --upgrade pillow
-
+```
 """
-
-
-
 
 import os
 import sys
@@ -46,7 +44,6 @@ if os.name == "posix":
     TMPDIR = "/tmp/"
 else:
     TMPDIR = "%TMP%"
-
 
 
 def save_image(image, output_dir, output_filename):
@@ -67,6 +64,8 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
     """
     Read tif files in "I" mode - one per specified band, and rescale and combine
     pixel values to r,g,b values betweek 0 and 255 in a combined output image.
+    Currently assumes that we have three bands.  Need to figure out how to
+    deal with more or fewer...
     """
 
     band_dict = {"r": {"band": bands[0],
@@ -86,6 +85,7 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
         im = Image.open(input_filebase+"."+band_dict[col]["band"]+".tif")
         pix = im.load()
         ## find the minimum and maximum pixel values in the original scale
+        print("Found image of size {}".format(im.size))
         for ix in range(im.size[0]):
             for iy in range(im.size[1]):
                 if pix[ix,iy]> band_dict[col]["max_val"]:
@@ -131,10 +131,10 @@ def construct_region_string(point):
     into a string representation of four sets of [lat,long]
     Assume our point is at the centre.
     """
-    left = point[0] - 0.05
-    right = point[0] + 0.05
-    top = point[1] + 0.05
-    bottom = point[1] - 0.05
+    left = point[1] - 0.01
+    right = point[1] + 0.01
+    top = point[0] + 0.01
+    bottom = point[0] - 0.01
     return str([[left,top],[right,top],[right,bottom],[left,bottom]])
 
 
@@ -198,13 +198,14 @@ def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
     for i in range(data.size().getInfo()):
         image = ee.Image(data.get(i));
         image = image.select(bands)
-#        region = construct_region_string(coords)
+
 
         url = image.getDownloadURL(
             {'region': region,
              'scale': size}
         )
         urls.append(url)
+    print("Found {} sets of images for coords {}".format(len(urls),coords))
     return urls
 
 
