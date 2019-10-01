@@ -127,20 +127,26 @@ def mask_cloud(image, input_coll, bands):
         mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0).And(
             qa.bitwiseAnd(cloudsBitMask).eq(0))
         return image.updateMask(mask).select(bands).divide(10000)
+    elif "COPERNICUS" in input_coll:
+        image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",20))
+        cloudBitMask = 1 << 10
+        cirrusBitMask = 1 << 11
+        qa = image.select("QA60")
 
 
 def construct_region_string(point, size=0.1):
     """
-    convert a list of two floats [lat, long]
-    into a string representation of four sets of [lat,long]
+    convert a list of two floats [long, lat]
+    into a string representation of four sets of [long,lat]
     Assume our point is at the centre.
     """
     left = point[0] - size/2
     right = point[0] + size/2
     top = point[1] + size/2
     bottom = point[1] - size/2
-    return str([[left,top],[right,top],[right,bottom],[left,bottom]])
-
+    coords =  str([[left,top],[right,top],[right,bottom],[left,bottom]])
+    print(coords)
+    return coords
 
 def download_and_unzip(url, output_tmpdir):
     """
@@ -193,6 +199,7 @@ def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
       geom = ee.Geometry.Rectangle(coords)
     dataset = image_coll.filterBounds(geom)\
     .filterDate(start_date, end_date)
+#    dataset = dataset.filterMetadata('resolution_meters', 'equals' , 10)
 #    dataset = mask_cloud(dataset, image_collection, bands)
     image = dataset.median()
 
