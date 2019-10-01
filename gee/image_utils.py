@@ -1,7 +1,12 @@
 """
 Modify, and slice up tif and png images using Python Image Library
+Needs a relatively recent version of pillow (fork of PIL):
+```
+pip install --upgrade pillow
+```
 """
 
+import sys
 from PIL import Image
 
 

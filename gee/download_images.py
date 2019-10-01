@@ -23,14 +23,11 @@ individual set of coordinates as a command line argument, then:
 * Unpack zipfile
 * Combine tif files for individual bands into one output file
 
-Needs a relatively recent version of pillow (fork of PIL):
-```
-pip install --upgrade pillow
-```
 """
 
 import os
 import sys
+import shutil
 import requests
 import argparse
 from zipfile import ZipFile
@@ -108,9 +105,9 @@ def download_and_unzip(url, output_tmpdir):
     r = requests.get(url)
     if not r.status_code == 200:
         raise RuntimeError(" HTTP Error getting download link {}".format(url))
-    # create out
-    if not os.path.exists(output_tmpdir):
-        os.makedirs(output_tmpdir, exist_ok=True)
+    # remove output directory and recreate it
+    shutil.rmtree(output_tmpdir, ignore_errors=True)
+    os.makedirs(output_tmpdir, exist_ok=True)
     output_zipfile = os.path.join(output_tmpdir,"gee.zip")
     with open(output_zipfile, "wb") as outfile:
         outfile.write(r.content)
@@ -133,7 +130,8 @@ def download_and_unzip(url, output_tmpdir):
 def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
                       image_collection, # name
                       bands, # []
-                      size, # in m
+                      region_size, # size of output image region in long/lat
+                      scale, # output pixel size in m
                       start_date, # 'yyyy-mm-dd'
                       end_date, # 'yyyy-mm-dd'
                       region=None):
@@ -147,37 +145,29 @@ def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
       geom = ee.Geometry.Rectangle(coords)
     dataset = image_coll.filterBounds(geom)\
     .filterDate(start_date, end_date)
-#    dataset = dataset.filterMetadata('resolution_meters', 'equals' , 10)
 #    dataset = mask_cloud(dataset, image_collection, bands)
     image = dataset.median()
 
     image = image.select(bands)
 #    data = dataset.toList(dataset.size())
     if not region:
-        region = construct_region_string(coords)
+        region = construct_region_string(coords, region_size)
     urls = []
-  #  for i in range(data.size().getInfo()):
-  #      image = ee.Image(data.get(i));
-      #  image = mask_cloud(image, image_collection, bands)
-   #     image = image.select(bands)
-
 
     url = image.getDownloadURL(
         {'region': region,
-         'scale': 30}
+         'scale': scale}
     )
     urls.append(url)
     print("Found {} sets of images for coords {}".format(len(urls),coords))
     return urls
 
 
-
-
-
 def process_coords(coords,
                    image_coll,
                    bands,
-                   size,
+                   region_size, ## dimensions of output image in longitude/latitude
+                   scale, # size of each pixel in output image (in m)
                    start_date,
                    end_date,
                    output_dir,
@@ -190,7 +180,8 @@ def process_coords(coords,
     download_urls = get_download_urls(coords,
                                       image_coll,
                                       bands,
-                                      size,
+                                      region_size,
+                                      scale,
                                       start_date,
                                       end_date)
 
@@ -216,7 +207,8 @@ def process_coords(coords,
 def process_input_file(filename,
                        image_coll,
                        bands,
-                       size,
+                       region_size,
+                       scale,
                        start_date,
                        end_date,
                        output_dir,
@@ -233,7 +225,8 @@ def process_input_file(filename,
         process_coords(coords,
                        image_coll,
                        bands,
-                       size,
+                       region_size,
+                       scale,
                        start_date,
                        end_date,
                        output_dir,
@@ -266,7 +259,8 @@ def main():
     parser.add_argument("--coords_rect",help="'long1,lat1,long2,lat2...,...'")
     parser.add_argument("--bands",help="string containing comma-separated list",
                         default="B2,B3,B4,B5,B6,B7")
-    parser.add_argument("--size", help="size of output region", default=10)
+    parser.add_argument("--region_size", help="size of output region in long/lat", default=0.1, type=float)
+    parser.add_argument("--scale", help="size of each pixel in output image (m)", default=10, type=int)
     parser.add_argument("--output_dir",help="output directory",
                         default=".")
     parser.add_argument("--output_suffix",help="end of output filename, including file extension",
@@ -281,7 +275,8 @@ def main():
     output_dir = args.output_dir
     output_suffix = args.output_suffix
     bands = args.bands.split(",")
-    size = args.size
+    region_size = args.region_size
+    scale = args.scale
 
     if args.coords_point:
       coords = [float(x) for x in args.coords_point.split(",")]
@@ -292,7 +287,8 @@ def main():
         process_input_file(args.input_file,
                            image_coll,
                            bands,
-                           size,
+                           region_size,
+                           scale,
                            start_date,
                            end_date,
                            output_dir,
@@ -302,11 +298,13 @@ def main():
         process_coords(coords,
                        image_coll,
                        bands,
-                       size,
+                       region_size,
+                       scale,
                        start_date,
                        end_date,
                        output_dir,
                        output_suffix)
+
 
 if __name__ == "__main__":
     main()
