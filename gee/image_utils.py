@@ -8,7 +8,7 @@ pip install --upgrade pillow
 
 import sys
 from PIL import Image
-
+import sys
 
 def combine_tif(input_filebase, bands=["B4","B3","B2"]):
     """
@@ -62,3 +62,24 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
             new_img.putpixel((ix,iy), tuple(get_pix_val(ix,iy,col) \
                                             for col in ["r","g","b"]))
     return new_img
+
+def crop_image(input_image,n_parts):
+
+
+    xsize, ysize = input_image.size
+
+
+    box1 = (0, 0, xsize/2, ysize/2)
+    region1 = input_image.crop(box1)
+
+    box2 = (xsize/2, 0, xsize, ysize/2)
+    region2 = input_image.crop(box2)
+
+    box3 = (0, ysize/2, xsize/2, ysize)
+    region3 = input_image.crop(box3)
+
+    box4 = (xsize/2, ysize/2, xsize, ysize)
+    region4 = input_image.crop(box4)
+
+    return [region1,region2,region3,region4]
+

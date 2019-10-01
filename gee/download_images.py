@@ -23,6 +23,10 @@ individual set of coordinates as a command line argument, then:
 * Unpack zipfile
 * Combine tif files for individual bands into one output file
 
+Needs a relatively recent version of pillow (fork of PIL):
+```
+pip install --upgrade pillow
+```
 """
 
 import os
@@ -197,11 +201,27 @@ def process_coords(coords,
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
             merged_image = combine_tif(tif_filebase, bands)
-            # now save this
             output_filename = tif_filebase.split("/")[-1]
-            output_filename += "_{}_{}".format(coords[0],coords[1])
+            output_filename += "_{}_{}".format(coords[0], coords[1])
             output_filename += output_suffix
+
             save_image(merged_image, output_dir, output_filename)
+
+            merged_image = crop_image(merged_image,4)
+            # now save this
+
+            n = 0
+            for image in merged_image:
+
+                output_filename = tif_filebase.split("/")[-1]
+                output_filename += "_"+str(n)
+                output_filename += "_{}_{}".format(coords[0], coords[1])
+                output_filename += output_suffix
+
+                print (output_filename)
+
+                save_image(image, output_dir, output_filename)
+                n = n + 1
 
 
 def process_input_file(filename,
