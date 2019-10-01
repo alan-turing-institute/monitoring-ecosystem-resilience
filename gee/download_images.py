@@ -67,20 +67,20 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
     Currently assumes that we have three bands.  Need to figure out how to
     deal with more or fewer...
     """
-
-    band_dict = {"r": {"band": bands[0],
-                       "min_val": sys.maxsize,
-                       "max_val": -1*sys.maxsize,
-                       "pix_vals": []},
-                 "g": {"band": bands[1],
-                       "min_val": sys.maxsize,
-                       "max_val": -1*sys.maxsize,
-                       "pix_vals": []},
-                 "b": {"band": bands[2],
-                       "min_val": sys.maxsize,
-                       "max_val": -1*sys.maxsize,
-                       "pix_vals": []}
-                }
+    if len(bands) >= 3:
+        band_dict = {"r": {"band": bands[0],
+                           "min_val": sys.maxsize,
+                           "max_val": -1*sys.maxsize,
+                           "pix_vals": []},
+                     "g": {"band": bands[1],
+                           "min_val": sys.maxsize,
+                           "max_val": -1*sys.maxsize,
+                           "pix_vals": []},
+                     "b": {"band": bands[2],
+                           "min_val": sys.maxsize,
+                           "max_val": -1*sys.maxsize,
+                           "pix_vals": []}
+        }
     for col in band_dict.keys():
         im = Image.open(input_filebase+"."+band_dict[col]["band"]+".tif")
         pix = im.load()
@@ -94,13 +94,17 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
                     band_dict[col]["min_val"] = pix[ix,iy]
         band_dict[col]["pix_vals"] = pix
     # Take the overall max of the three bands to be the value to scale down with.
+    print("Max values {} {} {}".format(band_dict["r"]["max_val"],
+                                       band_dict["g"]["max_val"],
+                                       band_dict["b"]["max_val"]))
+
     overall_max = max((band_dict[col]["max_val"] for col in ["r","g","b"]))
 
     # create a new image where we will fill RGB pixel values from 0 to 255
     get_pix_val = lambda ix, iy, col: \
         max(0, int(band_dict[col]["pix_vals"][ix,iy] * 255/ \
 #                   band_dict[col]["max_val"]
-                   overall_max
+                   (overall_max+1)
         ))
     new_img = Image.new("RGB", im.size)
     for ix in range(im.size[0]):
@@ -111,7 +115,7 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
 
 
 # Cloud masking function.
-def mask_cloud(image, input_coll):
+def mask_cloud(image, input_coll, bands):
     """
     Different input_collections need different steps to be taken to filter
     out cloud.
@@ -125,16 +129,16 @@ def mask_cloud(image, input_coll):
         return image.updateMask(mask).select(bands).divide(10000)
 
 
-def construct_region_string(point):
+def construct_region_string(point, size=0.1):
     """
     convert a list of two floats [lat, long]
     into a string representation of four sets of [lat,long]
     Assume our point is at the centre.
     """
-    left = point[1] - 0.01
-    right = point[1] + 0.01
-    top = point[0] + 0.01
-    bottom = point[0] - 0.01
+    left = point[0] - size/2
+    right = point[0] + size/2
+    top = point[1] + size/2
+    bottom = point[1] - size/2
     return str([[left,top],[right,top],[right,bottom],[left,bottom]])
 
 
@@ -189,22 +193,25 @@ def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
       geom = ee.Geometry.Rectangle(coords)
     dataset = image_coll.filterBounds(geom)\
     .filterDate(start_date, end_date)
-    selectors = bands
-    dataset = dataset.select(selectors)
-    data = dataset.toList(dataset.size())
+#    dataset = mask_cloud(dataset, image_collection, bands)
+    image = dataset.median()
+
+    image = image.select(bands)
+#    data = dataset.toList(dataset.size())
     if not region:
         region = construct_region_string(coords)
     urls = []
-    for i in range(data.size().getInfo()):
-        image = ee.Image(data.get(i));
-        image = image.select(bands)
+  #  for i in range(data.size().getInfo()):
+  #      image = ee.Image(data.get(i));
+      #  image = mask_cloud(image, image_collection, bands)
+   #     image = image.select(bands)
 
 
-        url = image.getDownloadURL(
-            {'region': region,
-             'scale': size}
-        )
-        urls.append(url)
+    url = image.getDownloadURL(
+        {'region': region,
+         'scale': 30}
+    )
+    urls.append(url)
     print("Found {} sets of images for coords {}".format(len(urls),coords))
     return urls
 
@@ -300,8 +307,8 @@ def main():
                         default="2013-03-30")
     parser.add_argument("--end_date",help="YYYY-MM-DD",
                         default="2013-04-01")
-    parser.add_argument("--coords_point",help="'lat,long'")
-    parser.add_argument("--coords_rect",help="'lat1,long1,lat2,long2,...,...'")
+    parser.add_argument("--coords_point",help="'long,lat'")
+    parser.add_argument("--coords_rect",help="'long1,lat1,long2,lat2...,...'")
     parser.add_argument("--bands",help="string containing comma-separated list",
                         default="B2,B3,B4,B5,B6,B7")
     parser.add_argument("--size", help="size of output region", default=10)
