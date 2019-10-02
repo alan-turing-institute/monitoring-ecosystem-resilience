@@ -23,6 +23,10 @@ individual set of coordinates as a command line argument, then:
 * Unpack zipfile
 * Combine tif files for individual bands into one output file
 
+Needs a relatively recent version of pillow (fork of PIL):
+```
+pip install --upgrade pillow
+```
 """
 
 import os
@@ -171,7 +175,9 @@ def process_coords(coords,
                    start_date,
                    end_date,
                    output_dir,
-                   output_suffix):
+                   output_suffix,
+                   divide_images=False,
+                   num_sub_images=[4,4]):
     """
     Run through the whole process for one set of coordinates (either a point
     or a rectangle).
@@ -197,11 +203,25 @@ def process_coords(coords,
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
             merged_image = combine_tif(tif_filebase, bands)
-            # now save this
             output_filename = tif_filebase.split("/")[-1]
-            output_filename += "_{}_{}".format(coords[0],coords[1])
+            output_filename += "_{}_{}".format(coords[0], coords[1])
             output_filename += output_suffix
-            save_image(merged_image, output_dir, output_filename)
+            ## if requested, divide into smaller sub-images
+            if divide_images:
+                sub_images = crop_image(merged_image,
+                                        num_sub_images[0],
+                                        num_sub_images[1])
+                # now save these
+                for n, image in enumerate(sub_images):
+                    output_filename = tif_filebase.split("/")[-1]
+                    output_filename += "_{}_{}".format(coords[0], coords[1])
+                    output_filename += "_"+str(n)
+                    output_filename += output_suffix
+                    save_image(image, output_dir, output_filename)
+            else:
+                ## Save the full-size image
+                save_image(merged_image, output_dir, output_filename)
+        return
 
 
 def process_input_file(filename,

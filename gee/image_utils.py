@@ -8,7 +8,7 @@ pip install --upgrade pillow
 
 import sys
 from PIL import Image
-
+import sys
 
 def combine_tif(input_filebase, bands=["B4","B3","B2"]):
     """
@@ -63,6 +63,28 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
                                             for col in ["r","g","b"]))
     return new_img
 
+
+def crop_image(input_image, n_parts_x, n_parts_y=None):
+    """
+    Divide an image into smaller sub-images.
+    """
+    ## if n_parts_y not specified, assume we want equal x,y
+    if not n_parts_y:
+        n_parts_y = n_parts_x
+
+    xsize, ysize = input_image.size
+    x_sub = int(xsize / n_parts_x)
+    y_sub = int(ysize / n_parts_y)
+
+
+    sub_images = []
+    for ix in range(n_parts_x):
+        for iy in range(n_parts_y):
+            box = (ix*x_sub, iy*y_sub, (ix+1)*x_sub, (iy+1)*y_sub)
+            region = input_image.crop(box)
+            sub_images.append(region)
+
+    return sub_images
 
 
 def convert_to_bw(input_image, threshold):
