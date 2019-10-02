@@ -63,23 +63,25 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
                                             for col in ["r","g","b"]))
     return new_img
 
-def crop_image(input_image,n_parts):
 
+def crop_image(input_image, n_parts_x, n_parts_y=None):
+    """
+    Divide an image into smaller sub-images.
+    """
+    ## if n_parts_y not specified, assume we want equal x,y
+    if not n_parts_y:
+        n_parts_y = n_parts_x
 
     xsize, ysize = input_image.size
+    x_sub = int(xsize / n_parts_x)
+    y_sub = int(ysize / n_parts_y)
 
 
-    box1 = (0, 0, xsize/2, ysize/2)
-    region1 = input_image.crop(box1)
+    sub_images = []
+    for ix in range(n_parts_x):
+        for iy in range(n_parts_y):
+            box = (ix*x_sub, iy*y_sub, (ix+1)*x_sub, (iy+1)*y_sub)
+            region = input_image.crop(box)
+            sub_images.append(region)
 
-    box2 = (xsize/2, 0, xsize, ysize/2)
-    region2 = input_image.crop(box2)
-
-    box3 = (0, ysize/2, xsize/2, ysize)
-    region3 = input_image.crop(box3)
-
-    box4 = (xsize/2, ysize/2, xsize, ysize)
-    region4 = input_image.crop(box4)
-
-    return [region1,region2,region3,region4]
-
+    return sub_images
