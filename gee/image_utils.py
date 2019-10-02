@@ -85,3 +85,23 @@ def crop_image(input_image, n_parts_x, n_parts_y=None):
             sub_images.append(region)
 
     return sub_images
+
+
+def convert_to_bw(input_image, threshold):
+    """
+    Given an RGB input, apply a threshold to each pixel.
+    If pix(r,g,b)>threshold, set to 255,255,255, if <threshold, set to 0,0,0
+    """
+    pix = input_image.load()
+    new_img = Image.new("RGB", input_image.size)
+    for ix in range(input_image.size[0]):
+        for iy in range(input_image.size[1]):
+            p = pix[ix,iy]
+            total = 0
+            for col in p:
+                total += col
+            if total > threshold:
+                new_img.putpixel((ix,iy), (255,255,255))
+            else:
+                new_img.putpixel((ix,iy), (0,0,0))
+    return new_img
