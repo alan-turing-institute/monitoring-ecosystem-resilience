@@ -34,33 +34,20 @@ import sys
 import shutil
 import requests
 import argparse
-from zipfile import ZipFile
+from datetime import datetime
+from zipfile import ZipFile, BadZipFile
 
 import ee
 ee.Initialize()
 
-from image_utils import *
+from image_utils import convert_to_bw, crop_image, save_image, combine_tif
 
 if os.name == "posix":
     TMPDIR = "/tmp/"
 else:
     TMPDIR = "%TMP%"
 
-
-def save_image(image, output_dir, output_filename):
-    """
-    Given a PIL.Image (list of pixel values), save
-    to requested filename - note that the file extension
-    will determine the output file type, can be .png, .tif,
-    probably others...
-    """
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, output_filename)
-    image.save(output_path)
-    print("Saved image {}".format(output_path))
-
-
+LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 
 
 # Cloud masking function.
@@ -115,9 +102,17 @@ def download_and_unzip(url, output_tmpdir):
     output_zipfile = os.path.join(output_tmpdir,"gee.zip")
     with open(output_zipfile, "wb") as outfile:
         outfile.write(r.content)
-    with ZipFile(output_zipfile, 'r') as zip_obj:
-        zip_obj.extractall(path=output_tmpdir)
-
+    ## catch zipfile-related exceptions here, and if they arise,
+    ## write the name of the zipfile and the url to a logfile
+    try:
+        with ZipFile(output_zipfile, 'r') as zip_obj:
+            zip_obj.extractall(path=output_tmpdir)
+    except(BadZipFile):
+        with open(LOGFILE, "a") as logfile:
+            logfile.write("{}: {} {}\n".format(str(datetime.now()),
+                                               output_zipfile,
+                                               url))
+            return None
     tif_files = [filename for filename in os.listdir(output_tmpdir) \
                  if filename.endswith(".tif")]
     if len(tif_files) == 0:
@@ -199,6 +194,8 @@ def process_coords(coords,
         tmpdir = os.path.join(TMPDIR, "gee_"+str(coords[0])+"_"\
                               +str(coords[1])+"_"+str(i))
         tif_filebases = download_and_unzip(url,tmpdir)
+        if not tif_filebases:
+            continue
         # Now should have lots of .tif files in a temp dir - merge them
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:

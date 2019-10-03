@@ -6,9 +6,26 @@ pip install --upgrade pillow
 ```
 """
 
+import os
 import sys
+import argparse
+
 from PIL import Image
-import sys
+
+
+def save_image(image, output_dir, output_filename):
+    """
+    Given a PIL.Image (list of pixel values), save
+    to requested filename - note that the file extension
+    will determine the output file type, can be .png, .tif,
+    probably others...
+    """
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, output_filename)
+    image.save(output_path)
+    print("Saved image {}".format(output_path))
+
 
 def combine_tif(input_filebase, bands=["B4","B3","B2"]):
     """
@@ -105,3 +122,64 @@ def convert_to_bw(input_image, threshold):
             else:
                 new_img.putpixel((ix,iy), (0,0,0))
     return new_img
+
+
+
+def crop_and_convert_to_bw(input_filename, output_dir, threshold=470, num_x=4, num_y=4):
+    """
+    Open an image file, convert to monochrome, and crop into sub-images.
+    """
+    orig_image = Image.open(input_filename)
+    bw_image = convert_to_bw(orig_image, threshold)
+    sub_images = crop_image(bw_image, num_x, num_y)
+    ## strip the file extension from the input_filename
+    filename_elements = os.path.basename(input_filename).split(".")
+    file_ext = filename_elements[-1]
+    new_filename_base = ""
+    for el in filename_elements[:-1]:
+        new_filename_base+= el
+
+    for i, sub_image in enumerate(sub_images):
+        new_filename = "{}_{}.{}".format(new_filename_base,
+                                         i,
+                                         file_ext)
+        save_image(sub_image, output_dir, new_filename)
+
+
+def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=4, num_y=4):
+    """
+    Loop through a whole directory and crop and convert to black+white all
+    files within it.
+    """
+    for filename in os.listdir(input_dir):
+        print("Processing {}".format(filename))
+        input_filename = os.path.join(input_dir, filename)
+        crop_and_convert_to_bw(input_filename, output_dir,
+                               threshold=470, num_x=4, num_y=4)
+
+
+def main():
+    """
+    use command line arguments to specify input and output directories,
+    and parameters for doing the cropping and conversion.
+    """
+    parser = argparse.ArgumentParser(description="crop and convert images")
+    parser.add_argument("--input_dir",help="full path to directory containing input images", required=True)
+    parser.add_argument("--output_dir",help="directory to put output images", required=True)
+
+    parser.add_argument("--threshold",help="sum(r,g,b) threshold above which we colour the pixel white, or below black",
+                        default=470, type=int)
+    parser.add_argument("--num_parts_x",help="How many sub-images to divide into along x-axis",
+                        default=4, type=int)
+    parser.add_argument("--num_parts_y",help="How many sub-images to divide into along y-axis",
+                        default=4, type=int)
+    args = parser.parse_args()
+    ## now call the crop_and_convert function
+    crop_and_convert_all(args.input_dir, args.output_dir, args.threshold,
+                         args.num_parts_x, args.num_parts_y)
+
+
+##########################
+
+if __name__ == "__main__":
+    main()
