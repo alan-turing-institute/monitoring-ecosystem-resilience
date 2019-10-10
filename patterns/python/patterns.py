@@ -1,5 +1,7 @@
 from config import *
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib import pyplot as plt
 import numpy as np
 import random
 import matplotlib.animation as animation
@@ -78,11 +80,13 @@ def patterns():
         Time = Time + dT
 
         PlotTime = PlotTime - dT
+        axes = plt.gca()
+
         if PlotTime <= 0:
             snapshots.append(popP)
 
     # create figure
-    fig = plt.figure(figsize=(8, 8))
+    fig = plt.figure()
 
     # plot initial figure
     im = plt.imshow(snapshots[0], vmax=5.5,vmin=4.5)
@@ -104,7 +108,7 @@ def patterns():
     )
     anim.save('test_anim.html', fps=fps*1000, extra_args=['-vcodec', 'libx264'])
 
-    print('Done!')
     plt.show()
+    print('Done!')
 
 patterns()

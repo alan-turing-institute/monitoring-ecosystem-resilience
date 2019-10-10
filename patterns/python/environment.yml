@@ -1,0 +1,12 @@
+name: patterns
+channels:
+- defaults
+- conda-forge
+dependencies:
+- matplotlib=3.0.3
+- numpy=1.16.2
+- pandas=0.24.1
+- pip
+- setuptools
+- pip:
+prefix: /anaconda3/envs/patterns
