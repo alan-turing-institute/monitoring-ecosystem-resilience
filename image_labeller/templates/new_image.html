@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<html>
+<head>
+    <title>Label an image</title>
+</head>
+<body>
+  <div id="image_holder">
+  <img src="{{ veg_image }}" alt="User Image">
+  </div>
+  <div id="labelform">
+    <form method="POST" action="" enctype="multipart/form-data">
+    <table>
+      {% for field in form %}
+      <tr>
+	<td>{{ field.label }}</td><td>{{ field }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p><input type=submit value="Submit"></p>
+</form>
+</div>
+</body>
+</html>
