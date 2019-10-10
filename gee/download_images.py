@@ -69,6 +69,14 @@ def mask_cloud(image, input_coll, bands):
         cirrusBitMask = 1 << 11
         qa = image.select("QA60")
 
+def addNDVI(image):
+    try:
+        image_dvi = image.normalizedDifference(['B5', 'B4']).rename('NDVI')
+        return ee.Image(image).addBands(image_dvi)
+    except:
+        print ("Something went wrong in the NDVI variable construction")
+        return image
+
 
 def construct_region_string(point, size=0.1):
     """
@@ -147,8 +155,12 @@ def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
 #    dataset = mask_cloud(dataset, image_collection, bands)
     image = dataset.median()
 
+    if 'NDVI' in bands:
+        image = addNDVI(image)
+
     image = image.select(bands)
-#    data = dataset.toList(dataset.size())
+
+    #    data = dataset.toList(dataset.size())
     if not region:
         region = construct_region_string(coords, region_size)
     urls = []
