@@ -21,6 +21,8 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
     """
     placeholder
     """
+
+    input_array = input_array[0:10,0:10]
     input_flat = input_array.flatten()
     white_x_y = np.where(input_array>=threshold)
 
@@ -30,6 +32,7 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
 
     distances = spatial.distance.pdist(white_coords)
     dist_square = spatial.distance.squareform(distances)
+
     W = np.zeros(dist_square.shape)
     T = np.zeros(dist_square.shape)
 
@@ -49,11 +52,12 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
 
     from scipy.sparse import isspmatrix
 
-    W_phi, W_lambda = np.linalg.eig(W)
-
-    print (W_phi)
+    W_lambda, W_phi = np.linalg.eig(W)
 
 
+    phi2_explamba = np.dot(W_phi * W_phi, np.exp(W_lambda))
+
+    print (phi2_explamba)
 if __name__ == "__main__":
 
     image_matrix = read_file("binary_image.txt")
