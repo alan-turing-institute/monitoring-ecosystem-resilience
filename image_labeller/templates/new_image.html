@@ -2,9 +2,11 @@
 <html lang="en">
 <html>
 <head>
-    <title>Label an image</title>
+  <title>Label an image</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
+  <h1> Image {{ img_id }} </h1>
   <div id="image_holder">
   <img src="{{ veg_image }}" alt="User Image">
   </div>

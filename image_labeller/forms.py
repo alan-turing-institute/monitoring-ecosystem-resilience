@@ -15,4 +15,4 @@ class LabelForm(Form):
                                      ("Spots","Spots"),
                                      ("Other","Other")]
                              ,label="Label")
-    notes = StringField('Notes:', [validators.optional(), validators.length(max=300)])
+    notes = StringField('Notes:', [validators.optional(), validators.length(max=300)], default=" ")
