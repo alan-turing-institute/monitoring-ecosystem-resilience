@@ -1,0 +1,29 @@
+version: '3'
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+     - "5002:5002"
+    environment:
+     - ILDBURI=my_postgres
+    depends_on:
+     - postgres
+    networks:
+     - db_nw
+  postgres:
+    image: "postgres:latest"
+    container_name: "my_postgres"
+    environment:
+      - POSTGRES_USER=il
+      - POSTGRES_PASSWORD=il
+      - POSTGRES_DB=img-labeller
+    ports:
+     - 5432:5432
+    networks:
+     - db_nw
+
+networks:
+  db_nw:
+    driver: bridge
