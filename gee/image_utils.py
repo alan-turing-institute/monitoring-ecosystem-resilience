@@ -11,7 +11,7 @@ import sys
 import argparse
 
 from PIL import Image
-
+import matplotlib.pyplot as plt
 
 def save_image(image, output_dir, output_filename):
     """
@@ -27,6 +27,55 @@ def save_image(image, output_dir, output_filename):
     print("Saved image {}".format(output_path))
 
 
+def scale_tif(input_filebase, band):
+    """
+    Given only a single band, scale to range 0,255 and apply this
+    value to all of r,g,b
+    """
+    max_val = -1*sys.maxsize
+    min_val =  sys.maxsize
+    # load the single band file and extract pixel data
+    im = Image.open(input_filebase+"."+band+".tif")
+    pix = im.load()
+    ## find the minimum and maximum pixel values in the original scale
+    print("Found image of size {}".format(im.size))
+    for ix in range(im.size[0]):
+        for iy in range(im.size[1]):
+            if pix[ix,iy] > max_val:
+                max_val = pix[ix,iy]
+            elif pix[ix,iy] < min_val:
+                min_val = pix[ix,iy]
+
+    # create a new image where we will fill RGB pixel values from 0 to 255
+    get_pix_val = lambda ix, iy: \
+        max(0, int((pix[ix,iy]-min_val) * 255/ \
+                (max_val - min_val))
+        )
+    new_img = Image.new("RGB", im.size)
+    for ix in range(im.size[0]):
+        for iy in range(im.size[1]):
+            new_img.putpixel((ix,iy), tuple(get_pix_val(ix,iy) \
+                                            for col in ["r","g","b"]))
+    return new_img
+
+
+def plot_band_values(input_filebase, bands=["B4","B3","B2"]):
+    """
+    Plot histograms of the values in the chosen bands of the input image
+    """
+    num_subplots = len(bands)
+    for i, band in enumerate(bands):
+        im = Image.open(input_filebase+"."+band+".tif")
+        pix = im.load()
+        vals = []
+        for ix in range(im.size[0]):
+            for iy in range(im.size[1]):
+                vals.append(pix[ix,iy])
+        plt.subplot(1,num_subplots, i+1)
+        plt.hist(vals)
+    plt.show()
+
+
 def combine_tif(input_filebase, bands=["B4","B3","B2"]):
     """
     Read tif files in "I" mode - one per specified band, and rescale and combine
@@ -34,6 +83,7 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
     Currently assumes that we have three bands.  Need to figure out how to
     deal with more or fewer...
     """
+
     if len(bands) >= 3:
         band_dict = {"r": {"band": bands[0],
                            "min_val": sys.maxsize,
@@ -104,7 +154,7 @@ def crop_image(input_image, n_parts_x, n_parts_y=None):
     return sub_images
 
 
-def convert_to_bw(input_image, threshold):
+def convert_to_bw(input_image, threshold, invert=False):
     """
     Given an RGB input, apply a threshold to each pixel.
     If pix(r,g,b)>threshold, set to 255,255,255, if <threshold, set to 0,0,0
@@ -117,7 +167,8 @@ def convert_to_bw(input_image, threshold):
             total = 0
             for col in p:
                 total += col
-            if total > threshold:
+            if (invert and (total > threshold)) or \
+               ((not invert) and (total < threshold)):
                 new_img.putpixel((ix,iy), (255,255,255))
             else:
                 new_img.putpixel((ix,iy), (0,0,0))
