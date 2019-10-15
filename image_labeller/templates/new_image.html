@@ -6,21 +6,26 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <div class="imagenum">
   <h1> Image {{ img_id }} </h1>
-  <div id="image_holder">
+  </div>
+  <div id="imageholder">
   <img src="{{ veg_image }}" alt="User Image">
   </div>
-  <div id="labelform">
-    <form method="POST" action="" enctype="multipart/form-data">
-    <table>
-      {% for field in form %}
-      <tr>
-	<td>{{ field.label }}</td><td>{{ field }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-    <p><input type=submit value="Submit"></p>
-</form>
-</div>
+  <div id="formholder">
+    <div id="labelform">
+      <form method="POST" action="" enctype="multipart/form-data">
+	<table>
+	  {% for field in form %}
+	  <tr>
+	    <td>{{ field.label }}</td><td>{{ field }}</td>
+	  </tr>
+	  {% endfor %}
+	</table>
+	<p><input type=submit value="Submit"></p>
+      </form>
+    </div>
+  </div>
 </body>
 </html>

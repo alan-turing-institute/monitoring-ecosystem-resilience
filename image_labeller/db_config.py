@@ -18,4 +18,5 @@ if "ILDBFile" in os.environ.keys():
 
 ## location of postgres server
 if "ILDBURI" in os.environ.keys():
-    DB_CONNECTION_STRING = "postgres://{}/img-labeller?check_same_thread=False".format(os.environ["ILDBURI"])
+    DB_CONNECTION_STRING = "postgres+psycopg2://il:il@{}/img-labeller".format(os.environ["ILDBURI"])
+#    DB_CONNECTION_STRING = "postgres://{}/img-labeller?check_same_thread=False".format(os.environ["ILDBURI"])

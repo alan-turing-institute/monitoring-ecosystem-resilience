@@ -13,7 +13,7 @@ from flask_session import Session
 from uuid import uuid4
 
 from forms import LabelForm
-from schema import session_scope, User, Image, Label
+from schema import session_scope, User, Image, Label, remove_db_session
 
 
 IMG_DIR = "static/images"
@@ -22,17 +22,6 @@ IMG_DIR = "static/images"
 ## so that we can also make a test app
 
 blueprint = Blueprint("img-labeller",__name__)
-
-def fill_image_table():
-    images = os.listdir(IMG_DIR)
-    with session_scope() as session:
-#        Image.__table__.drop()
-        for filename in images:
-            image = Image(image_filename=filename)
-            session.add(image)
-        session.commit()
-    return True
-
 
 
 def get_session_id():
@@ -47,11 +36,50 @@ def get_session_id():
         return "DEFAULT_SESSION_ID"
 
 
+def fill_user_table():
+    """
+    Use the flask session id as the user_id for now
+    """
+    with session_scope() as session:
+        user = User(user_name=get_session_id())
+        session.add(user)
+        session.commit()
+    return True
+
+
+def fill_image_table():
+    images = os.listdir(IMG_DIR)
+    with session_scope() as session:
+        for filename in images:
+            image = Image(image_filename=filename)
+            session.add(image)
+        session.commit()
+    return True
+
+
+def get_user():
+    """
+    query the user table for a user_name matching the
+    current session_id.
+    """
+    with session_scope() as session:
+        user_rows = session.query(User).filter_by(user_name=get_session_id()).all()
+        if len(user_rows)==0:
+            raise RuntimeError("No user found in db")
+        return user_rows[-1]
+
+
+@blueprint.teardown_request
+def remove_session(ex=None):
+    remove_db_session()
+
+
 @blueprint.route("/")
 def homepage():
     """
     basic homepage - options to view results table or run a new test.
     """
+    fill_user_table()
     fill_image_table()
     return render_template("index.html")
 
@@ -71,9 +99,11 @@ def new_image():
         label_form = LabelForm(request.form)
 
         if request.method=="POST":
+            user = get_user()
             label = label_form.veg_label.data
             notes = label_form.notes.data
-            l = Label(label=label, notes=notes, user_id=1, image=image)
+            l = Label(label=label, notes=notes,
+                      user=user, image=image)
             session.add(l)
             session.commit()
     # now reset the form to re-render the page
