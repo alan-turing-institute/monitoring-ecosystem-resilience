@@ -9,5 +9,6 @@ dependencies:
 - pip
 - setuptools
 - scipy=1.3.0
+- casadi=3.4.5
 - pip:
 prefix: /anaconda3/envs/patterns

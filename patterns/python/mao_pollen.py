@@ -5,6 +5,7 @@ pixels on a binary image
 
 import numpy as np
 from scipy import spatial
+import casadi
 
 
 
@@ -22,7 +23,7 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
     placeholder
     """
 
-    input_array = input_array[0:10,0:10]
+    input_array = input_array[0:4,0:4]
     input_flat = input_array.flatten()
     white_x_y = np.where(input_array>=threshold)
 
@@ -57,7 +58,47 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
 
     phi2_explamba = np.dot(W_phi * W_phi, np.exp(W_lambda))
 
-    print (phi2_explamba)
+
+    Ind = np.argsort(phi2_explamba)[::-1]
+    sorted_subgraph_centrality = sorted(phi2_explamba,reverse=True)
+
+
+    n1 = max(T.shape)
+
+    for j in range(n1):
+        print ('something')
+        T[j][j] = 1
+
+
+    # this is 20-dim. e.g. use range(0,2,100) for 50-dim
+    input = 0
+    end = 100
+    steps = 5
+    x = [i for i in range(input,end+1,steps)]
+    g = x;
+    g[0] = 0;
+
+    for i in range(1,len(g)):
+
+        t = round(x[i] * n1 / 100)
+
+        sub = Ind[0:t]
+
+        S = T[sub, sub]
+  #      nb, rowperm, colperm, rowblock, colblock, coarse_rowblock, coarse_colblock = S.sparsity().dulmageMendelsohn()
+
+    #
+        #    [p q r s] = dmperm(T(sub, sub));
+        #g(i) = length(r) - 1;
+        #r2 = r(1:length(r) - 1); # used for kicking out too small component
+        #k = find(r(2:end)-r2 < 1); # value 1  can be changed to other values
+    #g(i) = g(i) - length(k);
+
+#g = g(2:end);
+
+
+
+
 if __name__ == "__main__":
 
     image_matrix = read_file("binary_image.txt")
