@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-     - "5002:5002"
+     - "5002:80"
     environment:
      - ILDBURI=my_postgres
     depends_on:
