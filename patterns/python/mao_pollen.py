@@ -5,8 +5,7 @@ pixels on a binary image
 
 import numpy as np
 from scipy import spatial
-import casadi
-
+from casadi import *
 
 
 def read_file(input_filename):
@@ -23,7 +22,7 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
     placeholder
     """
 
-    input_array = input_array[0:4,0:4]
+    input_array = input_array[0:9,0:9]
     input_flat = input_array.flatten()
     white_x_y = np.where(input_array>=threshold)
 
@@ -80,23 +79,33 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
 
     for i in range(1,len(g)):
 
+        print (i)
+
         t = round(x[i] * n1 / 100)
 
         sub = Ind[0:t]
 
-        S = T[sub, sub]
-  #      nb, rowperm, colperm, rowblock, colblock, coarse_rowblock, coarse_colblock = S.sparsity().dulmageMendelsohn()
+        S = DM(T[sub, sub])
 
+        nb, rowperm, colperm, rowblock, colblock, coarse_rowblock, coarse_colblock = S.sparsity().btf()
+
+        p = rowperm
+        q = colperm
+        r = np.array(rowblock)
+        s = colblock
+
+        print (r)
+        print (s)
     #
-        #    [p q r s] = dmperm(T(sub, sub));
-        #g(i) = length(r) - 1;
-        #r2 = r(1:length(r) - 1); # used for kicking out too small component
-        #k = find(r(2:end)-r2 < 1); # value 1  can be changed to other values
-    #g(i) = g(i) - length(k);
-
-#g = g(2:end);
+        g[i] = len(r) - 1 # maybe 0 ?
+        r2 = np.array(r[0:(len(r) - 1)]) # used for kicking out too small component
+        k = np.where((r[1:end]-r2) < 1); # value 1  can be changed to other values
+        g[i] = g[i] - len(k)
 
 
+    g = g[1:end]
+
+    print (g)
 
 
 if __name__ == "__main__":

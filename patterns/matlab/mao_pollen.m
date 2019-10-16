@@ -2,8 +2,14 @@
 %input: h is binary image (black and white). 
 %output: g is k-dim feature
 
+h_first= readmatrix('binary_image.txt');
+
+h_sub = h_first(1:10,1:10)
+
+h = rot90(fliplr(h_sub));
+
 function [g]=mao_pollen(h)
-[a b]=find(h<270);% assume the white value is less than 270,e.g.255.
+[a b]=find(h>=255);% assume the white value is less than 270,e.g.255.
 % use h==0 if only compute for background
 X=[b -a];
 D=pdist(X);
@@ -36,6 +42,7 @@ x=0:5:100;% this is 20-dim. e.g. use 0:2:100 for 50-dim
 g=x;
 g(1)=0;
 for i=2:length(g)
+    test= i
     t=round(x(i)*n1/100);
     sub=Ind(1:t);
     [p q r s]=dmperm(T(sub,sub));
