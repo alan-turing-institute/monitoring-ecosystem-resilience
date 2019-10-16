@@ -1,9 +1,10 @@
 version: '3'
 services:
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+    image: "nbarlow/ds4sd_image_labeller:latest"
     ports:
      - "5002:80"
     environment:
