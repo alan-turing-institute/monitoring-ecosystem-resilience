@@ -48,18 +48,18 @@ Base.metadata.create_all(engine)
 Base.metadata.bind = engine
 
 @contextmanager
-def session_scope():
+def db_session_scope():
     """Provide a transactional scope around a series of operations."""
-    db_session = sessionmaker(bind=engine, autoflush=False)
-    session = db_session()
+    db_session_maker = sessionmaker(bind=engine, autoflush=False)
+    dbsession = db_session_maker()
     try:
-        yield session
-        session.commit()
+        yield dbsession
+        dbsession.commit()
     except:
-        session.rollback()
+        dbsession.rollback()
         raise
     finally:
-        session.close()
+        dbsession.close()
 
 
 def remove_db_session():
