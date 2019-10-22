@@ -164,9 +164,12 @@ def convert_to_bw(input_image, threshold, invert=False):
     for ix in range(input_image.size[0]):
         for iy in range(input_image.size[1]):
             p = pix[ix,iy]
-            total = 0
-            for col in p:
-                total += col
+            try:
+                total = 0
+                for col in p:
+                    total += col
+            except:
+                total = p
             if (invert and (total > threshold)) or \
                ((not invert) and (total < threshold)):
                 new_img.putpixel((ix,iy), (255,255,255))
