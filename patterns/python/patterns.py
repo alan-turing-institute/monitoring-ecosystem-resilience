@@ -1,11 +1,9 @@
+
 """
 Translation of Matlab code to model patterned vegetation in semi-arid landscapes.
 """
-
-
 import sys
 import argparse
-
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -108,11 +106,13 @@ def generate_pattern(rainfall):  # rainfall in mm
         Time = Time + dT
 
         PlotTime = PlotTime - dT
+        axes = plt.gca()
+
         if PlotTime <= 0:
             snapshots.append(popP)
 
     # create figure
-    fig = plt.figure(figsize=(8, 8))
+    fig = plt.figure()
 
     # plot final figure
     im = plt.imshow(snapshots[-1], vmax=5.5,vmin=4.5)
@@ -132,6 +132,7 @@ def generate_pattern(rainfall):  # rainfall in mm
         fig,
         animate_func,
     )
+
     try:
         anim.save('test_anim.html', fps=fps*1000, extra_args=['-vcodec', 'libx264'])
     except:
@@ -145,6 +146,7 @@ if __name__ == "__main__":
     parser.add_argument("--rainfall", help="rainfall in mm",type=float, default=1.4)
     args = parser.parse_args()
     snapshots = generate_pattern(args.rainfall)
+
 
     binary_pattern = make_binary(snapshots[-1])
     plot_image(binary_pattern)
