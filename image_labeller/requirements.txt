@@ -1,0 +1,5 @@
+sqlalchemy
+flask
+flask_session
+flask_cors
+wtforms
