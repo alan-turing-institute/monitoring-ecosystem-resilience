@@ -1,12 +1,42 @@
-from config import *
-import matplotlib.pyplot as plt
-import numpy as np
+"""
+Translation of Matlab code to model patterned vegetation in semi-arid landscapes.
+"""
+
+
+import sys
+import argparse
+
 import random
+import numpy as np
+import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
+# import a set of constants from configuration file
+from config import *
+
+def plot_image(value_array):
+    im = plt.imshow(value_array)
+    plt.show()
 
 
-def patterns():
+def make_binary(value_array, threshold=None):
+    """
+    if not given a threshold to use,  look at the (max+min)/2 value
+    - for anything below, set to zero, for anything above, set to 1
+    """
+    if not threshold:
+        threshold = (value_array.max() + value_array.min()) / 2.
+    new_list_x = []
+    for row in value_array:
+        new_list_y = np.array([float(val > threshold) for val in row])
+        new_list_x.append(new_list_y)
+    return np.array(new_list_x)
+
+def generate_pattern(rainfall):  # rainfall in mm
+    """
+    Run the code to converge on a vegetation pattern
+    """
+    print("Generating pattern with rainfall {}mm".format(rainfall))
     # Initialisation
     popP = np.zeros((m, m))
     popW = np.zeros((m, m))
@@ -20,7 +50,7 @@ def patterns():
 
     # Boundary conditions
     FYP = np.zeros((NY + 1, NX)) # bound.con.no flow in / outo Y - direction
-    FXP = np.zeros((NY, NX + 1)) # bound.con.no fow in / out to X - direction
+    FXP = np.zeros((NY, NX + 1)) # bound.con.no flow in / out to X - direction
     FYW = np.zeros((NY + 1, NX)) # bound.con.no flow in / out to Y - direction
     FXW = np.zeros((NY, NX + 1)) # bound.con.no flow in / out to X - direction
     FYO = np.zeros((NY + 1, NX)) # bound.con.no flow in / out to Y - direction
@@ -30,18 +60,18 @@ def patterns():
     for i in range(1,m):
         for j in range(1,m):
             if random.random() > frac:
-                popO[i, j] = R / (alpha * W0)
-                popW[i, j] = R / rw # Homogeneous equilibrium soil water in absence of plants
+                popO[i, j] = rainfall / (alpha * W0)
+                popW[i, j] = rainfall / rw # Homogeneous equilibrium soil water in absence of plants
                 popP[i, j] = 90 # Initial plant biomass
             else:
-                popO[i, j] = R / (alpha * W0) # Homogeneousequilibriumsurfacewater in absenceof plants
-                popW[i, j] = R / rw # Homogeneousequilibriumsoil water in absenceofplants
-                popP[i, j] = 0 # Initialplant biomass
+                popO[i, j] = rainfall / (alpha * W0) # Homogeneous equilibrium surface water in absenceof plants
+                popW[i, j] = rainfall / rw # Homogeneous equilibriums oil water in absence of plants
+                popP[i, j] = 0 # Initial plant biomass
 
     # Timesteps
     dT = 1  # timestep
     Time = 1  # begin time
-    EndTime = 5000  # end time
+    EndTime = 10000  # end time
     PlotStep = 10  # (d)
     PlotTime = PlotStep  #(d)
     #  Timesteps
@@ -50,7 +80,7 @@ def patterns():
     while Time <= EndTime:
 
         # Reaction
-        drO = (R - np.divide(alpha * (popP + k2 * W0), (popP + k2))* popO)
+        drO = (rainfall - np.divide(alpha * (popP + k2 * W0), (popP + k2))* popO)
         drW = (alpha * np.divide((popP + k2 * W0), (popP + k2)) * popO - gmax * np.divide(popW, (popW + k1))* popP - rw * popW)
         drP = (c * gmax * np.divide(popW,(popW + k1)) * popP - (d + beta)* popP)
 
@@ -84,8 +114,8 @@ def patterns():
     # create figure
     fig = plt.figure(figsize=(8, 8))
 
-    # plot initial figure
-    im = plt.imshow(snapshots[0], vmax=5.5,vmin=4.5)
+    # plot final figure
+    im = plt.imshow(snapshots[-1], vmax=5.5,vmin=4.5)
     plt.colorbar()
 
     # animation function
@@ -102,9 +132,19 @@ def patterns():
         fig,
         animate_func,
     )
-    anim.save('test_anim.html', fps=fps*1000, extra_args=['-vcodec', 'libx264'])
-
+    try:
+        anim.save('test_anim.html', fps=fps*1000, extra_args=['-vcodec', 'libx264'])
+    except:
+        pass
     print('Done!')
-    plt.show()
+    return snapshots
 
-patterns()
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Generate vegetation patterns")
+    parser.add_argument("--rainfall", help="rainfall in mm",type=float, default=1.4)
+    args = parser.parse_args()
+    snapshots = generate_pattern(args.rainfall)
+
+    binary_pattern = make_binary(snapshots[-1])
+    plot_image(binary_pattern)
