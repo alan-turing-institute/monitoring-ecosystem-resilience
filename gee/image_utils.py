@@ -114,9 +114,12 @@ def convert_to_bw(input_image, threshold):
     for ix in range(input_image.size[0]):
         for iy in range(input_image.size[1]):
             p = pix[ix,iy]
-            total = 0
-            for col in p:
-                total += col
+            try:
+                total = 0
+                for col in p:
+                    total += col
+            except:
+                total = p
             if total > threshold:
                 new_img.putpixel((ix,iy), (255,255,255))
             else:
@@ -152,6 +155,8 @@ def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=4, num_y=4)
     files within it.
     """
     for filename in os.listdir(input_dir):
+        if filename.endswith(".tfw"):
+            continue
         print("Processing {}".format(filename))
         input_filename = os.path.join(input_dir, filename)
         crop_and_convert_to_bw(input_filename, output_dir,
