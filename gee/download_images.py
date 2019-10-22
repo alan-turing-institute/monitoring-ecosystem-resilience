@@ -31,87 +31,23 @@ pip install --upgrade pillow
 
 import os
 import sys
+import shutil
 import requests
 import argparse
-from zipfile import ZipFile
-
-from PIL import Image
+from datetime import datetime
+from zipfile import ZipFile, BadZipFile
 
 import ee
 ee.Initialize()
+
+from image_utils import convert_to_bw, crop_image, save_image, combine_tif
 
 if os.name == "posix":
     TMPDIR = "/tmp/"
 else:
     TMPDIR = "%TMP%"
 
-
-def save_image(image, output_dir, output_filename):
-    """
-    Given a PIL.Image (list of pixel values), save
-    to requested filename - note that the file extension
-    will determine the output file type, can be .png, .tif,
-    probably others...
-    """
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, output_filename)
-    image.save(output_path)
-    print("Saved image {}".format(output_path))
-
-
-def combine_tif(input_filebase, bands=["B4","B3","B2"]):
-    """
-    Read tif files in "I" mode - one per specified band, and rescale and combine
-    pixel values to r,g,b values betweek 0 and 255 in a combined output image.
-    Currently assumes that we have three bands.  Need to figure out how to
-    deal with more or fewer...
-    """
-    if len(bands) >= 3:
-        band_dict = {"r": {"band": bands[0],
-                           "min_val": sys.maxsize,
-                           "max_val": -1*sys.maxsize,
-                           "pix_vals": []},
-                     "g": {"band": bands[1],
-                           "min_val": sys.maxsize,
-                           "max_val": -1*sys.maxsize,
-                           "pix_vals": []},
-                     "b": {"band": bands[2],
-                           "min_val": sys.maxsize,
-                           "max_val": -1*sys.maxsize,
-                           "pix_vals": []}
-        }
-    for col in band_dict.keys():
-        im = Image.open(input_filebase+"."+band_dict[col]["band"]+".tif")
-        pix = im.load()
-        ## find the minimum and maximum pixel values in the original scale
-        print("Found image of size {}".format(im.size))
-        for ix in range(im.size[0]):
-            for iy in range(im.size[1]):
-                if pix[ix,iy]> band_dict[col]["max_val"]:
-                    band_dict[col]["max_val"]= pix[ix,iy]
-                elif pix[ix,iy] < band_dict[col]["min_val"]:
-                    band_dict[col]["min_val"] = pix[ix,iy]
-        band_dict[col]["pix_vals"] = pix
-    # Take the overall max of the three bands to be the value to scale down with.
-    print("Max values {} {} {}".format(band_dict["r"]["max_val"],
-                                       band_dict["g"]["max_val"],
-                                       band_dict["b"]["max_val"]))
-
-    overall_max = max((band_dict[col]["max_val"] for col in ["r","g","b"]))
-
-    # create a new image where we will fill RGB pixel values from 0 to 255
-    get_pix_val = lambda ix, iy, col: \
-        max(0, int(band_dict[col]["pix_vals"][ix,iy] * 255/ \
-#                   band_dict[col]["max_val"]
-                   (overall_max+1)
-        ))
-    new_img = Image.new("RGB", im.size)
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
-            new_img.putpixel((ix,iy), tuple(get_pix_val(ix,iy,col) \
-                                            for col in ["r","g","b"]))
-    return new_img
+LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 
 
 # Cloud masking function.
@@ -132,6 +68,17 @@ def mask_cloud(image, input_coll, bands):
         cloudBitMask = 1 << 10
         cirrusBitMask = 1 << 11
         qa = image.select("QA60")
+
+def add_NDVI(image):
+    try:
+        nir = image.select('B5');
+        red = image.select('B4');
+#        image_ndvi = nir.subtract(red).divide(nir.add(red)).rename('NDVI');
+        image_ndvi = image.normalizedDifference(['B5', 'B4']).rename('NDVI')
+        return ee.Image(image).addBands(image_ndvi)
+    except:
+        print ("Something went wrong in the NDVI variable construction")
+        return image
 
 
 def construct_region_string(point, size=0.1):
@@ -160,15 +107,23 @@ def download_and_unzip(url, output_tmpdir):
     r = requests.get(url)
     if not r.status_code == 200:
         raise RuntimeError(" HTTP Error getting download link {}".format(url))
-    # create out
-    if not os.path.exists(output_tmpdir):
-        os.makedirs(output_tmpdir, exist_ok=True)
+    # remove output directory and recreate it
+    shutil.rmtree(output_tmpdir, ignore_errors=True)
+    os.makedirs(output_tmpdir, exist_ok=True)
     output_zipfile = os.path.join(output_tmpdir,"gee.zip")
     with open(output_zipfile, "wb") as outfile:
         outfile.write(r.content)
-    with ZipFile(output_zipfile, 'r') as zip_obj:
-        zip_obj.extractall(path=output_tmpdir)
-
+    ## catch zipfile-related exceptions here, and if they arise,
+    ## write the name of the zipfile and the url to a logfile
+    try:
+        with ZipFile(output_zipfile, 'r') as zip_obj:
+            zip_obj.extractall(path=output_tmpdir)
+    except(BadZipFile):
+        with open(LOGFILE, "a") as logfile:
+            logfile.write("{}: {} {}\n".format(str(datetime.now()),
+                                               output_zipfile,
+                                               url))
+            return None
     tif_files = [filename for filename in os.listdir(output_tmpdir) \
                  if filename.endswith(".tif")]
     if len(tif_files) == 0:
@@ -185,7 +140,8 @@ def download_and_unzip(url, output_tmpdir):
 def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
                       image_collection, # name
                       bands, # []
-                      size, # in m
+                      region_size, # size of output image region in long/lat
+                      scale, # output pixel size in m
                       start_date, # 'yyyy-mm-dd'
                       end_date, # 'yyyy-mm-dd'
                       region=None):
@@ -199,41 +155,39 @@ def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
       geom = ee.Geometry.Rectangle(coords)
     dataset = image_coll.filterBounds(geom)\
     .filterDate(start_date, end_date)
-#    dataset = dataset.filterMetadata('resolution_meters', 'equals' , 10)
 #    dataset = mask_cloud(dataset, image_collection, bands)
     image = dataset.median()
 
-    image = image.select(bands)
-#    data = dataset.toList(dataset.size())
-    if not region:
-        region = construct_region_string(coords)
-    urls = []
-  #  for i in range(data.size().getInfo()):
-  #      image = ee.Image(data.get(i));
-      #  image = mask_cloud(image, image_collection, bands)
-   #     image = image.select(bands)
+    if 'NDVI' in bands:
+        image = add_NDVI(image)
 
+    image = image.select(bands)
+
+    #    data = dataset.toList(dataset.size())
+    if not region:
+        region = construct_region_string(coords, region_size)
+    urls = []
 
     url = image.getDownloadURL(
         {'region': region,
-         'scale': 30}
+         'scale': scale}
     )
     urls.append(url)
     print("Found {} sets of images for coords {}".format(len(urls),coords))
     return urls
 
 
-
-
-
 def process_coords(coords,
                    image_coll,
                    bands,
-                   size,
+                   region_size, ## dimensions of output image in longitude/latitude
+                   scale, # size of each pixel in output image (in m)
                    start_date,
                    end_date,
                    output_dir,
-                   output_suffix):
+                   output_suffix,
+                   divide_images=False,
+                   num_sub_images=[4,4]):
     """
     Run through the whole process for one set of coordinates (either a point
     or a rectangle).
@@ -242,7 +196,8 @@ def process_coords(coords,
     download_urls = get_download_urls(coords,
                                       image_coll,
                                       bands,
-                                      size,
+                                      region_size,
+                                      scale,
                                       start_date,
                                       end_date)
 
@@ -254,21 +209,38 @@ def process_coords(coords,
         tmpdir = os.path.join(TMPDIR, "gee_"+str(coords[0])+"_"\
                               +str(coords[1])+"_"+str(i))
         tif_filebases = download_and_unzip(url,tmpdir)
+        if not tif_filebases:
+            continue
         # Now should have lots of .tif files in a temp dir - merge them
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
             merged_image = combine_tif(tif_filebase, bands)
-            # now save this
             output_filename = tif_filebase.split("/")[-1]
-            output_filename += "_{}_{}".format(coords[0],coords[1])
+            output_filename += "_{}_{}".format(coords[0], coords[1])
             output_filename += output_suffix
-            save_image(merged_image, output_dir, output_filename)
+            ## if requested, divide into smaller sub-images
+            if divide_images:
+                sub_images = crop_image(merged_image,
+                                        num_sub_images[0],
+                                        num_sub_images[1])
+                # now save these
+                for n, image in enumerate(sub_images):
+                    output_filename = tif_filebase.split("/")[-1]
+                    output_filename += "_{}_{}".format(coords[0], coords[1])
+                    output_filename += "_"+str(n)
+                    output_filename += output_suffix
+                    save_image(image, output_dir, output_filename)
+            else:
+                ## Save the full-size image
+                save_image(merged_image, output_dir, output_filename)
+        return
 
 
 def process_input_file(filename,
                        image_coll,
                        bands,
-                       size,
+                       region_size,
+                       scale,
                        start_date,
                        end_date,
                        output_dir,
@@ -285,7 +257,8 @@ def process_input_file(filename,
         process_coords(coords,
                        image_coll,
                        bands,
-                       size,
+                       region_size,
+                       scale,
                        start_date,
                        end_date,
                        output_dir,
@@ -318,7 +291,8 @@ def main():
     parser.add_argument("--coords_rect",help="'long1,lat1,long2,lat2...,...'")
     parser.add_argument("--bands",help="string containing comma-separated list",
                         default="B2,B3,B4,B5,B6,B7")
-    parser.add_argument("--size", help="size of output region", default=10)
+    parser.add_argument("--region_size", help="size of output region in long/lat", default=0.1, type=float)
+    parser.add_argument("--scale", help="size of each pixel in output image (m)", default=10, type=int)
     parser.add_argument("--output_dir",help="output directory",
                         default=".")
     parser.add_argument("--output_suffix",help="end of output filename, including file extension",
@@ -333,7 +307,8 @@ def main():
     output_dir = args.output_dir
     output_suffix = args.output_suffix
     bands = args.bands.split(",")
-    size = args.size
+    region_size = args.region_size
+    scale = args.scale
 
     if args.coords_point:
       coords = [float(x) for x in args.coords_point.split(",")]
@@ -344,7 +319,8 @@ def main():
         process_input_file(args.input_file,
                            image_coll,
                            bands,
-                           size,
+                           region_size,
+                           scale,
                            start_date,
                            end_date,
                            output_dir,
@@ -354,11 +330,13 @@ def main():
         process_coords(coords,
                        image_coll,
                        bands,
-                       size,
+                       region_size,
+                       scale,
                        start_date,
                        end_date,
                        output_dir,
                        output_suffix)
+
 
 if __name__ == "__main__":
     main()
