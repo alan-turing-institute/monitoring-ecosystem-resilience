@@ -5,7 +5,7 @@ pixels on a binary image
 
 import numpy as np
 from scipy import spatial
-from casadi import *
+import casadi
 
 
 def read_file(input_filename):
@@ -22,7 +22,7 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
     placeholder
     """
 
-    input_array = input_array[0:9,0:9]
+    input_array = input_array[0:5,0:5]
     input_flat = input_array.flatten()
     white_x_y = np.where(input_array>=threshold)
 
@@ -36,7 +36,7 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
     W = np.zeros(dist_square.shape)
     T = np.zeros(dist_square.shape)
 
-    neighbour_x_y = np.where((dist_square > 0) & (dist_square <neighbour_threshold))
+    neighbour_x_y = np.where(dist_square ==1)
 
     for i in range(len(neighbour_x_y[0])):
         if (input_flat[neighbour_x_y[0][i]] == input_flat[neighbour_x_y[1][i]]):
@@ -50,9 +50,8 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
     # subgraph centrality
 
 
-    from scipy.sparse import isspmatrix
 
-    W_lambda, W_phi = np.linalg.eig(W)
+    W_lambda, W_phi = np.linalg.eigh(W)
 
 
     phi2_explamba = np.dot(W_phi * W_phi, np.exp(W_lambda))
@@ -85,7 +84,9 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
 
         sub = Ind[0:t]
 
-        S = DM(T[sub, sub])
+        print (sub)
+
+        S = casadi.DM(T[np.ix_(sub,sub)])
 
         nb, rowperm, colperm, rowblock, colblock, coarse_rowblock, coarse_colblock = S.sparsity().btf()
 
@@ -95,10 +96,9 @@ def mao_pollen(input_array, threshold=255, neighbour_threshold = 2):
         s = colblock
 
         print (r)
-        print (s)
     #
         g[i] = len(r) - 1 # maybe 0 ?
-        r2 = np.array(r[0:(len(r) - 1)]) # used for kicking out too small component
+        r2 = (r[0:(len(r) - 1)]) # used for kicking out too small component
         k = np.where((r[1:end]-r2) < 1); # value 1  can be changed to other values
         g[i] = g[i] - len(k)
 

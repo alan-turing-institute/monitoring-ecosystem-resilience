@@ -4,7 +4,7 @@
 
 h_first= readmatrix('binary_image.txt');
 
-h_sub = h_first(1:10,1:10)
+h_sub = h_first(1:5,1:5)
 
 h = rot90(fliplr(h_sub));
 
@@ -42,10 +42,15 @@ x=0:5:100;% this is 20-dim. e.g. use 0:2:100 for 50-dim
 g=x;
 g(1)=0;
 for i=2:length(g)
-    test= i
+    disp(i);
+    
     t=round(x(i)*n1/100);
     sub=Ind(1:t);
+    
+    disp(sub);
+        
     [p q r s]=dmperm(T(sub,sub));
+    disp(r);
     g(i)=length(r)-1;
     r2=r(1:length(r)-1);  %used for kicking out too small component
     k=find(r(2:end)-r2<1); %value 1 can be changed to other values
