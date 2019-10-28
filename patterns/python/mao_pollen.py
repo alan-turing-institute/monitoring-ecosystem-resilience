@@ -68,7 +68,7 @@ def calc_adjacency_matrix(input_array,
     return T, W
 
 
-def calc_and_sort_SC_indices(adjacency_matrix):
+def calc_and_sort_sc_indices(adjacency_matrix):
     """
     Given an input adjacency matrix, calculate eigenvalues and eigenvectors,
     calculate the subgraph centrality (ref: <== ADD REF), then sort.
