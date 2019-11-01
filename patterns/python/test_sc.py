@@ -151,3 +151,9 @@ def test_full_calculation_EC():
     feat_vec, sel_pix = subgraph_centrality(IMG, True)
     assert(len(feat_vec)==20)
     assert(len(sel_pix)==19)
+
+
+def test_fill_sc_pixels():
+    sig_pix = get_signal_pixels(IMG)
+    new_img = fill_sc_pixels(sig_pix, IMG)
+    assert((IMG==255).sum() == (new_img==200).sum())

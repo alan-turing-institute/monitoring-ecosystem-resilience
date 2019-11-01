@@ -34,7 +34,10 @@ def image_from_array(input_array, output_size=None):
     for ix in range(size_x):
         for iy in range(size_y):
             val = input_array[ix,iy]
-            new_img.putpixel((ix,iy),(val,val,val))
+            if val == input_array.max():
+                new_img.putpixel((ix,iy),(val,val,val))
+            else:
+                new_img.putpixel((ix,iy),(0,val,val))
     if output_size:
         new_img = new_img.resize((output_size, output_size), Image.ANTIALIAS)
     return new_img
@@ -92,29 +95,42 @@ def crop_image(input_image, x_range, y_range):
     return input_image[x_range[0]:x_range[1], y_range[0]:y_range[1]]
 
 
-def fill_sc_pixels(sel_pixels, orig_image, val=123):
+def fill_sc_pixels(sel_pixels, orig_image, val=200):
     """
     Given an original 2D array where all the elements are 0 (background)
     or 255 (signal), fill in a selected subset of signal pixels as 123 (grey).
     """
     new_image = np.copy(orig_image)
     for pix in sel_pixels:
-        new_image[pix] = 123
+        new_image[pix] = 200
     return new_image
 
 
+def generate_sc_images(sel_pixels, orig_image, val=200):
+    """
+    Return a dict of images with the selected subsets of signal
+    pixels filled in in cyan.
+    """
+    image_dict = {}
+    for k,v in sel_pixels.items():
+        new_image_array = fill_sc_pixels(v, orig_image, val)
+        new_image = image_from_array(new_image_array,400)
+        image_dict[k] = new_image
+    return image_dict
 
-def get_signal_pixels(input_array, threshold=255, lower_threshold=True):
+
+def get_signal_pixels(input_array, threshold=255, lower_threshold=True, invert_y=False):
     """
     Find coordinates of all pixels within the image that are > or <
     the threshold ( require < threshold if lower_threshold==True)
-    NOTE - we make the second coordinate negative, for reasons.
+    NOTE - if invert_y is set, we make the second coordinate negative, for reasons.
     """
+    y_sign = -1 if invert_y else 1
     # find all the "white" pixels
     signal_x_y = np.where(input_array>=threshold)
 
     # convert ([x1, x2, ...], [y1,y2,...]) to ([x1,y1],...)
-    signal_coords = [(signal_x_y[0][i], -1*signal_x_y[1][i]) \
+    signal_coords = [(signal_x_y[0][i], y_sign*signal_x_y[1][i]) \
                     for i in range(len(signal_x_y[0]))]
     return signal_coords
 
@@ -468,3 +484,4 @@ if __name__ == "__main__":
                                                   num_quantiles,
                                                   threshold,
                                                   is_lower_limit)
+    sc_images = generate_sc_images(sel_pixels, image_array)
