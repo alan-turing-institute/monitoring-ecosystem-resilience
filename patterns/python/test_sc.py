@@ -7,18 +7,18 @@ import numpy as np
 from subgraph_centrality import *
 
 IMG_FILE = "../binary_image.txt"
-FULL_IMG = read_file(IMG_FILE)
+FULL_IMG = read_text_file(IMG_FILE)
 IMG = crop_image(FULL_IMG,(0,5),(0,5))
 
 
 def test_load_image():
-    img = read_file(IMG_FILE)
+    img = read_text_file(IMG_FILE)
     assert(isinstance(img, np.ndarray))
     assert(img.shape == (100,100))
 
 
 def test_crop_image():
-    img = read_file(IMG_FILE)
+    img = read_text_file(IMG_FILE)
     new_img = crop_image(img,(0,5),(0,5))
     assert(isinstance(new_img, np.ndarray))
     assert(new_img.shape ==(5,5))
@@ -40,7 +40,6 @@ def test_calc_distance_matrix():
     assert(dsq.shape==(len(sig_pix), len(sig_pix)))
 
 
-        #
 def test_calc_adjacency_matrix_with_diagonals():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
@@ -86,15 +85,14 @@ def test_calc_and_sort_indices():
     assert(indices[0]==1)
 
 
-def test_find_ec_quantiles():
+def test_calc_connected_components():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
     T, W = calc_adjacency_matrix(dsq, IMG, False)
     # use the T matrix
     indices = calc_and_sort_sc_indices(T)
-    selected_pixels = find_ec_quantiles(sig_pix, indices, 20)
-    assert(len(selected_pixels)==20)
-    assert(len(selected_pixels[100]) == len(indices))
+    cc = calc_connected_components(indices, W)
+    assert(cc == 0)
 
 
 def test_get_neighbour_elements():
@@ -103,3 +101,53 @@ def test_get_neighbour_elements():
     assert(len(av_with_diagonals)==2)
     av_no_diagonals = get_neighbour_elements(test_vec, False)[0]
     assert(len(av_no_diagonals)==1)
+
+
+def test_calc_ec():
+    sig_pix = get_signal_pixels(IMG)
+    d,dsq = calc_distance_matrix(sig_pix)
+    T, W = calc_adjacency_matrix(dsq, IMG, False)
+    # use the T matrix
+    indices = calc_and_sort_sc_indices(T)
+    ec = calc_ec(sig_pix, indices)
+    assert(ec==0)
+
+
+def test_fill_feature_vector_connected_components():
+    sig_pix = get_signal_pixels(IMG)
+    d,dsq = calc_distance_matrix(sig_pix)
+    T, W = calc_adjacency_matrix(dsq, IMG, False)
+    indices = calc_and_sort_sc_indices(T)
+    feature_vec, sel_pix = fill_feature_vector(indices,
+                                               sig_pix,
+                                               W)
+    assert(len(feature_vec)==20)
+    assert(len(sel_pix)==19)
+    pass
+
+
+def test_fill_feature_vector_EC():
+    sig_pix = get_signal_pixels(IMG)
+    d,dsq = calc_distance_matrix(sig_pix)
+    T, W = calc_adjacency_matrix(dsq, IMG, False)
+    indices = calc_and_sort_sc_indices(T)
+    feature_vec, sel_pix = fill_feature_vector(indices,
+                                               sig_pix,
+                                               T,
+                                               True
+    )
+    assert(len(feature_vec)==20)
+    assert(len(sel_pix)==19)
+    pass
+
+
+def test_full_calculation_connected_components():
+    feat_vec, sel_pix = subgraph_centrality(IMG)
+    assert(len(feat_vec)==20)
+    assert(len(sel_pix)==19)
+
+
+def test_full_calculation_EC():
+    feat_vec, sel_pix = subgraph_centrality(IMG, True)
+    assert(len(feat_vec)==20)
+    assert(len(sel_pix)==19)
