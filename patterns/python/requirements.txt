@@ -1,0 +1,6 @@
+scipy
+numpy
+casadi
+matplotlib
+pillow
+pytest
