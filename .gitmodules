@@ -1,0 +1,3 @@
+[submodule "ImageLabeller"]
+	path = ImageLabeller
+	url = https://github.com/alan-turing-institute/ImageLabeller
