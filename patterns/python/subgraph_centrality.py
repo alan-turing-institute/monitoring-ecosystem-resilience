@@ -135,6 +135,12 @@ def get_signal_pixels(input_array, threshold=255, lower_threshold=True, invert_y
     return signal_coords
 
 
+def invert_y_coord(coord_list):
+    """
+    Convert [(x1,y1),(x2,y2),...] to [(x1,-y1),(x2,-y2),...]
+    """
+    return [(x,-1*y) for (x,y) in coord_list]
+
 
 def calc_distance_matrix(signal_coords):
     """
@@ -227,8 +233,9 @@ def calc_ec(sel_pix, pix_indices):
     sel_pix = coordinates of signal pixels in the selected sub-region.
     pix_indices = indices of all signal pixels in the original image.
     """
-
     try:
+        sel_pix = invert_y_coord(sel_pix)
+        n_pix = len(pix_indices)
         sub_dist, sub_dist_matrix = calc_distance_matrix(sel_pix)
         sub_neighbours = get_neighbour_elements(sub_dist)[0]
         # get x,y coordinates of neighbouring pixels within this subregion
@@ -246,8 +253,11 @@ def calc_ec(sel_pix, pix_indices):
             tmp = tmp1 - tmp3
             ff1 = np.where((tmp[:,0]==0) & (tmp[:,1]==0))
             f += len(ff1[0])
-        return n_pix - len(sub_neighbours) + f
-    except:
+        val = n_pix - len(sub_neighbours) + f
+        print("Euler characteristic is {}".format(val))
+        return val
+    except Exception as e:
+        print("{}".format(e))
         return 0
 
 
@@ -319,11 +329,13 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=False, num_quanti
             feature_vector[i] = calc_ec(sel_pix, pix_indices)
         else:
             feature_vector[i] = calc_connected_components(sub_region, adj_matrix)
+    # fill in the last quantile (100%) of selected pixels
+    selected_pixels[100] = coords
 
     return feature_vector, selected_pixels
 
 
-def find_sc_quantiles(pix_indices, adj_matrix, num_quantiles):
+def find_cc_quantiles(pix_indices, adj_matrix, num_quantiles):
     """
     Given indices of white pixels ordered by SC value,
     do ...
@@ -371,50 +383,50 @@ def find_sc_quantiles(pix_indices, adj_matrix, num_quantiles):
     feature_vector = feature_vector[1:end]
     return_feature_vector
 
-
-def find_ec_quantiles(coords, pix_indices, num_quantiles=20):
-    # find the different quantiles
-    start = 0
-    end = 100
-    step = (end-start)/num_quantiles
-    x = [i for i in range(start,end+1,int(step))]
-    # how many signal pixels?
-    n = len(coords)
-    # create feature vector of size num_quantiles
-    feature_vector = np.zeros(num_quantiles+1)
-    selected_pixels = {}
-    # Loop through the quantiles to fill the feature vector
-    for i in range(1,len(feature_vector)):
-        print("calculating subregion {} of {}".format(i, num_quantiles))
-        # how many pixels in this sub-region?
-        n_pix = round(x[i] * n / 100)
-        sub_region = pix_indices[0:n_pix]
-        sel_pix = [coords[j] for j in sub_region]
-        try:
-            sub_dist, sub_dist_matrix = calc_distance_matrix(sel_pix)
-            sub_neighbours = get_neighbour_elements(sub_dist)[0]
-            sub_coords = get_neighbour_elements(sub_dist_matrix)
-            # ==> NOTE we don't understand the next steps!
-            nb = np.where((pix_indices[sub_coords[1]] \
-                           - pix_indices[sub_coords[0]]) == 1)[0]
-            f = 0
-            for j in range(len(nb)):
-                tmp1 = [ sel_pix[k] for k in sub_coords[0][nb] ]
-                tmp2 = np.add(np.array([ sel_pix[k] \
-                                         for k in sub_coords[0][nb]][j]),
-                              np.array([1,0]))
-                tmp3 = np.tile(tmp2, (len(nb),1))
-                tmp = tmp1 - tmp3
-                ff1 = np.where((tmp[:,0]==0) & (tmp[:,1]==0))
-                f += len(ff1[0])
-            feature_vector[i] = n_pix - len(sub_neighbours) + f
-        except:
-
-            feature_vector[i] = 0
-
-        selected_pixels[x[i]] = sel_pix
-
-    return feature_vector, selected_pixels
+#
+#def find_ec_quantiles(coords, pix_indices, num_quantiles=20):
+#    # find the different quantiles
+#    start = 0
+#    end = 100
+#    step = (end-start)/num_quantiles
+#    x = [i for i in range(start,end+1,int(step))]
+#    # how many signal pixels?
+#    n = len(coords)
+#    # create feature vector of size num_quantiles
+#    feature_vector = np.zeros(num_quantiles+1)
+#    selected_pixels = {}
+#    # Loop through the quantiles to fill the feature vector
+#    for i in range(1,len(feature_vector)):
+#        print("calculating subregion {} of {}".format(i, num_quantiles))
+#        # how many pixels in this sub-region?
+#        n_pix = round(x[i] * n / 100)
+#        sub_region = pix_indices[0:n_pix]
+#        sel_pix = [coords[j] for j in sub_region]
+#        try:
+#            sub_dist, sub_dist_matrix = calc_distance_matrix(sel_pix)
+#            sub_neighbours = get_neighbour_elements(sub_dist)[0]
+#            sub_coords = get_neighbour_elements(sub_dist_matrix)
+#            # ==> NOTE we don't understand the next steps!
+#            nb = np.where((pix_indices[sub_coords[1]] \
+#                           - pix_indices[sub_coords[0]]) == 1)[0]
+#            f = 0
+#            for j in range(len(nb)):
+#                tmp1 = [ sel_pix[k] for k in sub_coords[0][nb] ]
+#                tmp2 = np.add(np.array([ sel_pix[k] \
+#                                         for k in sub_coords[0][nb]][j]),
+#                              np.array([1,0]))
+#                tmp3 = np.tile(tmp2, (len(nb),1))
+#                tmp = tmp1 - tmp3
+#                ff1 = np.where((tmp[:,0]==0) & (tmp[:,1]==0))
+#                f += len(ff1[0])
+#            feature_vector[i] = n_pix - len(sub_neighbours) + f
+#        except:
+#
+#            feature_vector[i] = 0
+#
+#        selected_pixels[x[i]] = sel_pix
+#
+#    return feature_vector, selected_pixels
 
 
 

@@ -109,8 +109,11 @@ def test_calc_ec():
     T, W = calc_adjacency_matrix(dsq, IMG, False)
     # use the T matrix
     indices = calc_and_sort_sc_indices(T)
-    ec = calc_ec(sig_pix, indices)
-    assert(ec==0)
+    # look at the top half of ordered list
+    sub_region = indices[0: len(indices)//2]
+    sel_pix = [sig_pix[j] for j in sub_region]
+    ec = calc_ec(sel_pix, sub_region)
+    assert(ec==1)
 
 
 def test_fill_feature_vector_connected_components():
@@ -122,7 +125,7 @@ def test_fill_feature_vector_connected_components():
                                                sig_pix,
                                                W)
     assert(len(feature_vec)==20)
-    assert(len(sel_pix)==19)
+    assert(len(sel_pix)==20)
     pass
 
 
@@ -137,20 +140,20 @@ def test_fill_feature_vector_EC():
                                                True
     )
     assert(len(feature_vec)==20)
-    assert(len(sel_pix)==19)
+    assert(len(sel_pix)==20)
     pass
 
 
 def test_full_calculation_connected_components():
     feat_vec, sel_pix = subgraph_centrality(IMG)
     assert(len(feat_vec)==20)
-    assert(len(sel_pix)==19)
+    assert(len(sel_pix)==20)
 
 
 def test_full_calculation_EC():
     feat_vec, sel_pix = subgraph_centrality(IMG, True)
     assert(len(feat_vec)==20)
-    assert(len(sel_pix)==19)
+    assert(len(sel_pix)==20)
 
 
 def test_fill_sc_pixels():
