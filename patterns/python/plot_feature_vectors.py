@@ -9,12 +9,16 @@ import matplotlib.pyplot as plt
 import argparse
 
 from generate_patterns import generate_pattern
-from subgraph_centrality import subgraph_centrality, generate_sc_images
+from subgraph_centrality import (
+    subgraph_centrality,
+    generate_sc_images,
+    image_from_array
+)
 
 LABELS=['bo','ro','go', 'b^', 'r^', 'g^']
 
 
-def feature_vec_plot(rainfall, do_EC=True):
+def generate_feature_vec_plot(rainfall, do_EC=True):
     """
     Generate a pattern and then calculate the feature vector
     """
@@ -23,7 +27,20 @@ def feature_vec_plot(rainfall, do_EC=True):
     # ignore the first element
     xvals = list(sc.keys())[1:]
     yvals = list(fv[1:])
-    return xvals, yvals, image
+    images = generate_sc_images(sc, image)
+    return xvals, yvals, images
+
+
+def display_plots(xvals, yvals):
+    """
+    Show the plots on the same canvas
+    """
+    for i, rain in enumerate(xvals.keys()):
+        plt.plot(xvals[rain], yvals[rain], LABELS[i])
+
+    plt.xlabel("pixel rank (%)")
+    plt.ylabel("Euler characteristic")
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -38,11 +55,5 @@ if __name__ == "__main__":
     yvals = {}
     for rain in rainfall_vals:
         label = "{}mm".format(rain)
-        xvals[label], yvals[label], images[label] = feature_vec_plot(float(rain), do_EC)
-
-    for i, rain in enumerate(xvals.keys()):
-        plt.plot(xvals[rain], yvals[rain], LABELS[i])
-
-
-    plt.xlabel("pixel rank (%)")
-    plt.ylabel("Euler characteristic")
+        xvals[label], yvals[label], images[label] = generate_feature_vec_plot(float(rain),
+                                                                              do_EC)

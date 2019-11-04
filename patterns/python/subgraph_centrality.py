@@ -22,7 +22,7 @@ import casadi
 import argparse
 
 
-def image_from_array(input_array, output_size=None):
+def image_from_array(input_array, output_size=None, sel_val=200):
     """
     convert a 2D numpy array of values into
     an image where each pixel has r,g,b set to
@@ -31,13 +31,15 @@ def image_from_array(input_array, output_size=None):
     """
     size_x, size_y = input_array.shape
     new_img = Image.new("RGB", (size_x,size_y))
+    # count the number of distinct values in the array
+    num_cols = len(np.unique(input_array))
     for ix in range(size_x):
         for iy in range(size_y):
             val = input_array[ix,iy]
-            if val == input_array.max():
-                new_img.putpixel((ix,iy),(val,val,val))
-            else:
+            if val == sel_val:
                 new_img.putpixel((ix,iy),(0,val,val))
+            else:
+                new_img.putpixel((ix,iy),(val,val,val))
     if output_size:
         new_img = new_img.resize((output_size, output_size), Image.ANTIALIAS)
     return new_img
