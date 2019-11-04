@@ -18,7 +18,7 @@ def plot_image(value_array):
     plt.show()
 
 
-def make_binary(value_array, threshold=None):
+def make_binary(value_array, threshold=None, sig_val=255):
     """
     if not given a threshold to use,  look at the (max+min)/2 value
     - for anything below, set to zero, for anything above, set to 1
@@ -27,7 +27,7 @@ def make_binary(value_array, threshold=None):
         threshold = (value_array.max() + value_array.min()) / 2.
     new_list_x = []
     for row in value_array:
-        new_list_y = np.array([float(val > threshold) for val in row])
+        new_list_y = np.array([sig_val*int(val > threshold) for val in row])
         new_list_x.append(new_list_y)
     return np.array(new_list_x)
 
@@ -113,18 +113,11 @@ def generate_pattern(rainfall):  # rainfall in mm
             snapshots.append(popP)
 
     # create figure
-    fig = plt.figure()
+#    fig = plt.figure()
 
     # plot final figure
-    im = plt.imshow(snapshots[-1], vmax=5.5,vmin=4.5)
-    plt.colorbar()
-
-    # animation function
-    def animate_func(i):
-        if i % fps == 0:
-            print('.', end='')
-        im.set_array(snapshots[i])
-        return [im]
+#    im = plt.imshow(snapshots[-1], vmax=5.5,vmin=4.5)
+#    plt.colorbar()
 
     print('Done!')
     binary_pattern = make_binary(snapshots[-1])
