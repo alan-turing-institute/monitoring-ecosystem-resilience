@@ -128,8 +128,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate vegetation patterns")
     parser.add_argument("--rainfall", help="rainfall in mm",type=float, default=1.4)
     args = parser.parse_args()
-    snapshots = generate_pattern(args.rainfall)
+    binary_pattern = generate_pattern(args.rainfall)
 
-
-    binary_pattern = make_binary(snapshots[-1])
     plot_image(binary_pattern)
