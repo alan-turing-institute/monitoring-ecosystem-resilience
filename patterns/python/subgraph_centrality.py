@@ -77,7 +77,7 @@ def read_image_file(input_filename):
             if pix[ix,iy] == sig_col:
                 row[ix] = 255
         rows.append(row)
-    return rows
+    return np.array(rows)
 
 
 def read_text_file(input_filename):
@@ -337,53 +337,53 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=False, num_quanti
     return feature_vector, selected_pixels
 
 
-def find_cc_quantiles(pix_indices, adj_matrix, num_quantiles):
-    """
-    Given indices of white pixels ordered by SC value,
-    do ...
-    """
-
-    # adj_matrix will be square - take the length of a side
-    n = max(adj_matrix.shape)
-    # set the diagonals of the adjacency matrix to 1 (previously
-    # zero by definition because a pixel can't be adjacent to itself)
-    for j in range(n):
-        adj_matrix[j][j] = 1
-
-    # find the different quantiles
-    start = 0
-    end = 100
-    step = (end-start)/num_quantiles
-    x = [i for i in range(start,end+1,step)]
-    # create feature vector of size num_quantiles
-    feature_vector = np.zeros(num_quantiles);
-
-    # Loop through the quantiles to fill the feature vector
-    for i in range(1,len(feature_vector)):
-        print("calculating subregion {} of {}".format(i, num_quantiles))
-        # how many pixels in this sub-region?
-        n_pix = round(x[i] * n / 100)
-
-        sub_region = pix_indices[0:n_pix]
-        print (sub_region)
-        # calculate the Dulmage-Mendelsohn decomposition (ref <== REF)
-        S = casadi.DM(adj_matrix[np.ix_(sub_region,sub_region)])
-        # calculate the block-triangular form
-        nb, rowperm, colperm, rowblock, colblock, coarse_rowblock, coarse_colblock = S.sparsity().btf()
-
-        p = rowperm
-        q = colperm
-        r = np.array(rowblock)
-        s = colblock
-
-        print (r)
-        feature_vector[i] = len(r) - 1 # maybe 0 ?
-        r2 = (r[0:(len(r) - 1)]) # used for kicking out too small component
-        k = np.where((r[1:end]-r2) < 1); # value 1  can be changed to other values
-        feature_vector[i] = feature_vector[i] - len(k)
-
-    feature_vector = feature_vector[1:end]
-    return_feature_vector
+#def find_cc_quantiles(pix_indices, adj_matrix, num_quantiles):
+#    """
+#    Given indices of white pixels ordered by SC value,
+#    do ...
+#    """
+#
+#    # adj_matrix will be square - take the length of a side
+#    n = max(adj_matrix.shape)
+#    # set the diagonals of the adjacency matrix to 1 (previously
+#    # zero by definition because a pixel can't be adjacent to itself)
+#    for j in range(n):
+#        adj_matrix[j][j] = 1
+#
+#    # find the different quantiles
+#    start = 0
+#    end = 100
+#    step = (end-start)/num_quantiles
+#    x = [i for i in range(start,end+1,step)]
+#    # create feature vector of size num_quantiles
+#    feature_vector = np.zeros(num_quantiles);
+#
+#    # Loop through the quantiles to fill the feature vector
+#    for i in range(1,len(feature_vector)):
+#        print("calculating subregion {} of {}".format(i, num_quantiles))
+#        # how many pixels in this sub-region?
+#        n_pix = round(x[i] * n / 100)
+#
+#        sub_region = pix_indices[0:n_pix]
+#        print (sub_region)
+#        # calculate the Dulmage-Mendelsohn decomposition (ref <== REF)
+#        S = casadi.DM(adj_matrix[np.ix_(sub_region,sub_region)])
+#        # calculate the block-triangular form
+#        nb, rowperm, colperm, rowblock, colblock, coarse_rowblock, coarse_colblock = S.sparsity().btf()
+#
+#        p = rowperm
+#        q = colperm
+#        r = np.array(rowblock)
+#        s = colblock
+#
+#        print (r)
+#        feature_vector[i] = len(r) - 1 # maybe 0 ?
+#        r2 = (r[0:(len(r) - 1)]) # used for kicking out too small component
+#        k = np.where((r[1:end]-r2) < 1); # value 1  can be changed to other values
+#        feature_vector[i] = feature_vector[i] - len(k)
+#
+#    feature_vector = feature_vector[1:end]
+#    return_feature_vector
 
 #
 #def find_ec_quantiles(coords, pix_indices, num_quantiles=20):
