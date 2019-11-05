@@ -13,6 +13,7 @@ import argparse
 from PIL import Image
 import matplotlib.pyplot as plt
 
+
 def save_image(image, output_dir, output_filename):
     """
     Given a PIL.Image (list of pixel values), save
@@ -25,6 +26,21 @@ def save_image(image, output_dir, output_filename):
     output_path = os.path.join(output_dir, output_filename)
     image.save(output_path)
     print("Saved image {}".format(output_path))
+
+
+def invert_binary_image(image):
+    """
+    Swap (255,255,255) with (0,0,0) for all pixels
+    """
+    new_img = Image.new("RGB", image.size)
+    pix = image.load()
+    for ix in range(image.size[0]):
+        for iy in range(image.size[1]):
+            if sum(pix[ix,iy]) == 0:
+                new_img.putpixel((ix,iy), (255,255,255))
+            else:
+                new_img.putpixel((ix,iy), (0,0,0))
+    return new_img
 
 
 def scale_tif(input_filebase, band):
@@ -131,9 +147,33 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
     return new_img
 
 
-def crop_image(input_image, n_parts_x, n_parts_y=None):
+def crop_image_npix(input_image, n_pix_x, n_pix_y=None):
     """
-    Divide an image into smaller sub-images.
+    Divide an image into smaller sub-images with fixed pixel size.
+    """
+    ## if n_pix_y not specified, assume we want equal x,y
+    if not n_pix_y:
+        n_pix_y = n_pix_x
+
+    xsize, ysize = input_image.size
+    x_parts = int(xsize // n_pix_x)
+    y_parts = int(ysize // n_pix_y)
+
+
+    sub_images = []
+    for ix in range(x_parts):
+        for iy in range(y_parts):
+            box = (ix*n_pix_x, iy*n_pix_y, (ix+1)*n_pix_x, (iy+1)*n_pix_y)
+            region = input_image.crop(box)
+            sub_images.append(region)
+
+    return sub_images
+
+
+
+def crop_image_nparts(input_image, n_parts_x, n_parts_y=None):
+    """
+    Divide an image into n_parts_x*n_parts_y equal smaller sub-images.
     """
     ## if n_parts_y not specified, assume we want equal x,y
     if not n_parts_y:
@@ -179,13 +219,13 @@ def convert_to_bw(input_image, threshold, invert=False):
 
 
 
-def crop_and_convert_to_bw(input_filename, output_dir, threshold=470, num_x=4, num_y=4):
+def crop_and_convert_to_bw(input_filename, output_dir, threshold=470, num_x=50, num_y=50):
     """
     Open an image file, convert to monochrome, and crop into sub-images.
     """
     orig_image = Image.open(input_filename)
     bw_image = convert_to_bw(orig_image, threshold)
-    sub_images = crop_image(bw_image, num_x, num_y)
+    sub_images = crop_image_npix(bw_image, num_x, num_y)
     ## strip the file extension from the input_filename
     filename_elements = os.path.basename(input_filename).split(".")
     file_ext = filename_elements[-1]
@@ -200,16 +240,18 @@ def crop_and_convert_to_bw(input_filename, output_dir, threshold=470, num_x=4, n
         save_image(sub_image, output_dir, new_filename)
 
 
-def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=4, num_y=4):
+def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=50, num_y=50):
     """
     Loop through a whole directory and crop and convert to black+white all
     files within it.
     """
     for filename in os.listdir(input_dir):
+        if not (filename.endswith("tif") or filename.endswith("png")):
+            continue
         print("Processing {}".format(filename))
         input_filename = os.path.join(input_dir, filename)
         crop_and_convert_to_bw(input_filename, output_dir,
-                               threshold=470, num_x=4, num_y=4)
+                               threshold, num_x, num_y)
 
 
 def main():
@@ -223,14 +265,14 @@ def main():
 
     parser.add_argument("--threshold",help="sum(r,g,b) threshold above which we colour the pixel white, or below black",
                         default=470, type=int)
-    parser.add_argument("--num_parts_x",help="How many sub-images to divide into along x-axis",
-                        default=4, type=int)
-    parser.add_argument("--num_parts_y",help="How many sub-images to divide into along y-axis",
-                        default=4, type=int)
+    parser.add_argument("--num_pix_x",help="Size in pixels of cropped image along x-axis",
+                        default=50, type=int)
+    parser.add_argument("--num_pix_y",help="Size in pixels of cropped image along y-axis",
+                        default=50, type=int)
     args = parser.parse_args()
     ## now call the crop_and_convert function
     crop_and_convert_all(args.input_dir, args.output_dir, args.threshold,
-                         args.num_parts_x, args.num_parts_y)
+                         args.num_pix_x, args.num_pix_y)
 
 
 ##########################
