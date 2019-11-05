@@ -228,12 +228,15 @@ def calc_and_sort_sc_indices(adjacency_matrix):
     return indices
 
 
-def calc_v_minus_e(sel_pix, adj_matrix):
+def calc_v_minus_e(sel_pix):
     """
     Calculate the number of vertices (i.e. signal pixels) minus
     the number of edges (i.e. non-zero elements of adjacency matrix)
     """
-    return len(sel_pix) - sum(adj_matrix)
+    sub_dist, sub_dist_matrix = calc_distance_matrix(sel_pix)
+    sub_neighbours = get_neighbour_elements(sub_dist)[0]
+    return len(sel_pix) - len(sub_neighbours)
+
 
 
 def calc_ec(sel_pix, pix_indices):
@@ -335,7 +338,7 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=False, num_quanti
         sel_pix = [coords[j] for j in sub_region]
         selected_pixels[x[i]] = sel_pix
         # now calculate the feature vector element using the selected method
-        print("Calculating feature vector for {} - {} {} pixels".format(x[i], len(sel_pix), len(sub_region)))
+#        print("V-E is {}".format(calc_v_minus_e(sel_pix)))
         if do_EC:
             feature_vector[i] = calc_ec(sel_pix, sub_region)
         else:
