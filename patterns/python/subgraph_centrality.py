@@ -22,7 +22,7 @@ import casadi
 import argparse
 
 
-def image_from_array(input_array, output_size=None):
+def image_from_array(input_array, output_size=None, sel_val=200):
     """
     convert a 2D numpy array of values into
     an image where each pixel has r,g,b set to
@@ -31,13 +31,15 @@ def image_from_array(input_array, output_size=None):
     """
     size_x, size_y = input_array.shape
     new_img = Image.new("RGB", (size_x,size_y))
+    # count the number of distinct values in the array
+    num_cols = len(np.unique(input_array))
     for ix in range(size_x):
         for iy in range(size_y):
             val = input_array[ix,iy]
-            if val == input_array.max():
-                new_img.putpixel((ix,iy),(val,val,val))
-            else:
+            if val == sel_val:
                 new_img.putpixel((ix,iy),(0,val,val))
+            else:
+                new_img.putpixel((ix,iy),(val,val,val))
     if output_size:
         new_img = new_img.resize((output_size, output_size), Image.ANTIALIAS)
     return new_img
@@ -75,7 +77,7 @@ def read_image_file(input_filename):
             if pix[ix,iy] == sig_col:
                 row[ix] = 255
         rows.append(row)
-    return rows
+    return np.array(rows)
 
 
 def read_text_file(input_filename):
@@ -325,111 +327,15 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=False, num_quanti
         sel_pix = [coords[j] for j in sub_region]
         selected_pixels[x[i]] = sel_pix
         # now calculate the feature vector element using the selected method
+        print("Calculating feature vector for {} - {} {} pixels".format(x[i], len(sel_pix), len(sub_region)))
         if do_EC:
-            feature_vector[i] = calc_ec(sel_pix, pix_indices)
+            feature_vector[i] = calc_ec(sel_pix, sub_region)
         else:
             feature_vector[i] = calc_connected_components(sub_region, adj_matrix)
     # fill in the last quantile (100%) of selected pixels
     selected_pixels[100] = coords
 
     return feature_vector, selected_pixels
-
-
-def find_cc_quantiles(pix_indices, adj_matrix, num_quantiles):
-    """
-    Given indices of white pixels ordered by SC value,
-    do ...
-    """
-
-    # adj_matrix will be square - take the length of a side
-    n = max(adj_matrix.shape)
-    # set the diagonals of the adjacency matrix to 1 (previously
-    # zero by definition because a pixel can't be adjacent to itself)
-    for j in range(n):
-        adj_matrix[j][j] = 1
-
-    # find the different quantiles
-    start = 0
-    end = 100
-    step = (end-start)/num_quantiles
-    x = [i for i in range(start,end+1,step)]
-    # create feature vector of size num_quantiles
-    feature_vector = np.zeros(num_quantiles);
-
-    # Loop through the quantiles to fill the feature vector
-    for i in range(1,len(feature_vector)):
-        print("calculating subregion {} of {}".format(i, num_quantiles))
-        # how many pixels in this sub-region?
-        n_pix = round(x[i] * n / 100)
-
-        sub_region = pix_indices[0:n_pix]
-        print (sub_region)
-        # calculate the Dulmage-Mendelsohn decomposition (ref <== REF)
-        S = casadi.DM(adj_matrix[np.ix_(sub_region,sub_region)])
-        # calculate the block-triangular form
-        nb, rowperm, colperm, rowblock, colblock, coarse_rowblock, coarse_colblock = S.sparsity().btf()
-
-        p = rowperm
-        q = colperm
-        r = np.array(rowblock)
-        s = colblock
-
-        print (r)
-        feature_vector[i] = len(r) - 1 # maybe 0 ?
-        r2 = (r[0:(len(r) - 1)]) # used for kicking out too small component
-        k = np.where((r[1:end]-r2) < 1); # value 1  can be changed to other values
-        feature_vector[i] = feature_vector[i] - len(k)
-
-    feature_vector = feature_vector[1:end]
-    return_feature_vector
-
-#
-#def find_ec_quantiles(coords, pix_indices, num_quantiles=20):
-#    # find the different quantiles
-#    start = 0
-#    end = 100
-#    step = (end-start)/num_quantiles
-#    x = [i for i in range(start,end+1,int(step))]
-#    # how many signal pixels?
-#    n = len(coords)
-#    # create feature vector of size num_quantiles
-#    feature_vector = np.zeros(num_quantiles+1)
-#    selected_pixels = {}
-#    # Loop through the quantiles to fill the feature vector
-#    for i in range(1,len(feature_vector)):
-#        print("calculating subregion {} of {}".format(i, num_quantiles))
-#        # how many pixels in this sub-region?
-#        n_pix = round(x[i] * n / 100)
-#        sub_region = pix_indices[0:n_pix]
-#        sel_pix = [coords[j] for j in sub_region]
-#        try:
-#            sub_dist, sub_dist_matrix = calc_distance_matrix(sel_pix)
-#            sub_neighbours = get_neighbour_elements(sub_dist)[0]
-#            sub_coords = get_neighbour_elements(sub_dist_matrix)
-#            # ==> NOTE we don't understand the next steps!
-#            nb = np.where((pix_indices[sub_coords[1]] \
-#                           - pix_indices[sub_coords[0]]) == 1)[0]
-#            f = 0
-#            for j in range(len(nb)):
-#                tmp1 = [ sel_pix[k] for k in sub_coords[0][nb] ]
-#                tmp2 = np.add(np.array([ sel_pix[k] \
-#                                         for k in sub_coords[0][nb]][j]),
-#                              np.array([1,0]))
-#                tmp3 = np.tile(tmp2, (len(nb),1))
-#                tmp = tmp1 - tmp3
-#                ff1 = np.where((tmp[:,0]==0) & (tmp[:,1]==0))
-#                f += len(ff1[0])
-#            feature_vector[i] = n_pix - len(sub_neighbours) + f
-#        except:
-#
-#            feature_vector[i] = 0
-#
-#        selected_pixels[x[i]] = sel_pix
-#
-#    return feature_vector, selected_pixels
-
-
-
 
 
 def subgraph_centrality(image, do_EC=False,

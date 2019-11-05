@@ -22,6 +22,6 @@ k1      =     3  #Half saturation constant for plant uptake and growth (mm)
 k2      =     5  #Half saturation constant for water infiltration (g.m-2)
 
 #Number of grid cells
-m=100
+m=50
 NX=m
 NY=m

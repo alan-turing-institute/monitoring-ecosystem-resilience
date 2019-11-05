@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 """
 Translation of Matlab code to model patterned vegetation in semi-arid landscapes.
@@ -7,7 +8,7 @@ import argparse
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+
 
 # import a set of constants from configuration file
 from config import *
@@ -17,7 +18,7 @@ def plot_image(value_array):
     plt.show()
 
 
-def make_binary(value_array, threshold=None):
+def make_binary(value_array, threshold=None, sig_val=255):
     """
     if not given a threshold to use,  look at the (max+min)/2 value
     - for anything below, set to zero, for anything above, set to 1
@@ -26,7 +27,7 @@ def make_binary(value_array, threshold=None):
         threshold = (value_array.max() + value_array.min()) / 2.
     new_list_x = []
     for row in value_array:
-        new_list_y = np.array([float(val > threshold) for val in row])
+        new_list_y = np.array([sig_val*int(val > threshold) for val in row])
         new_list_x.append(new_list_y)
     return np.array(new_list_x)
 
@@ -112,41 +113,21 @@ def generate_pattern(rainfall):  # rainfall in mm
             snapshots.append(popP)
 
     # create figure
-    fig = plt.figure()
+#    fig = plt.figure()
 
     # plot final figure
-    im = plt.imshow(snapshots[-1], vmax=5.5,vmin=4.5)
-    plt.colorbar()
+#    im = plt.imshow(snapshots[-1], vmax=5.5,vmin=4.5)
+#    plt.colorbar()
 
-    # animation function
-    def animate_func(i):
-        if i % fps == 0:
-            print('.', end='')
-        im.set_array(snapshots[i])
-        return [im]
-
-    fps = len(snapshots)
-
-    # run animation
-    anim = animation.FuncAnimation(
-        fig,
-        animate_func,
-    )
-
-    try:
-        anim.save('test_anim.html', fps=fps*1000, extra_args=['-vcodec', 'libx264'])
-    except:
-        pass
     print('Done!')
-    return snapshots
+    binary_pattern = make_binary(snapshots[-1])
+    return binary_pattern
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Generate vegetation patterns")
     parser.add_argument("--rainfall", help="rainfall in mm",type=float, default=1.4)
     args = parser.parse_args()
-    snapshots = generate_pattern(args.rainfall)
+    binary_pattern = generate_pattern(args.rainfall)
 
-
-    binary_pattern = make_binary(snapshots[-1])
     plot_image(binary_pattern)

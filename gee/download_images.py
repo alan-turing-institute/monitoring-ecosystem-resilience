@@ -40,7 +40,7 @@ from zipfile import ZipFile, BadZipFile
 import ee
 ee.Initialize()
 
-from image_utils import convert_to_bw, crop_image, save_image, combine_tif
+from image_utils import convert_to_bw, crop_image_npix, save_image, combine_tif
 
 if os.name == "posix":
     TMPDIR = "/tmp/"
@@ -68,6 +68,7 @@ def mask_cloud(image, input_coll, bands):
         cloudBitMask = 1 << 10
         cirrusBitMask = 1 << 11
         qa = image.select("QA60")
+
 
 def add_NDVI(image):
     try:
@@ -155,7 +156,7 @@ def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
       geom = ee.Geometry.Rectangle(coords)
     dataset = image_coll.filterBounds(geom)\
     .filterDate(start_date, end_date)
-#    dataset = mask_cloud(dataset, image_collection, bands)
+    dataset = mask_cloud(dataset, image_collection, bands)
     image = dataset.median()
 
     if 'NDVI' in bands:
@@ -187,7 +188,7 @@ def process_coords(coords,
                    output_dir,
                    output_suffix,
                    divide_images=False,
-                   num_sub_images=[4,4]):
+                   sub_image_size=[50,50]):
     """
     Run through the whole process for one set of coordinates (either a point
     or a rectangle).
@@ -217,12 +218,12 @@ def process_coords(coords,
             merged_image = combine_tif(tif_filebase, bands)
             output_filename = tif_filebase.split("/")[-1]
             output_filename += "_{}_{}".format(coords[0], coords[1])
-            output_filename += output_suffix
+            output_filename += "_{}".format(output_suffix)
             ## if requested, divide into smaller sub-images
             if divide_images:
-                sub_images = crop_image(merged_image,
-                                        num_sub_images[0],
-                                        num_sub_images[1])
+                sub_images = crop_image_npix(merged_image,
+                                             sub_image_size[0],
+                                             sub_image_size[1])
                 # now save these
                 for n, image in enumerate(sub_images):
                     output_filename = tif_filebase.split("/")[-1]
