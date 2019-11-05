@@ -228,6 +228,14 @@ def calc_and_sort_sc_indices(adjacency_matrix):
     return indices
 
 
+def calc_v_minus_e(sel_pix, adj_matrix):
+    """
+    Calculate the number of vertices (i.e. signal pixels) minus
+    the number of edges (i.e. non-zero elements of adjacency matrix)
+    """
+    return len(sel_pix) - sum(adj_matrix)
+
+
 def calc_ec(sel_pix, pix_indices):
     """
     calculate the Euler characteristic for a selected subset of pixels.
