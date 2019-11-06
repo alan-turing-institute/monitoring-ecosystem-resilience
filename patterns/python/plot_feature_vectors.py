@@ -57,3 +57,4 @@ if __name__ == "__main__":
         label = "{}mm".format(rain)
         xvals[label], yvals[label], images[label] = generate_feature_vec_plot(float(rain),
                                                                               do_EC)
+    display_plots(xvals, yvals)

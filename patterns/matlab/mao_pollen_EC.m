@@ -7,7 +7,7 @@ D=squareform(D);
 [n1 n2]=size(D);
 W=zeros(n1,n2);
 T=zeros(n1,n2);
-[c d]=find(D<2); %4-neighbor. use D<2 if 8-neighbor
+[c d]=find(D==1); %4-neighbor. use D<2 if 8-neighbor
 for j=1:length(c)
     W(c(j),d(j))=1;
 end
