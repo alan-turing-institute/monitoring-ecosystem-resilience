@@ -21,7 +21,7 @@ DifO=1000;  % (m2.d-1)
 frac=0.90;  % (-)
 
 % Parameter values
-R       =   1.4;  % Rainfall (mm.d-1)
+R       =   1.5;  % Rainfall (mm.d-1)
 alpha   =   0.1;  % Proportion of surface water available for infiltration (d-1)
 W0      =  0.15;  % Bare soil infiltration (-)
 beta    =  0.3;   % Plant loss rate due to grazing (d-1)
