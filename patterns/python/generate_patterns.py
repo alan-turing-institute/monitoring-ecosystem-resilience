@@ -95,7 +95,9 @@ def generate_pattern(rainfall):  # rainfall in mm
 
         # Reaction
         drO = (rainfall - np.divide(alpha * (popP + k2 * W0), (popP + k2))* popO)
-        drW = (alpha * np.divide((popP + k2 * W0), (popP + k2)) * popO - gmax * np.divide(popW, (popW + k1))* popP - rw * popW)
+        drW = (alpha * np.divide((popP + k2 * W0),
+                                 (popP + k2)) \
+               * popO - gmax * np.divide(popW, (popW + k1))* popP - rw * popW)
         drP = (c * gmax * np.divide(popW,(popW + k1)) * popP - (d + beta)* popP)
 
         # Diffusion

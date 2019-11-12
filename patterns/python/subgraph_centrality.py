@@ -1,4 +1,4 @@
-"""
+s"""
 Python version of mao_pollen.m matlab code to look at connectedness of
 pixels on a binary image, using "Subgraph Centrality" as described in:
 
@@ -35,7 +35,8 @@ def image_from_array(input_array, output_size=None, sel_val=200):
     num_cols = len(np.unique(input_array))
     for ix in range(size_x):
         for iy in range(size_y):
-            val = input_array[ix,iy]
+            val = int(input_array[ix,iy])
+
             if val == sel_val:
                 new_img.putpixel((ix,iy),(0,val,val))
             else:
@@ -171,18 +172,22 @@ def get_neighbour_elements(distance_vector, include_diagonal_neighbours=False):
 
 
 def calc_adjacency_matrix(distance_matrix,
-                          input_image,
+                          weighted = False,
+                          input_image = None,
                           include_diagonal_neighbours=False):
     """
     Return a symmetric matrix of
     (n-pixels-over-threshold)x(n-pixel-over-threshold)
     where each element ij is 0 or 1 depending on whether the distance between
-    pixel i and pixel j is < or > neighbour_threshold
+    pixel i and pixel j is < or > neighbour_threshold.
+    Note that if the "weighted" option is True, we need to include the input_image.
     """
+    if weighted and not isinstance(input_image, np.ndarray):
 
-    # prepare empty arrays
-    W = np.zeros(distance_matrix.shape)
-    T = np.zeros(distance_matrix.shape)
+        raise RuntimeError("Need to include the input image in order to get weighted adjacency matrix")
+
+    # prepare empty array
+    adj_matrix = np.zeros(distance_matrix.shape)
     # get 2xM array where M is the number of elements of
     # the distance matrix that satisfy the "neighbour threshold" criterion.
     # i.e. the x,y coordinates of all "neighbours" in the distance matrix.
@@ -191,23 +196,22 @@ def calc_adjacency_matrix(distance_matrix,
     else:
         neighbour_x_y = np.where((distance_matrix>0) & (distance_matrix < 2))
 
-    # get the flattened input image for the next step
-    input_flat = input_image.flatten()
+    # get the flattened input image for the next step if doing the weighted version
+    input_flat = input_image.flatten() if weighted else None
 
     # loop over coordinates of neighbours in distance matrix
     for i in range(len(neighbour_x_y[0])):
-        # ===> NOTE!!! we don't really understand this step.
-        # Looks like for 2 consecutive neighbours, one gets weighted down to 0.01
-        if (input_flat[neighbour_x_y[0][i]] == input_flat[neighbour_x_y[1][i]]):
-            W[neighbour_x_y[0][i]][neighbour_x_y[1][i]] = 1
-        else:
-            W[neighbour_x_y[0][i]][neighbour_x_y[1][i]] = 0.01
-        # T is the adjacency matrix, will be NxN (with N as num-white-pixels)
-        # and element ij is 1 if pix i and pix j satisfy neighbour threshold.
-        T[neighbour_x_y[0][i]][neighbour_x_y[1][i]] = 1
-    # return both T (the adjacency matrix) and W (similar but with some
-    # elements set to 0.01)
-    return T, W
+        if weighted:
+            # ===> NOTE!!! we don't really understand this step.
+            # Looks like for 2 consecutive neighbours, one gets weighted down to 0.01
+            if (input_flat[neighbour_x_y[0][i]] == input_flat[neighbour_x_y[1][i]]):
+                adj_matrix[neighbour_x_y[0][i]][neighbour_x_y[1][i]] = 1
+            else:
+                adj_matrix[neighbour_x_y[0][i]][neighbour_x_y[1][i]] = 0.01
+        else: # unweighted
+            adj_matrix[neighbour_x_y[0][i]][neighbour_x_y[1][i]] = 1
+
+    return adj_matrix
 
 
 def calc_and_sort_sc_indices(adjacency_matrix):
@@ -226,6 +230,35 @@ def calc_and_sort_sc_indices(adjacency_matrix):
     # (corresponding to their position in the 1D list of white pixels)
     indices= np.argsort(phi2_explamba)[::-1]
     return indices
+
+
+def count_connected_components(sel_pix):
+    """
+    Count the "blobs" of selected signal pixels in the image.
+    sel_pix = coordinates of selected signal pixels
+    1) make an (initially empty) list of blobs (these will eventually be lists of pixels)
+    2)Loop through all pixels, see if they are neighbours with any pixels
+    in any existing blob.  If not, make a new blob and add them.
+    3) If a pixel is neighbour to pixels in more than one blob, merge the blobs.
+    4) Count the blobs
+    """
+    blobs = []
+    sub_dist, sub_dist_matrix = calc_distance_matrix(sel_pix)
+    sub_adj_matrix = calc_adjacency_matrix(sub_dist_matrix)
+    # loop over all rows of adjacency matrix (each is one pixel)
+    for i, row in enumerate(sub_adj_matrix):
+        this_pix_coords = sel_pix[i]
+        blobs_containing_neighbours = []
+        # loop over all pixels in row (i.e. other pixels)
+        for j in range(len(row)):
+            if sub_adj_matrix[i,j] > 0:
+                neighbour_coords = sel_pix[j]
+                for iblob, blob in enumerate(blobs):
+                    if neighbour_coords in blob:
+                        blobs_containing_neighbours.append(iblob)
+                        blob.append(this_pix_coords)
+    return blobs
+
 
 
 def calc_v_minus_e(sel_pix):
@@ -299,7 +332,7 @@ def calc_connected_components(sub_region, adj_matrix):
     return connected_components
 
 
-def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=False, num_quantiles=20):
+def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=True, num_quantiles=20):
     """
     Given indices and coordinates of signal pixels ordered by SC value, put them into
     quantiles and calculate an element of a feature vector for each quantile.
@@ -349,7 +382,7 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=False, num_quanti
     return feature_vector, selected_pixels
 
 
-def subgraph_centrality(image, do_EC=False,
+def subgraph_centrality(image, do_EC=Trues,
                         use_diagonal_neighbours=False,
                         num_quantiles=20,
                         threshold=255, # what counts as a signal pixel?
@@ -365,10 +398,11 @@ def subgraph_centrality(image, do_EC=False,
     signal_coords = get_signal_pixels(image, threshold, lower_threshold)
     # get the distance matrix
     dist_vec, dist_matrix = calc_distance_matrix(signal_coords)
-    T, W = calc_adjacency_matrix(dist_matrix, image, use_diagonal_neighbours)
     # Use weighted or unweighted adjacency matrix depending on which algorithm we
     # will use to fill our feature vector
-    adj_matrix = T if do_EC else W
+    weighted_adj_matrix = not do_EC
+    adj_matrix = calc_adjacency_matrix(dist_matrix, weighted_adj_matrix,
+                                       image, use_diagonal_neighbours)
     # calculate the subgraph centrality and order our signal pixels accordingly
     sorted_pix_indices = calc_and_sort_sc_indices(adj_matrix)
     # calculate the feature vector and get the subsets of pixels in each quantile
@@ -384,7 +418,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Look at subgraph centrality of signal pixels in an image")
     parser.add_argument("--input_txt",help="input image as a csv file")
     parser.add_argument("--input_img",help="input image as an image file")
-    parser.add_argument("--do_EC",help="calculate Euler characteristic for feature vector",
+    parser.add_argument("--do_CC",help="Count connected components rather than calculating Euler characteristic for feature vector",
                         action='store_true')
     parser.add_argument("--use_diagonal_neighbours", help="use 8-neighbours rather than 4-neighbours",
                         action='store_true')
@@ -402,7 +436,7 @@ if __name__ == "__main__":
         image_array = read_image_file(args.input_img)
     else:
         raise RuntimeError("Need to specify input_txt or input_img")
-    do_EC = True if args.do_EC else False
+    do_EC = False if args.do_CC else True
     use_diagonal_neighbours = True if args.use_diagonal_neighbours else False
     num_quantiles = args.num_quantiles
     threshold = args.sig_threshold
