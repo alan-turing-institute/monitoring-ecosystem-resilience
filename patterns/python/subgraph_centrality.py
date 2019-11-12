@@ -382,7 +382,7 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=True, num_quantil
     return feature_vector, selected_pixels
 
 
-def subgraph_centrality(image, do_EC=Trues,
+def subgraph_centrality(image, do_EC=True,
                         use_diagonal_neighbours=False,
                         num_quantiles=20,
                         threshold=255, # what counts as a signal pixel?
