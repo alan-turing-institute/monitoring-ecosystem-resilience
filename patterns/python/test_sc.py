@@ -43,44 +43,37 @@ def test_calc_distance_matrix():
 def test_calc_adjacency_matrix_with_diagonals():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
-    T, W = calc_adjacency_matrix(dsq, IMG,True)
-    assert(isinstance(T, np.ndarray))
-    assert(isinstance(W, np.ndarray))
-    assert(T.shape==dsq.shape)
-    assert(W.shape==dsq.shape)
+    adj_matrix = calc_adjacency_matrix(dsq, weighted=False,
+                                       include_diagonal_neighbours=True)
+    assert(isinstance(adj_matrix, np.ndarray))
+    assert(adj_matrix.shape==dsq.shape)
     # check that all diagonals are zero - pixels
     # can't be their own neighbours
-    for i in range(T.shape[0]):
-        assert(T[i,i] == 0)
-        assert(W[i,i] == 0)
+    for i in range(adj_matrix.shape[0]):
+        assert(adj_matrix[i,i] == 0)
     # check that we have some non-zero elements
-    assert(T.sum() == 24)
-    assert(W.sum() == 20.04)
+    assert(adj_matrix.sum() == 24)
 
 
 def test_calc_adjacency_matrix_no_diagonals():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
-    T, W = calc_adjacency_matrix(dsq, IMG,False)
-    assert(isinstance(T, np.ndarray))
-    assert(isinstance(W, np.ndarray))
-    assert(T.shape==dsq.shape)
-    assert(W.shape==dsq.shape)
+    adj_matrix = calc_adjacency_matrix(dsq, weighted=False)
+    assert(isinstance(adj_matrix, np.ndarray))
+    assert(adj_matrix.shape==dsq.shape)
     # check that all diagonals are zero - pixels
     # can't be their own neighbours
-    for i in range(T.shape[0]):
-        assert(T[i,i] == 0)
-        assert(W[i,i] == 0)
+    for i in range(adj_matrix.shape[0]):
+        assert(adj_matrix[i,i] == 0)
     # check that we have some non-zero elements
-    assert(T.sum() == 16)
-    assert(W.sum() == 14.02)
+    assert(adj_matrix.sum() == 16)
 
 
 def test_calc_and_sort_indices():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
-    T, W = calc_adjacency_matrix(dsq, IMG, False)
-    indices = calc_and_sort_sc_indices(W)
+    adj_matrix = calc_adjacency_matrix(dsq, False)
+    indices = calc_and_sort_sc_indices(adj_matrix)
     assert(len(indices)==9)
     assert(indices[0]==1)
 
@@ -88,10 +81,9 @@ def test_calc_and_sort_indices():
 def test_calc_connected_components():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
-    T, W = calc_adjacency_matrix(dsq, IMG, False)
-    # use the T matrix
-    indices = calc_and_sort_sc_indices(T)
-    cc = calc_connected_components(indices, W)
+    adj_matrix = calc_adjacency_matrix(dsq, weighted=False)
+    indices = calc_and_sort_sc_indices(adj_matrix)
+    cc = calc_connected_components(indices, adj_matrix)
     assert(cc == 0)
 
 
@@ -106,9 +98,9 @@ def test_get_neighbour_elements():
 def test_calc_ec():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
-    T, W = calc_adjacency_matrix(dsq, IMG, False)
+    adj_matrix = calc_adjacency_matrix(dsq, False)
     # use the T matrix
-    indices = calc_and_sort_sc_indices(T)
+    indices = calc_and_sort_sc_indices(adj_matrix)
     # look at the top half of ordered list
     sub_region = indices[0: len(indices)//2]
     sel_pix = [sig_pix[j] for j in sub_region]
@@ -119,11 +111,11 @@ def test_calc_ec():
 def test_fill_feature_vector_connected_components():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
-    T, W = calc_adjacency_matrix(dsq, IMG, False)
-    indices = calc_and_sort_sc_indices(T)
+    adj_matrix = calc_adjacency_matrix(dsq, True, IMG, False)
+    indices = calc_and_sort_sc_indices(adj_matrix)
     feature_vec, sel_pix = fill_feature_vector(indices,
                                                sig_pix,
-                                               W)
+                                               adj_matrix)
     assert(len(feature_vec)==20)
     assert(len(sel_pix)==20)
     pass
@@ -132,11 +124,11 @@ def test_fill_feature_vector_connected_components():
 def test_fill_feature_vector_EC():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
-    T, W = calc_adjacency_matrix(dsq, IMG, False)
-    indices = calc_and_sort_sc_indices(T)
+    adj_matrix = calc_adjacency_matrix(dsq)
+    indices = calc_and_sort_sc_indices(adj_matrix)
     feature_vec, sel_pix = fill_feature_vector(indices,
                                                sig_pix,
-                                               T,
+                                               adj_matrix,
                                                True
     )
     assert(len(feature_vec)==20)
