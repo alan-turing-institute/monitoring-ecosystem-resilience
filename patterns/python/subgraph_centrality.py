@@ -1,4 +1,4 @@
-s"""
+"""
 Python version of mao_pollen.m matlab code to look at connectedness of
 pixels on a binary image, using "Subgraph Centrality" as described in:
 
