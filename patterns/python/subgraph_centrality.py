@@ -302,6 +302,8 @@ def count_connected_components(sel_pix):
         # loop over all pixels in row (i.e. other pixels)
         for j in range(len(row)):
             if sub_adj_matrix[i,j] > 0:
+                # pixel j is a neighbour of our pixel i.
+                # see which blob(s) pixel j is in, and add pixel i to it/them.
                 neighbour_coords = sel_pix[j]
                 for blob in blobs:
                     if neighbour_coords in blob:
@@ -350,31 +352,6 @@ def calc_euler_characteristic(sel_pix, pix_indices):
     except Exception as e:
         print("{}".format(e))
         return 0
-
-
-def calc_connected_components(sub_region, adj_matrix):
-    """
-    Calculate something (V-E ?) for a selected subregion.
-    Takes as arguments:
-    sub_region = list of signal pixels in this subregion (ordered by SC)
-    adj_matrix = adjacency matrix from the whole image (we use the "W" weighted one here).
-    """
-    # calculate the Dulmage-Mendelsohn decomposition (ref <== REF)
-    S = casadi.DM(adj_matrix[np.ix_(sub_region,sub_region)])
-    # calculate the block-triangular form
-    nb, rowperm, colperm, rowblock, colblock, coarse_rowblock, coarse_colblock = S.sparsity().btf()
-
-    p = rowperm
-    q = colperm
-    r = np.array(rowblock)
-    s = colblock
-
-    connected_components = len(r) - 1 # maybe 0 ?
-    r2 = (r[0:(len(r) - 1)]) # used for kicking out too small component
-
-    k = np.where((r[1:]-r2) < 1); # value 0  can be changed to other values
-    connected_components = connected_components - len(k)
-    return connected_components
 
 
 def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=True, num_quantiles=20):
@@ -495,6 +472,7 @@ if __name__ == "__main__":
     threshold = args.sig_threshold
     is_lower_limit = True if not args.upper_threshold else False
     output_csv = args.output_csv
+    # call the subgraph_centrality function to calculate everything
     feature_vec, sel_pixels = subgraph_centrality(image_array,
                                                   do_EC,
                                                   use_diagonal_neighbours,
@@ -502,4 +480,5 @@ if __name__ == "__main__":
                                                   threshold,
                                                   is_lower_limit,
                                                   output_csv)
+    # get the images showing the selected sub-regions
     sc_images = generate_sc_images(sel_pixels, image_array)
