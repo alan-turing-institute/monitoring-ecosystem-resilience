@@ -20,6 +20,20 @@ from scipy import spatial
 import matplotlib.pyplot as plt
 import casadi
 import argparse
+import copy
+
+
+def write_csv(feature_vec, output_filename):
+    """
+    Write the feature vector to a 1-line csv
+    """
+    output_string = ""
+    for feat in feature_vec:
+        output_string += str(feat)+","
+    output_string = output_string[:-1]+"\n"
+    with open(output_filename,"w") as outfile:
+        outfile.write(output_string)
+    return True
 
 
 def image_from_array(input_array, output_size=None, sel_val=200):
@@ -232,47 +246,78 @@ def calc_and_sort_sc_indices(adjacency_matrix):
     return indices
 
 
+def merge_blobs(blobs, indices):
+    """
+    if a pixel is in more than one blob, merge them.
+    """
+    new_blob_list = copy.deepcopy(blobs)
+    for i in indices[1:]:
+        new_blob_list[indices[0]] += blobs[i]
+        new_blob_list[indices[0]] = list(set(new_blob_list[indices[0]]))
+        # remove duplicates
+        new_blob_list.remove(blobs[i])
+
+    return new_blob_list
+
+
+def consolidate_blob_list(blob_list, pix_list):
+    """
+    Every time a pixel is in more than one blob,
+    merge those blobs.
+    """
+    while sum([len(blob) for blob in blob_list]) > len(pix_list):
+        for pix in pix_list:
+            blobs_containing_pix = [i for i in range(len(blob_list)) \
+                                    if pix in blob_list[i]]
+            blob_list = merge_blobs(blob_list, blobs_containing_pix)
+        # one more round to remove duplicates
+        blob_list = [list(set(blob)) for blob in blob_list]
+    return blob_list
+
+
 def count_connected_components(sel_pix):
     """
     Count the "blobs" of selected signal pixels in the image.
     sel_pix = coordinates of selected signal pixels
     1) make an (initially empty) list of blobs (these will eventually be lists of pixels)
-    2)Loop through all pixels, see if they are neighbours with any pixels
-    in any existing blob.  If not, make a new blob and add them.
-    3) If a pixel is neighbour to pixels in more than one blob, merge the blobs.
+    2) Loop through all pixels, see if they are neighbours with any pixels
+       in any existing blob.  If so, add them to those blobs.
+       If not, make a new blob and add them.
+    3) At the end, if pixels are in more than one blob, merge the blobs using
+       the consolidate_blob_list function.
     4) Count the blobs
     """
+    # create empty list of blobs
     blobs = []
     sub_dist, sub_dist_matrix = calc_distance_matrix(sel_pix)
     sub_adj_matrix = calc_adjacency_matrix(sub_dist_matrix)
     # loop over all rows of adjacency matrix (each is one pixel)
     for i, row in enumerate(sub_adj_matrix):
         this_pix_coords = sel_pix[i]
-        blobs_containing_neighbours = []
+        # if no blobs yet, add this to the first one!
+        if len(blobs)==0:
+            blobs.append([this_pix_coords])
+            continue
+        added_to_blob = False
         # loop over all pixels in row (i.e. other pixels)
         for j in range(len(row)):
             if sub_adj_matrix[i,j] > 0:
                 neighbour_coords = sel_pix[j]
-                for iblob, blob in enumerate(blobs):
+                for blob in blobs:
                     if neighbour_coords in blob:
-                        blobs_containing_neighbours.append(iblob)
                         blob.append(this_pix_coords)
-    return blobs
+                        added_to_blob = True
+
+        # if we haven't added this pixel to one of it's neighbours
+        # blobs, we make a new blob containing just it.
+        if not added_to_blob:
+            blobs.append([this_pix_coords])
+
+    blobs = consolidate_blob_list(blobs, sel_pix)
+    return len(blobs)
 
 
-
-def calc_v_minus_e(sel_pix):
-    """
-    Calculate the number of vertices (i.e. signal pixels) minus
-    the number of edges (i.e. non-zero elements of adjacency matrix)
-    """
-    sub_dist, sub_dist_matrix = calc_distance_matrix(sel_pix)
-    sub_neighbours = get_neighbour_elements(sub_dist)[0]
-    return len(sel_pix) - len(sub_neighbours)
-
-
-
-def calc_ec(sel_pix, pix_indices):
+def calc_euler_characteristic(sel_pix, pix_indices):
     """
     calculate the Euler characteristic for a selected subset of pixels.
     Takes arguments:
@@ -373,9 +418,9 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=True, num_quantil
         # now calculate the feature vector element using the selected method
 #        print("V-E is {}".format(calc_v_minus_e(sel_pix)))
         if do_EC:
-            feature_vector[i] = calc_ec(sel_pix, sub_region)
+            feature_vector[i] = calc_euler_characteristic(sel_pix, sub_region)
         else:
-            feature_vector[i] = calc_connected_components(sub_region, adj_matrix)
+            feature_vector[i] = count_connected_components(sel_pix)
     # fill in the last quantile (100%) of selected pixels
     selected_pixels[100] = coords
 
@@ -386,7 +431,8 @@ def subgraph_centrality(image, do_EC=True,
                         use_diagonal_neighbours=False,
                         num_quantiles=20,
                         threshold=255, # what counts as a signal pixel?
-                        lower_threshold=True):
+                        lower_threshold=True,
+                        output_csv=None):
     """
     Go through the whole calculation, from input image to output vector of
     pixels in each SC quantile, and feature vector (either connected-components
@@ -411,7 +457,12 @@ def subgraph_centrality(image, do_EC=True,
                                                   adj_matrix,
                                                   do_EC,
                                                   num_quantiles)
+    # write the feature vector to a csv file
+    if output_csv:
+        write_csv(feature_vec, output_csv)
+
     return feature_vec, sel_pixels
+
 
 
 if __name__ == "__main__":
@@ -428,6 +479,8 @@ if __name__ == "__main__":
                         type=int, default=255)
     parser.add_argument("--upper_threshold", help="threshold for signal pixel is an upper limit",
                         action='store_true')
+    parser.add_argument("--output_csv", help="filename for output csv of feature vector",
+                        default="feature_vector.csv")
     args = parser.parse_args()
     image_array = None
     if args.input_txt:
@@ -441,10 +494,12 @@ if __name__ == "__main__":
     num_quantiles = args.num_quantiles
     threshold = args.sig_threshold
     is_lower_limit = True if not args.upper_threshold else False
+    output_csv = args.output_csv
     feature_vec, sel_pixels = subgraph_centrality(image_array,
                                                   do_EC,
                                                   use_diagonal_neighbours,
                                                   num_quantiles,
                                                   threshold,
-                                                  is_lower_limit)
+                                                  is_lower_limit,
+                                                  output_csv)
     sc_images = generate_sc_images(sel_pixels, image_array)

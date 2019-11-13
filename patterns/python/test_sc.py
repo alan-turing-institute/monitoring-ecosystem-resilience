@@ -104,7 +104,7 @@ def test_calc_ec():
     # look at the top half of ordered list
     sub_region = indices[0: len(indices)//2]
     sel_pix = [sig_pix[j] for j in sub_region]
-    ec = calc_ec(sel_pix, sub_region)
+    ec = calc_euler_characteristic(sel_pix, sub_region)
     assert(ec==1)
 
 
@@ -152,3 +152,33 @@ def test_fill_sc_pixels():
     sig_pix = get_signal_pixels(IMG)
     new_img = fill_sc_pixels(sig_pix, IMG)
     assert((IMG==255).sum() == (new_img==200).sum())
+
+
+def test_merge_blobs_two():
+    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)]]
+    new_blobs = merge_blobs(test_blobs,[0,1])
+    assert(len(new_blobs)==1)
+    assert(len(new_blobs[0])==3)
+
+
+def test_merge_blobs_three():
+    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)],[(1,1),(2,2),(4,4)]]
+    new_blobs = merge_blobs(test_blobs,[0,1,2])
+    assert(len(new_blobs)==1)
+    assert(len(new_blobs[0])==4)
+
+
+def test_merge_blobs_three_one():
+    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)],[(1,1),(2,2),(4,4)],[(5,5)]]
+    new_blobs = merge_blobs(test_blobs,[0,1,2])
+    assert(len(new_blobs)==2)
+    assert(len(new_blobs[0])==4)
+    assert(len(new_blobs[1])==1)
+
+
+def test_consolidate_blobs_two():
+    pix_list = [(0,0),(1,1),(2,2)]
+    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)]]
+    new_blobs = consolidate_blob_list(test_blobs,pix_list)
+    assert(len(new_blobs)==1)
+    assert(len(new_blobs[0])==3)

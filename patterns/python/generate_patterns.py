@@ -46,6 +46,7 @@ def make_binary(value_array, threshold=None, sig_val=255):
         new_list_x.append(new_list_y)
     return np.array(new_list_x)
 
+
 def generate_pattern(rainfall):  # rainfall in mm
     """
     Run the code to converge on a vegetation pattern
