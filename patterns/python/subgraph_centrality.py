@@ -287,6 +287,8 @@ def count_connected_components(sel_pix):
        the consolidate_blob_list function.
     4) Count the blobs
     """
+    if len(sel_pix)==0: # no pixels in this subregion
+        return 0.
     # create empty list of blobs
     blobs = []
     sub_dist, sub_dist_matrix = calc_distance_matrix(sel_pix)
@@ -393,10 +395,9 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=True, num_quantil
         sel_pix = [coords[j] for j in sub_region]
         selected_pixels[x[i]] = sel_pix
         # now calculate the feature vector element using the selected method
-#        print("V-E is {}".format(calc_v_minus_e(sel_pix)))
-        if do_EC:
+        if do_EC: # Euler characteristic
             feature_vector[i] = calc_euler_characteristic(sel_pix, sub_region)
-        else:
+        else:  # count blobs
             feature_vector[i] = count_connected_components(sel_pix)
     # fill in the last quantile (100%) of selected pixels
     selected_pixels[100] = coords

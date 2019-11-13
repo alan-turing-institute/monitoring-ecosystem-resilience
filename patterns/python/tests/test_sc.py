@@ -78,15 +78,6 @@ def test_calc_and_sort_indices():
     assert(indices[0]==1)
 
 
-def test_calc_connected_components():
-    sig_pix = get_signal_pixels(IMG)
-    d,dsq = calc_distance_matrix(sig_pix)
-    adj_matrix = calc_adjacency_matrix(dsq, weighted=False)
-    indices = calc_and_sort_sc_indices(adj_matrix)
-    cc = calc_connected_components(indices, adj_matrix)
-    assert(cc == 0)
-
-
 def test_get_neighbour_elements():
     test_vec = np.array([0.,1.,2.,3.,np.sqrt(2.)])
     av_with_diagonals = get_neighbour_elements(test_vec, True)[0]
@@ -115,9 +106,13 @@ def test_fill_feature_vector_connected_components():
     indices = calc_and_sort_sc_indices(adj_matrix)
     feature_vec, sel_pix = fill_feature_vector(indices,
                                                sig_pix,
-                                               adj_matrix)
+                                               adj_matrix,
+                                               do_EC=False)
     assert(len(feature_vec)==20)
     assert(len(sel_pix)==20)
+    assert(feature_vec[0]==0)
+    assert(feature_vec[10]==1)
+    assert(feature_vec[19]==2)
     pass
 
 
