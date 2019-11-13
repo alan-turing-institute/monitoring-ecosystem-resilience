@@ -4,7 +4,7 @@ Test the functions in subgraph_centrality.py
 
 import os
 import numpy as np
-from subgraph_centrality import *
+from ..subgraph_centrality import *
 
 IMG_FILE = "../binary_image.txt"
 FULL_IMG = read_text_file(IMG_FILE)
@@ -78,15 +78,6 @@ def test_calc_and_sort_indices():
     assert(indices[0]==1)
 
 
-def test_calc_connected_components():
-    sig_pix = get_signal_pixels(IMG)
-    d,dsq = calc_distance_matrix(sig_pix)
-    adj_matrix = calc_adjacency_matrix(dsq, weighted=False)
-    indices = calc_and_sort_sc_indices(adj_matrix)
-    cc = calc_connected_components(indices, adj_matrix)
-    assert(cc == 0)
-
-
 def test_get_neighbour_elements():
     test_vec = np.array([0.,1.,2.,3.,np.sqrt(2.)])
     av_with_diagonals = get_neighbour_elements(test_vec, True)[0]
@@ -104,7 +95,7 @@ def test_calc_ec():
     # look at the top half of ordered list
     sub_region = indices[0: len(indices)//2]
     sel_pix = [sig_pix[j] for j in sub_region]
-    ec = calc_ec(sel_pix, sub_region)
+    ec = calc_euler_characteristic(sel_pix, sub_region)
     assert(ec==1)
 
 
@@ -115,9 +106,13 @@ def test_fill_feature_vector_connected_components():
     indices = calc_and_sort_sc_indices(adj_matrix)
     feature_vec, sel_pix = fill_feature_vector(indices,
                                                sig_pix,
-                                               adj_matrix)
+                                               adj_matrix,
+                                               do_EC=False)
     assert(len(feature_vec)==20)
     assert(len(sel_pix)==20)
+    assert(feature_vec[0]==0)
+    assert(feature_vec[10]==1)
+    assert(feature_vec[19]==2)
     pass
 
 
@@ -152,3 +147,33 @@ def test_fill_sc_pixels():
     sig_pix = get_signal_pixels(IMG)
     new_img = fill_sc_pixels(sig_pix, IMG)
     assert((IMG==255).sum() == (new_img==200).sum())
+
+
+def test_merge_blobs_two():
+    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)]]
+    new_blobs = merge_blobs(test_blobs,[0,1])
+    assert(len(new_blobs)==1)
+    assert(len(new_blobs[0])==3)
+
+
+def test_merge_blobs_three():
+    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)],[(1,1),(2,2),(4,4)]]
+    new_blobs = merge_blobs(test_blobs,[0,1,2])
+    assert(len(new_blobs)==1)
+    assert(len(new_blobs[0])==4)
+
+
+def test_merge_blobs_three_one():
+    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)],[(1,1),(2,2),(4,4)],[(5,5)]]
+    new_blobs = merge_blobs(test_blobs,[0,1,2])
+    assert(len(new_blobs)==2)
+    assert(len(new_blobs[0])==4)
+    assert(len(new_blobs[1])==1)
+
+
+def test_consolidate_blobs_two():
+    pix_list = [(0,0),(1,1),(2,2)]
+    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)]]
+    new_blobs = consolidate_blob_list(test_blobs,pix_list)
+    assert(len(new_blobs)==1)
+    assert(len(new_blobs[0])==3)
