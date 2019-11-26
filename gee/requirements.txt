@@ -1,0 +1,8 @@
+pytest
+geetools
+requests
+zipfile
+pillow
+earthengine-api
+numpy
+matplotlib
