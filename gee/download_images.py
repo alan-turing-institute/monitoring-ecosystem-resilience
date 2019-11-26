@@ -36,6 +36,8 @@ import requests
 import argparse
 from datetime import datetime
 from zipfile import ZipFile, BadZipFile
+from geetools import cloud_mask
+
 
 import ee
 ee.Initialize()
@@ -50,24 +52,24 @@ else:
 LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 
 
-# Cloud masking function.
-def mask_cloud(image, input_coll, bands):
+# EXPERIMENTAL Cloud masking function.  To be applied to Images (not ImageCollections)
+def mask_cloud(image, input_coll):
     """
     Different input_collections need different steps to be taken to filter
     out cloud.
     """
     if "LANDSAT" in input_coll:
-        cloudShadowBitMask = ee.Number(2).pow(3).int()
-        cloudsBitMask = ee.Number(2).pow(5).int()
-        qa = image.select('pixel_qa')
-        mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0).And(
-            qa.bitwiseAnd(cloudsBitMask).eq(0))
-        return image.updateMask(mask).select(bands).divide(10000)
+        mask_func = cloud_mask.landsat8ToaBQA()
+        return mask_func(image)
+
     elif "COPERNICUS" in input_coll:
         image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",20))
-        cloudBitMask = 1 << 10
-        cirrusBitMask = 1 << 11
-        qa = image.select("QA60")
+        mask_func = cloud_mask.sentinel2()
+        return mask_func(image)
+    else:
+        print("No cloud mask logic defined for input collection {}"\
+              .format(input_coll))
+        return image
 
 
 def add_NDVI(image):
@@ -145,7 +147,8 @@ def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
                       scale, # output pixel size in m
                       start_date, # 'yyyy-mm-dd'
                       end_date, # 'yyyy-mm-dd'
-                      region=None):
+                      region=None,
+                      mask_cloud=False):
     """
     Download specified image to output directory
     """
@@ -156,9 +159,10 @@ def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
       geom = ee.Geometry.Rectangle(coords)
     dataset = image_coll.filterBounds(geom)\
     .filterDate(start_date, end_date)
-    dataset = mask_cloud(dataset, image_collection, bands)
-    image = dataset.median()
 
+    image = dataset.median()
+    if mask_cloud:
+        image = mask_cloud(image, image_collection)
     if 'NDVI' in bands:
         image = add_NDVI(image)
 
@@ -185,8 +189,9 @@ def process_coords(coords,
                    scale, # size of each pixel in output image (in m)
                    start_date,
                    end_date,
-                   output_dir,
-                   output_suffix,
+                   mask_cloud=False, ## EXPERIMENTAL - false by default
+                   output_dir=".",
+                   output_suffix="gee",
                    divide_images=False,
                    sub_image_size=[50,50]):
     """
@@ -200,7 +205,8 @@ def process_coords(coords,
                                       region_size,
                                       scale,
                                       start_date,
-                                      end_date)
+                                      end_date,
+                                      mask_cloud)
 
     # loop through these URLS, download zip files, and combine tif files
     # for each band into RGB output images.
@@ -244,8 +250,9 @@ def process_input_file(filename,
                        scale,
                        start_date,
                        end_date,
-                       output_dir,
-                       output_suffix):
+                       mask_cloud=False,
+                       output_dir=".",
+                       output_suffix="gee"):
     """
     Loop through an input file with one set of coordinates per line
     """
@@ -262,6 +269,7 @@ def process_input_file(filename,
                        scale,
                        start_date,
                        end_date,
+                       mask_cloud,
                        output_dir,
                        output_suffix)
 
@@ -299,6 +307,7 @@ def main():
     parser.add_argument("--output_suffix",help="end of output filename, including file extension",
                       default="gee_img.png")
     parser.add_argument("--input_file",help="text file with coordinates, one per line")
+    parser.add_argument("--mask_cloud",help="EXPERIMENTAL - apply cloud masking function",action='store_true')
     args = parser.parse_args()
     sanity_check_args(args)
 
@@ -310,6 +319,7 @@ def main():
     bands = args.bands.split(",")
     region_size = args.region_size
     scale = args.scale
+    mask_cloud = True if args.mask_cloud else False
 
     if args.coords_point:
       coords = [float(x) for x in args.coords_point.split(",")]
@@ -324,6 +334,7 @@ def main():
                            scale,
                            start_date,
                            end_date,
+                           mask_cloud,
                            output_dir,
                            output_suffix)
     else:
@@ -335,6 +346,7 @@ def main():
                        scale,
                        start_date,
                        end_date,
+                       mask_cloud,
                        output_dir,
                        output_suffix)
 
