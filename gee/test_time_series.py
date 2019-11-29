@@ -3,7 +3,7 @@ Tests for getting time-series of images
 """
 
 import pytest
-from get_time_series import *
+from download_images import *
 
 
 def test_bad_timestring():
@@ -49,3 +49,15 @@ def test_slice_time_period_2():
     assert(chunks[0][0] == "2018-01-01")
     assert(chunks[1][0] == "2018-01-11")
     assert(chunks[2][1] == "2018-02-01")
+
+
+
+def test_mid_time_1():
+    """
+    Given a couple of date strings, test
+    we get the correct middle date
+    """
+    t1 = "2018-01-01"
+    t2 = "2018-02-01"
+    mid = find_mid_period(t1,t2)
+    assert(mid=="2018-01-16")

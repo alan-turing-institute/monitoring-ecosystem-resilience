@@ -1,4 +1,5 @@
 pytest
+argparse
 geetools
 requests
 zipfile
@@ -6,3 +7,5 @@ pillow
 earthengine-api
 numpy
 matplotlib
+datetime
+dateparser

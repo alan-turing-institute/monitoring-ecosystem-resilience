@@ -147,9 +147,12 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
     return new_img
 
 
-def crop_image_npix(input_image, n_pix_x, n_pix_y=None):
+def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
+                    region_size=None, coords=None):
     """
     Divide an image into smaller sub-images with fixed pixel size.
+    If region_size and coordinates are provided, we want to return the
+    coordinates of the sub-images along with the sub-images themselves.
     """
     ## if n_pix_y not specified, assume we want equal x,y
     if not n_pix_y:
@@ -159,13 +162,32 @@ def crop_image_npix(input_image, n_pix_x, n_pix_y=None):
     x_parts = int(xsize // n_pix_x)
     y_parts = int(ysize // n_pix_y)
 
+    # if we are given coords, calculate coords for all sub-regions
+    sub_image_coords = []
+    if coords and region_size:
+        left_start = coords[0] - region_size/2
+        bottom_start = coords[1] - region_size/2
+        sub_image_size_x = region_size / x_parts
+        sub_image_size_y = region_size / y_parts
+        for ix in range(x_parts):
+            for iy in range(y_parts):
+                sub_image_coords.append(
+                    (left_start + sub_image_size_x/2 + (ix*sub_image_size_x),
+                     bottom_start + sub_image_size_y/2 + (iy*sub_image_size_y))
+                )
 
+    # now do the actual cropping
     sub_images = []
     for ix in range(x_parts):
         for iy in range(y_parts):
             box = (ix*n_pix_x, iy*n_pix_y, (ix+1)*n_pix_x, (iy+1)*n_pix_y)
             region = input_image.crop(box)
-            sub_images.append(region)
+            # depending on whether we have been given coordinates,
+            # return a list of images, or a list of (image,coords) tuples.
+            if sub_image_coords:
+                sub_images.append((region, sub_image_coords[ix*x_parts+iy]))
+            else:
+                sub_images.append(region)
 
     return sub_images
 
