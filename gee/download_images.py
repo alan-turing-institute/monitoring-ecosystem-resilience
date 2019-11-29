@@ -34,7 +34,8 @@ import sys
 import shutil
 import requests
 import argparse
-from datetime import datetime
+import dateparser
+from datetime import datetime, timedelta
 from zipfile import ZipFile, BadZipFile
 from geetools import cloud_mask
 
@@ -50,6 +51,34 @@ else:
     TMPDIR = "%TMP%"
 
 LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
+
+
+def divide_time_period(start_date, end_date, n):
+    """
+    Divide the full period between the start_date and end_date into n equal-length
+    (to the nearest day) chunks.
+    Takes start_date and end_date as strings 'YYYY-MM-DD'.
+    Returns a list of tuples
+    [ (chunk0_start,chunk0_end),...]
+    """
+    start = dateparser.parse(start_date)
+    end = dateparser.parse(end_date)
+    if (not isinstance(start, datetime)) or (not isinstance(end, datetime)):
+        raise RuntimeError("invalid time strings")
+    td = end - start
+    if td.days <= 0:
+        raise RuntimeError("end_date must be after start_date")
+    days_per_chunk = td.days // n
+    output_list = []
+    for i in range(n):
+        chunk_start = start + timedelta(days=(i*days_per_chunk))
+        chunk_end = start + timedelta(days=((i+1)*days_per_chunk))
+        ## unless we are in the last chunk, which should finish at end_date
+        if i == n-1:
+            chunk_end = end
+        output_list.append((chunk_start.isoformat().split("T")[0],
+                           chunk_end.isoformat().split("T")[0]))
+    return output_list
 
 
 # EXPERIMENTAL Cloud masking function.  To be applied to Images (not ImageCollections)
@@ -191,8 +220,8 @@ def process_coords(coords,
                    end_date,
                    mask_cloud=False, ## EXPERIMENTAL - false by default
                    output_dir=".",
-                   output_suffix="gee",
-                   divide_images=False,
+                   output_suffix="_gee.png",
+                   divide_images=True,
                    sub_image_size=[50,50]):
     """
     Run through the whole process for one set of coordinates (either a point
@@ -223,20 +252,25 @@ def process_coords(coords,
         for tif_filebase in tif_filebases:
             merged_image = combine_tif(tif_filebase, bands)
             output_filename = tif_filebase.split("/")[-1]
-            output_filename += "_{}_{}".format(coords[0], coords[1])
+            output_filename += "_{0:.3f}_{1:.3f}".format(coords[0], coords[1])
             output_filename += "_{}".format(output_suffix)
             ## if requested, divide into smaller sub-images
             if divide_images:
                 sub_images = crop_image_npix(merged_image,
                                              sub_image_size[0],
-                                             sub_image_size[1])
+                                             sub_image_size[1],
+                                             region_size,
+                                             coords
+                )
                 # now save these
                 for n, image in enumerate(sub_images):
+                    sub_image = convert_to_bw(image[0],470)
+                    sub_coords = image[1]
                     output_filename = tif_filebase.split("/")[-1]
-                    output_filename += "_{}_{}".format(coords[0], coords[1])
+                    output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
                     output_filename += "_"+str(n)
                     output_filename += output_suffix
-                    save_image(image, output_dir, output_filename)
+                    save_image(sub_image, output_dir, output_filename)
             else:
                 ## Save the full-size image
                 save_image(merged_image, output_dir, output_filename)
@@ -274,6 +308,68 @@ def process_input_file(filename,
                        output_suffix)
 
 
+def find_mid_period(start_time, end_time):
+    """
+    Given two strings in the format YYYY-MM-DD return a
+    string in the same format representing the middle (to
+    the nearest day)
+    """
+    t0 = dateparser.parse(start_time)
+    t1 = dateparser.parse(end_time)
+    td = (t1 - t0).days
+    mid = (t0 + timedelta(days=(td//2))).isoformat()
+    return mid.split("T")[0]
+
+
+
+def get_time_series(num_time_periods,
+                    input_file, # could be None if we are looking at individual coords
+                    coords, # could be None if we have an input_file listing coords
+                    image_coll,
+                    bands,
+                    region_size, ## dimensions of output image in longitude/latitude
+                    scale, # size of each pixel in output image (in m)
+                    start_date,
+                    end_date,
+                    mask_cloud=False, ## EXPERIMENTAL - false by default
+                    output_dir=".",
+                    divide_images=True,
+                    sub_image_size=[50,50]):
+    """
+    Divide the time between start_date and end_date into num_time_periods periods
+    and call download_images.process coords for each.
+    """
+    time_periods = divide_time_period(start_date, end_date, num_time_periods)
+    for period in time_periods:
+        print("Processing the time period between {} and {}".format(period[0],period[1]))
+        mid_period_string = find_mid_period(period[0], period[1])
+        output_suffix = "_{}.png".format(mid_period_string)
+        if input_file:
+            process_input_file(input_file,
+                               image_coll,
+                               bands,
+                               region_size,
+                               scale,
+                               period[0],
+                               period[1],
+                               mask_cloud,
+                               output_dir,
+                               output_suffix)
+        else:
+            process_coords(coords,
+                           image_coll,
+                           bands,
+                           region_size,
+                           scale,
+                           period[0],
+                           period[1],
+                           mask_cloud,
+                           output_dir,
+                           output_suffix)
+        print("Finished processing {}".format(mid_period_string))
+    return True
+
+
 def sanity_check_args(args):
     """
     Check that the user has set a self-consistent set of arguments.
@@ -296,6 +392,7 @@ def main():
                         default="2013-03-30")
     parser.add_argument("--end_date",help="YYYY-MM-DD",
                         default="2013-04-01")
+    parser.add_argument("--num_time_points",help="Get a time series with this many divisions between start_date and end_date", type=int, default=1)
     parser.add_argument("--coords_point",help="'long,lat'")
     parser.add_argument("--coords_rect",help="'long1,lat1,long2,lat2...,...'")
     parser.add_argument("--bands",help="string containing comma-separated list",
@@ -308,6 +405,7 @@ def main():
                       default="gee_img.png")
     parser.add_argument("--input_file",help="text file with coordinates, one per line")
     parser.add_argument("--mask_cloud",help="EXPERIMENTAL - apply cloud masking function",action='store_true')
+
     args = parser.parse_args()
     sanity_check_args(args)
 
@@ -320,35 +418,31 @@ def main():
     region_size = args.region_size
     scale = args.scale
     mask_cloud = True if args.mask_cloud else False
-
+    input_file = arg.input_file if args.input_file else None
+    num_time_points = args.num_time_points
     if args.coords_point:
-      coords = [float(x) for x in args.coords_point.split(",")]
+        coords = [float(x) for x in args.coords_point.split(",")]
     elif args.coords_rect:
-      coords_all = [float(x) for x in args.coords_rect.split(",")]
-      coords = [ [coords_all[2*i],coords_all[2*i+1]] for i in range(int(len(coords_all)/2))]
-    if args.input_file:
-        process_input_file(args.input_file,
-                           image_coll,
-                           bands,
-                           region_size,
-                           scale,
-                           start_date,
-                           end_date,
-                           mask_cloud,
-                           output_dir,
-                           output_suffix)
+        coords_all = [float(x) for x in args.coords_rect.split(",")]
+        coords = [ [coords_all[2*i],coords_all[2*i+1]] for i in range(int(len(coords_all)/2))]
     else:
-        # individual set of coordinates
-        process_coords(coords,
-                       image_coll,
-                       bands,
-                       region_size,
-                       scale,
-                       start_date,
-                       end_date,
-                       mask_cloud,
-                       output_dir,
-                       output_suffix)
+        coords = None
+    ##
+    get_time_series(num_time_points,
+                    input_file,
+                    coords,
+                    image_coll,
+                    bands,
+                    region_size,
+                    scale,
+                    start_date,
+                    end_date,
+                    mask_cloud,
+                    output_dir,
+                    output_suffix)
+    print("Done")
+
+
 
 
 if __name__ == "__main__":
