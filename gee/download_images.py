@@ -251,7 +251,7 @@ def process_coords(coords,
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
             merged_image = combine_tif(tif_filebase, bands)
-            output_filename = tif_filebase.split("/")[-1]
+            output_filename = os.path.basename(tif_filebase)
             output_filename += "_{0:.3f}_{1:.3f}".format(coords[0], coords[1])
             output_filename += "_{}".format(output_suffix)
             ## if requested, divide into smaller sub-images
@@ -266,7 +266,7 @@ def process_coords(coords,
                 for n, image in enumerate(sub_images):
                     sub_image = convert_to_bw(image[0],470)
                     sub_coords = image[1]
-                    output_filename = tif_filebase.split("/")[-1]
+                    output_filename = os.path.basename(tif_filebase)
                     output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
                     output_filename += "_"+str(n)
                     output_filename += output_suffix
