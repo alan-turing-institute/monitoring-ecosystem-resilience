@@ -21,6 +21,28 @@ import matplotlib.pyplot as plt
 import casadi
 import argparse
 import copy
+import igraph
+
+
+def make_graph(adj_matrix):
+    """
+    Use igraph to create a graph from our adjacency matrix
+    """
+    graph = igraph.Graph.Adjacency((adj_matrix>0).tolist())
+    return graph
+
+
+def calc_euler_coeff(pix_indices, graph):
+    """
+    Find the edges where both ends are within the pix_indices list
+    """
+    V = len(pix_indices)
+    edges = []
+    for edge in graph.get_edgelist():
+        if edge[0] in pix_indices and edge[1] in pix_indices:
+            edges.append(edge)
+    E = len(edges)/2
+    return V-E
 
 
 def write_csv(feature_vec, output_filename):
@@ -238,11 +260,11 @@ def calc_and_sort_sc_indices(adjacency_matrix):
     am_lambda, am_phi = np.linalg.eigh(adjacency_matrix)
 
     # calculate the subgraph centrality (SC)
-    phi2_explamba = np.dot(am_phi * am_phi, np.exp(am_lambda))
+    phi2_explambda = np.dot(am_phi * am_phi, np.exp(am_lambda))
 
     # order the pixels by subgraph centrality, then find their indices
     # (corresponding to their position in the 1D list of white pixels)
-    indices= np.argsort(phi2_explamba)[::-1]
+    indices= np.argsort(phi2_explambda)[::-1]
     return indices
 
 
@@ -321,6 +343,7 @@ def count_connected_components(sel_pix):
     return len(blobs)
 
 
+
 def calc_euler_characteristic(sel_pix, pix_indices):
     """
     calculate the Euler characteristic for a selected subset of pixels.
@@ -372,10 +395,13 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=True, num_quantil
     """
     # adj_matrix will be square - take the length of a side
     n = max(adj_matrix.shape)
+
+    graph = make_graph(adj_matrix)
     # set the diagonals of the adjacency matrix to 1 (previously
     # zero by definition because a pixel can't be adjacent to itself)
     for j in range(n):
         adj_matrix[j][j] = 1
+
 
     # find the different quantiles
     start = 0
@@ -396,7 +422,7 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, do_EC=True, num_quantil
         selected_pixels[x[i]] = sel_pix
         # now calculate the feature vector element using the selected method
         if do_EC: # Euler characteristic
-            feature_vector[i] = calc_euler_characteristic(sel_pix, sub_region)
+            feature_vector[i] = calc_euler_coeff(sub_region, graph)
         else:  # count blobs
             feature_vector[i] = count_connected_components(sel_pix)
     # fill in the last quantile (100%) of selected pixels
