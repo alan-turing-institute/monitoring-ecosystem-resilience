@@ -5,6 +5,7 @@ Test the functions in subgraph_centrality.py
 import os
 import numpy as np
 from ..subgraph_centrality import *
+import igraph
 
 IMG_FILE = "../binary_image.txt"
 FULL_IMG = read_text_file(IMG_FILE)
@@ -43,7 +44,7 @@ def test_calc_distance_matrix():
 def test_calc_adjacency_matrix_with_diagonals():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
-    adj_matrix = calc_adjacency_matrix(dsq, weighted=False,
+    adj_matrix = calc_adjacency_matrix(dsq,
                                        include_diagonal_neighbours=True)
     assert(isinstance(adj_matrix, np.ndarray))
     assert(adj_matrix.shape==dsq.shape)
@@ -58,7 +59,7 @@ def test_calc_adjacency_matrix_with_diagonals():
 def test_calc_adjacency_matrix_no_diagonals():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
-    adj_matrix = calc_adjacency_matrix(dsq, weighted=False)
+    adj_matrix = calc_adjacency_matrix(dsq)
     assert(isinstance(adj_matrix, np.ndarray))
     assert(adj_matrix.shape==dsq.shape)
     # check that all diagonals are zero - pixels
@@ -78,14 +79,6 @@ def test_calc_and_sort_indices():
     assert(indices[0]==1)
 
 
-def test_get_neighbour_elements():
-    test_vec = np.array([0.,1.,2.,3.,np.sqrt(2.)])
-    av_with_diagonals = get_neighbour_elements(test_vec, True)[0]
-    assert(len(av_with_diagonals)==2)
-    av_no_diagonals = get_neighbour_elements(test_vec, False)[0]
-    assert(len(av_no_diagonals)==1)
-
-
 def test_calc_ec():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
@@ -95,24 +88,26 @@ def test_calc_ec():
     # look at the top half of ordered list
     sub_region = indices[0: len(indices)//2]
     sel_pix = [sig_pix[j] for j in sub_region]
-    ec = calc_euler_characteristic(sel_pix, sub_region)
-    assert(ec==1)
+    graph = make_graph(adj_matrix)
+    ec = calc_euler_characteristic(sel_pix, graph)
+    assert(ec==4)
 
 
 def test_fill_feature_vector_connected_components():
     sig_pix = get_signal_pixels(IMG)
     d,dsq = calc_distance_matrix(sig_pix)
-    adj_matrix = calc_adjacency_matrix(dsq, True, IMG, False)
+    adj_matrix = calc_adjacency_matrix(dsq, False)
     indices = calc_and_sort_sc_indices(adj_matrix)
     feature_vec, sel_pix = fill_feature_vector(indices,
                                                sig_pix,
-                                               adj_matrix,
-                                               do_EC=False)
+                                               adj_matrix)
+
+    print (feature_vec)
     assert(len(feature_vec)==20)
     assert(len(sel_pix)==20)
     assert(feature_vec[0]==0)
-    assert(feature_vec[10]==1)
-    assert(feature_vec[19]==2)
+    assert(feature_vec[10]==0.0)
+    assert(feature_vec[19]==1.0)
     pass
 
 
@@ -123,8 +118,7 @@ def test_fill_feature_vector_EC():
     indices = calc_and_sort_sc_indices(adj_matrix)
     feature_vec, sel_pix = fill_feature_vector(indices,
                                                sig_pix,
-                                               adj_matrix,
-                                               True
+                                               adj_matrix
     )
     assert(len(feature_vec)==20)
     assert(len(sel_pix)==20)
@@ -149,31 +143,12 @@ def test_fill_sc_pixels():
     assert((IMG==255).sum() == (new_img==200).sum())
 
 
-def test_merge_blobs_two():
-    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)]]
-    new_blobs = merge_blobs(test_blobs,[0,1])
-    assert(len(new_blobs)==1)
-    assert(len(new_blobs[0])==3)
 
+def test_make_graph():
+    sig_pix = get_signal_pixels(IMG)
+    d, dsq = calc_distance_matrix(sig_pix)
+    adj_matrix = calc_adjacency_matrix(dsq, False)
+    graph = make_graph(adj_matrix)
+    print (len(graph.get_edgelist()))
+    assert(len(graph.get_edgelist()) == 16)
 
-def test_merge_blobs_three():
-    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)],[(1,1),(2,2),(4,4)]]
-    new_blobs = merge_blobs(test_blobs,[0,1,2])
-    assert(len(new_blobs)==1)
-    assert(len(new_blobs[0])==4)
-
-
-def test_merge_blobs_three_one():
-    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)],[(1,1),(2,2),(4,4)],[(5,5)]]
-    new_blobs = merge_blobs(test_blobs,[0,1,2])
-    assert(len(new_blobs)==2)
-    assert(len(new_blobs[0])==4)
-    assert(len(new_blobs[1])==1)
-
-
-def test_consolidate_blobs_two():
-    pix_list = [(0,0),(1,1),(2,2)]
-    test_blobs = [[(0,0),(1,1)],[(1,1),(2,2)]]
-    new_blobs = consolidate_blob_list(test_blobs,pix_list)
-    assert(len(new_blobs)==1)
-    assert(len(new_blobs[0])==3)
