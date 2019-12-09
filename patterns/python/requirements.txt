@@ -4,4 +4,4 @@ casadi
 matplotlib
 pillow
 pytest
-igraph
+python-igraph
