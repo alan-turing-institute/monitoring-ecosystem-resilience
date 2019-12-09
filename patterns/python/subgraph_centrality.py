@@ -54,6 +54,11 @@ def write_csv(feature_vec, output_filename):
         outfile.write(output_string)
     return True
 
+def write_dict_to_csv(metrics_dict, output_filename):
+    with open(output_filename, 'w') as f:
+        for key in metrics_dict.keys():
+            f.write("%s,%s\n" % (key, metrics_dict[key]))
+    return True
 
 def image_from_array(input_array, output_size=None, sel_val=200):
     """
@@ -199,21 +204,33 @@ def calc_distance_matrix(signal_coords):
     return distances, dist_square
 
 
-def feature_vector_metrics(feature_vector):
+def feature_vector_metrics(feature_vector,output_csv=None):
     """
     Calculate different metrics for the feature vector
     """
     feature_vec_metrics = {}
 
-
     if len(feature_vector)==0:
         raise RuntimeError("Empty feature vector")
 
+    # slope of the vector
     feature_vec_metrics['slope'] = (feature_vector[-1] - feature_vector[0])/len(feature_vector)
+
+    # difference between last and first indexes
     feature_vec_metrics['offset'] = (feature_vector[-1] - feature_vector[0])
 
+    # mean value on the feature_vector
+    feature_vec_metrics['mean'] = np.mean(feature_vector)
+
+    # std value on the feature_vector
+    feature_vec_metrics['std'] = np.std(feature_vector)
+
+    if output_csv:
+        # write the feature vector to a csv file
+        write_dict_to_csv(feature_vec_metrics, "metrics_"+output_csv)
 
     return feature_vec_metrics
+
 
 
 
@@ -384,6 +401,10 @@ if __name__ == "__main__":
                                                   output_csv)
     # get the images showing the selected sub-regions
     sc_images = generate_sc_images(sel_pixels, image_array)
+
+    feature_vec_metrics = feature_vector_metrics(feature_vec,output_csv)
+
+    print (feature_vec_metrics)
 
     if args.output_img:
         save_sc_images(sc_images,args.output_img)

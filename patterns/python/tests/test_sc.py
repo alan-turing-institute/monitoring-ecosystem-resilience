@@ -152,3 +152,13 @@ def test_make_graph():
     print (len(graph.get_edgelist()))
     assert(len(graph.get_edgelist()) == 16)
 
+
+def test_feature_vector_metrics():
+
+    feat_vec, sel_pix = subgraph_centrality(IMG, True)
+    feature_vec_metrics = feature_vector_metrics(feat_vec)
+
+    assert(('mean' in feature_vec_metrics) == True)
+    assert(('std' in feature_vec_metrics) == True)
+    assert(('slope' in feature_vec_metrics) == True)
+
