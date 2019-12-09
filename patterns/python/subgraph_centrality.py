@@ -213,8 +213,9 @@ def feature_vector_metrics(feature_vector,output_csv=None):
     if len(feature_vector)==0:
         raise RuntimeError("Empty feature vector")
 
+    half_vector_size = len(feature_vector)/2
     # slope of the vector
-    feature_vec_metrics['slope'] = (feature_vector[-1] - feature_vector[10])/10
+    feature_vec_metrics['slope'] = (feature_vector[-1] - feature_vector[half_vector_size-1])/half_vector_size
 
     # difference between last and first indexes
     feature_vec_metrics['offset'] = (feature_vector[-1] - feature_vector[0])
