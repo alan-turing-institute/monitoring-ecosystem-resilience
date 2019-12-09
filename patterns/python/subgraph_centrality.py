@@ -226,8 +226,9 @@ def feature_vector_metrics(feature_vector,output_csv=None):
     feature_vec_metrics['std'] = np.std(feature_vector)
 
     if output_csv:
+        output_csv = output_csv[:-4]+"_metrics.csv"
         # write the feature vector to a csv file
-        write_dict_to_csv(feature_vec_metrics, "metrics_"+output_csv)
+        write_dict_to_csv(feature_vec_metrics, output_csv)
 
     return feature_vec_metrics
 
@@ -313,7 +314,7 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, num_quantiles=20):
     selected_pixels = {}
     # Loop through the quantiles to fill the feature vector
     for i in range(1,len(feature_vector)):
-        print("calculating subregion {} of {}".format(i, num_quantiles))
+        #print("calculating subregion {} of {}".format(i, num_quantiles))
         # how many pixels in this sub-region?
         n_pix = round(x[i] * n / 100)
         sub_region = pix_indices[0:n_pix]
@@ -379,6 +380,7 @@ if __name__ == "__main__":
     parser.add_argument("--output_csv", help="filename for output csv of feature vector",
                         default="feature_vector.csv")
     parser.add_argument("--output_img", help="filename for output images")
+
     args = parser.parse_args()
     image_array = None
     if args.input_txt:
