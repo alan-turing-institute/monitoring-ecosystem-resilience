@@ -214,13 +214,16 @@ def feature_vector_metrics(feature_vector,output_csv=None):
         raise RuntimeError("Empty feature vector")
 
     # slope of the vector
-    feature_vec_metrics['slope'] = (feature_vector[-1] - feature_vector[0])/len(feature_vector)
+    feature_vec_metrics['slope'] = (feature_vector[-1] - feature_vector[10])/10
 
     # difference between last and first indexes
     feature_vec_metrics['offset'] = (feature_vector[-1] - feature_vector[0])
 
     # mean value on the feature_vector
     feature_vec_metrics['mean'] = np.mean(feature_vector)
+
+    # std value on the feature_vector
+    feature_vec_metrics['std'] = np.std(feature_vector)
 
     # std value on the feature_vector
     feature_vec_metrics['std'] = np.std(feature_vector)
