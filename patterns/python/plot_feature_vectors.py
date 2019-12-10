@@ -2,6 +2,11 @@
 
 """
 Try to reproduce plots from Mander et. al. "A morphometric analysis of vegetatoin patterns in dryland ecosystems"
+
+Example usage:
+```
+python -i plot_feature_vectors.py --rainfall_vals 1.1,1.2,1.3,1.4,1.5,1.55
+```
 """
 
 import os
@@ -36,8 +41,8 @@ def display_plots(xvals, yvals):
     Show the plots on the same canvas
     """
     for i, rain in enumerate(xvals.keys()):
-        plt.plot(xvals[rain], yvals[rain], LABELS[i])
-
+        plt.plot(xvals[rain], yvals[rain], LABELS[i], label=rain)
+    plt.legend()
     plt.xlabel("pixel rank (%)")
     plt.ylabel("Euler characteristic")
     plt.show()
