@@ -156,25 +156,22 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, num_quantiles=20):
     # find the different quantiles
     start = 0
     end = 100
-    step = (end-start)/num_quantiles
-    x = [i for i in range(start,end+1,int(step))]
+    step = (end-start)//num_quantiles
+    x = [i for i in range(start,end+1,int(step))] # need the "+1" to include 100% quantile
     # create feature vector of size num_quantiles
-    feature_vector = np.zeros(num_quantiles);
+    feature_vector = np.zeros(len(x));
     # create a dictionary of selected pixels for each quantile.
     selected_pixels = {}
     # Loop through the quantiles to fill the feature vector
     for i in range(1,len(feature_vector)):
         #print("calculating subregion {} of {}".format(i, num_quantiles))
         # how many pixels in this sub-region?
-        n_pix = round(x[i] * n / 100)
+        n_pix = round(x[i] * n / end)
         sub_region = pix_indices[0:n_pix]
         sel_pix = [coords[j] for j in sub_region]
         selected_pixels[x[i]] = sel_pix
         # now calculate the feature vector element using the selected method
         feature_vector[i] = calc_euler_characteristic(sub_region, graph)
-
-    # fill in the last quantile (100%) of selected pixels
-    selected_pixels[100] = coords
 
     return feature_vector, selected_pixels
 
