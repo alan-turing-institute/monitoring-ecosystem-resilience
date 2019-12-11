@@ -14,7 +14,7 @@ and before running the script, from the command-line, do:
 and follow the instructions there.
 
 The procedure is then to either loop through an input file containing
-a list of coordinates (one per line in format:   lat,long ) OR receive an
+a list of coordinates (one per line in format:   long,lat ) OR receive an
 individual set of coordinates as a command line argument, then:
 * Find image
 * Filter clouds
@@ -264,7 +264,7 @@ def process_coords(coords,
                 )
                 # now save these
                 for n, image in enumerate(sub_images):
-                    sub_image = convert_to_bw(image[0],470)
+                    sub_image = convert_to_bw(image[0],threshold=470)
                     sub_coords = image[1]
                     output_filename = os.path.basename(tif_filebase)
                     output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
