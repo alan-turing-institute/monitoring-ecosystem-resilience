@@ -46,7 +46,6 @@ dependencies:
   - python=3.6.9=h359304d_0
   - pytz=2019.3=py_0
   - readline=7.0=h1de35cc_5
-  - requests=2.22.0=py36_1
   - rsa=3.4.2=py_1
   - setuptools=41.4.0=py36_0
   - simplejson=3.16.1=py36h470a237_0
@@ -59,4 +58,6 @@ dependencies:
   - xz=5.2.4=h1de35cc_4
   - zlib=1.2.11=h1de35cc_3
   - zstd=1.4.0=ha9f0a20_0
+  - dateparser
+  - requests
 

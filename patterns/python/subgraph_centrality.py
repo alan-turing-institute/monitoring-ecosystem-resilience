@@ -20,7 +20,7 @@ from scipy import spatial
 import argparse
 import igraph
 
-from sc_utils import (
+from patterns.python.sc_utils import (
     read_image_file,
     read_text_file,
     crop_image,

@@ -14,6 +14,7 @@ dependencies:
 - nb_conda_kernels
 - ipykernel
 - seaborn
+- gmaps
 - pip:
 - Pillow=6.2.1
 - pytest
