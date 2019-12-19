@@ -40,8 +40,8 @@ def display_plots(xvals, yvals):
     """
     Show the plots on the same canvas
     """
-    for i, rain in enumerate(xvals.keys()):
-        plt.plot(xvals[rain], yvals[rain], LABELS[i], label=rain)
+    for i, rain in enumerate(yvals.keys()):
+        plt.plot(xvals, yvals[rain], LABELS[i], label=rain)
     plt.legend()
     plt.xlabel("pixel rank (%)")
     plt.ylabel("Euler characteristic")
@@ -54,9 +54,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     rainfall_vals = args.rainfall_vals.split(",")
     images = {}
-    xvals = {}
+    xvals = []
     yvals = {}
     for rain in rainfall_vals:
         label = "{}mm".format(rain)
-        xvals[label], yvals[label], images[label] = generate_feature_vec_plot(float(rain))
+        xvals, yvals[label], images[label] = generate_feature_vec_plot(float(rain))
     display_plots(xvals, yvals)
