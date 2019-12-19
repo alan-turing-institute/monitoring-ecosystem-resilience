@@ -4,7 +4,7 @@ Test the functions in subgraph_centrality.py
 
 import os
 import numpy as np
-from ..subgraph_centrality import *
+from subgraph_centrality import *
 import igraph
 
 IMG_FILE = "../binary_image.txt"
@@ -103,7 +103,7 @@ def test_fill_feature_vector_connected_components():
                                                adj_matrix)
 
     print (feature_vec)
-    assert(len(feature_vec)==20)
+    assert(len(feature_vec)==21)
     assert(len(sel_pix)==20)
     assert(feature_vec[0]==0)
     assert(feature_vec[10]==0.0)
@@ -120,20 +120,14 @@ def test_fill_feature_vector_EC():
                                                sig_pix,
                                                adj_matrix
     )
-    assert(len(feature_vec)==20)
+    assert(len(feature_vec)==21)
     assert(len(sel_pix)==20)
     pass
 
 
-def test_full_calculation_connected_components():
-    feat_vec, sel_pix = subgraph_centrality(IMG)
-    assert(len(feat_vec)==20)
-    assert(len(sel_pix)==20)
-
-
 def test_full_calculation_EC():
     feat_vec, sel_pix = subgraph_centrality(IMG, True)
-    assert(len(feat_vec)==20)
+    assert(len(feat_vec)==21)
     assert(len(sel_pix)==20)
 
 
@@ -161,4 +155,3 @@ def test_feature_vector_metrics():
     assert(('mean' in feature_vec_metrics) == True)
     assert(('std' in feature_vec_metrics) == True)
     assert(('slope' in feature_vec_metrics) == True)
-
