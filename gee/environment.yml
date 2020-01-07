@@ -60,4 +60,5 @@ dependencies:
   - zstd=1.4.0=ha9f0a20_0
   - dateparser
   - requests
+  - geetools
 
