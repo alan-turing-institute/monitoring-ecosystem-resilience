@@ -104,11 +104,12 @@ def process_coords(coords,
     Run through the whole process for one set of coordinates (either a point
     or a rectangle).
     """
+    region = construct_region_string(coords, region_size)
     # Get download URL for all images at these coords
     download_urls = get_download_urls(coords,
+                                      region,
                                       image_coll,
                                       bands,
-                                      region_size,
                                       scale,
                                       start_date,
                                       end_date,

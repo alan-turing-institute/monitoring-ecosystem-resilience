@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from zipfile import ZipFile, BadZipFile
 from geetools import cloud_mask
 
+import ee
+ee.Initialize()
 
 from .image_utils import (
     convert_to_bw,
@@ -102,23 +104,20 @@ def download_and_unzip(url, output_tmpdir):
             for tif_filebase in tif_filebases]
 
 
-def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
+def get_download_urls(coords, # [long,lat]
+                      region,   # string representation of 4 sets of [long,lat] forming rectangle around coords
                       image_collection, # name
                       bands, # []
-                      region_size, # size of output image region in long/lat
                       scale, # output pixel size in m
                       start_date, # 'yyyy-mm-dd'
                       end_date, # 'yyyy-mm-dd'
-                      region=None,
                       mask_cloud=False):
     """
     Download specified image to output directory
     """
     image_coll = ee.ImageCollection(image_collection)
-    if len(coords) == 2:
-      geom = ee.Geometry.Point(coords)
-    else:
-      geom = ee.Geometry.Rectangle(coords)
+    geom = ee.Geometry.Point(coords)
+
     dataset = image_coll.filterBounds(geom)\
     .filterDate(start_date, end_date)
 
@@ -130,9 +129,6 @@ def get_download_urls(coords,   # (long, lat) or [(long,lat),...,...,...]
 
     image = image.select(bands)
 
-    #    data = dataset.toList(dataset.size())
-    if not region:
-        region = construct_region_string(coords, region_size)
     urls = []
 
     url = image.getDownloadURL(
