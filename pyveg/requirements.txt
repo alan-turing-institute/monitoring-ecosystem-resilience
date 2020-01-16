@@ -1,0 +1,13 @@
+pytest
+argparse
+geetools
+requests
+pillow
+earthengine-api
+scipy
+numpy
+matplotlib
+datetime
+dateparser
+casadi
+python-igraph
