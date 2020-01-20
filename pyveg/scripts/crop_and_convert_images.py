@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+"""
+Use some of the functionality in src/image_utils.py as command-line script.
+"""
+
+
 import argparse
 
 from pyveg.src.image_utils import *
