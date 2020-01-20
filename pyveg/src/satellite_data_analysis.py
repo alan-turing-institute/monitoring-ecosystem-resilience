@@ -21,8 +21,20 @@ from .image_utils import (
     convert_to_bw,
     crop_image_npix,
     save_image,
-    combine_tif
+    combine_tif,
+    from_image_to_array,
+    save_json
 )
+
+
+from .subgraph_centrality import (
+    subgraph_centrality,
+    feature_vector_metrics,
+    generate_sc_images,
+    text_file_to_array,
+    image_file_to_array,
+)
+
 from pyveg.src.subgraph_centrality import subgraph_centrality
 
 if os.name == "posix":
@@ -98,7 +110,7 @@ def process_coords(coords,
                    mask_cloud=False, ## EXPERIMENTAL - false by default
                    output_dir=".",
                    output_suffix="_gee.png",
-                   divide_images=True,
+                   network_centrality=False,
                    sub_image_size=[50,50]):
     """
     Run through the whole process for one set of coordinates (either a point
@@ -133,24 +145,35 @@ def process_coords(coords,
             output_filename += "_{0:.3f}_{1:.3f}".format(coords[0], coords[1])
             output_filename += "_{}".format(output_suffix)
             ## if requested, divide into smaller sub-images
-            if divide_images:
-                sub_images = crop_image_npix(merged_image,
+            sub_images = crop_image_npix(merged_image,
                                              sub_image_size[0],
                                              sub_image_size[1],
                                              region_size,
                                              coords
                 )
-                # now save these
-                for n, image in enumerate(sub_images):
-                    sub_image = convert_to_bw(image[0],470)
-                    sub_coords = image[1]
+            # now save these
+            for n, image in enumerate(sub_images):
+                sub_image = convert_to_bw(image[0],470)
+                sub_coords = image[1]
+                output_filename = os.path.basename(tif_filebase)
+                output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+                output_filename += output_suffix
+                save_image(sub_image, output_dir, output_filename)
+
+                if network_centrality:
+
+                    image_array = from_image_to_array(sub_image)
+                    feature_vec, sel_pixels = subgraph_centrality(image_array)
+                    feature_vec_metrics = feature_vector_metrics(feature_vec)
+                    feature_vec_metrics['latitude'] = sub_coords[0]
+                    feature_vec_metrics['longitude'] = sub_coords[1]
+                    feature_vec_metrics['date']= output_suffix[1:-4]
                     output_filename = os.path.basename(tif_filebase)
                     output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
-                    output_filename += output_suffix
-                    save_image(sub_image, output_dir, output_filename)
-            else:
-                ## Save the full-size image
-                save_image(merged_image, output_dir, output_filename)
+                    output_filename += "_{}".format(output_suffix[1:-4])
+                    output_filename += '.json'
+                    save_json(feature_vec_metrics, output_dir, output_filename)
+
         return
 
 
@@ -163,7 +186,8 @@ def process_input_file(filename,
                        end_date,
                        mask_cloud=False,
                        output_dir=".",
-                       output_suffix="gee"):
+                       output_suffix="gee",
+                       network_centrality=False):
     """
     Loop through an input file with one set of coordinates per line
     """
@@ -182,7 +206,8 @@ def process_input_file(filename,
                        end_date,
                        mask_cloud,
                        output_dir,
-                       output_suffix)
+                       output_suffix,
+                       network_centrality)
 
 
 def get_time_series(num_time_periods,
@@ -196,7 +221,7 @@ def get_time_series(num_time_periods,
                     end_date,
                     mask_cloud=False, ## EXPERIMENTAL - false by default
                     output_dir=".",
-                    divide_images=True,
+                    network_centrality = False,
                     sub_image_size=[50,50]):
     """
     Divide the time between start_date and end_date into num_time_periods periods
@@ -217,7 +242,8 @@ def get_time_series(num_time_periods,
                                period[1],
                                mask_cloud,
                                output_dir,
-                               output_suffix)
+                               output_suffix,
+                               network_centrality)
         else:
             process_coords(coords,
                            image_coll,
@@ -228,6 +254,7 @@ def get_time_series(num_time_periods,
                            period[1],
                            mask_cloud,
                            output_dir,
-                           output_suffix)
+                           output_suffix,
+                           network_centrality)
         print("Finished processing {}".format(mid_period_string))
     return True

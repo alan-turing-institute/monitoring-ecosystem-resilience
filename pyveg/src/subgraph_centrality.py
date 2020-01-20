@@ -286,18 +286,25 @@ def subgraph_centrality(image,
     pixels in each SC quantile, and feature vector (either connected-components
     or Euler characteristic).
     """
-    # get the coordinates of all the signal pixels
-    signal_coords = get_signal_pixels(image, threshold, lower_threshold)
-    # get the distance matrix
-    dist_vec, dist_matrix = calc_distance_matrix(signal_coords)
 
-    # will use to fill our feature vector
-    adj_matrix = calc_adjacency_matrix(dist_matrix,
+    feature_vec = [0 for i in range(0,num_quantiles)] # need the "+1" to include 100% quantile
+    sel_pixels = {}
+
+    # making sure that there image is not empty (all black)
+    if np.array(np.where(image != 0)).size != 0 :
+
+        # get the coordinates of all the signal pixels
+        signal_coords = get_signal_pixels(image, threshold, lower_threshold)
+        # get the distance matrix
+        dist_vec, dist_matrix = calc_distance_matrix(signal_coords)
+
+        # will use to fill our feature vector
+        adj_matrix = calc_adjacency_matrix(dist_matrix,
                                        use_diagonal_neighbours)
-    # calculate the subgraph centrality and order our signal pixels accordingly
-    sorted_pix_indices = calc_and_sort_sc_indices(adj_matrix)
-    # calculate the feature vector and get the subsets of pixels in each quantile
-    feature_vec, sel_pixels = fill_feature_vector(sorted_pix_indices,
+        # calculate the subgraph centrality and order our signal pixels accordingly
+        sorted_pix_indices = calc_and_sort_sc_indices(adj_matrix)
+        # calculate the feature vector and get the subsets of pixels in each quantile
+        feature_vec, sel_pixels = fill_feature_vector(sorted_pix_indices,
                                                   signal_coords,
                                                   adj_matrix,
                                                   num_quantiles)
