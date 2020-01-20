@@ -9,18 +9,14 @@ pip install earthengine-api
 ```
 or, if you don't use pip and/or would like to install from source, follow the instructions [here](https://developers.google.com/earth-engine/python_install_manual).
 
-## *download_images.py*
-This script can download images from google earth engine to local disk.
+## Installing the package
 
-Dependencies:
+From the main `monitoring-ecosystem-resilience` directory (one above this one), do
 ```
-requests
-zipfile
-pillow
-earthengine-api
+pip install .
 ```
 
-Before running the script, from the command-line, do:
+Before running the any of the GEE-related scripts, from the command-line, do:
 ```
  earthengine authenticate
 ```
