@@ -29,6 +29,7 @@ def save_json(dict, output_dir, output_filename):
 
     print("Saved json file {}".format(output_path))
 
+
 def save_image(image, output_dir, output_filename):
     """
     Given a PIL.Image (list of pixel values), save
@@ -65,47 +66,25 @@ def image_from_array(input_array, output_size=None, sel_val=200):
         new_img = new_img.resize((output_size, output_size), Image.ANTIALIAS)
     return new_img
 
-def from_image_to_array(im):
-    """
-    Convert RGB image to a 2D numpy array, with values
-    0 for background pixels and 255 for signal.
-    Assume that the input image has only two colours, and take
-    the one with higher sum(r,g,b) to be "signal".
-    """
-    x_size, y_size = im.size
-    pix = im.load()
-    sig_col = None
-    bkg_col = None
-    max_sum_rgb = 0
-    # loop through all the pixels and find the colour with the highest sum(r,g,b)
-    for ix in range(x_size):
-        for iy in range(y_size):
-            col = pix[ix,iy]
-            if sum(col) > max_sum_rgb:
-                max_rgb = sum(col)
-                if sig_col:
-                    bkg_col = sig_col
-                sig_col = col
-    # ok, we now know what sig_col is - loop through pixels again and set any that
-    # match this colour to 255.
-    rows = []
-    for iy in range(y_size):
-        row = np.zeros(x_size)
-        for ix in range(x_size):
-            if pix[ix,iy] == sig_col:
-                row[ix] = 255
-        rows.append(row)
-    return np.array(rows)
-
 
 def image_file_to_array(input_filename):
     """
-    Read an image and convert to a 2D numpy array, with values
+    Read an image file and convert to a 2D numpy array, with values
     0 for background pixels and 255 for signal.
     Assume that the input image has only two colours, and take
     the one with higher sum(r,g,b) to be "signal".
     """
     im = Image.open(input_filename)
+    return image_to_array(input_image)
+
+
+def image_to_array(im):
+    """
+    convert PIL image to a 2D numpy array, with values
+    0 for background pixels and 255 for signal.
+    Assume that the input image has only two colours, and take
+    the one with higher sum(r,g,b) to be "signal".
+    """
     x_size, y_size = im.size
     pix = im.load()
     sig_col = None
@@ -147,6 +126,63 @@ def invert_binary_image(image):
     return new_img
 
 
+def combine_tif(input_filebase, bands=["B4","B3","B2"]):
+    """
+    Read tif files in "I" mode - one per specified band, and rescale and combine
+    pixel values to r,g,b values betweek 0 and 255 in a combined output image.
+    Currently assumes that we have three bands.  Need to figure out how to
+    deal with more or fewer...
+    """
+    band_dict = {}
+    if len(bands) >= 3:
+        band_dict = {"r": {"band": bands[0],
+                           "min_val": sys.maxsize,
+                           "max_val": -1*sys.maxsize,
+                           "pix_vals": []},
+                     "g": {"band": bands[1],
+                           "min_val": sys.maxsize,
+                           "max_val": -1*sys.maxsize,
+                           "pix_vals": []},
+                     "b": {"band": bands[2],
+                           "min_val": sys.maxsize,
+                           "max_val": -1*sys.maxsize,
+                           "pix_vals": []}
+        }
+    else:
+        raise RuntimeError("Need three bands to combine into RGB image")
+    for col in band_dict.keys():
+        im = Image.open(input_filebase+"."+band_dict[col]["band"]+".tif")
+        pix = im.load()
+        ## find the minimum and maximum pixel values in the original scale
+        print("Found image of size {}".format(im.size))
+        for ix in range(im.size[0]):
+            for iy in range(im.size[1]):
+                if pix[ix,iy]> band_dict[col]["max_val"]:
+                    band_dict[col]["max_val"]= pix[ix,iy]
+                elif pix[ix,iy] < band_dict[col]["min_val"]:
+                    band_dict[col]["min_val"] = pix[ix,iy]
+        band_dict[col]["pix_vals"] = pix
+    # Take the overall max of the three bands to be the value to scale down with.
+    print("Max values {} {} {}".format(band_dict["r"]["max_val"],
+                                       band_dict["g"]["max_val"],
+                                       band_dict["b"]["max_val"]))
+
+    overall_max = max((band_dict[col]["max_val"] for col in ["r","g","b"]))
+
+    # create a new image where we will fill RGB pixel values from 0 to 255
+    get_pix_val = lambda ix, iy, col: \
+        max(0, int(band_dict[col]["pix_vals"][ix,iy] * 255/ \
+#                   band_dict[col]["max_val"]
+                   (overall_max+1)
+        ))
+    new_img = Image.new("RGB", im.size)
+    for ix in range(im.size[0]):
+        for iy in range(im.size[1]):
+            new_img.putpixel((ix,iy), tuple(get_pix_val(ix,iy,col) \
+                for col in ["r","g","b"]))
+    return new_img
+
+
 def scale_tif(input_filebase, band):
     """
     Given only a single band, scale to range 0,255 and apply this
@@ -179,6 +215,24 @@ def scale_tif(input_filebase, band):
     return new_img
 
 
+
+def convert_to_rgb(input_filebase, bands):
+    """
+    If we are given three or more bands, interpret the first as red,
+    the second as green, the third as blue, and scale them to be between
+    0 and 255 using the combine_tif function.
+    If we are only given one band, use the scale_tif function to scale the
+    range of input values to between 0 and 255 then apply this to all of r,g,b
+    """
+    if len(bands) >= 3:
+        new_img = combine_tif(input_filebase, bands)
+    elif len(bands) == 1:
+        new_img = scale_tif(input_filebase, bands[0])
+    else:
+        raise RuntimeError("Can't convert to RGB with {} bands".format(len(bands)))
+    return new_img
+
+
 def plot_band_values(input_filebase, bands=["B4","B3","B2"]):
     """
     Plot histograms of the values in the chosen bands of the input image
@@ -194,61 +248,6 @@ def plot_band_values(input_filebase, bands=["B4","B3","B2"]):
         plt.subplot(1,num_subplots, i+1)
         plt.hist(vals)
     plt.show()
-
-
-def combine_tif(input_filebase, bands=["B4","B3","B2"]):
-    """
-    Read tif files in "I" mode - one per specified band, and rescale and combine
-    pixel values to r,g,b values betweek 0 and 255 in a combined output image.
-    Currently assumes that we have three bands.  Need to figure out how to
-    deal with more or fewer...
-    """
-
-    if len(bands) >= 3:
-        band_dict = {"r": {"band": bands[0],
-                           "min_val": sys.maxsize,
-                           "max_val": -1*sys.maxsize,
-                           "pix_vals": []},
-                     "g": {"band": bands[1],
-                           "min_val": sys.maxsize,
-                           "max_val": -1*sys.maxsize,
-                           "pix_vals": []},
-                     "b": {"band": bands[2],
-                           "min_val": sys.maxsize,
-                           "max_val": -1*sys.maxsize,
-                           "pix_vals": []}
-        }
-    for col in band_dict.keys():
-        im = Image.open(input_filebase+"."+band_dict[col]["band"]+".tif")
-        pix = im.load()
-        ## find the minimum and maximum pixel values in the original scale
-        print("Found image of size {}".format(im.size))
-        for ix in range(im.size[0]):
-            for iy in range(im.size[1]):
-                if pix[ix,iy]> band_dict[col]["max_val"]:
-                    band_dict[col]["max_val"]= pix[ix,iy]
-                elif pix[ix,iy] < band_dict[col]["min_val"]:
-                    band_dict[col]["min_val"] = pix[ix,iy]
-        band_dict[col]["pix_vals"] = pix
-    # Take the overall max of the three bands to be the value to scale down with.
-    print("Max values {} {} {}".format(band_dict["r"]["max_val"],
-                                       band_dict["g"]["max_val"],
-                                       band_dict["b"]["max_val"]))
-
-    overall_max = max((band_dict[col]["max_val"] for col in ["r","g","b"]))
-
-    # create a new image where we will fill RGB pixel values from 0 to 255
-    get_pix_val = lambda ix, iy, col: \
-        max(0, int(band_dict[col]["pix_vals"][ix,iy] * 255/ \
-#                   band_dict[col]["max_val"]
-                   (overall_max+1)
-        ))
-    new_img = Image.new("RGB", im.size)
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
-            new_img.putpixel((ix,iy), tuple(get_pix_val(ix,iy,col) \
-                                            for col in ["r","g","b"]))
-    return new_img
 
 
 def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
@@ -380,28 +379,34 @@ def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=50, num_y=5
                                threshold, num_x, num_y)
 
 
-def main():
+def image_all_same_colour(image, colour=(255,255,255), threshold=0.99):
     """
-    use command line arguments to specify input and output directories,
-    and parameters for doing the cropping and conversion.
+    Return true if all (or nearly all) pixels are same colour
     """
-    parser = argparse.ArgumentParser(description="crop and convert images")
-    parser.add_argument("--input_dir",help="full path to directory containing input images", required=True)
-    parser.add_argument("--output_dir",help="directory to put output images", required=True)
-
-    parser.add_argument("--threshold",help="sum(r,g,b) threshold above which we colour the pixel white, or below black",
-                        default=470, type=int)
-    parser.add_argument("--num_pix_x",help="Size in pixels of cropped image along x-axis",
-                        default=50, type=int)
-    parser.add_argument("--num_pix_y",help="Size in pixels of cropped image along y-axis",
-                        default=50, type=int)
-    args = parser.parse_args()
-    ## now call the crop_and_convert function
-    crop_and_convert_all(args.input_dir, args.output_dir, args.threshold,
-                         args.num_pix_x, args.num_pix_y)
+    num_total = image.size[0] * image.size[1]
+    num_different = 0
+    pix = image.load()
+    for ix in range(image.size[0]):
+        for iy in range(image.size[1]):
+            if pix[ix,iy] != colour:
+                num_different += 1
+                if 1.0 - float(num_different/num_total) < threshold:
+                    return False
+    return True
 
 
-##########################
-
-if __name__ == "__main__":
-    main()
+def compare_binary_images(image1, image2):
+    """
+    Return the fraction of pixels that are the same in the two images.
+    """
+    if not image1.size == image2.size:
+        return 0.
+    pix1 = image1.load()
+    pix2 = image2.load()
+    num_same = 0
+    num_total = image1.size[0] * image1.size[1]
+    for ix in range(image1.size[0]):
+        for iy in range(image1.size[1]):
+            if pix1[ix,iy] == pix2[ix,iy]:
+                num_same += 1
+    return float(num_same / num_total)
