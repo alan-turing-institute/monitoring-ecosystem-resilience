@@ -1,14 +1,21 @@
 # monitoring-ecosystem-resilience
 Repository for mini-projects in the Data science for Sustainable development project.
 
-Currently the focus of code in this repository is understanding vegetation patterns in semi-arid environments.  There are two subdirectories:
+Currently the focus of code in this repository is understanding vegetation patterns in semi-arid environments.
 
-## patterns
+The code in this repository is intended to perform three inter-related tasks:
+* Download and process satellite imagery from Google Earth Engine.
+* Generate simulated vegetation patterns.
+* Calculate graph metrics to quantify the interconnectedness of vegetation in real and simulated images.
 
-This is a simple mathematical model for generating patterns of vegetation on a grid, and evolving them through time as the amount of water varies. 
-The original code was in Matlab, and this has been translated into R and Python here.  For further details see the README in that directory.
+### Python
 
-## gee
+The tasks above are all implemented in Python in the *pyveg* package.  This can be installed by doing
+```
+pip install .
+```
+from this directory.  See the README.md in the `pyveg` subdirectory for further details.
 
-This directory contains scripts and utilities for interacting with *Google Earth Engine*, to analyse satellite imagery of these semi-arid regions.
-See the README in that directory for further details and instructions.
+### R
+
+The pattern-generation and graph-modelling are implemented in R in the `rveg` package.  See the README.md in that directory for further details.
