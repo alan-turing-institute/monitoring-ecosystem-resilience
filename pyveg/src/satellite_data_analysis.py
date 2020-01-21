@@ -190,7 +190,8 @@ def get_time_series(num_time_periods,
                     mask_cloud=False, ## EXPERIMENTAL - false by default
                     output_dir=".",
                     network_centrality = False,
-                    sub_image_size=[50,50]):
+                    sub_image_size=[50,50],
+                    threshold=470):
     """
     Divide the time between start_date and end_date into num_time_periods periods
     and call download_images.process coords for each.
@@ -210,6 +211,7 @@ def get_time_series(num_time_periods,
                        mask_cloud,
                        output_dir,
                        output_suffix,
-                       network_centrality)
+                       network_centrality,
+                       threshold=threshold)
         print("Finished processing {}".format(mid_period_string))
     return True
