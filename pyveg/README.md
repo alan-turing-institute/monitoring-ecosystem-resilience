@@ -42,7 +42,7 @@ converted into monochrome based on the sum of r,g,b pixel values.
 The ```start_date``` and ```end_date``` can be used in conjunction with the ```--num_time_points``` argument to divide the time period into this number of (approx) equal length periods, and download images for all of them.
 
 ```
-pyveg_gee_analysis --image_coll COPERNICUS/S2 --start_date 2016-01-01 --end_date 2017-01-01 --coords_point 27.95,11.57 --bands B2,B3,B4 --region_size 0.1 --output_dir /tmp/TEST_IMAGES --num_time_points 12
+pyveg_gee_analysis --image_coll COPERNICUS/S2 --start_date 2016-01-01 --end_date 2017-01-01 --coords 27.95,11.57 --bands B2,B3,B4 --region_size 0.1 --output_dir /tmp/TEST_IMAGES --num_time_points 12
 ```
 
 
