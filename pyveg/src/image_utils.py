@@ -379,6 +379,16 @@ def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=50, num_y=5
                                threshold, num_x, num_y)
 
 
+def image_file_all_same_colour(image_filename, colour=(255,255,255), threshold=0.99):
+    """
+    Wrapper for image_all_same_colour that opens and closes the image file
+    """
+    image = Image.open(image_filename)
+    is_same_colour = image_all_same_colour(image, colour, threshold)
+    image.close()
+    return is_same_colour
+
+
 def image_all_same_colour(image, colour=(255,255,255), threshold=0.99):
     """
     Return true if all (or nearly all) pixels are same colour
@@ -393,6 +403,18 @@ def image_all_same_colour(image, colour=(255,255,255), threshold=0.99):
                 if 1.0 - float(num_different/num_total) < threshold:
                     return False
     return True
+
+
+def compare_binary_image_files(filename1, filename2):
+    """
+    Wrapper for compare_binary_images that opens and closes the image files.
+    """
+    img1 = Image.open(filename1)
+    img2 = Image.open(filename2)
+    frac = compare_binary_images(img1,img2)
+    img1.close()
+    img2.close()
+    return frac
 
 
 def compare_binary_images(image1, image2):
