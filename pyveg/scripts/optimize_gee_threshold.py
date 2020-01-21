@@ -18,71 +18,98 @@ and a short time between them, then run the convert-to-BW,
 divide into sub-images, calculate Euler characteristic procedure
 on them, then:
 * Count how many sub-images are all-black or all-white.
-* Count how many sub-images have > 50% difference between them.
+* Count how many sub-images have > 20% difference between them.
 * Return the number of "good" sub-images (not all-black or all-white or
 too much variation.
-
-
 """
 
 import os
-
+import re
 import argparse
+from PIL import Image
 
 from pyveg.src.satellite_data_analysis import get_time_series
+from pyveg.src.image_utils import image_file_all_same_colour, compare_binary_image_files
+
+if os.name == "posix":
+    TMPDIR = "/tmp/"
+else:
+    TMPDIR = "%TMP%"
 
 
-def count_good_images(filebase):
+def count_good_images(date_loc_dict):
+    """
+    Go through the date_loc dict and count how many
+    images are "bad"
+    """
+    num_total = 0
     num_good = 0
+    num_all_black = 0
+    num_all_white = 0
+    num_big_change = 0
+    for k,v in date_loc_dict.items():
+        for date, img in v.items():
+            num_total += 1
+            is_all_black = image_file_all_same_colour(img, (0,0,0))
+            is_all_white = image_file_all_same_colour(img, (255,255,255))
+            if not (is_all_black or is_all_white):
+                num_good += 1
+            elif is_all_black:
+                num_all_black += 1
+            elif is_all_white:
+                num_all_white += 1
+        dates = list(v.keys())
+        if len(dates) < 2:
+            print("Need at least two dates to compare")
+            continue
+        is_similar = compare_binary_image_files(v[dates[0]],v[dates[1]])
+        if is_similar < 0.8:
+            num_big_change += 2
+
+    return (num_total, num_all_black, num_all_white, num_big_change)
 
 
-def main():
+def create_date_location_dict(input_dir):
     """
-    use command line arguments to choose images.
+    Loop through directory, gather filenames that have
+    the same coordinates and different dates.
     """
-    parser = argparse.ArgumentParser(description="download from EE")
-    parser.add_argument("--image_coll",help="image collection",
-                        default="LANDSAT/LC08/C01/T1_SR")
-    parser.add_argument("--start_date",help="YYYY-MM-DD",
-                        default="2013-03-30")
-    parser.add_argument("--end_date",help="YYYY-MM-DD",
-                        default="2013-04-01")
-    parser.add_argument("--num_time_points",help="Get a time series with this many divisions between start_date and end_date", type=int, default=1)
-    parser.add_argument("--coords_point",help="'long,lat'")
-    parser.add_argument("--coords_rect",help="'long1,lat1,long2,lat2...,...'")
-    parser.add_argument("--bands",help="string containing comma-separated list",
-                        default="B2,B3,B4,B5,B6,B7")
-    parser.add_argument("--region_size", help="size of output region in long/lat", default=0.1, type=float)
-    parser.add_argument("--scale", help="size of each pixel in output image (m)", default=10, type=int)
-    parser.add_argument("--output_dir",help="output directory",
-                        default=".")
-    parser.add_argument("--output_suffix",help="end of output filename, including file extension",
-                      default="gee_img.png")
+    # list the files in the directory.  see how many dates there are:
+    date_regex = re.compile("([\d]{4}-[\d]{2}-[\d]{2})")
+    coord_regex = re.compile("([\d]{1,3}.[\d]{1,3}_[\d]{1,3}.[\d]{1,3})")
+    dates_locations = {}
+    for f in os.listdir(input_dir):
+        if not f.endswith("png"):
+            continue
+        loc_match = coord_regex.search(f)
+        if not loc_match:
+            print("Couldnt find coordinates in {}".format(f))
+            continue
+        coords = loc_match.groups()[0]
+        if not coords in dates_locations.keys():
+            dates_locations[coords] = {}
+        date_match = date_regex.search(f)
+        if not date_match:
+            continue
+        date = date_match.groups()[0]
+        if not date in dates_locations[coords].keys():
+            dates_locations[coords][date] = os.path.join(input_dir,f)
+    return dates_locations
 
-    args = parser.parse_args()
-    sanity_check_args(args)
 
-    image_coll = args.image_coll
-    start_date = args.start_date
-    end_date = args.end_date
-    output_dir = args.output_dir
-    output_suffix = args.output_suffix
-    bands = args.bands.split(",")
-    region_size = args.region_size
-    scale = args.scale
-    mask_cloud = True if args.mask_cloud else False
-    input_file = arg.input_file if args.input_file else None
-    num_time_points = args.num_time_points
-    if args.coords_point:
-        coords = [float(x) for x in args.coords_point.split(",")]
-    elif args.coords_rect:
-        coords_all = [float(x) for x in args.coords_rect.split(",")]
-        coords = [ [coords_all[2*i],coords_all[2*i+1]] for i in range(int(len(coords_all)/2))]
-    else:
-        coords = None
-    ##
+def optimize(start_date, end_date, coords, threshold):
+    """
+    Run the get_time_series method, making some assumptions about
+    what image_coll, bands, etc we will use.
+    """
+    image_coll = "COPERNICUS/S2"
+    num_time_points = 2
+    bands = "NDVI"
+    region_size = 0.1
+    scale = 10
+    opt_dir = os.path.join(TMPDIR,"optimize_{}".format(threshold))
+    mask_cloud = False
     get_time_series(num_time_points,
-                    input_file,
                     coords,
                     image_coll,
                     bands,
@@ -91,11 +118,38 @@ def main():
                     start_date,
                     end_date,
                     mask_cloud,
-                    output_dir,
-                    output_suffix)
+                    opt_dir,
+                    network_centrality=False,
+                    threshold=threshold)
+    # this will havce put a bunch of files in opt_dir
+    # now sort them by coordinates and date
+    date_location_dir = create_date_location_dir(opt_dir)
+    # then look at them to count the good ones
+    numbers = count_good_images(date_location_dir)
+    return numbers
+
+
+def main():
+    """
+    use command line arguments to choose images.
+    """
+    parser = argparse.ArgumentParser(description="download from EE")
+    parser.add_argument("--start_date",help="YYYY-MM-DD",
+                        default="2016-03-30")
+    parser.add_argument("--end_date",help="YYYY-MM-DD",
+                        default="2016-04-30")
+    parser.add_argument("--coords",help="'long,lat'", default="27.95,11.57")
+    parser.add_argument("--threshold",help="threshold (0-765)", default=470)
+
+    args = parser.parse_args()
+    #sanity_check_args(args)
+
+    start_date = args.start_date
+    end_date = args.end_date
+    coords = [float(x) for x in args.coords.split(",")]
+    threshold = args.threshold
+    optimize(start_date, end_date, coords, threshold)
     print("Done")
-
-
 
 
 if __name__ == "__main__":
