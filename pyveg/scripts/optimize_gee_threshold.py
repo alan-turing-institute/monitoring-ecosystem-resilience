@@ -64,7 +64,7 @@ def count_good_images(date_loc_dict):
             print("Need at least two dates to compare")
             continue
         is_similar = compare_binary_image_files(v[dates[0]],v[dates[1]])
-        if is_similar < 0.8:
+        if is_similar < 0.9:
             num_big_change += 2
 
     return (num_total, num_all_black, num_all_white, num_big_change)
@@ -98,7 +98,10 @@ def create_date_location_dict(input_dir):
     return dates_locations
 
 
-def optimize(start_date, end_date, coords, threshold):
+def optimize_threshold(threshold,
+             start_date="2016-03-30",
+             end_date="2016-04-30",
+             coords=[27.95,11.57]):
     """
     Run the get_time_series method, making some assumptions about
     what image_coll, bands, etc we will use.
