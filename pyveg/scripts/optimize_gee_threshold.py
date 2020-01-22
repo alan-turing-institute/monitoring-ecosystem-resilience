@@ -44,30 +44,31 @@ def count_good_images(date_loc_dict):
     images are "bad"
     """
     num_total = 0
-    num_good = 0
     num_all_black = 0
     num_all_white = 0
     num_big_change = 0
+
     for k,v in date_loc_dict.items():
+        both_single_colour = True
         for date, img in v.items():
             num_total += 1
             is_all_black = image_file_all_same_colour(img, (0,0,0))
             is_all_white = image_file_all_same_colour(img, (255,255,255))
-            if not (is_all_black or is_all_white):
-                num_good += 1
-            elif is_all_black:
+            if is_all_black:
                 num_all_black += 1
             elif is_all_white:
                 num_all_white += 1
+            both_single_colour &= (is_all_white | is_all_black)
         dates = list(v.keys())
         if len(dates) < 2:
             print("Need at least two dates to compare")
             continue
-        is_similar = compare_binary_image_files(v[dates[0]],v[dates[1]])
-        if is_similar < 0.9:
-            num_big_change += 2
+        if not both_single_colour:
+            is_similar = compare_binary_image_files(v[dates[0]],v[dates[1]])
+            if is_similar < 0.9:
+                num_big_change += 2
 
-    return (num_total, num_all_black, num_all_white, num_big_change)
+    return 1.0 - float((num_all_black + num_all_white + num_big_change) / num_total)
 
 
 def create_date_location_dict(input_dir):
