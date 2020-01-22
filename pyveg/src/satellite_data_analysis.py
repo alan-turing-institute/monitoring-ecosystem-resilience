@@ -107,7 +107,7 @@ def process_coords(coords,
                    scale, # size of each pixel in output image (in m)
                    start_date,
                    end_date,
-                   mask_cloud=True, ## EXPERIMENTAL - false by default
+                   mask_cloud=False, ## EXPERIMENTAL - false by default
                    output_dir=".",
                    output_suffix="_gee.png",
                    network_centrality=False,
