@@ -77,7 +77,7 @@ def create_date_location_dict(input_dir):
     """
     # list the files in the directory.  see how many dates there are:
     date_regex = re.compile("([\d]{4}-[\d]{2}-[\d]{2})")
-    coord_regex = re.compile("([\d]{1,3}.[\d]{1,3}_[\d]{1,3}.[\d]{1,3})")
+    coord_regex = re.compile("([\d]{1,3}\.[\d]{1,3}_[\d]{1,3}\.[\d]{1,3})")
     dates_locations = {}
     for f in os.listdir(input_dir):
         if not f.endswith("png"):
