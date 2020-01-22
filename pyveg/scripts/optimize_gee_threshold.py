@@ -24,6 +24,7 @@ too much variation.
 """
 
 import os
+import shutil
 import re
 import argparse
 from PIL import Image
@@ -104,10 +105,12 @@ def optimize(start_date, end_date, coords, threshold):
     """
     image_coll = "COPERNICUS/S2"
     num_time_points = 2
-    bands = "NDVI"
+    bands = ["NDVI"]
     region_size = 0.1
     scale = 10
     opt_dir = os.path.join(TMPDIR,"optimize_{}".format(threshold))
+    if os.path.exists(opt_dir):
+        shutil.rmtree(opt_dir)
     mask_cloud = False
     get_time_series(num_time_points,
                     coords,
@@ -123,7 +126,7 @@ def optimize(start_date, end_date, coords, threshold):
                     threshold=threshold)
     # this will havce put a bunch of files in opt_dir
     # now sort them by coordinates and date
-    date_location_dir = create_date_location_dir(opt_dir)
+    date_location_dir = create_date_location_dict(opt_dir)
     # then look at them to count the good ones
     numbers = count_good_images(date_location_dir)
     return numbers
