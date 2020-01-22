@@ -30,8 +30,10 @@ else:
 LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 
 
+
+
 # EXPERIMENTAL Cloud masking function.  To be applied to Images (not ImageCollections)
-def mask_cloud(image, input_coll):
+def apply_mask_cloud(image, input_coll):
     """
     Different input_collections need different steps to be taken to filter
     out cloud.
@@ -41,9 +43,9 @@ def mask_cloud(image, input_coll):
         return mask_func(image)
 
     elif "COPERNICUS" in input_coll:
-        image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",20))
         mask_func = cloud_mask.sentinel2()
-        return mask_func(image)
+        image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",20)).map(mask_func)
+        return image
     else:
         print("No cloud mask logic defined for input collection {}"\
               .format(input_coll))
@@ -111,7 +113,7 @@ def get_download_urls(coords, # [long,lat]
                       scale, # output pixel size in m
                       start_date, # 'yyyy-mm-dd'
                       end_date, # 'yyyy-mm-dd'
-                      mask_cloud=False):
+                      mask_cloud=True):
     """
     Download specified image to output directory
     """
@@ -121,9 +123,11 @@ def get_download_urls(coords, # [long,lat]
     dataset = image_coll.filterBounds(geom)\
     .filterDate(start_date, end_date)
 
-    image = dataset.median()
     if mask_cloud:
-        image = mask_cloud(image, image_collection)
+        image = apply_mask_cloud(dataset, image_collection)
+
+    image = dataset.median()
+
     if 'NDVI' in bands:
         image = add_NDVI(image)
 

@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 
 from .gee_interface import (
-    mask_cloud,
+    apply_mask_cloud,
     add_NDVI,
     download_and_unzip,
     get_download_urls
@@ -107,7 +107,7 @@ def process_coords(coords,
                    scale, # size of each pixel in output image (in m)
                    start_date,
                    end_date,
-                   mask_cloud=False, ## EXPERIMENTAL - false by default
+                   mask_cloud=True, ## EXPERIMENTAL - false by default
                    output_dir=".",
                    output_suffix="_gee.png",
                    network_centrality=False,
