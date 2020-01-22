@@ -155,7 +155,7 @@ def main():
     end_date = args.end_date
     coords = [float(x) for x in args.coords.split(",")]
     threshold = args.threshold
-    optimize(start_date, end_date, coords, threshold)
+    optimize_threshold(threshold, start_date, end_date, coords)
     print("Done")
 
 
