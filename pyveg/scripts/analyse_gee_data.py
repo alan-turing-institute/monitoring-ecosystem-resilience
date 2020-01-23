@@ -71,6 +71,7 @@ def main():
                       default="gee_img.png")
     parser.add_argument("--input_file",help="text file with coordinates, one per line")
     parser.add_argument("--mask_cloud",help="EXPERIMENTAL - apply cloud masking function",action='store_true')
+    parser.add_argument("--network_centrality",help="EXPERIMENTAL - apply cloud masking function",action='store_true')
 
     args = parser.parse_args()
     sanity_check_args(args)
@@ -84,7 +85,9 @@ def main():
     region_size = args.region_size
     scale = args.scale
     mask_cloud = True if args.mask_cloud else False
-    input_file = arg.input_file if args.input_file else None
+    network_centrality = True if args.network_centrality else False
+
+    input_file = args.input_file if args.input_file else None
     num_time_points = args.num_time_points
     if args.coords_point:
         coords = [float(x) for x in args.coords_point.split(",")]
@@ -105,7 +108,10 @@ def main():
                     end_date,
                     mask_cloud,
                     output_dir,
-                    output_suffix)
+                    output_suffix,
+                    network_centrality)
+
+
     print("Done")
 
 
