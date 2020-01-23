@@ -71,7 +71,7 @@ def main():
                       default="gee_img.png")
     parser.add_argument("--input_file",help="text file with coordinates, one per line")
     parser.add_argument("--mask_cloud",help="EXPERIMENTAL - apply cloud masking function",action='store_true')
-    parser.add_argument("--network_centrality",help="EXPERIMENTAL - apply cloud masking function",action='store_true')
+    parser.add_argument("--network_centrality",help="calculate network centrality measures on images and print them out as json files",action='store_true')
 
     args = parser.parse_args()
     sanity_check_args(args)
