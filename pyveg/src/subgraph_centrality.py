@@ -165,6 +165,9 @@ def feature_vector_metrics(feature_vector,output_csv=None):
     # difference between last and first indexes
     feature_vec_metrics['offset'] = (feature_vector[-1] - feature_vector[0])
 
+    # difference between last and middle indexes
+    feature_vec_metrics['offset50'] = (feature_vector[-1] - feature_vector[len(feature_vector)//2])
+
     # mean value on the feature_vector
     feature_vec_metrics['mean'] = np.mean(feature_vector)
 
@@ -177,7 +180,6 @@ def feature_vector_metrics(feature_vector,output_csv=None):
         write_dict_to_csv(feature_vec_metrics, output_csv)
 
     return feature_vec_metrics
-
 
 
 
