@@ -124,7 +124,7 @@ def get_download_urls(coords, # [long,lat]
     .filterDate(start_date, end_date)
 
     if mask_cloud:
-        image = apply_mask_cloud(dataset, image_collection)
+        dataset = apply_mask_cloud(dataset, image_collection)
 
     image = dataset.median()
 
