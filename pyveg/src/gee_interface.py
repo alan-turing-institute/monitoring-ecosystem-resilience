@@ -38,11 +38,12 @@ def apply_mask_cloud(image, input_coll):
     Different input_collections need different steps to be taken to filter
     out cloud.
     """
-    if "LANDSAT" in input_coll:
-        mask_func = cloud_mask.landsat8ToaBQA()
-        return mask_func(image)
+    if input_coll=='LANDSAT/LC08/C01/T1_SR':
+        mask_func = cloud_mask.landsat8SRPixelQA()
+        image = image.map(mask_func)
+        return image
 
-    elif "COPERNICUS" in input_coll:
+    elif input_coll=='COPERNICUS/S2':
         mask_func = cloud_mask.sentinel2()
         image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",20)).map(mask_func)
         return image
