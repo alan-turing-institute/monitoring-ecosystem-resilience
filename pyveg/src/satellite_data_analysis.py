@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 
 from .gee_interface import (
-    mask_cloud,
+    apply_mask_cloud,
     add_NDVI,
     download_and_unzip,
     get_download_urls
@@ -141,9 +141,13 @@ def process_coords(coords,
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
             merged_image = combine_tif(tif_filebase, bands)
+            bw_image = convert_to_bw(merged_image,470)
+
             output_filename = os.path.basename(tif_filebase)
             output_filename += "_{0:.3f}_{1:.3f}".format(coords[0], coords[1])
-            output_filename += "_{}".format(output_suffix)
+            output_filename += "_10kmLargeImage{}".format(output_suffix)
+            save_image(bw_image, output_dir, output_filename)
+
             ## if requested, divide into smaller sub-images
             sub_images = crop_image_npix(merged_image,
                                              sub_image_size[0],
@@ -161,6 +165,7 @@ def process_coords(coords,
                 save_image(sub_image, output_dir, output_filename)
 
                 if network_centrality:
+                    print ('Calculating network centrality metrics')
 
                     image_array = from_image_to_array(sub_image)
                     feature_vec, sel_pixels = subgraph_centrality(image_array)
@@ -221,6 +226,7 @@ def get_time_series(num_time_periods,
                     end_date,
                     mask_cloud=False, ## EXPERIMENTAL - false by default
                     output_dir=".",
+                    output_suffix=".",#end of output filename, including file extension" # DOESNT SEEM TO BE USED
                     network_centrality = False,
                     sub_image_size=[50,50]):
     """
