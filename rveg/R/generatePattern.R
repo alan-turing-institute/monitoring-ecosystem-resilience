@@ -19,12 +19,14 @@ loadConfig <- function(configFile="patternConfig.json") {
 #' Load a CSV file containing a 2D array of 1s and zeros, representing a starting pattern.
 #' If no file is given, start with all zeros.
 #' @param patternFile filename of CSV file containing starting pattern of 1s and 0s.
-#' @param m
+#' @param m length of each side of the matrix.
 #' @return pattern m*m matrix of 1s and 0s.
 #' @export
 getStartingPattern <- function(patternFile=NULL,m=50) {
-    if (is.null(patternFile)) {
-        matrix(0,m,m);
+    pattern = matrix(0,m,m);
+    if (! is.null(patternFile)) {
+        pattern <- as.matrix(read.csv(patternFile))
+        pattern <- pattern[1:m, 1:m]
     }
     return(pattern)
 }
