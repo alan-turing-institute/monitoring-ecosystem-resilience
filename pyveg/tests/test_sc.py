@@ -7,7 +7,7 @@ import numpy as np
 from pyveg.src.subgraph_centrality import *
 import igraph
 
-IMG_FILE = os.path.join(os.path.dirname(__file__),"..","testdata","binary_image.txt")
+IMG_FILE = os.path.join(os.path.dirname(__file__),"..","..","testdata","binary_image.txt")
 FULL_IMG = text_file_to_array(IMG_FILE)
 IMG = crop_image_array(FULL_IMG,(0,5),(0,5))
 
