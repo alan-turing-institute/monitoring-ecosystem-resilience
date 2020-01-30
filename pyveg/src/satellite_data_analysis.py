@@ -17,12 +17,14 @@ from .gee_interface import (
     download_and_unzip,
     get_download_urls
     )
+
 from .image_utils import (
     convert_to_bw,
     crop_image_npix,
     save_image,
-    combine_tif,
-    from_image_to_array,
+    convert_to_rgb,
+    image_file_to_array,
+    image_to_array,
     save_json
 )
 
@@ -32,7 +34,6 @@ from .subgraph_centrality import (
     feature_vector_metrics,
     generate_sc_images,
     text_file_to_array,
-    image_file_to_array,
 )
 
 from pyveg.src.subgraph_centrality import subgraph_centrality
@@ -111,7 +112,8 @@ def process_coords(coords,
                    output_dir=".",
                    output_suffix="_gee.png",
                    network_centrality=False,
-                   sub_image_size=[50,50]):
+                   sub_image_size=[50,50],
+                   threshold=470):
     """
     Run through the whole process for one set of coordinates (either a point
     or a rectangle).
@@ -140,7 +142,8 @@ def process_coords(coords,
         # Now should have lots of .tif files in a temp dir - merge them
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
-            merged_image = combine_tif(tif_filebase, bands)
+
+            merged_image = convert_to_rgb(tif_filebase, bands)
             bw_image = convert_to_bw(merged_image,470)
 
             output_filename = os.path.basename(tif_filebase)
@@ -150,14 +153,13 @@ def process_coords(coords,
 
             ## if requested, divide into smaller sub-images
             sub_images = crop_image_npix(merged_image,
-                                             sub_image_size[0],
-                                             sub_image_size[1],
-                                             region_size,
-                                             coords
-                )
+                                         sub_image_size[0],
+                                         sub_image_size[1],
+                                         region_size,
+                                         coords)
             # now save these
             for n, image in enumerate(sub_images):
-                sub_image = convert_to_bw(image[0],470)
+                sub_image = convert_to_bw(image[0],threshold)
                 sub_coords = image[1]
                 output_filename = os.path.basename(tif_filebase)
                 output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
@@ -165,9 +167,8 @@ def process_coords(coords,
                 save_image(sub_image, output_dir, output_filename)
 
                 if network_centrality:
-                    print ('Calculating network centrality metrics')
+                    image_array = image_to_array(sub_image)
 
-                    image_array = from_image_to_array(sub_image)
                     feature_vec, sel_pixels = subgraph_centrality(image_array)
                     feature_vec_metrics = feature_vector_metrics(feature_vec)
                     feature_vec_metrics['latitude'] = sub_coords[0]
@@ -178,45 +179,13 @@ def process_coords(coords,
                     output_filename += "_{}".format(output_suffix[1:-4])
                     output_filename += '.json'
                     save_json(feature_vec_metrics, output_dir, output_filename)
-
+                    pass
+                pass
+            pass
         return
 
 
-def process_input_file(filename,
-                       image_coll,
-                       bands,
-                       region_size,
-                       scale,
-                       start_date,
-                       end_date,
-                       mask_cloud=False,
-                       output_dir=".",
-                       output_suffix="gee",
-                       network_centrality=False):
-    """
-    Loop through an input file with one set of coordinates per line
-    """
-    if not os.path.exists(filename):
-        raise RuntimeError("Input file {} does not exist".format(filename))
-    infile = open(filename,"r")
-    for line in infile.readlines():
-        coords = [float(x) for x in line.strip().split(",")]
-        print("Processing {}".format(coords))
-        process_coords(coords,
-                       image_coll,
-                       bands,
-                       region_size,
-                       scale,
-                       start_date,
-                       end_date,
-                       mask_cloud,
-                       output_dir,
-                       output_suffix,
-                       network_centrality)
-
-
 def get_time_series(num_time_periods,
-                    input_file, # could be None if we are looking at individual coords
                     coords, # could be None if we have an input_file listing coords
                     image_coll,
                     bands,
@@ -228,7 +197,8 @@ def get_time_series(num_time_periods,
                     output_dir=".",
                     output_suffix=".",#end of output filename, including file extension" # DOESNT SEEM TO BE USED
                     network_centrality = False,
-                    sub_image_size=[50,50]):
+                    sub_image_size=[50,50],
+                    threshold=470):
     """
     Divide the time between start_date and end_date into num_time_periods periods
     and call download_images.process coords for each.
@@ -238,29 +208,17 @@ def get_time_series(num_time_periods,
         print("Processing the time period between {} and {}".format(period[0],period[1]))
         mid_period_string = find_mid_period(period[0], period[1])
         output_suffix = "_{}.png".format(mid_period_string)
-        if input_file:
-            process_input_file(input_file,
-                               image_coll,
-                               bands,
-                               region_size,
-                               scale,
-                               period[0],
-                               period[1],
-                               mask_cloud,
-                               output_dir,
-                               output_suffix,
-                               network_centrality)
-        else:
-            process_coords(coords,
-                           image_coll,
-                           bands,
-                           region_size,
-                           scale,
-                           period[0],
-                           period[1],
-                           mask_cloud,
-                           output_dir,
-                           output_suffix,
-                           network_centrality)
+        process_coords(coords,
+                       image_coll,
+                       bands,
+                       region_size,
+                       scale,
+                       period[0],
+                       period[1],
+                       mask_cloud,
+                       output_dir,
+                       output_suffix,
+                       network_centrality,
+                       threshold=threshold)
         print("Finished processing {}".format(mid_period_string))
     return True
