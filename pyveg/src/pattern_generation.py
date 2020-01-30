@@ -1,151 +1,338 @@
 """
 Translation of Matlab code to model patterned vegetation in semi-arid landscapes.
 """
+import os
 import sys
 import random
+import json
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-# import a set of constants from configuration file
-from .pattern_gen_config import *
-
-def plot_image(value_array):
-    im = plt.imshow(value_array)
-    plt.show()
-
-
-def save_as_csv(binary_array, filename):
+def calc_plant_change(plant_biomass,
+                      soil_water,
+                      uptake,
+                      uptake_saturation,
+                      growth_constant,
+                      senescence,
+                      grazing_loss):
     """
-    Save the image as a csv file
+    Change in plant biomass as a function of available soil water
+    and various constants.
     """
-    np.savetxt(filename, binary_array, delimiter=",", newline="\n", fmt="%i")
+    relative_growth = growth_constant * uptake * np.divide(soil_water,
+                                                           (soil_water+uptake_saturation))
+    relative_loss = senescence + grazing_loss
+
+    change = (relative_growth - relative_loss) * plant_biomass
+    return change
 
 
-def save_as_png(binary_array, filename):
+def calc_surface_water_change(surface_water,
+                              plant_biomass,
+                              rainfall,
+                              frac_surface_water_available,
+                              bare_soil_infilt,
+                              infilt_saturation):
     """
-    Save the image as a png file
+    Change in surface water as a function of rainfall, plant_biomass,
+    and various constants.
     """
-    im = plt.imshow(binary_array)
-    plt.savefig(filename)
+    absorb_numerator = plant_biomass + bare_soil_infilt * infilt_saturation
+    absorb_denominator = plant_biomass + infilt_saturation
+    rel_loss = frac_surface_water_available * np.divide(absorb_numerator,absorb_denominator)
+    change = rainfall - surface_water*rel_loss
+    return change
 
 
-def make_binary(value_array, threshold=None, sig_val=255):
+def calc_soil_water_change(soil_water,
+                           surface_water,
+                           plant_biomass,
+                           frac_surface_water_available,
+                           bare_soil_infilt,
+                           infilt_saturation,
+                           plant_growth,
+                           soil_water_evap,
+                           uptake_saturation):
     """
-    if not given a threshold to use,  look at the (max+min)/2 value
-    - for anything below, set to zero, for anything above, set to 1
+    Change in soil water as a function of surface water, plant_biomass,
+    and various constants.
     """
-    if not threshold:
-        threshold = (value_array.max() + value_array.min()) / 2.
-    new_list_x = []
-    for row in value_array:
-        new_list_y = np.array([sig_val*int(val > threshold) for val in row])
-        new_list_x.append(new_list_y)
-    return np.array(new_list_x)
+    lost_to_plants = plant_growth * np.divide(soil_water,
+                                              (soil_water + uptake_saturation))
+    surface_water_available = surface_water * frac_surface_water_available
+    rel_absorbed_from_surface = np.divide((plant_biomass + infilt_saturation*bare_soil_infilt),
+                                          (plant_biomass + infilt_saturation))
+
+    absorbed_from_surface = surface_water_available * rel_absorbed_from_surface
+    lost_to_evaporation = soil_water * soil_water_evap
+    change = absorbed_from_surface - lost_to_plants - lost_to_evaporation
+    return change
 
 
-def generate_pattern(rainfall):  # rainfall in mm
+###############################################################################################
+
+
+class PatternGenerator(object):
     """
-    Run the code to converge on a vegetation pattern
+    Class that can generate simulated vegetation patterns, optionally
+    from a loaded starting pattern, and propagate through time according
+    to various amounts of rainfall and/or surface and soil water density.
     """
-    print("Generating pattern with rainfall {}mm".format(rainfall))
-    # Initialisation
-    popP = np.zeros((m, m))
-    popW = np.zeros((m, m))
-    popO = np.zeros((m, m))
-    dP = np.zeros((m, m))
-    dO = np.zeros((m, m))
-    dW = np.zeros((m, m))
-    NetP = np.zeros((m, m))
-    NetW = np.zeros((m, m))
-    NetO = np.zeros((m, m))
 
-    # Boundary conditions
-    FYP = np.zeros((NY + 1, NX)) # bound.con.no flow in / outo Y - direction
-    FXP = np.zeros((NY, NX + 1)) # bound.con.no flow in / out to X - direction
-    FYW = np.zeros((NY + 1, NX)) # bound.con.no flow in / out to Y - direction
-    FXW = np.zeros((NY, NX + 1)) # bound.con.no flow in / out to X - direction
-    FYO = np.zeros((NY + 1, NX)) # bound.con.no flow in / out to Y - direction
-    FXO = np.zeros((NY, NX + 1)) # bound.con.no flow in / out to X - direction
-
-    # Initial state
-    for i in range(1,m):
-        for j in range(1,m):
-            if random.random() > frac:
-                popO[i, j] = rainfall / (alpha * W0)
-                popW[i, j] = rainfall / rw # Homogeneous equilibrium soil water in absence of plants
-                popP[i, j] = 90 # Initial plant biomass
-            else:
-                popO[i, j] = rainfall / (alpha * W0) # Homogeneous equilibrium surface water in absenceof plants
-                popW[i, j] = rainfall / rw # Homogeneous equilibriums oil water in absence of plants
-                popP[i, j] = 0 # Initial plant biomass
-
-    # Timesteps
-    dT = 1  # timestep
-    Time = 1  # begin time
-    EndTime = 10000  # end time
-    PlotStep = 10  # (d)
-    PlotTime = PlotStep  #(d)
-    #  Timesteps
-
-    snapshots = []
-    while Time <= EndTime:
-
-        # Reaction
-        drO = (rainfall - np.divide(alpha * (popP + k2 * W0), (popP + k2))* popO)
-        drW = (alpha * np.divide((popP + k2 * W0),
-                                 (popP + k2)) \
-               * popO - gmax * np.divide(popW, (popW + k1))* popP - rw * popW)
-        drP = (c * gmax * np.divide(popW,(popW + k1)) * popP - (d + beta)* popP)
-
-        # Diffusion
-        # calculate Flow in x - direction: Flow = -D * dpopP / dx;
-        FXP[0:NY, 1:NX] = -DifP * (popP[:, 1:NX] - popP[:, 0:(NX - 1)]) *DeltaY / DeltaX
-        FXW[0:NY, 1:NX] = -DifW * (popW[:, 1:NX] - popW[:, 0:(NX - 1)]) *DeltaY / DeltaX
-        FXO[0:NY, 1:NX] = -DifO * (popO[:, 1:NX] - popO[:, 0:(NX - 1)]) *DeltaY / DeltaX
-
-        # calculate Flow in y - direction: Flow = -D * dpopP / dy;
-        FYP[1:NY, 0:NX] = -DifP * (popP[1:NY,:] - popP[0:(NY - 1),:]) *DeltaX / DeltaY
-        FYW[1:NY, 0:NX] = -DifW * (popW[1:NY,:] - popW[0:(NY - 1),:]) *DeltaX / DeltaY
-        FYO[1:NY, 0:NX] = -DifO * (popO[1:NY,:] - popO[0:(NY - 1),:]) *DeltaX / DeltaY
-
-        # calculate netflow
-        NetP = (FXP[:, 0:NX] - FXP[:, 1:(NX + 1)]) + (FYP[0:NY,:] - FYP[1:NY + 1,:])
-        NetW = (FXW[:, 0:NX] - FXW[:, 1:(NX + 1)]) + (FYW[0:NY,:] - FYW[1:NY + 1,:])
-        NetO = (FXO[:, 0:NX] - FXO[:, 1:(NX + 1)]) + (FYO[0:NY,:] - FYO[1:NY + 1,:])
-        # NewO(1:NY, 1:NX)=0;
-        # Update
-        popW = popW + (drW + (NetW / (DeltaX * DeltaY))) * dT
-        popO = popO + (drO + (NetO / (DeltaX * DeltaY))) * dT
-        popP = popP + (drP + (NetP / (DeltaX * DeltaY))) * dT
-
-        Time = Time + dT
-
-        PlotTime = PlotTime - dT
-        axes = plt.gca()
-
-        if PlotTime <= 0:
-            snapshots.append(popP)
-
-    print('Done!')
-    binary_pattern = make_binary(snapshots[-1])
-    return binary_pattern
+    def __init__(self):
+        default_config_file = os.path.join(os.path.dirname(__file__),
+                                           "..","..","testdata",
+                                           "patternGenConfig.json")
+        self.load_config(default_config_file)
+        self.pattern = None
+        # remember the starting pattern in case we want to compare
+        self.starting_pattern = None
+        self.rainfall = None # needs to be set explicitly
+        self.configure()
+        self.initialize()
+        self.time = 0
+        pass
 
 
-if __name__ == "__main__":
+    def set_rainfall(self, rainfall):
+        """
+        Rainfall in mm
+        """
+        self.rainfall = rainfall
 
-    parser = argparse.ArgumentParser(description="Generate vegetation patterns")
-    parser.add_argument("--rainfall", help="rainfall in mm",type=float, default=1.4)
-    parser.add_argument("--output_png", help="output png filename",type=str)
-    parser.add_argument("--output_csv", help="output csv filename",type=str)
-    parser.add_argument("--transpose", help="rotate image (useful for comparing to matlab",action="store_true")
-    args = parser.parse_args()
 
-    binary_pattern = generate_pattern(args.rainfall)
-    if args.transpose:
-        binary_pattern = binary_pattern.transpose()
-    if args.output_csv:
-        save_as_csv(binary_pattern, args.output_csv)
-    if args.output_png:
-        save_as_png(binary_pattern, args.output_png)
-    plot_image(binary_pattern)
+    def set_starting_pattern_from_file(self, filename):
+        """
+        Takes full path to a CSV file containing m rows
+        of m comma-separated values, which are zero (bare soil)
+        or not-zero (vegetation covered).
+        """
+        try:
+            pattern = np.genfromtxt(filename, delimiter=",")
+        except OSError:
+            raise RuntimeError("File {} not found".format(filename))
+        # Crop it to m*m if necessary
+        pattern = pattern[:self.m,:self.m]
+
+        # rescale non-zero values
+        try:
+            pattern = pattern * (self.veg_mass_per_cell / pattern.max())
+        except ZeroDivisionError:
+            print("Pattern is all zeros")
+            pass
+        self.starting_pattern = pattern
+        self.pattern = pattern
+
+
+    def set_random_starting_pattern(self):
+        """
+        Use the frac from config file to randomly cover
+        some fraction of cells.
+        """
+        if len(self.config.items()) == 0:
+            raise RuntimeError("Need to set config file first")
+        # loop over all cells and
+        for ix in range(self.m):
+            for iy in range(self.m):
+                self.surface_water[ix, iy] = self.rainfall / \
+                                             (self.surface_water_frac * \
+                                              self.bare_soil_infiltration)
+                # Homogeneous equilibrium soil water in absence of plants
+                self.soil_water[ix, iy] = self.rainfall / self.soil_water_loss
+                if random.random() > self.config['frac']:
+
+                    self.starting_pattern[ix, iy] = 90 # Initial plant biomass
+                else:
+                    self.starting_pattern[ix, iy] = 0 # Initial plant biomass
+        self.pattern = self.starting_pattern
+
+
+    def configure(self):
+        """
+        Set initial parameters, loaded from JSON.
+        """
+        self.m = self.config["m"]
+
+
+        # System discretisation
+        self.delta_x = self.config["DeltaX"]
+        self.delta_y = self.config["DeltaY"]
+
+        # Diffusion constants for plants, soil water, surface water
+        self.plant_diffusion = self.config["DifP"]
+        self.soil_water_diffusion = self.config["DifW"]
+        self.surface_water_diffusion = self.config["DifO"]
+
+        # Parameter values
+        self.surface_water_frac = self.config["alpha"] # proportion of surface water available for infiltration (d-1)
+        self.bare_soil_infiltration = self.config["W0"] # Bare soil infiltration (-)
+        self.grazing_loss = self.config["beta"] # Plant loss rate due to grazing (d-1)
+        self.soil_water_loss = self.config["rw"] #Soil water loss rate due to seepage and evaporation (d-1)
+        self.plant_uptake = self.config["c"] #Plant uptake constant (g.mm-1.m-2)
+        self.plant_growth = self.config["gmax"] #Plant growth constant (mm.g-1.m-2.d-1)
+        self.plant_senescence = self.config["d"] #Plant senescence rate (d-1)
+        self.plant_uptake_saturation = self.config["k1"] #Half saturation constant for plant uptake and growth (mm)
+        self.water_infilt_saturation = self.config["k2"] #Half saturation constant for water infiltration (g.m-2)
+
+        # Starting biomass in a vegetation-covered cell.
+        self.veg_mass_per_cell = self.config["vmass"] # how much biomass in vegetation-covered cells?
+
+
+    def initialize(self):
+        """
+        Set initial values to zero, and boundary conditions.
+        """
+        # Initialize arrays with zeros
+        self.plant_biomass = np.zeros((self.m, self.m))
+        self.soil_water = np.zeros((self.m, self.m))
+        self.surface_water = np.zeros((self.m, self.m))
+        self.d_plant = np.zeros((self.m, self.m))
+        self.d_surf = np.zeros((self.m, self.m))
+        self.d_soil = np.zeros((self.m, self.m))
+        self.net_flow_plant = np.zeros((self.m, self.m))
+        self.net_flow_surf = np.zeros((self.m, self.m))
+        self.net_flow_soil = np.zeros((self.m, self.m))
+
+        # Boundary conditions - no flow in/out to x, y directions
+        self.y_flow_plant = np.zeros((self.m + 1, self.m))
+        self.x_flow_plant = np.zeros((self.m, self.m + 1))
+        self.y_flow_soil = np.zeros((self.m + 1, self.m))
+        self.x_flow_soil = np.zeros((self.m, self.m + 1))
+        self.y_flow_surf = np.zeros((self.m + 1, self.m))
+        self.x_flow_surf = np.zeros((self.m, self.m + 1))
+
+
+    def initial_conditions(self):
+        """
+        Set initial arrays of soil and surface water.
+        """
+        if not self.rainfall:
+            raise RuntimeError("Need to call set_rainfall() first")
+        # Initial conditions for soil and surface water
+        for ix in range(self.m):
+            for iy in range(self.m):
+                self.surface_water[ix, iy] = self.rainfall / \
+                                             (self.surface_water_frac * \
+                                              self.bare_soil_infiltration)
+                # Homogeneous equilibrium soil water in absence of plants
+                self.soil_water[ix, iy] = self.rainfall / self.soil_water_loss
+
+
+    def evolve_pattern(self, steps=10000, dt=1):
+        """
+        Run the code to converge on a vegetation pattern
+        """
+        print("Generating pattern with rainfall {}mm".format(self.rainfall))
+
+        # assume symmetrix m*m arrays
+        nx = self.m
+        ny = self.m
+
+        #  Timesteps
+        snapshots = []
+        for step in range(steps):
+
+            # Changes over each cell
+            d_surf = calc_surface_water_change(self.surface_water,
+                                               self.pattern,
+                                               self.rainfall,
+                                               self.surface_water_frac,
+                                               self.bare_soil_infiltration,
+                                               self.water_infilt_saturation)
+
+            d_soil = calc_soil_water_change(self.soil_water,
+                                            self.surface_water,
+                                            self.pattern,
+                                            self.surface_water_frac,
+                                            self.bare_soil_infiltration,
+                                            self.water_infilt_saturation,
+                                            self.plant_growth,
+                                            self.soil_water_loss,
+                                            self.plant_uptake_saturation)
+
+            d_plant = calc_plant_change(self.pattern,
+                                        self.soil_water,
+                                        self.plant_uptake,
+                                        self.plant_uptake_saturation,
+                                        self.plant_growth,
+                                        self.plant_senescence,
+                                        self.grazing_loss)
+
+            # Diffusion
+            # calculate Flow in x - direction: Flow = -D * d_pattern / dx;
+
+            self.x_flow_plant[0:ny, 1:nx] = \
+                                - d_plant * \
+                                (self.pattern[:, 1:nx] - self.pattern[:,0:(nx - 1)]) \
+                                * self.delta_y / self.delta_x
+            self.x_flow_soil[0:ny, 1:nx] = \
+                                - d_soil * (self.soil_water[:, 1:nx] - self.soil_water[:,0:(nx - 1)]) \
+                                *self.delta_y / self.delta_x
+            self.x_flow_surf[0:ny, 1:nx] = - d_surf * (self.surface_water[:, 1:nx] - self.surface_water[:,0:(nx - 1)]) \
+                                           *self.delta_y / self.delta_x
+
+            # calculate Flow in y - direction: Flow = -D * d_pattern / dy;
+            self.y_flow_plant[1:ny, 0:nx] = -d_plant * (self.pattern[1:ny,:] - self.pattern[0:(ny - 1),:]) * self.delta_x / self.delta_y
+            self.y_flow_soil[1:ny, 0:nx] = -d_soil * (self.soil_water[1:ny,:] - self.soil_water[0:(ny - 1),:]) * self.delta_x / self.delta_y
+            self.y_flow_surf[1:ny, 0:nx] = -d_surf * (self.surface_water[1:ny,:] - self.surface_water[0:(ny - 1),:]) * self.delta_x / self.delta_y
+
+            # calculate netflow
+            net_plant = self.x_flow_plant[:, 0:nx] - self.x_flow_plant[:, 1:(nx + 1)] \
+                        + self.y_flow_plant[0:ny,:] - self.y_flow_plant[1:ny + 1,:]
+            net_soil = self.x_flow_soil[:, 0:nx] - self.x_flow_soil[:, 1:(nx + 1)] \
+                       + self.y_flow_soil[0:ny,:] - self.y_flow_soil[1:ny + 1,:]
+            net_surf = self.x_flow_surf[:, 0:nx] - self.x_flow_surf[:, 1:(nx + 1)] \
+                       + self.y_flow_surf[0:ny,:] - self.y_flow_surf[1:ny + 1,:]
+            # Update
+            self.soil_water = self.soil_water + (d_soil + (net_soil / (self.delta_x * self.delta_y))) * dt
+            self.surface_water = self.surface_water + (d_surf + (net_surf / (self.delta_x * self.delta_y))) * dt
+            self.pattern = self.pattern + (d_plant + (net_plant / (self.delta_x * self.delta_y))) * dt
+
+            self.time += dt
+
+
+    def load_config(self, config_filename):
+        """
+        Load a set of configuration parameters from a JSON file
+        """
+        if not os.path.exists(config_filename):
+            raise RuntimeError("Config file {} does not exist".format(config_filename))
+        self.config = json.load(open(config_filename))
+
+
+    def plot_image(self):
+        """
+        Display the current pattern.
+        """
+        im = plt.imshow(self.pattern)
+        plt.show()
+
+
+    def save_as_csv(self, filename):
+        """
+        Save the image as a csv file
+        """
+        np.savetxt(filename, self.pattern, delimiter=",", newline="\n", fmt="%i")
+
+
+    def save_as_png(filename):
+        """
+        Save the image as a png file
+        """
+        im = plt.imshow(self.pattern)
+        plt.savefig(filename)
+
+
+    def make_binary(threshold=None):
+        """
+        if not given a threshold to use,  look at the (max+min)/2 value
+        - for anything below, set to zero, for anything above, set to 1
+        """
+        if not threshold:
+            threshold = (pattern.max() + pattern.min()) / 2.
+        new_list_x = []
+        for row in self.pattern:
+            new_list_y = np.array([sig_val*int(val > threshold) for val in row])
+            new_list_x.append(new_list_y)
+        return np.array(new_list_x)
