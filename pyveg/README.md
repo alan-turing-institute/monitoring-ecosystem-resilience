@@ -48,3 +48,7 @@ The ```start_date``` and ```end_date``` can be used in conjunction with the ```-
 ```
 python download_images.py --image_coll COPERNICUS/S2 --start_date 2016-01-01 --end_date 2017-01-01 --coords_point 27.95,11.57 --bands B2,B3,B4 --region_size 0.1 --output_dir /tmp/TEST_IMAGES --num_time_points 12
 ```
+
+### Also
+
+Note that we use the GEE convention for coordinates, i.e. `(longitude,latitude)`.

@@ -19,7 +19,18 @@ from PIL import Image
 from scipy import spatial
 import igraph
 
+from sc_utils import (
+    read_image_file,
+    read_text_file,
+    crop_image,
+    write_csv,
+    write_dict_to_csv,
+    generate_sc_images,
+    fill_sc_pixels,
+    save_sc_images
+)
 
+<<<<<<< HEAD:pyveg/src/pattern_modelling/subgraph_centrality_utils.py
 def make_graph(adj_matrix):
     """
     Use igraph to create a graph from our adjacency matrix
@@ -166,29 +177,29 @@ def save_sc_images(image_dict, file_prefix):
     for key in image_dict:
         im = image_dict[key]
         im.save(file_prefix + "_"+ str(key), "JPEG")
+=======
+### First find the signal pixels, then calculate distance matrix
+### then adjacency matrix and corresponding graph, then calc SC,
+### order pixels accordingly, and calc Euler Characteristic for
+### subgraphs containing increasing fractions of these pixels.
+>>>>>>> origin:patterns/python/subgraph_centrality.py
 
 
-def get_signal_pixels(input_array, threshold=255, lower_threshold=True, invert_y=False):
+def get_signal_pixels(input_array, threshold=255, lower_threshold=True):
     """
     Find coordinates of all pixels within the image that are > or <
     the threshold ( require < threshold if lower_threshold==True)
-    NOTE - if invert_y is set, we make the second coordinate negative, for reasons.
     """
-    y_sign = -1 if invert_y else 1
-    # find all the "white" pixels
-    signal_x_y = np.where(input_array>=threshold)
-
-    # convert ([x1, x2, ...], [y1,y2,...]) to ([x1,y1],...)
-    signal_coords = [(signal_x_y[0][i], y_sign*signal_x_y[1][i]) \
+    if lower_threshold:
+        # find all the "white" pixels
+        signal_x_y = np.where(input_array >= threshold)
+    else:
+        # "black" pixels are signal pixels
+        signal_x_y = np.where(input_array < threshold)
+    # convert ([x1, x2, ...], [y1,y2,...]) to [(x1,y1),...]
+    signal_coords = [(signal_x_y[0][i], signal_x_y[1][i]) \
                     for i in range(len(signal_x_y[0]))]
     return signal_coords
-
-
-def invert_y_coord(coord_list):
-    """
-    Convert [(x1,y1),(x2,y2),...] to [(x1,-y1),(x2,-y2),...]
-    """
-    return [(x,-1*y) for (x,y) in coord_list]
 
 
 def calc_distance_matrix(signal_coords):
@@ -205,37 +216,6 @@ def calc_distance_matrix(signal_coords):
     return distances, dist_square
 
 
-def feature_vector_metrics(feature_vector,output_csv=None):
-    """
-    Calculate different metrics for the feature vector
-    """
-    feature_vec_metrics = {}
-
-    if len(feature_vector)==0:
-        raise RuntimeError("Empty feature vector")
-
-    # slope of the vector
-    feature_vec_metrics['slope'] = (feature_vector[-1] - feature_vector[0])/len(feature_vector)
-
-    # difference between last and first indexes
-    feature_vec_metrics['offset'] = (feature_vector[-1] - feature_vector[0])
-
-    # mean value on the feature_vector
-    feature_vec_metrics['mean'] = np.mean(feature_vector)
-
-    # std value on the feature_vector
-    feature_vec_metrics['std'] = np.std(feature_vector)
-
-    if output_csv:
-        output_csv = output_csv[:-4]+"_metrics.csv"
-        # write the feature vector to a csv file
-        write_dict_to_csv(feature_vec_metrics, output_csv)
-
-    return feature_vec_metrics
-
-
-
-
 def calc_adjacency_matrix(distance_matrix,
                           include_diagonal_neighbours=False):
     """
@@ -244,7 +224,6 @@ def calc_adjacency_matrix(distance_matrix,
     where each element ij is 0 or 1 depending on whether the distance between
     pixel i and pixel j is < or > neighbour_threshold.
     """
-
     # prepare empty array
     adj_matrix = np.zeros(distance_matrix.shape)
     # get 2xM array where M is the number of elements of
@@ -255,12 +234,19 @@ def calc_adjacency_matrix(distance_matrix,
     else:
         neighbour_x_y = np.where((distance_matrix>0) & (distance_matrix < 2))
 
-
     # loop over coordinates of neighbours in distance matrix
     for i in range(len(neighbour_x_y[0])):
         adj_matrix[neighbour_x_y[0][i]][neighbour_x_y[1][i]] = 1
 
     return adj_matrix
+
+
+def make_graph(adj_matrix):
+    """
+    Use igraph to create a graph from our adjacency matrix
+    """
+    graph = igraph.Graph.Adjacency((adj_matrix>0).tolist())
+    return graph
 
 
 def calc_and_sort_sc_indices(adjacency_matrix):
@@ -280,6 +266,18 @@ def calc_and_sort_sc_indices(adjacency_matrix):
     indices= np.argsort(phi2_explambda)[::-1]
     return indices
 
+
+def calc_euler_characteristic(pix_indices, graph):
+    """
+    Find the edges where both ends are within the pix_indices list
+    """
+    V = len(pix_indices)
+    edges = []
+    for edge in graph.get_edgelist():
+        if edge[0] in pix_indices and edge[1] in pix_indices:
+            edges.append(edge)
+    E = len(edges)/2
+    return V-E
 
 
 def fill_feature_vector(pix_indices, coords, adj_matrix, num_quantiles=20):
@@ -303,46 +301,74 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, num_quantiles=20):
     for j in range(n):
         adj_matrix[j][j] = 1
 
-
     # find the different quantiles
     start = 0
     end = 100
-    step = (end-start)/num_quantiles
-    x = [i for i in range(start,end+1,int(step))]
+    step = (end-start)//num_quantiles
+    x = [i for i in range(start,end+1,int(step))] # need the "+1" to include 100% quantile
     # create feature vector of size num_quantiles
-    feature_vector = np.zeros(num_quantiles);
+    feature_vector = np.zeros(len(x));
     # create a dictionary of selected pixels for each quantile.
     selected_pixels = {}
     # Loop through the quantiles to fill the feature vector
     for i in range(1,len(feature_vector)):
         #print("calculating subregion {} of {}".format(i, num_quantiles))
         # how many pixels in this sub-region?
-        n_pix = round(x[i] * n / 100)
+        n_pix = round(x[i] * n / end)
         sub_region = pix_indices[0:n_pix]
         sel_pix = [coords[j] for j in sub_region]
         selected_pixels[x[i]] = sel_pix
         # now calculate the feature vector element using the selected method
         feature_vector[i] = calc_euler_characteristic(sub_region, graph)
 
-    # fill in the last quantile (100%) of selected pixels
-    selected_pixels[100] = coords
-
     return feature_vector, selected_pixels
 
+
+def feature_vector_metrics(feature_vector,output_csv=None):
+    """
+    Calculate different metrics for the feature vector
+    """
+    feature_vec_metrics = {}
+
+    if len(feature_vector)==0:
+        raise RuntimeError("Empty feature vector")
+
+    # slope of the vector
+    feature_vec_metrics['slope'] = (feature_vector[-1] - feature_vector[0])/len(feature_vector)
+
+    # difference between last and first indexes
+    feature_vec_metrics['offset'] = (feature_vector[-1] - feature_vector[0])
+
+    # difference between last and middle indexes
+    feature_vec_metrics['offset50'] = (feature_vector[-1] - feature_vector[len(feature_vector)//2])
+
+    # mean value on the feature_vector
+    feature_vec_metrics['mean'] = np.mean(feature_vector)
+
+    # std value on the feature_vector
+    feature_vec_metrics['std'] = np.std(feature_vector)
+
+    if output_csv:
+        output_csv = output_csv[:-4]+"_metrics.csv"
+        # write the feature vector to a csv file
+        write_dict_to_csv(feature_vec_metrics, output_csv)
+
+    return feature_vec_metrics
+
+
+###  Put everything together...
 
 def subgraph_centrality(image,
                         use_diagonal_neighbours=False,
                         num_quantiles=20,
                         threshold=255, # what counts as a signal pixel?
-                        lower_threshold=True,
+                        lower_threshold=True, # what counts as a signal pixel?
                         output_csv=None):
     """
     Go through the whole calculation, from input image to output vector of
     pixels in each SC quantile, and feature vector (either connected-components
     or Euler characteristic).
     """
-    # flatten the input image for later use
-    image_flat = image.flatten()
     # get the coordinates of all the signal pixels
     signal_coords = get_signal_pixels(image, threshold, lower_threshold)
     # get the distance matrix
@@ -363,3 +389,57 @@ def subgraph_centrality(image,
         write_csv(feature_vec, output_csv)
 
     return feature_vec, sel_pixels
+<<<<<<< HEAD:pyveg/src/pattern_modelling/subgraph_centrality_utils.py
+=======
+
+
+# the "main" program interprets command line arguments and calls the subgraph_centrality func, which in turn calls.
+# 1) get_signal_pixels  - find all white (or black) pixels in the image.
+# 2) calc_distance_matrix - find the distance
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Look at subgraph centrality of signal pixels in an image")
+    parser.add_argument("--input_txt",help="input image as a csv file")
+    parser.add_argument("--input_img",help="input image as an image file")
+    parser.add_argument("--use_diagonal_neighbours", help="use 8-neighbours rather than 4-neighbours",
+                        action='store_true')
+    parser.add_argument("--num_quantiles", help="number of elements of feature vector",
+                        type=int, default=20)
+    parser.add_argument("--sig_threshold", help="threshold for signal pixel",
+                        type=int, default=255)
+    parser.add_argument("--upper_threshold", help="threshold for signal pixel is an upper limit",
+                        action='store_true')
+    parser.add_argument("--output_csv", help="filename for output csv of feature vector",
+                        default="feature_vector.csv")
+    parser.add_argument("--output_img", help="filename for output images")
+
+    args = parser.parse_args()
+    image_array = None
+    if args.input_txt:
+        image_array = read_text_file(args.input_txt)
+    elif args.input_img:
+        image_array = read_image_file(args.input_img)
+    else:
+        raise RuntimeError("Need to specify input_txt or input_img")
+    use_diagonal_neighbours = True if args.use_diagonal_neighbours else False
+    num_quantiles = args.num_quantiles
+    threshold = args.sig_threshold
+    is_lower_limit = True if not args.upper_threshold else False
+    output_csv = args.output_csv
+    # call the subgraph_centrality function to calculate everything
+    feature_vec, sel_pixels = subgraph_centrality(image_array,
+                                                  use_diagonal_neighbours,
+                                                  num_quantiles,
+                                                  threshold,
+                                                  is_lower_limit,
+                                                  output_csv)
+    # get the images showing the selected sub-regions
+    sc_images = generate_sc_images(sel_pixels, image_array)
+
+    feature_vec_metrics = feature_vector_metrics(feature_vec,output_csv)
+
+    print (feature_vec_metrics)
+
+    if args.output_img:
+        save_sc_images(sc_images,args.output_img)
+>>>>>>> origin:patterns/python/subgraph_centrality.py
