@@ -22,7 +22,7 @@ from .image_utils import (
     crop_image_npix,
     save_image,
     combine_tif,
-    from_image_to_array,
+    image_to_array,
     save_json
 )
 
