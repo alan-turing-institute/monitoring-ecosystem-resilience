@@ -154,9 +154,10 @@ def main():
     start_date = args.start_date
     end_date = args.end_date
     coords = [float(x) for x in args.coords.split(",")]
-    threshold = args.threshold
-    optimize_threshold(threshold, start_date, end_date, coords)
-    print("Done")
+    threshold = int(args.threshold)
+    frac_good = optimize_threshold(threshold, start_date, end_date, coords)
+    print(frac_good)
+    return frac_good
 
 
 if __name__ == "__main__":
