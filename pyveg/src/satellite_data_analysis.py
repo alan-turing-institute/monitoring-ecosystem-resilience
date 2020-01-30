@@ -21,7 +21,7 @@ from .image_utils import (
     convert_to_bw,
     crop_image_npix,
     save_image,
-    combine_tif,
+    convert_to_rgb,
     image_to_array,
     save_json
 )
@@ -140,12 +140,17 @@ def process_coords(coords,
         # Now should have lots of .tif files in a temp dir - merge them
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
-            merged_image = combine_tif(tif_filebase, bands)
-            bw_image = convert_to_bw(merged_image,470)
-
+            # output the full-size colour image
+            merged_image = convert_to_rgb(tif_filebase, bands)
             output_filename = os.path.basename(tif_filebase)
             output_filename += "_{0:.3f}_{1:.3f}".format(coords[0], coords[1])
-            output_filename += "_10kmLargeImage{}".format(output_suffix)
+            output_filename += "_10kmLargeImage_colour_{}".format(output_suffix)
+            save_image(merged_image, output_dir, output_filename)
+            # output the full-size black-and-white image
+            bw_image = convert_to_bw(merged_image,470)
+            output_filename = os.path.basename(tif_filebase)
+            output_filename += "_{0:.3f}_{1:.3f}".format(coords[0], coords[1])
+            output_filename += "_10kmLargeImage_bw_{}".format(output_suffix)
             save_image(bw_image, output_dir, output_filename)
 
             ## if requested, divide into smaller sub-images
