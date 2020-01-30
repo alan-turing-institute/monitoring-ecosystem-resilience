@@ -9,6 +9,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def plot_image(pattern):
+    """
+    Display the current pattern.
+    """
+    im = plt.imshow(pattern)
+    plt.show()
+
+
+def save_as_csv(pattern, filename):
+        """
+        Save the image as a csv file
+        """
+        np.savetxt(filename, self.plant_biomass, delimiter=",", newline="\n", fmt="%i")
+
+
+def save_as_png(pattern, filename):
+    """
+    Save the image as a png file
+    """
+    im = plt.imshow(self.plant_biomass)
+    plt.savefig(filename)
+
+
+
 def calc_plant_change(plant_biomass,
                       soil_water,
                       uptake,
@@ -318,32 +342,7 @@ class PatternGenerator(object):
         if not os.path.exists(config_filename):
             raise RuntimeError("Config file {} does not exist".format(config_filename))
         self.config = json.load(open(config_filename))
-
-
-    def plot_image(self, starting_pattern=False):
-        """
-        Display the current pattern.
-        """
-        if starting_pattern:
-            im = plt.imshow(self.starting_pattern)
-        else:
-            im = plt.imshow(self.plant_biomass)
-        plt.show()
-
-
-    def save_as_csv(self, filename):
-        """
-        Save the image as a csv file
-        """
-        np.savetxt(filename, self.plant_biomass, delimiter=",", newline="\n", fmt="%i")
-
-
-    def save_as_png(self, filename):
-        """
-        Save the image as a png file
-        """
-        im = plt.imshow(self.plant_biomass)
-        plt.savefig(filename)
+        self.configure()
 
 
     def make_binary(self, threshold=None):
