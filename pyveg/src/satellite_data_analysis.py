@@ -167,7 +167,7 @@ def process_coords(coords,
                 if network_centrality:
                     print ('Calculating network centrality metrics')
 
-                    image_array = from_image_to_array(sub_image)
+                    image_array = image_to_array(sub_image)
                     feature_vec, sel_pixels = subgraph_centrality(image_array)
                     feature_vec_metrics = feature_vector_metrics(feature_vec)
                     feature_vec_metrics['latitude'] = sub_coords[0]
