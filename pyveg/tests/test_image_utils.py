@@ -8,42 +8,33 @@ from pyveg.src.image_utils import *
 import igraph
 
 
-def test_image_file_all_white():
-    img = os.path.join(os.path.dirname(__file__),"..","testdata","white.png")
-    assert(image_file_all_same_colour(img,(255,255,255)))
-    assert(not image_file_all_same_colour(img,(0,0,0)))
-
 def test_image_all_white():
-    img = Image.open(os.path.join(os.path.dirname(__file__),"..","testdata","white.png"))
+    img = Image.open(os.path.join(os.path.dirname(__file__),"..","..","testdata","white.png"))
     assert(image_all_same_colour(img,(255,255,255)))
     assert(not image_all_same_colour(img,(0,0,0)))
 
 
 def test_image_all_black():
-    img = Image.open(os.path.join(os.path.dirname(__file__),"..","testdata","black.png"))
+    img = Image.open(os.path.join(os.path.dirname(__file__),"..","..","testdata","black.png"))
     assert(image_all_same_colour(img,(0,0,0)))
     assert(not image_all_same_colour(img,(255,255,255)))
 
 
 def test_image_not_all_same():
-    img = Image.open(os.path.join(os.path.dirname(__file__),"..","testdata","black_and_white_diagonal.png"))
+
+    img = Image.open(os.path.join(os.path.dirname(__file__),"..","..","testdata","black_and_white_diagonal.png"))
     assert(not image_all_same_colour(img,(0,0,0)))
     assert(not image_all_same_colour(img,(255,255,255)))
 
 
 def test_compare_same_image():
-    img1 = Image.open(os.path.join(os.path.dirname(__file__),"..","testdata","black_and_white_diagonal.png"))
-    img2 = Image.open(os.path.join(os.path.dirname(__file__),"..","testdata","black_and_white_diagonal.png"))
+
+    img1 = Image.open(os.path.join(os.path.dirname(__file__),"..","..","testdata","black_and_white_diagonal.png"))
+    img2 = Image.open(os.path.join(os.path.dirname(__file__),"..","..","testdata","black_and_white_diagonal.png"))
     assert(compare_binary_images(img1,img2) == 1.)
 
 
-def test_compare_same_image_files():
-    img1 = os.path.join(os.path.dirname(__file__),"..","testdata","black_and_white_diagonal.png")
-    img2 = os.path.join(os.path.dirname(__file__),"..","testdata","black_and_white_diagonal.png")
-    assert(compare_binary_image_files(img1,img2) == 1.)
-
-
 def test_compare_opposite_images():
-    img1 = Image.open(os.path.join(os.path.dirname(__file__),"..","testdata","black_and_white_diagonal.png"))
-    img2 = Image.open(os.path.join(os.path.dirname(__file__),"..","testdata","black_and_white_diagonal_2.png"))
+    img1 = Image.open(os.path.join(os.path.dirname(__file__),"..","..","testdata","black_and_white_diagonal.png"))
+    img2 = Image.open(os.path.join(os.path.dirname(__file__),"..","..","testdata","black_and_white_diagonal_2.png"))
     assert(compare_binary_images(img1,img2) < 0.1)
