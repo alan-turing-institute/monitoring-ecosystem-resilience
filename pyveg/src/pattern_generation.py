@@ -85,7 +85,7 @@ class PatternGenerator(object):
                                            "..","..","testdata",
                                            "patternGenConfig.json")
         self.load_config(default_config_file)
-        self.pattern = None
+        self.plant_biomass = None
         # remember the starting pattern in case we want to compare
         self.starting_pattern = None
         self.rainfall = None # needs to be set explicitly
@@ -122,7 +122,7 @@ class PatternGenerator(object):
             print("Pattern is all zeros")
             pass
         self.starting_pattern = pattern
-        self.pattern = pattern
+        self.plant_biomass = pattern
 
 
     def set_random_starting_pattern(self):
@@ -145,7 +145,7 @@ class PatternGenerator(object):
                     self.starting_pattern[ix, iy] = 90 # Initial plant biomass
                 else:
                     self.starting_pattern[ix, iy] = 0 # Initial plant biomass
-        self.pattern = self.starting_pattern
+        self.plant_biomass = self.starting_pattern
 
 
     def configure(self):
@@ -174,6 +174,9 @@ class PatternGenerator(object):
         self.plant_senescence = self.config["d"] #Plant senescence rate (d-1)
         self.plant_uptake_saturation = self.config["k1"] #Half saturation constant for plant uptake and growth (mm)
         self.water_infilt_saturation = self.config["k2"] #Half saturation constant for water infiltration (g.m-2)
+        self.diffusion_plant = self.config["DifP"] # Diffusion constant for plants
+        self.diffusion_soil = self.config["DifW"] # Diffusion constant for soil water
+        self.diffusion_surface = self.config["DifO"] # Diffusion constant for surface water
 
         # Starting biomass in a vegetation-covered cell.
         self.veg_mass_per_cell = self.config["vmass"] # how much biomass in vegetation-covered cells?
@@ -184,6 +187,7 @@ class PatternGenerator(object):
         Set initial values to zero, and boundary conditions.
         """
         # Initialize arrays with zeros
+        self.starting_pattern = np.zeros((self.m, self.m))
         self.plant_biomass = np.zeros((self.m, self.m))
         self.soil_water = np.zeros((self.m, self.m))
         self.surface_water = np.zeros((self.m, self.m))
@@ -223,7 +227,7 @@ class PatternGenerator(object):
         """
         Run the code to converge on a vegetation pattern
         """
-        print("Generating pattern with rainfall {}mm".format(self.rainfall))
+        print("Doing {} steps with rainfall {}mm".format(steps, self.rainfall))
 
         # assume symmetrix m*m arrays
         nx = self.m
@@ -235,7 +239,7 @@ class PatternGenerator(object):
 
             # Changes over each cell
             d_surf = calc_surface_water_change(self.surface_water,
-                                               self.pattern,
+                                               self.plant_biomass,
                                                self.rainfall,
                                                self.surface_water_frac,
                                                self.bare_soil_infiltration,
@@ -243,7 +247,7 @@ class PatternGenerator(object):
 
             d_soil = calc_soil_water_change(self.soil_water,
                                             self.surface_water,
-                                            self.pattern,
+                                            self.plant_biomass,
                                             self.surface_water_frac,
                                             self.bare_soil_infiltration,
                                             self.water_infilt_saturation,
@@ -251,7 +255,7 @@ class PatternGenerator(object):
                                             self.soil_water_loss,
                                             self.plant_uptake_saturation)
 
-            d_plant = calc_plant_change(self.pattern,
+            d_plant = calc_plant_change(self.plant_biomass,
                                         self.soil_water,
                                         self.plant_uptake,
                                         self.plant_uptake_saturation,
@@ -263,19 +267,31 @@ class PatternGenerator(object):
             # calculate Flow in x - direction: Flow = -D * d_pattern / dx;
 
             self.x_flow_plant[0:ny, 1:nx] = \
-                                - d_plant * \
-                                (self.pattern[:, 1:nx] - self.pattern[:,0:(nx - 1)]) \
-                                * self.delta_y / self.delta_x
+                                -1 * self.diffusion_plant * \
+                                (self.plant_biomass[:, 1:nx] - self.plant_biomass[:,0:(nx - 1)]) * \
+                                self.delta_y / self.delta_x
             self.x_flow_soil[0:ny, 1:nx] = \
-                                - d_soil * (self.soil_water[:, 1:nx] - self.soil_water[:,0:(nx - 1)]) \
-                                *self.delta_y / self.delta_x
-            self.x_flow_surf[0:ny, 1:nx] = - d_surf * (self.surface_water[:, 1:nx] - self.surface_water[:,0:(nx - 1)]) \
-                                           *self.delta_y / self.delta_x
+                                -1 * self.diffusion_soil * \
+                                (self.soil_water[:, 1:nx] - self.soil_water[:,0:(nx - 1)]) * \
+                                self.delta_y / self.delta_x
+            self.x_flow_surf[0:ny, 1:nx] = \
+                                -1 * self.diffusion_surface * \
+                                (self.surface_water[:, 1:nx] - self.surface_water[:,0:(nx - 1)]) * \
+                                self.delta_y / self.delta_x
 
             # calculate Flow in y - direction: Flow = -D * d_pattern / dy;
-            self.y_flow_plant[1:ny, 0:nx] = -d_plant * (self.pattern[1:ny,:] - self.pattern[0:(ny - 1),:]) * self.delta_x / self.delta_y
-            self.y_flow_soil[1:ny, 0:nx] = -d_soil * (self.soil_water[1:ny,:] - self.soil_water[0:(ny - 1),:]) * self.delta_x / self.delta_y
-            self.y_flow_surf[1:ny, 0:nx] = -d_surf * (self.surface_water[1:ny,:] - self.surface_water[0:(ny - 1),:]) * self.delta_x / self.delta_y
+            self.y_flow_plant[1:ny, 0:nx] = \
+                                -1 * self.diffusion_plant * \
+                                (self.plant_biomass[1:ny,:] - self.plant_biomass[0:(ny - 1),:]) * \
+                                self.delta_x / self.delta_y
+            self.y_flow_soil[1:ny, 0:nx] = \
+                                -1 * self.diffusion_soil * \
+                                (self.soil_water[1:ny,:] - self.soil_water[0:(ny - 1),:]) * \
+                                self.delta_x / self.delta_y
+            self.y_flow_surf[1:ny, 0:nx] = \
+                                -1 * self.diffusion_surface * \
+                                (self.surface_water[1:ny,:] - self.surface_water[0:(ny - 1),:]) * \
+                                self.delta_x / self.delta_y
 
             # calculate netflow
             net_plant = self.x_flow_plant[:, 0:nx] - self.x_flow_plant[:, 1:(nx + 1)] \
@@ -285,9 +301,12 @@ class PatternGenerator(object):
             net_surf = self.x_flow_surf[:, 0:nx] - self.x_flow_surf[:, 1:(nx + 1)] \
                        + self.y_flow_surf[0:ny,:] - self.y_flow_surf[1:ny + 1,:]
             # Update
-            self.soil_water = self.soil_water + (d_soil + (net_soil / (self.delta_x * self.delta_y))) * dt
-            self.surface_water = self.surface_water + (d_surf + (net_surf / (self.delta_x * self.delta_y))) * dt
-            self.pattern = self.pattern + (d_plant + (net_plant / (self.delta_x * self.delta_y))) * dt
+            self.soil_water = self.soil_water + \
+                              (d_soil + (net_soil / (self.delta_x * self.delta_y))) * dt
+            self.surface_water = self.surface_water + \
+                                 (d_surf + (net_surf / (self.delta_x * self.delta_y))) * dt
+            self.plant_biomass = self.plant_biomass + \
+                                 (d_plant + (net_plant / (self.delta_x * self.delta_y))) * dt
 
             self.time += dt
 
@@ -301,11 +320,14 @@ class PatternGenerator(object):
         self.config = json.load(open(config_filename))
 
 
-    def plot_image(self):
+    def plot_image(self, starting_pattern=False):
         """
         Display the current pattern.
         """
-        im = plt.imshow(self.pattern)
+        if starting_pattern:
+            im = plt.imshow(self.starting_pattern)
+        else:
+            im = plt.imshow(self.plant_biomass)
         plt.show()
 
 
@@ -313,26 +335,26 @@ class PatternGenerator(object):
         """
         Save the image as a csv file
         """
-        np.savetxt(filename, self.pattern, delimiter=",", newline="\n", fmt="%i")
+        np.savetxt(filename, self.plant_biomass, delimiter=",", newline="\n", fmt="%i")
 
 
-    def save_as_png(filename):
+    def save_as_png(self, filename):
         """
         Save the image as a png file
         """
-        im = plt.imshow(self.pattern)
+        im = plt.imshow(self.plant_biomass)
         plt.savefig(filename)
 
 
-    def make_binary(threshold=None):
+    def make_binary(self, threshold=None):
         """
         if not given a threshold to use,  look at the (max+min)/2 value
         - for anything below, set to zero, for anything above, set to 1
         """
         if not threshold:
-            threshold = (pattern.max() + pattern.min()) / 2.
+            threshold = (self.plant_biomass.max() + self.plant_biomass.min()) / 2.
         new_list_x = []
-        for row in self.pattern:
+        for row in self.plant_biomass:
             new_list_y = np.array([sig_val*int(val > threshold) for val in row])
             new_list_x.append(new_list_y)
         return np.array(new_list_x)
