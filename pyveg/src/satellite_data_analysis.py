@@ -22,6 +22,7 @@ from .image_utils import (
     crop_image_npix,
     save_image,
     convert_to_rgb,
+    scale_tif,
     image_to_array,
     save_json
 )
@@ -99,6 +100,31 @@ def construct_region_string(point, size=0.1):
     return coords
 
 
+def write_fullsize_images(tif_filebase, output_dir, output_suffix,
+                          coords, bands, threshold):
+    """
+    Output black-and-white and colour, and possibly rescaled NDVI,
+    images before dividing into sub-images.
+    """
+    def construct_filename(image_type):
+        filename = os.path.basename(tif_filebase)
+        filename += "_{0:.3f}_{1:.3f}".format(coords[0], coords[1])
+        filename += "_10kmLargeImage_{}{}".format(image_type,output_suffix)
+        return filename
+    # output the full-size colour image
+    merged_image = convert_to_rgb(tif_filebase, bands)
+    output_filename = construct_filename("colour")
+    save_image(merged_image, output_dir, output_filename)
+    # if we have NDVI, rescale this and output it.
+    if "NDVI" in bands:
+        ndvi_image = scale_tif(tif_filebase, "NDVI")
+        output_filename = construct_filename("ndvi")
+        save_image(ndvi_image, output_dir, output_filename)
+    # output the full-size black-and-white image
+    bw_image = convert_to_bw(merged_image,470)
+    output_filename = construct_filename("bw")
+    save_image(bw_image, output_dir, output_filename)
+
 
 def process_coords(coords,
                    image_coll,
@@ -111,7 +137,8 @@ def process_coords(coords,
                    output_dir=".",
                    output_suffix="_gee.png",
                    network_centrality=False,
-                   sub_image_size=[50,50]):
+                   sub_image_size=[50,50],
+                   threshold=470):
     """
     Run through the whole process for one set of coordinates (either a point
     or a rectangle).
@@ -140,29 +167,19 @@ def process_coords(coords,
         # Now should have lots of .tif files in a temp dir - merge them
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
-            # output the full-size colour image
+            write_fullsize_images(tif_filebase, output_dir, output_suffix,
+                                  coords, bands, threshold)
             merged_image = convert_to_rgb(tif_filebase, bands)
-            output_filename = os.path.basename(tif_filebase)
-            output_filename += "_{0:.3f}_{1:.3f}".format(coords[0], coords[1])
-            output_filename += "_10kmLargeImage_colour_{}".format(output_suffix)
-            save_image(merged_image, output_dir, output_filename)
-            # output the full-size black-and-white image
-            bw_image = convert_to_bw(merged_image,470)
-            output_filename = os.path.basename(tif_filebase)
-            output_filename += "_{0:.3f}_{1:.3f}".format(coords[0], coords[1])
-            output_filename += "_10kmLargeImage_bw_{}".format(output_suffix)
-            save_image(bw_image, output_dir, output_filename)
-
             ## if requested, divide into smaller sub-images
             sub_images = crop_image_npix(merged_image,
                                              sub_image_size[0],
                                              sub_image_size[1],
                                              region_size,
                                              coords
-                )
+            )
             # now save these
             for n, image in enumerate(sub_images):
-                sub_image = convert_to_bw(image[0],470)
+                sub_image = convert_to_bw(image[0], threshold)
                 sub_coords = image[1]
                 output_filename = os.path.basename(tif_filebase)
                 output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
