@@ -124,6 +124,10 @@ def get_download_urls(coords, # [long,lat]
     dataset = image_coll.filterBounds(geom)\
     .filterDate(start_date, end_date)
 
+    if dataset.size().getInfo() == 0:
+        print('No images found in this date rage, skipping.')
+        return []
+
     if mask_cloud:
         dataset = apply_mask_cloud(dataset, image_collection)
 
