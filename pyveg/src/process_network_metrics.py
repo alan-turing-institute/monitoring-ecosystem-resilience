@@ -4,7 +4,7 @@ import os
 from os.path import isfile, join
 
 import geopandas as gpd
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,29 +22,32 @@ def process_json_metrics_to_dataframe(directory_path):
 
     # in case the directory do not contain json files
     if len(list_json_files) == 0:
-        print('No json files in ' + directory_path + ' returning an empty dataframe.')
+        print('No json files in ' + directory_path + ', returning an empty dataframe.')
 
     else:
 
         metrics = []
 
         #loop by each json file and get metrics
-        for image_json in list_json_files:
-
+        for file_json in list_json_files:
+            print (file_json)
             try:
-                with open(directory_path + image_json) as f:
+                with open(directory_path + file_json) as f:
                     d = json.load(f)
                     metrics.append(d)
             except:
-                print('Issue with file', image_json)
+                print('Issue with file', file_json)
                 continue
 
         # turn metrics into dataframe
         data_df = pd.DataFrame.from_dict(metrics)
 
+        data_df["date"]= data_df["date"].astype('datetime64[ns]')
+
+        print (data_df.head())
         # Add a year variable
         data_df["year"] = data_df["date"].str.slice(0, 4, 1)
-        data_df["year"].astype(int).head()
+        data_df["year"].astype(int)
 
         data_df.sort_values(by=['date'], inplace=True, ascending=True)
 

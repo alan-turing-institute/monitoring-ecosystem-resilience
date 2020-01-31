@@ -11,6 +11,8 @@ import sys
 import argparse
 import json
 from PIL import Image
+import matplotlib
+matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import numpy as np
 import imageio
