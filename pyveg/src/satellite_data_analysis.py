@@ -120,8 +120,11 @@ def write_fullsize_images(tif_filebase, output_dir, output_suffix,
         ndvi_image = scale_tif(tif_filebase, "NDVI")
         output_filename = construct_filename("ndvi")
         save_image(ndvi_image, output_dir, output_filename)
+        bw_ndvi = convert_to_bw(ndvi_image, threshold)
+        output_filename = construct_filename("ndvibw")
+        save_image(bw_ndvi, output_dir, output_filename)
     # output the full-size black-and-white image
-    bw_image = convert_to_bw(merged_image,470)
+    bw_image = convert_to_bw(merged_image, threshold)
     output_filename = construct_filename("bw")
     save_image(bw_image, output_dir, output_filename)
 
