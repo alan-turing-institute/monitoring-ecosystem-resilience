@@ -8,7 +8,6 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-###############################################################################################
 
 class PatternGenerator(object):
     """
@@ -247,6 +246,8 @@ class PatternGenerator(object):
 
             self.time += dt
 
+    # static methods for evolving the simulation
+    # --------------------------------------------------------------------------
     @staticmethod
     def calc_plant_change(plant_biomass,
                           soil_water,
@@ -307,7 +308,7 @@ class PatternGenerator(object):
         lost_to_evaporation = soil_water * soil_water_evap
         change = absorbed_from_surface - lost_to_plants - lost_to_evaporation
         return change
-
+    # --------------------------------------------------------------------------
 
     def make_binary(self, threshold=None):
         """
