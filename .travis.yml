@@ -5,7 +5,6 @@ python:
  - "3.5"
  - "3.6"
  - "3.7"
- - "3.8"
 
 
 install:
@@ -19,6 +18,9 @@ install:
  - conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION pytest rpy2 pytest-cov pyyaml
  - source activate test-env
  - pip install .
+# R
+- conda install -c r devtools
+- cd rveg; Rscript -e "devtools::load_all()"; cd -;
 
 script:
  - pytest -s
