@@ -127,6 +127,10 @@ def get_download_urls(coords, # [long,lat]
     if mask_cloud:
         dataset = apply_mask_cloud(dataset, image_collection)
 
+    if dataset.size().getInfo() == 0:
+        print('No valid images found in this date rage, skipping.')
+        return []
+
     image = dataset.median()
 
     if 'NDVI' in bands:
