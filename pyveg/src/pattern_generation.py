@@ -8,94 +8,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-def plot_image(pattern):
-    """
-    Display the current pattern.
-    """
-    im = plt.imshow(pattern)
-    plt.show()
-
-
-def save_as_csv(pattern, filename):
-        """
-        Save the image as a csv file
-        """
-        np.savetxt(filename, self.plant_biomass, delimiter=",", newline="\n", fmt="%i")
-
-
-def save_as_png(pattern, filename):
-    """
-    Save the image as a png file
-    """
-    im = plt.imshow(self.plant_biomass)
-    plt.savefig(filename)
-
-
-
-def calc_plant_change(plant_biomass,
-                      soil_water,
-                      uptake,
-                      uptake_saturation,
-                      growth_constant,
-                      senescence,
-                      grazing_loss):
-    """
-    Change in plant biomass as a function of available soil water
-    and various constants.
-    """
-    relative_growth = growth_constant * uptake * np.divide(soil_water,
-                                                           (soil_water+uptake_saturation))
-    relative_loss = senescence + grazing_loss
-
-    change = (relative_growth - relative_loss) * plant_biomass
-    return change
-
-
-def calc_surface_water_change(surface_water,
-                              plant_biomass,
-                              rainfall,
-                              frac_surface_water_available,
-                              bare_soil_infilt,
-                              infilt_saturation):
-    """
-    Change in surface water as a function of rainfall, plant_biomass,
-    and various constants.
-    """
-    absorb_numerator = plant_biomass + bare_soil_infilt * infilt_saturation
-    absorb_denominator = plant_biomass + infilt_saturation
-    rel_loss = frac_surface_water_available * np.divide(absorb_numerator,absorb_denominator)
-    change = rainfall - surface_water*rel_loss
-    return change
-
-
-def calc_soil_water_change(soil_water,
-                           surface_water,
-                           plant_biomass,
-                           frac_surface_water_available,
-                           bare_soil_infilt,
-                           infilt_saturation,
-                           plant_growth,
-                           soil_water_evap,
-                           uptake_saturation):
-    """
-    Change in soil water as a function of surface water, plant_biomass,
-    and various constants.
-    """
-    lost_to_plants = plant_growth * np.divide(soil_water,
-                                              (soil_water + uptake_saturation))
-    surface_water_available = surface_water * frac_surface_water_available
-    rel_absorbed_from_surface = np.divide((plant_biomass + infilt_saturation*bare_soil_infilt),
-                                          (plant_biomass + infilt_saturation))
-
-    absorbed_from_surface = surface_water_available * rel_absorbed_from_surface
-    lost_to_evaporation = soil_water * soil_water_evap
-    change = absorbed_from_surface - lost_to_plants - lost_to_evaporation
-    return change
-
-
 ###############################################################################################
-
 
 class PatternGenerator(object):
     """
@@ -262,30 +175,30 @@ class PatternGenerator(object):
         for step in range(steps):
 
             # Changes over each cell
-            d_surf = calc_surface_water_change(self.surface_water,
-                                               self.plant_biomass,
-                                               self.rainfall,
-                                               self.surface_water_frac,
-                                               self.bare_soil_infiltration,
-                                               self.water_infilt_saturation)
+            d_surf = PatternGenerator.calc_surface_water_change(self.surface_water,
+                                                                self.plant_biomass,
+                                                                self.rainfall,
+                                                                self.surface_water_frac,
+                                                                self.bare_soil_infiltration,
+                                                                self.water_infilt_saturation)
 
-            d_soil = calc_soil_water_change(self.soil_water,
-                                            self.surface_water,
-                                            self.plant_biomass,
-                                            self.surface_water_frac,
-                                            self.bare_soil_infiltration,
-                                            self.water_infilt_saturation,
-                                            self.plant_growth,
-                                            self.soil_water_loss,
-                                            self.plant_uptake_saturation)
+            d_soil = PatternGenerator.calc_soil_water_change(self.soil_water,
+                                                             self.surface_water,
+                                                             self.plant_biomass,
+                                                             self.surface_water_frac,
+                                                             self.bare_soil_infiltration,
+                                                             self.water_infilt_saturation,
+                                                             self.plant_growth,
+                                                             self.soil_water_loss,
+                                                             self.plant_uptake_saturation)
 
-            d_plant = calc_plant_change(self.plant_biomass,
-                                        self.soil_water,
-                                        self.plant_uptake,
-                                        self.plant_uptake_saturation,
-                                        self.plant_growth,
-                                        self.plant_senescence,
-                                        self.grazing_loss)
+            d_plant = PatternGenerator.calc_plant_change(self.plant_biomass,
+                                                         self.soil_water,
+                                                         self.plant_uptake,
+                                                         self.plant_uptake_saturation,
+                                                         self.plant_growth,
+                                                         self.plant_senescence,
+                                                         self.grazing_loss)
 
             # Diffusion
             # calculate Flow in x - direction: Flow = -D * d_pattern / dx;
@@ -334,15 +247,66 @@ class PatternGenerator(object):
 
             self.time += dt
 
+    @staticmethod
+    def calc_plant_change(plant_biomass,
+                          soil_water,
+                          uptake,
+                          uptake_saturation,
+                          growth_constant,
+                          senescence,
+                          grazing_loss):
+        """
+        Change in plant biomass as a function of available soil water
+        and various constants.
+        """
+        relative_growth = growth_constant * uptake * np.divide(soil_water,
+                                                               (soil_water+uptake_saturation))
+        relative_loss = senescence + grazing_loss
 
-    def load_config(self, config_filename):
+        change = (relative_growth - relative_loss) * plant_biomass
+        return change
+
+    @staticmethod
+    def calc_surface_water_change(surface_water,
+                                  plant_biomass,
+                                  rainfall,
+                                  frac_surface_water_available,
+                                  bare_soil_infilt,
+                                  infilt_saturation):
         """
-        Load a set of configuration parameters from a JSON file
+        Change in surface water as a function of rainfall, plant_biomass,
+        and various constants.
         """
-        if not os.path.exists(config_filename):
-            raise RuntimeError("Config file {} does not exist".format(config_filename))
-        self.config = json.load(open(config_filename))
-        self.configure()
+        absorb_numerator = plant_biomass + bare_soil_infilt * infilt_saturation
+        absorb_denominator = plant_biomass + infilt_saturation
+        rel_loss = frac_surface_water_available * np.divide(absorb_numerator,absorb_denominator)
+        change = rainfall - surface_water*rel_loss
+        return change
+
+    @staticmethod
+    def calc_soil_water_change(soil_water,
+                               surface_water,
+                               plant_biomass,
+                               frac_surface_water_available,
+                               bare_soil_infilt,
+                               infilt_saturation,
+                               plant_growth,
+                               soil_water_evap,
+                               uptake_saturation):
+        """
+        Change in soil water as a function of surface water, plant_biomass,
+        and various constants.
+        """
+        lost_to_plants = plant_growth * np.divide(soil_water,
+                                                  (soil_water + uptake_saturation))
+        surface_water_available = surface_water * frac_surface_water_available
+        rel_absorbed_from_surface = np.divide((plant_biomass + infilt_saturation*bare_soil_infilt),
+                                              (plant_biomass + infilt_saturation))
+
+        absorbed_from_surface = surface_water_available * rel_absorbed_from_surface
+        lost_to_evaporation = soil_water * soil_water_evap
+        change = absorbed_from_surface - lost_to_plants - lost_to_evaporation
+        return change
 
 
     def make_binary(self, threshold=None):
@@ -357,3 +321,36 @@ class PatternGenerator(object):
             new_list_y = np.array([sig_val*int(val > threshold) for val in row])
             new_list_x.append(new_list_y)
         return np.array(new_list_x)
+
+
+    def load_config(self, config_filename):
+        """
+        Load a set of configuration parameters from a JSON file
+        """
+        if not os.path.exists(config_filename):
+            raise RuntimeError("Config file {} does not exist".format(config_filename))
+        self.config = json.load(open(config_filename))
+        self.configure()
+
+
+    def save_as_csv(self, filename):
+        """
+        Save the image as a csv file
+        """
+        np.savetxt(filename, self.plant_biomass, delimiter=",", newline="\n", fmt="%i")
+
+
+    def save_as_png(self, filename):
+        """
+        Save the image as a png file
+        """
+        im = plt.imshow(self.plant_biomass)
+        plt.savefig(filename)
+
+
+    def plot_image(self):
+        """
+        Display the current pattern.
+        """
+        im = plt.imshow(self)
+        plt.show()
