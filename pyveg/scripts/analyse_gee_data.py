@@ -74,7 +74,6 @@ def main():
     mask_cloud = True if args.mask_cloud else False
     network_centrality = True if args.network_centrality else False
 
-    #input_file = args.input_file if args.input_file else None
     num_time_points = args.num_time_points
     coords = [float(x) for x in args.coords.split(",")]
 
