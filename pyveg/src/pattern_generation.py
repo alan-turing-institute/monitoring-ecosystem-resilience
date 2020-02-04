@@ -298,8 +298,10 @@ class PatternGenerator(object):
         Change in soil water as a function of surface water, plant_biomass,
         and various constants.
         """
-        lost_to_plants = plant_growth * np.divide(soil_water,
-                                                  (soil_water + uptake_saturation))
+        lost_to_plants = (plant_growth *
+                          np.divide(soil_water,(soil_water + uptake_saturation)) *
+                          plant_biomass)
+
         surface_water_available = surface_water * frac_surface_water_available
         rel_absorbed_from_surface = np.divide((plant_biomass + infilt_saturation*bare_soil_infilt),
                                               (plant_biomass + infilt_saturation))
