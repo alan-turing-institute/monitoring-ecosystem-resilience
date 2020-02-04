@@ -340,7 +340,7 @@ class PatternGenerator(object):
         """
         Save the image as a csv file
         """
-        np.savetxt(filename, self.plant_biomass, delimiter=",", newline="\n", fmt="%i")
+        np.savetxt(filename, self.plant_biomass, delimiter=",", newline="\n", fmt="%f")
 
 
     def save_as_png(self, filename):
