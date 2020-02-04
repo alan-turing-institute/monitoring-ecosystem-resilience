@@ -3,6 +3,7 @@ Tests for the functions and methods in pattern_generation.py
 """
 
 import pytest
+import numpy as np
 
 from pyveg.src.pattern_generation import PatternGenerator as PG
 
@@ -183,3 +184,17 @@ def test_soil_water_change_zero():
                                        soil_water_evap,
                                        uptake_saturation)
     assert(change==0)
+
+
+
+def test_plant_growth_quantitative():
+    # create a PG object and check results against expected
+    pg = PG()
+    pg.set_rainfall(1.0)
+    pg.set_starting_pattern_from_file("testdata/binary_labyrinths_50.csv")
+    pg.initial_conditions()
+    pg.evolve_pattern(100)
+
+    expected = np.loadtxt('testdata/PG-1mm-100iterations.csv', delimiter=",")
+
+    assert((pg.plant_biomass.round(2) == expected.round(2)).all()) # agreement to two decimal places
