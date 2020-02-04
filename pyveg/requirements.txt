@@ -11,3 +11,4 @@ datetime
 dateparser
 casadi
 python-igraph
+imageio

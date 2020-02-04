@@ -55,10 +55,10 @@ def apply_mask_cloud(image, input_coll):
 
 def add_NDVI(image):
     try:
-        nir = image.select('B5');
+        nir = image.select('B8');
         red = image.select('B4');
 #        image_ndvi = nir.subtract(red).divide(nir.add(red)).rename('NDVI');
-        image_ndvi = image.normalizedDifference(['B5', 'B4']).rename('NDVI')
+        image_ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI')
         return ee.Image(image).addBands(image_ndvi)
     except:
         print ("Something went wrong in the NDVI variable construction")
@@ -123,9 +123,13 @@ def get_download_urls(coords, # [long,lat]
 
     dataset = image_coll.filterBounds(geom)\
     .filterDate(start_date, end_date)
-
+    print("Size of image_coll is {}".format(dataset.size().getInfo()))
     if mask_cloud:
         dataset = apply_mask_cloud(dataset, image_collection)
+
+    if dataset.size().getInfo() == 0:
+        print('No valid images found in this date rage, skipping.')
+        return []
 
     image = dataset.median()
 
