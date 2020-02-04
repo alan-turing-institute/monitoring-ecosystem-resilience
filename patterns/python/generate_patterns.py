@@ -72,8 +72,8 @@ def generate_pattern(rainfall):  # rainfall in mm
     FXO = np.zeros((NY, NX + 1)) # bound.con.no flow in / out to X - direction
 
     # Initial state
-    for i in range(1,m):
-        for j in range(1,m):
+    for i in range(0,m):
+        for j in range(0,m):
             if random.random() > frac:
                 popO[i, j] = rainfall / (alpha * W0)
                 popW[i, j] = rainfall / rw # Homogeneous equilibrium soil water in absence of plants
