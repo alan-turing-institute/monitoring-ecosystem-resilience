@@ -112,3 +112,14 @@ def create_network_figures(data_df, metric, output_dir, output_name):
 
 
 
+def create_network_time_series(data_df, metric, output_dir, output_name):
+
+
+    unique_coords = data_df[['latitude','longitude',metric,'date']].groupby(['latitude','longitude'])
+
+    for k1, k2, group in unique_coords:
+        print (k1)
+        print (k2)
+        print (group)
+
+    print(unique_coords.head())

@@ -13,7 +13,8 @@ import argparse
 
 from pyveg.src.process_network_metrics import (
     process_json_metrics_to_dataframe,
-    create_network_figures
+    create_network_figures,
+    create_network_time_series
 )
 
 from pyveg.src.image_utils import (
@@ -59,6 +60,10 @@ def main():
 
     create_gif_from_images(input_dir, output_name+"_Images10Km_bw_","10kmLargeImage_bw_")
 
+
+    # create time series analysis
+
+    create_network_time_series(metrics_df, metric= metric_name, output_dir = output_dir, output_name= output_name)
 
     print("Done")
 
