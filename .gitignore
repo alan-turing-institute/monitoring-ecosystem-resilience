@@ -87,3 +87,7 @@ ipython_config.py
 # emacs autosave
 *~
 .Rproj.user
+
+# data
+output_dir/
+

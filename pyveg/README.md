@@ -87,3 +87,7 @@ pyveg_calc_EC --input_txt ../binary_image.txt --do_EC
 >>> plt.plot(list(sel_pixels.keys()), feature_vec, "bo") # plot the feature vector vs pixel rank
 >>> plt.show()
 ```
+
+### Also
+
+Note that we use the GEE convention for coordinates, i.e. `(longitude,latitude)`.
