@@ -5,7 +5,8 @@ from os.path import isfile, join
 
 import geopandas as gpd
 from shapely.geometry import Point
-
+import matplotlib
+matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -29,13 +30,12 @@ def process_json_metrics_to_dataframe(directory_path):
 
         #loop by each json file and get metrics
         for file_json in list_json_files:
-            print (file_json)
             try:
-                with open(directory_path + file_json) as f:
+                with open(os.path.join(directory_path , file_json)) as f:
                     d = json.load(f)
                     metrics.append(d)
             except:
-                print('Issue with file', directory_path + file_json)
+                print('Issue with file', os.path.join(directory_path , file_json))
                 continue
 
         if len(metrics) != 0:
@@ -66,7 +66,7 @@ def create_network_figures(data_df, metric, output_dir, output_name):
 
 
         # turn lat, long into geopandas
-        data_df['geometry'] = [Point(xy) for xy in zip(data_df.longitude, data_df.latitude)]
+        data_df['geometry'] = [Point(xy) for xy in zip(data_df.latitude, data_df.longitude)]
 
         crs = {'init': 'epsg:4326'}
         data_geo_pd = gpd.GeoDataFrame(data_df, crs=crs, geometry=data_df['geometry'])

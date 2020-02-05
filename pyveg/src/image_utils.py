@@ -385,7 +385,7 @@ def create_gif_from_images(directory_path, output_name, condition_filename=''):
         # only use images with certain name (optional)
         if condition_filename in filename:
 
-            images.append(imageio.imread(directory_path + filename))
+            images.append(imageio.imread(os.path.join(directory_path, filename)))
 
             # the name of each file should end with the date of the image (this is true in the gee images)
             date.append(filename[-14:-4])
@@ -398,7 +398,7 @@ def create_gif_from_images(directory_path, output_name, condition_filename=''):
         image_dates_df['images'] = images
 
         image_dates_df.sort_values(by=['date'], inplace=True, ascending=True)
-        imageio.mimsave(directory_path+output_name + '.gif', image_dates_df['images'], duration=1)
+        imageio.mimsave(os.path.join(directory_path,output_name + '.gif'), image_dates_df['images'], duration=1)
 
 
 

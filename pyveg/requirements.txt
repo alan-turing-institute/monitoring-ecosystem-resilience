@@ -12,3 +12,4 @@ dateparser
 casadi
 python-igraph
 imageio
+geopandas

@@ -45,13 +45,19 @@ def main():
     metrics_df = process_json_metrics_to_dataframe(input_dir)
 
     # from the dataframe, produce network metric figure for each avalaible date
-    create_network_figures(metrics_df, metric_name, output_dir, output_name)
+    create_network_figures(metrics_df, metric= metric_name, output_dir = output_dir, output_name= output_name)
 
     # get all figures into a gif file
-    create_gif_from_images(output_dir, output_dir+output_name)
+    create_gif_from_images(output_dir, output_name)
 
     # create gif evolution for the 10km images for reference
-    create_gif_from_images(input_dir, output_dir+output_name+"_Images10Km","10kmLargeImage")
+    create_gif_from_images(input_dir, output_name+"_Images10Km_ndvi","10kmLargeImage_ndvi_")
+
+    create_gif_from_images(input_dir, output_name+"_Images10Km_colour_","10kmLargeImage_colour_")
+
+    create_gif_from_images(input_dir, output_name+"_Images10Km_ndvibw_","10kmLargeImage_ndvibw_")
+
+    create_gif_from_images(input_dir, output_name+"_Images10Km_bw_","10kmLargeImage_bw_")
 
 
     print("Done")
