@@ -135,7 +135,7 @@ def create_network_time_series(data_df, metric, output_dir, output_name):
             plt.title('Network Centrality Measure')
             plt.ylabel('offset50');
             plt.legend();
-            fig.savefig(os.path.join(output_dir,output_name+"_"+str(round(name[0],2))+","+str(round(name[1],2))+"_time_series.png"), dpi=300)
+            fig.savefig(os.path.join(output_dir,output_name+"_"+str(round(name[0],2))+","+str(round(name[1],2))+"_time_series.png"), dpi=30)
             plt.clf()
 
             count = 0
@@ -151,4 +151,4 @@ def create_general_network_time_series(data_df, metric):
     fig, ax = plt.subplots(2, figsize=(12, 6))
     ax[0].plot(unique_dates.index, unique_dates['mean'])
     ax[1].plot(unique_dates.index, unique_dates['std'])
-    fig.savefig('test.png', dpi=300)
+    fig.savefig('test.png', dpi=30)
