@@ -6,7 +6,7 @@ from os.path import isfile, join
 import geopandas as gpd
 from shapely.geometry import Point
 import matplotlib
-matplotlib.use('PS')
+#matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -115,11 +115,40 @@ def create_network_figures(data_df, metric, output_dir, output_name):
 def create_network_time_series(data_df, metric, output_dir, output_name):
 
 
+    # get data for each unique pair of lat, long
     unique_coords = data_df[['latitude','longitude',metric,'date']].groupby(['latitude','longitude'])
 
-    for k1, k2, group in unique_coords:
-        print (k1)
-        print (k2)
-        print (group)
+    fig, ax = plt.subplots(1, figsize=(12, 6))
 
-    print(unique_coords.head())
+    count = 0
+
+    # get time series
+    for name, group in unique_coords:
+
+        if group.shape[0]>1:
+
+            plt.plot(group['date'], group['offset50'],label = str(round(name[0],2))+","+str(round(name[1],2)))
+            count = count +1
+
+        if count > 10:
+
+            plt.title('Network Centrality Measure')
+            plt.ylabel('offset50');
+            plt.legend();
+            fig.savefig(os.path.join(output_dir,output_name+"_"+str(round(name[0],2))+","+str(round(name[1],2))+"_time_series.png"), dpi=300)
+            plt.clf()
+
+            count = 0
+
+
+
+
+def create_general_network_time_series(data_df, metric):
+
+
+    unique_dates = data_df[['latitude','longitude',metric,'date']].groupby(['date'])[metric].agg(['mean', 'std'])
+
+    fig, ax = plt.subplots(2, figsize=(12, 6))
+    ax[0].plot(unique_dates.index, unique_dates['mean'])
+    ax[1].plot(unique_dates.index, unique_dates['std'])
+    fig.savefig('test.png', dpi=300)
