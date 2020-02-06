@@ -77,8 +77,7 @@ class PatternGenerator(object):
                 # Homogeneous equilibrium soil water in absence of plants
                 self.soil_water[ix, iy] = self.rainfall / self.soil_water_loss
                 if random.random() > self.config['frac']:
-
-                    self.starting_pattern[ix, iy] = 90 # Initial plant biomass
+                    self.starting_pattern[ix, iy] = self.config["vmass"] # Initial plant biomass
                 else:
                     self.starting_pattern[ix, iy] = 0 # Initial plant biomass
         self.plant_biomass = self.starting_pattern
@@ -88,17 +87,18 @@ class PatternGenerator(object):
         """
         Set initial parameters, loaded from JSON.
         """
-        self.m = self.config["m"]
 
+        # number of cells along each of the (x,y) directions
+        self.m = self.config["m"]
 
         # System discretisation
         self.delta_x = self.config["DeltaX"]
         self.delta_y = self.config["DeltaY"]
 
         # Diffusion constants for plants, soil water, surface water
-        self.plant_diffusion = self.config["DifP"]
-        self.soil_water_diffusion = self.config["DifW"]
-        self.surface_water_diffusion = self.config["DifO"]
+        self.diffusion_plant   = self.config["DifP"]
+        self.diffusion_soil    = self.config["DifW"]
+        self.diffusion_surface = self.config["DifO"]
 
         # Parameter values
         self.surface_water_frac = self.config["alpha"] # proportion of surface water available for infiltration (d-1)
@@ -110,9 +110,6 @@ class PatternGenerator(object):
         self.plant_senescence = self.config["d"] #Plant senescence rate (d-1)
         self.plant_uptake_saturation = self.config["k1"] #Half saturation constant for plant uptake and growth (mm)
         self.water_infilt_saturation = self.config["k2"] #Half saturation constant for water infiltration (g.m-2)
-        self.diffusion_plant = self.config["DifP"] # Diffusion constant for plants
-        self.diffusion_soil = self.config["DifW"] # Diffusion constant for soil water
-        self.diffusion_surface = self.config["DifO"] # Diffusion constant for surface water
 
         # Starting biomass in a vegetation-covered cell.
         self.veg_mass_per_cell = self.config["vmass"] # how much biomass in vegetation-covered cells?
@@ -124,23 +121,23 @@ class PatternGenerator(object):
         """
         # Initialize arrays with zeros
         self.starting_pattern = np.zeros((self.m, self.m))
-        self.plant_biomass = np.zeros((self.m, self.m))
-        self.soil_water = np.zeros((self.m, self.m))
-        self.surface_water = np.zeros((self.m, self.m))
-        self.d_plant = np.zeros((self.m, self.m))
-        self.d_surf = np.zeros((self.m, self.m))
-        self.d_soil = np.zeros((self.m, self.m))
-        self.net_flow_plant = np.zeros((self.m, self.m))
-        self.net_flow_surf = np.zeros((self.m, self.m))
-        self.net_flow_soil = np.zeros((self.m, self.m))
+        self.plant_biomass    = np.zeros((self.m, self.m))
+        self.soil_water       = np.zeros((self.m, self.m))
+        self.surface_water    = np.zeros((self.m, self.m))
+        self.d_plant          = np.zeros((self.m, self.m))
+        self.d_surf           = np.zeros((self.m, self.m))
+        self.d_soil           = np.zeros((self.m, self.m))
+        self.net_flow_plant   = np.zeros((self.m, self.m))
+        self.net_flow_surf    = np.zeros((self.m, self.m))
+        self.net_flow_soil    = np.zeros((self.m, self.m))
 
         # Boundary conditions - no flow in/out to x, y directions
         self.y_flow_plant = np.zeros((self.m + 1, self.m))
         self.x_flow_plant = np.zeros((self.m, self.m + 1))
-        self.y_flow_soil = np.zeros((self.m + 1, self.m))
-        self.x_flow_soil = np.zeros((self.m, self.m + 1))
-        self.y_flow_surf = np.zeros((self.m + 1, self.m))
-        self.x_flow_surf = np.zeros((self.m, self.m + 1))
+        self.y_flow_soil  = np.zeros((self.m + 1, self.m))
+        self.x_flow_soil  = np.zeros((self.m, self.m + 1))
+        self.y_flow_surf  = np.zeros((self.m + 1, self.m))
+        self.x_flow_surf  = np.zeros((self.m, self.m + 1))
 
 
     def initial_conditions(self):
@@ -201,7 +198,6 @@ class PatternGenerator(object):
 
             # Diffusion
             # calculate Flow in x - direction: Flow = -D * d_pattern / dx;
-
             self.x_flow_plant[0:ny, 1:nx] = \
                                 -1 * self.diffusion_plant * \
                                 (self.plant_biomass[:, 1:nx] - self.plant_biomass[:,0:(nx - 1)]) * \
@@ -236,6 +232,7 @@ class PatternGenerator(object):
                        + self.y_flow_soil[0:ny,:] - self.y_flow_soil[1:ny + 1,:]
             net_surf = self.x_flow_surf[:, 0:nx] - self.x_flow_surf[:, 1:(nx + 1)] \
                        + self.y_flow_surf[0:ny,:] - self.y_flow_surf[1:ny + 1,:]
+
             # Update
             self.soil_water = self.soil_water + \
                               (d_soil + (net_soil / (self.delta_x * self.delta_y))) * dt
@@ -355,5 +352,6 @@ class PatternGenerator(object):
         """
         Display the current pattern.
         """
-        im = plt.imshow(self)
+        im = plt.imshow(self.plant_biomass)
+        plt.colorbar()
         plt.show()
