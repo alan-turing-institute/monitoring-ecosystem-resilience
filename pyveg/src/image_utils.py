@@ -187,25 +187,34 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
     return new_img
 
 
-def scale_tif(input_filebase, band):
+def scale_tif(input_filebase, band, source_range=None):
     """
     Given only a single band, scale to range 0,255 and apply this
-    value to all of r,g,b
+    value to all of r,g,b.
+    If "source_range" argument is supplied, it should be a list [min,max]
+    and "min" will then be scaled to zero, and "max" to 255.
+    Otherwise, we will loop through all the pixels, find the min and max
+    values from there.
     """
-    max_val = -1*sys.maxsize
-    min_val =  sys.maxsize
     # load the single band file and extract pixel data
     im = Image.open(input_filebase+"."+band+".tif")
     pix = im.load()
-    ## find the minimum and maximum pixel values in the original scale
     print("Found image of size {}".format(im.size))
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
-            if pix[ix,iy] > max_val:
-                max_val = pix[ix,iy]
-            elif pix[ix,iy] < min_val:
-                min_val = pix[ix,iy]
+    if not source_range:
+        max_val = -1*sys.maxsize
+        min_val =  sys.maxsize
 
+
+        ## find the minimum and maximum pixel values in the original scale
+        for ix in range(im.size[0]):
+            for iy in range(im.size[1]):
+                if pix[ix,iy] > max_val:
+                    max_val = pix[ix,iy]
+                elif pix[ix,iy] < min_val:
+                    min_val = pix[ix,iy]
+    else:
+        min_val = source_range[0]
+        max_val = source_range[1]
     # create a new image where we will fill RGB pixel values from 0 to 255
     get_pix_val = lambda ix, iy: \
         max(0, int((pix[ix,iy]-min_val) * 255/ \
@@ -237,9 +246,11 @@ def convert_to_rgb(input_filebase, bands):
     return new_img
 
 
-def plot_band_values(input_filebase, bands=["B4","B3","B2"]):
+def plot_band_values(input_filebase, bands=["B4","B3","B2"], output_dir=None):
     """
-    Plot histograms of the values in the chosen bands of the input image
+    Plot histograms of the values in the chosen bands of the input image.
+    Argument input_filebase is the full path of the tif file downloaded from GEE,
+    up to but not including the '.<BAND>.tif'  part of the filename.
     """
     num_subplots = len(bands)
     for i, band in enumerate(bands):
@@ -251,7 +262,14 @@ def plot_band_values(input_filebase, bands=["B4","B3","B2"]):
                 vals.append(pix[ix,iy])
         plt.subplot(1,num_subplots, i+1)
         plt.hist(vals)
-    plt.show()
+    # if we are given an output directory, save the plot.  Otherwise show it.
+    if output_dir:
+        output_basename = os.path.basename(input_filebase)+"_band_vals.png"
+        output_filename = os.path.join(output_dir, output_basename)
+        plt.savefig(output_filename)
+    else:
+        plt.show()
+    return vals
 
 
 def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
@@ -297,7 +315,6 @@ def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
                 sub_images.append(region)
 
     return sub_images
-
 
 
 def crop_image_nparts(input_image, n_parts_x, n_parts_y=None):

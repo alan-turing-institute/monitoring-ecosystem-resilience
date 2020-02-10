@@ -25,7 +25,8 @@ from .image_utils import (
     convert_to_rgb,
     scale_tif,
     image_to_array,
-    save_json
+    save_json,
+    plot_band_values
 )
 
 
@@ -120,11 +121,16 @@ def write_fullsize_images(tif_filebase, output_dir, output_suffix,
         ndvi_image = scale_tif(tif_filebase, "NDVI")
         output_filename = construct_filename("ndvi")
         save_image(ndvi_image, output_dir, output_filename)
+        ndvi_image_fullscale = scale_tif(tif_filebase, "NDVI",[-1,1])
+        output_filename = construct_filename("ndvifull")
+        save_image(ndvi_image_fullscale, output_dir, output_filename)
         bw_ndvi = convert_to_bw(ndvi_image, threshold)
         output_filename = construct_filename("ndvibw")
         save_image(bw_ndvi, output_dir, output_filename)
+        # save the plot of band values
+        band_vals = plot_band_values(tif_filebase, ["NDVI"], output_dir)
     # output the full-size black-and-white image
-    bw_image = convert_to_bw(merged_image, threshold)
+    bw_image = convert_to_bw(ndvi_image_fullscale, threshold)
     output_filename = construct_filename("bw")
     save_image(bw_image, output_dir, output_filename)
 
@@ -173,39 +179,39 @@ def process_coords(coords,
             write_fullsize_images(tif_filebase, output_dir, output_suffix,
                                   coords, bands, threshold)
             merged_image = convert_to_rgb(tif_filebase, bands)
-            ## if requested, divide into smaller sub-images
-            sub_images = crop_image_npix(merged_image,
-                                             sub_image_size[0],
-                                             sub_image_size[1],
-                                             region_size,
-                                             coords
-            )
-            # now save these
-            for n, image in enumerate(sub_images):
-                sub_image = convert_to_bw(image[0], threshold)
-
-                sub_coords = image[1]
-                output_filename = os.path.basename(tif_filebase)
-                output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
-                output_filename += output_suffix
-                save_image(sub_image, output_dir, output_filename)
-
-                if network_centrality:
-                    image_array = image_to_array(sub_image)
-
-                    feature_vec, sel_pixels = subgraph_centrality(image_array)
-                    feature_vec_metrics = feature_vector_metrics(feature_vec)
-                    feature_vec_metrics['latitude'] = sub_coords[0]
-                    feature_vec_metrics['longitude'] = sub_coords[1]
-                    feature_vec_metrics['date']= output_suffix[1:-4]
-                    output_filename = os.path.basename(tif_filebase)
-                    output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
-                    output_filename += "_{}".format(output_suffix[1:-4])
-                    output_filename += '.json'
-                    save_json(feature_vec_metrics, output_dir, output_filename)
-                    pass
-                pass
-            pass
+#            ## if requested, divide into smaller sub-images
+#            sub_images = crop_image_npix(merged_image,
+#                                             sub_image_size[0],
+#                                             sub_image_size[1],
+#                                             region_size,
+#                                             coords
+#            )
+#            # now save these
+#            for n, image in enumerate(sub_images):
+#                sub_image = convert_to_bw(image[0], threshold)
+#
+#                sub_coords = image[1]
+#                output_filename = os.path.basename(tif_filebase)
+#                output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+#                output_filename += output_suffix
+#                save_image(sub_image, output_dir, output_filename)
+#
+#                if network_centrality:
+#                    image_array = image_to_array(sub_image)
+#
+#                    feature_vec, sel_pixels = subgraph_centrality(image_array)
+#                    feature_vec_metrics = feature_vector_metrics(feature_vec)
+#                    feature_vec_metrics['latitude'] = sub_coords[0]
+#                    feature_vec_metrics['longitude'] = sub_coords[1]
+#                    feature_vec_metrics['date']= output_suffix[1:-4]
+#                    output_filename = os.path.basename(tif_filebase)
+#                    output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+#                    output_filename += "_{}".format(output_suffix[1:-4])
+#                    output_filename += '.json'
+#                    save_json(feature_vec_metrics, output_dir, output_filename)
+#                    pass
+#                pass
+#            pass
         return
 
 
