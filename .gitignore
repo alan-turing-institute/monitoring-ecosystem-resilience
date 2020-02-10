@@ -91,3 +91,4 @@ ipython_config.py
 # data
 output_dir/
 
+.DS_Store
