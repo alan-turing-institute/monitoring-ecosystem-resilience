@@ -1,3 +1,5 @@
+![Build status](https://api.travis-ci.com/alan-turing-institute/monitoring-ecosystem-resilience.svg?branch=master)
+
 # monitoring-ecosystem-resilience
 Repository for mini-projects in the Data science for Sustainable development project.
 
