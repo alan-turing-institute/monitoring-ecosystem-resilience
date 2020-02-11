@@ -55,7 +55,6 @@ def main():
     if args.output_matlab:
         pg.save_as_matlab(args.output_matlab)
 
-    print(pg.plant_biomass[0])
     print('Finished generating patterns!\n')
 
 
