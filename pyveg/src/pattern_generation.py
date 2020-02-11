@@ -337,13 +337,24 @@ class PatternGenerator(object):
         """
         Save the image as a csv file
         """
+        print(f'Saving file "{filename}"')
         np.savetxt(filename, self.plant_biomass, delimiter=",", newline="\n", fmt="%f")
+
+
+    def save_as_matlab(self, filename):
+        """
+        Save the image as a matlab file
+        """
+        from scipy.io import savemat
+        print(f'Saving file "{filename}"')
+        savemat(filename, mdict={'plant_biomass': self.plant_biomass})
 
 
     def save_as_png(self, filename):
         """
         Save the image as a png file
         """
+        print(f'Saving file "{filename}"')
         im = plt.imshow(self.plant_biomass)
         plt.savefig(filename)
 
