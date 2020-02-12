@@ -45,7 +45,7 @@ def apply_mask_cloud(image, input_coll):
 
     elif input_coll=='COPERNICUS/S2':
         mask_func = cloud_mask.sentinel2()
-        image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",20)).map(mask_func)
+        image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",5)).map(mask_func)
         return image
     else:
         print("No cloud mask logic defined for input collection {}"\
