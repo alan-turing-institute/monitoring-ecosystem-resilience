@@ -173,26 +173,30 @@ def process_coords(coords,
             write_fullsize_images(tif_filebase, output_dir, output_suffix,
                                   coords, bands, threshold)
             merged_image = convert_to_rgb(tif_filebase, bands)
-            ## if requested, divide into smaller sub-images
-            sub_images = crop_image_npix(merged_image,
-                                             sub_image_size[0],
-                                             sub_image_size[1],
-                                             region_size,
-                                             coords
-            )
-            # now save these
-            for n, image in enumerate(sub_images):
-                sub_image = convert_to_bw(image[0], threshold)
 
-                sub_coords = image[1]
-                output_filename = os.path.basename(tif_filebase)
-                output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
-                output_filename += output_suffix
-                save_image(sub_image, output_dir, output_filename)
+            # if requested, divide into smaller sub-images
+            if network_centrality:
+                sub_images = crop_image_npix(merged_image,
+                                                sub_image_size[0],
+                                                sub_image_size[1],
+                                                region_size,
+                                                coords
+                )
 
-                if network_centrality:
+                # loop through sub images
+                for n, image in enumerate(sub_images):
+                    sub_image = convert_to_bw(image[0], threshold)
+
+                    sub_coords = image[1]
+                    output_filename = os.path.basename(tif_filebase)
+                    output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+                    output_filename += output_suffix
+
+                    # save sub image
+                    save_image(sub_image, output_dir, output_filename)
+
+                    # run network centrality
                     image_array = image_to_array(sub_image)
-
                     feature_vec, sel_pixels = subgraph_centrality(image_array)
                     feature_vec_metrics = feature_vector_metrics(feature_vec)
                     feature_vec_metrics['latitude'] = sub_coords[0]
@@ -203,10 +207,6 @@ def process_coords(coords,
                     output_filename += "_{}".format(output_suffix[1:-4])
                     output_filename += '.json'
                     save_json(feature_vec_metrics, output_dir, output_filename)
-                    pass
-                pass
-            pass
-        return
 
 
 def get_time_series(num_time_periods,
