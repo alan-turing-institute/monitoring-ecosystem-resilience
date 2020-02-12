@@ -85,6 +85,25 @@ def divide_time_period(start_date, end_date, n):
     return output_list
 
 
+def divide_time_period_in_n_day_portions(start_date, end_date, days_per_chunk):
+    """
+    Divide the full period between the start_date and end_date into n equal-length
+    (to the nearest day) chunks. The size of the chunk is defined by days_per_chunk.
+    Takes start_date and end_date as strings 'YYYY-MM-DD'.
+    Returns an integer with the number of possible points avalaible in that time period]
+    """
+    start = dateparser.parse(start_date)
+    end = dateparser.parse(end_date)
+    if (not isinstance(start, datetime)) or (not isinstance(end, datetime)):
+        raise RuntimeError("invalid time strings")
+    td = end - start
+    if td.days <= 0:
+        raise RuntimeError("end_date must be after start_date")
+    n = td.days//days_per_chunk
+
+    return  n
+
+
 def construct_region_string(point, size=0.1):
     """
     convert a list of two floats [long, lat]
