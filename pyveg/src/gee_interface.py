@@ -45,7 +45,7 @@ def apply_mask_cloud(image, input_coll):
 
     elif input_coll=='COPERNICUS/S2':
         mask_func = cloud_mask.sentinel2()
-        image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",20)).map(mask_func)
+        image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", 5)).map(mask_func)
         return image
     else:
         print("No cloud mask logic defined for input collection {}"\
@@ -59,12 +59,12 @@ def get_solar_angles(image_collection):
     If we are using a different image collection, just return None
     """
     try:
-        azimuth = image_collection.aggregate_stats['MEAN_SOLAR_AZIMUTH_ANGLE'].getInfo()["values"]["mean"]
-        zenith = image_collection.aggregate_stats['MEAN_SOLAR_ZENITH_ANGLE'].getInfo()["values"]["mean"]
+        azimuth = image_collection.aggregate_stats('MEAN_SOLAR_AZIMUTH_ANGLE').getInfo()["values"]["mean"]
+        zenith = image_collection.aggregate_stats('MEAN_SOLAR_ZENITH_ANGLE').getInfo()["values"]["mean"]
     except:
         print("Solar angles not available - is this COPERNICUS/S2 data?")
-        return None, None
-    return azimuth, zenith
+        return None
+    return {"azimuthal_angle":azimuth, "zenith_angle": zenith}
 
 
 def add_NDVI(image):
@@ -142,8 +142,12 @@ def get_download_urls(coords, # [long,lat]
         dataset = apply_mask_cloud(dataset, image_collection)
 
     if dataset.size().getInfo() == 0:
-        print('No valid images found in this date rage, skipping.')
-        return []
+        print('No valid images found in this date rage, skipping...')
+        return [], None
+
+    angles = get_solar_angles(dataset)
+
+    print("ANGLES: {}".format(angles))
 
     image = dataset.median()
 
@@ -160,4 +164,4 @@ def get_download_urls(coords, # [long,lat]
     )
     urls.append(url)
     print("Found {} sets of images for coords {}".format(len(urls),coords))
-    return urls
+    return urls, angles

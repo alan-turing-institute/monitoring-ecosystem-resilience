@@ -5,6 +5,7 @@ Functions to download and process satellite imagery from Google Earth Engine.
 import os
 import sys
 import shutil
+import json
 import requests
 import argparse
 import dateparser
@@ -102,7 +103,7 @@ def construct_region_string(point, size=0.1):
 
 
 def write_fullsize_images(tif_filebase, output_dir, output_suffix,
-                          coords, bands, threshold):
+                          coords, bands, threshold, solar_angles=None):
     """
     Output black-and-white and colour, and possibly rescaled NDVI,
     images before dividing into sub-images.
@@ -116,6 +117,16 @@ def write_fullsize_images(tif_filebase, output_dir, output_suffix,
     merged_image = convert_to_rgb(tif_filebase, bands)
     output_filename = construct_filename("colour")
     save_image(merged_image, output_dir, output_filename)
+    # if we have a json object containing the solar angles, write this out
+    if solar_angles:
+        output_json = os.path.join(output_dir,
+                                   "{}_solar_angles.json"\
+                                   .format(os.path.basename(tif_filebase)))
+        print("Writing to {}".format(output_json))
+        with open(output_json,"w") as outfile:
+            json.dump(solar_angles, outfile)
+    else:
+        print("no solar angles")
     # if we have NDVI, rescale this and output it.
     if "NDVI" in bands:
         ndvi_image = scale_tif(tif_filebase, "NDVI")
@@ -142,7 +153,7 @@ def process_coords(coords,
                    scale, # size of each pixel in output image (in m)
                    start_date,
                    end_date,
-                   mask_cloud=False, ## EXPERIMENTAL - false by default
+                   mask_cloud=False,
                    output_dir=".",
                    output_suffix="_gee.png",
                    network_centrality=False,
@@ -154,14 +165,14 @@ def process_coords(coords,
     """
     region = construct_region_string(coords, region_size)
     # Get download URL for all images at these coords
-    download_urls = get_download_urls(coords,
-                                      region,
-                                      image_coll,
-                                      bands,
-                                      scale,
-                                      start_date,
-                                      end_date,
-                                      mask_cloud)
+    download_urls, solar_angles = get_download_urls(coords,
+                                                    region,
+                                                    image_coll,
+                                                    bands,
+                                                    scale,
+                                                    start_date,
+                                                    end_date,
+                                                    mask_cloud)
 
     # loop through these URLS, download zip files, and combine tif files
     # for each band into RGB output images.
@@ -177,41 +188,40 @@ def process_coords(coords,
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
             write_fullsize_images(tif_filebase, output_dir, output_suffix,
-                                  coords, bands, threshold)
+                                  coords, bands, threshold, solar_angles)
             merged_image = convert_to_rgb(tif_filebase, bands)
-#            ## if requested, divide into smaller sub-images
-#            sub_images = crop_image_npix(merged_image,
-#                                             sub_image_size[0],
-#                                             sub_image_size[1],
-#                                             region_size,
-#                                             coords
-#            )
-#            # now save these
-#            for n, image in enumerate(sub_images):
-#                sub_image = convert_to_bw(image[0], threshold)
-#
-#                sub_coords = image[1]
-#                output_filename = os.path.basename(tif_filebase)
-#                output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
-#                output_filename += output_suffix
-#                save_image(sub_image, output_dir, output_filename)
-#
-#                if network_centrality:
-#                    image_array = image_to_array(sub_image)
-#
-#                    feature_vec, sel_pixels = subgraph_centrality(image_array)
-#                    feature_vec_metrics = feature_vector_metrics(feature_vec)
-#                    feature_vec_metrics['latitude'] = sub_coords[0]
-#                    feature_vec_metrics['longitude'] = sub_coords[1]
-#                    feature_vec_metrics['date']= output_suffix[1:-4]
-#                    output_filename = os.path.basename(tif_filebase)
-#                    output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
-#                    output_filename += "_{}".format(output_suffix[1:-4])
-#                    output_filename += '.json'
-#                    save_json(feature_vec_metrics, output_dir, output_filename)
-#                    pass
-#                pass
-#            pass
+            ## if requested, divide into smaller sub-images and calculate network centrality
+            if network_centrality:
+                sub_images = crop_image_npix(merged_image,
+                                             sub_image_size[0],
+                                             sub_image_size[1],
+                                             region_size,
+                                             coords
+                )
+                # now save these
+                for n, image in enumerate(sub_images):
+                    sub_image = convert_to_bw(image[0], threshold)
+
+                    sub_coords = image[1]
+                    output_filename = os.path.basename(tif_filebase)
+                    output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+                    output_filename += output_suffix
+                    save_image(sub_image, output_dir, output_filename)
+                    # convert to a numpy array to calculate network centrality
+                    image_array = image_to_array(sub_image)
+                    feature_vec, sel_pixels = subgraph_centrality(image_array)
+                    feature_vec_metrics = feature_vector_metrics(feature_vec)
+                    feature_vec_metrics['latitude'] = sub_coords[0]
+                    feature_vec_metrics['longitude'] = sub_coords[1]
+                    feature_vec_metrics['date']= output_suffix[1:-4]
+                    output_filename = os.path.basename(tif_filebase)
+                    output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+                    output_filename += "_{}".format(output_suffix[1:-4])
+                    output_filename += '.json'
+                    save_json(feature_vec_metrics, output_dir, output_filename)
+                    pass
+                pass
+            pass
         return
 
 
