@@ -42,22 +42,16 @@ def main():
     use command line arguments to choose images.
     """
     parser = argparse.ArgumentParser(description="download from EE")
-    parser.add_argument("--image_coll",help="image collection",
-                        default="LANDSAT/LC08/C01/T1_SR")
-    parser.add_argument("--start_date",help="YYYY-MM-DD",
-                        default="2013-03-30")
-    parser.add_argument("--end_date",help="YYYY-MM-DD",
-                        default="2013-04-01")
+    parser.add_argument("--image_coll",help="image collection", default="LANDSAT/LC08/C01/T1_SR")
+    parser.add_argument("--start_date",help="YYYY-MM-DD", default="2013-03-30")
+    parser.add_argument("--end_date",help="YYYY-MM-DD", default="2013-04-01")
     parser.add_argument("--num_time_points",help="Get a time series with this many divisions between start_date and end_date", type=int, default=1)
     parser.add_argument("--coords",help="'long,lat'")
-    parser.add_argument("--bands",help="string containing comma-separated list",
-                        default="B2,B3,B4,B5,B6,B7")
+    parser.add_argument("--bands",help="string containing comma-separated list", default="B2,B3,B4,B5,B6,B7")
     parser.add_argument("--region_size", help="size of output region in long/lat", default=0.1, type=float)
     parser.add_argument("--scale", help="size of each pixel in output image (m)", default=10, type=int)
-    parser.add_argument("--output_dir",help="output directory",
-                        default=".")
-    parser.add_argument("--output_suffix",help="end of output filename, including file extension",
-                      default="gee.png")
+    parser.add_argument("--output_dir",help="output directory", default=".")
+    parser.add_argument("--output_suffix",help="end of output filename, including file extension", default="gee.png")
     parser.add_argument("--mask_cloud",help="EXPERIMENTAL - apply cloud masking function",action='store_true')
     parser.add_argument("--network_centrality",help="calculate network centrality measures on images and print them out as json files",action='store_true')
 
