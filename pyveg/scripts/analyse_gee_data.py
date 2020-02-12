@@ -57,7 +57,7 @@ def main():
     parser.add_argument("--output_dir",help="output directory",
                         default=".")
     parser.add_argument("--output_suffix",help="end of output filename, including file extension",
-                      default="gee_img.png")
+                      default="gee.png")
     parser.add_argument("--mask_cloud",help="EXPERIMENTAL - apply cloud masking function",action='store_true')
     parser.add_argument("--network_centrality",help="calculate network centrality measures on images and print them out as json files",action='store_true')
 
@@ -77,7 +77,6 @@ def main():
     num_time_points = args.num_time_points
     coords = [float(x) for x in args.coords.split(",")]
 
-    ##
     get_time_series(num_time_points,
                     coords,
                     image_coll,

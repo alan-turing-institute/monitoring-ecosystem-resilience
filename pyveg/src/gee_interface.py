@@ -121,16 +121,22 @@ def get_download_urls(coords, # [long,lat]
     image_coll = ee.ImageCollection(image_collection)
     geom = ee.Geometry.Point(coords)
 
-    dataset = image_coll.filterBounds(geom)\
-    .filterDate(start_date, end_date)
-    print("Size of image_coll is {}".format(dataset.size().getInfo()))
+    # gather relevant images
+    dataset = image_coll.filterBounds(geom).filterDate(start_date, end_date)
+    dataset_size = dataset.size().getInfo()
+
+    # mask cloudy images
     if mask_cloud:
         dataset = apply_mask_cloud(dataset, image_collection)
 
-    if dataset.size().getInfo() == 0:
+    # check we have enough images to work with
+    if dataset_size == 0:
         print('No valid images found in this date rage, skipping.')
         return []
+    else:
+        print(f"Found {dataset.size().getInfo()} valid images of {dataset_size} total images in this date range.")
 
+    # take the median across all images in the ImageCollection at every pixel location
     image = dataset.median()
 
     if 'NDVI' in bands:
@@ -145,5 +151,5 @@ def get_download_urls(coords, # [long,lat]
          'scale': scale}
     )
     urls.append(url)
-    print("Found {} sets of images for coords {}".format(len(urls),coords))
+
     return urls
