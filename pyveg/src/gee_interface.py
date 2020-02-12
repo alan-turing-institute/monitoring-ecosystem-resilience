@@ -53,6 +53,20 @@ def apply_mask_cloud(image, input_coll):
         return image
 
 
+def get_solar_angles(image_collection):
+    """
+    For COPERNICUS/S2 we can extract the angle of the sun from metadata.
+    If we are using a different image collection, just return None
+    """
+    try:
+        azimuth = image_collection.aggregate_stats['MEAN_SOLAR_AZIMUTH_ANGLE'].getInfo()["values"]["mean"]
+        zenith = image_collection.aggregate_stats['MEAN_SOLAR_ZENITH_ANGLE'].getInfo()["values"]["mean"]
+    except:
+        print("Solar angles not available - is this COPERNICUS/S2 data?")
+        return None, None
+    return azimuth, zenith
+
+
 def add_NDVI(image):
     try:
         nir = image.select('B8');
