@@ -55,9 +55,9 @@ def apply_mask_cloud(image, input_coll):
 
 def add_NDVI(image):
     try:
-        nir = image.select('B8');
-        red = image.select('B4');
-#        image_ndvi = nir.subtract(red).divide(nir.add(red)).rename('NDVI');
+        #nir = image.select('B8')
+        #red = image.select('B4')
+        #image_ndvi = nir.subtract(red).divide(nir.add(red)).rename('NDVI');
         image_ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI')
         return ee.Image(image).addBands(image_ndvi)
     except:
@@ -72,7 +72,7 @@ def download_and_unzip(url, output_tmpdir):
     Then find the base filename of the resulting .tif files (there
     should be one-file-per-band) and return that.
     """
-    filebases = []
+
     # GET the URL
     r = requests.get(url)
     if not r.status_code == 200:

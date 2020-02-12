@@ -79,7 +79,7 @@ def image_file_to_array(input_filename):
     the one with higher sum(r,g,b) to be "signal".
     """
     im = Image.open(input_filename)
-    return image_to_array(input_image)
+    return image_to_array(im)
 
 
 def image_to_array(im):
