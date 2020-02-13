@@ -573,4 +573,22 @@ def adaptive_threshold(img):
                                       offset)
 
     return img_thresh
+
+
+def process_image(img, r=3):
+    """
+    Perform histogram equalisation, adaptive thresholding, and median
+    filtering on an input PIL Image. Return the result converted
+    back to a PIL Image.
+
+    @param img input PIL Image object
+    @return processed PIL Image
+    """
+
+    img = pillow_to_numpy(img)
+    img = hist_eq(img)
+    img = adaptive_threshold(img, r)
+    img = median_filter(img)
+
+    return numpy_to_pillow(img)
 # ---------------------------------------------------------------------
