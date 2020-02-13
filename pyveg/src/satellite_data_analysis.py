@@ -25,9 +25,9 @@ from .image_utils import (
     convert_to_rgb,
     scale_tif,
     image_to_array,
-    save_json
+    save_json,
+    process_image
 )
-
 
 from .subgraph_centrality import (
     subgraph_centrality,
@@ -120,7 +120,8 @@ def write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix
         ndvi_image = scale_tif(tif_filebase, "NDVI")
         output_filename = construct_filename("ndvi")
         save_image(ndvi_image, output_dir, output_filename)
-        bw_ndvi = convert_to_bw(ndvi_image, threshold)
+        #bw_ndvi = convert_to_bw(ndvi_image, threshold)
+        bw_ndvi = process_image(ndvi_image)
         output_filename = construct_filename("ndvibw")
         save_image(bw_ndvi, output_dir, output_filename)
     # output the full-size black-and-white image
