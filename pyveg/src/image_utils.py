@@ -372,8 +372,8 @@ def crop_and_convert_to_bw(input_filename, output_dir, threshold=470, num_x=50, 
 
 def create_gif_from_images(directory_path, output_name, condition_filename=''):
     """
-       Loop through a whole directory and convert all images in it into a gif chronologically
-       """
+    Loop through a whole directory and convert all images in it into a gif chronologically
+    """
 
     file_names = [f for f in os.listdir(directory_path) if (os.path.isfile(os.path.join(directory_path, f)) and f.endswith(".png"))]
 
@@ -470,3 +470,107 @@ def compare_binary_images(image1, image2):
             if pix1[ix,iy] == pix2[ix,iy]:
                 num_same += 1
     return float(num_same / num_total)
+
+
+# ---------------------------------------------------------------------
+# Image processing functionality
+# ---------------------------------------------------------------------
+def pillow_to_numpy(pil_image):
+    """
+    Convert a PIL Image object to a 2D numpy array (used by openCV).
+
+    @param img PIL Image object to convert
+    @return 2D numpy array
+    """
+    if issubclass(type(pil_image),type(Image.Image)):
+        raise TypeError('Input should be a PIL Image object')
+
+    numpy_image = np.array(pil_image)
+
+    # if the array is already 2D, return it
+    if numpy_image.ndim == 2:
+        return numpy_image
+
+    # check that 3rd index is equal
+    r,g,b = numpy_image[:,:,0], numpy_image[:,:,1], numpy_image[:,:,2]
+    if not (b==g).all() and (b==r).all():
+        raise ValueError('Input should be a grayscale image')
+
+    # return with 3rd index removed
+    return numpy_image[:,:,0]
+
+
+def numpy_to_pillow(numpy_image):
+    """
+    Convert a 2D numpy array to a PIL Image object.
+
+    @param img 2D numpy array to convert
+    @return PIL Image object
+    """
+    if type(numpy_image) != np.ndarray:
+        raise TypeError('Input should be a NumPy array')
+
+    if numpy_image.ndim != 2:
+        raise ValueError('Input should be a grayscale image')
+
+    return Image.fromarray(numpy_image)
+
+
+def hist_eq(img, clip_limit=2):
+    """
+    Perform contrast limited local histogram equalisation on an imput
+    image.
+
+    @param img 2D numpy array representing a grayscale image
+    @param clip_limit controls the strength of the equalisation
+    @return 2D numpy array representing the equalised image
+    """
+    if img.ndim != 2:
+        raise ValueError("The input image should be a 2D numpy array \
+                          repersenting a grayscale image")
+
+    clahe = cv.createCLAHE(clipLimit=clip_lim, tileGridSize=(11,11))
+    return clahe.apply(img)
+
+
+def median_filter(img, r=3):
+    """
+    Convolve a median filter over the image.
+
+    @param img 2D numpy array representing a grayscale image
+    @param r the size of the grid to convolve 
+    @return 2D numpy array representing the smoothed image
+    """
+    if img.ndim != 2:
+        raise ValueError("The input image should be a 2D numpy array \
+                          repersenting a grayscale image")
+
+    return cv.medianBlur(img, r)
+
+
+def adaptive_threshold(img):
+    """
+    Threshold a grayscale image using the mean pixel value of a local area
+    to set the threshold at each pixel location. At the moment set above 
+    average brightness pixels to the max (255) and vice versa for below 
+    average brightness pixels.
+
+    @param img 2D numpy array representing a grayscale image
+    @return thresholded image
+    """
+    if img.ndim != 2:
+        raise ValueError("The input image should be a 2D numpy array \
+                          repersenting a grayscale image")
+
+    local_area_size = 51 # must be odd
+    offset = 0  # threshold = mean + offset
+
+    img_thresh = cv.adaptiveThreshold(img, 
+                                      255, # max value
+                                      cv.ADAPTIVE_THRESH_MEAN_C, 
+                                      cv.THRESH_BINARY, # can perform inverted threholding here
+                                      local_area_size,
+                                      offset)
+
+    return img_thresh
+# ---------------------------------------------------------------------
