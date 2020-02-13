@@ -96,11 +96,10 @@ def construct_region_string(point, size=0.1):
     top = point[1] + size/2
     bottom = point[1] - size/2
     coords =  str([[left,top],[right,top],[right,bottom],[left,bottom]])
-    print(coords)
     return coords
 
 
-def write_fullsize_images(tif_filebase, output_dir, output_suffix,
+def write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix,
                           coords, bands, threshold):
     """
     Output black-and-white and colour, and possibly rescaled NDVI,
@@ -109,7 +108,8 @@ def write_fullsize_images(tif_filebase, output_dir, output_suffix,
     def construct_filename(image_type):
         filename = os.path.basename(tif_filebase)
         filename += "_{0:.3f}_{1:.3f}".format(coords[0], coords[1])
-        filename += "_10kmLargeImage_{}{}".format(image_type,output_suffix)
+        filename += "_10kmLargeImage_{}_{}".format(image_type,output_suffix)
+        filename = output_prefix + '_' + filename
         return filename
     # output the full-size colour image
     merged_image = convert_to_rgb(tif_filebase, bands)
@@ -138,7 +138,8 @@ def process_coords(coords,
                    end_date,
                    mask_cloud=False, ## EXPERIMENTAL - false by default
                    output_dir=".",
-                   output_suffix="_gee.png",
+                   output_prefix='',
+                   output_suffix=".png",
                    network_centrality=False,
                    sub_image_size=[50,50],
                    threshold=470):
@@ -170,29 +171,33 @@ def process_coords(coords,
         # Now should have lots of .tif files in a temp dir - merge them
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
-            write_fullsize_images(tif_filebase, output_dir, output_suffix,
+            write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix,
                                   coords, bands, threshold)
             merged_image = convert_to_rgb(tif_filebase, bands)
-            ## if requested, divide into smaller sub-images
-            sub_images = crop_image_npix(merged_image,
-                                             sub_image_size[0],
-                                             sub_image_size[1],
-                                             region_size,
-                                             coords
-            )
-            # now save these
-            for n, image in enumerate(sub_images):
-                sub_image = convert_to_bw(image[0], threshold)
 
-                sub_coords = image[1]
-                output_filename = os.path.basename(tif_filebase)
-                output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
-                output_filename += output_suffix
-                save_image(sub_image, output_dir, output_filename)
+            # if requested, divide into smaller sub-images
+            if network_centrality:
+                sub_images = crop_image_npix(merged_image,
+                                                sub_image_size[0],
+                                                sub_image_size[1],
+                                                region_size,
+                                                coords
+                )
 
-                if network_centrality:
+                # loop through sub images
+                for n, image in enumerate(sub_images):
+                    sub_image = convert_to_bw(image[0], threshold)
+
+                    sub_coords = image[1]
+                    output_filename = os.path.basename(tif_filebase)
+                    output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+                    output_filename += output_suffix
+
+                    # save sub image
+                    save_image(sub_image, output_dir, output_filename)
+
+                    # run network centrality
                     image_array = image_to_array(sub_image)
-
                     feature_vec, sel_pixels = subgraph_centrality(image_array)
                     feature_vec_metrics = feature_vector_metrics(feature_vec)
                     feature_vec_metrics['latitude'] = sub_coords[0]
@@ -203,10 +208,6 @@ def process_coords(coords,
                     output_filename += "_{}".format(output_suffix[1:-4])
                     output_filename += '.json'
                     save_json(feature_vec_metrics, output_dir, output_filename)
-                    pass
-                pass
-            pass
-        return
 
 
 def get_time_series(num_time_periods,
@@ -219,7 +220,7 @@ def get_time_series(num_time_periods,
                     end_date,
                     mask_cloud=False, ## EXPERIMENTAL - false by default
                     output_dir=".",
-                    output_suffix=".",#end of output filename, including file extension" # DOESNT SEEM TO BE USED
+                    output_suffix=".png", # end of output filename, including file extension
                     network_centrality = False,
                     sub_image_size=[50,50],
                     threshold=470):
@@ -228,10 +229,12 @@ def get_time_series(num_time_periods,
     and call download_images.process coords for each.
     """
     time_periods = divide_time_period(start_date, end_date, num_time_periods)
+    
     for period in time_periods:
-        print("Processing the time period between {} and {}".format(period[0],period[1]))
+        print(f"\nProcessing the time period between {period[0]} and {period[1]}...")
         mid_period_string = find_mid_period(period[0], period[1])
-        output_suffix = "_{}.png".format(mid_period_string)
+        output_prefix = mid_period_string
+
         process_coords(coords,
                        image_coll,
                        bands,
@@ -241,8 +244,10 @@ def get_time_series(num_time_periods,
                        period[1],
                        mask_cloud,
                        output_dir,
+                       output_prefix,
                        output_suffix,
                        network_centrality,
                        threshold=threshold)
-        print("Finished processing {}".format(mid_period_string))
+
+        print(f"Finihsed processing the time period between {period[0]} and {period[1]}.")
     return True

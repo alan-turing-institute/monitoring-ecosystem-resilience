@@ -167,7 +167,7 @@ class PatternGenerator(object):
         ny = self.m
 
         #  Timesteps
-        snapshots = []
+        #snapshots = []
         for step in range(steps):
 
             # Changes over each cell

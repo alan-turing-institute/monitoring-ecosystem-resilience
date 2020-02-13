@@ -45,7 +45,7 @@ def apply_mask_cloud(image, input_coll):
 
     elif input_coll=='COPERNICUS/S2':
         mask_func = cloud_mask.sentinel2()
-        image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",20)).map(mask_func)
+        image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",5)).map(mask_func)
         return image
     else:
         print("No cloud mask logic defined for input collection {}"\
@@ -55,9 +55,9 @@ def apply_mask_cloud(image, input_coll):
 
 def add_NDVI(image):
     try:
-        nir = image.select('B8');
-        red = image.select('B4');
-#        image_ndvi = nir.subtract(red).divide(nir.add(red)).rename('NDVI');
+        #nir = image.select('B8')
+        #red = image.select('B4')
+        #image_ndvi = nir.subtract(red).divide(nir.add(red)).rename('NDVI');
         image_ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI')
         return ee.Image(image).addBands(image_ndvi)
     except:
@@ -72,7 +72,7 @@ def download_and_unzip(url, output_tmpdir):
     Then find the base filename of the resulting .tif files (there
     should be one-file-per-band) and return that.
     """
-    filebases = []
+
     # GET the URL
     r = requests.get(url)
     if not r.status_code == 200:
@@ -121,16 +121,22 @@ def get_download_urls(coords, # [long,lat]
     image_coll = ee.ImageCollection(image_collection)
     geom = ee.Geometry.Point(coords)
 
-    dataset = image_coll.filterBounds(geom)\
-    .filterDate(start_date, end_date)
-    print("Size of image_coll is {}".format(dataset.size().getInfo()))
+    # gather relevant images
+    dataset = image_coll.filterBounds(geom).filterDate(start_date, end_date)
+    dataset_size = dataset.size().getInfo()
+
+    # mask cloudy images
     if mask_cloud:
         dataset = apply_mask_cloud(dataset, image_collection)
 
-    if dataset.size().getInfo() == 0:
+    # check we have enough images to work with
+    if dataset_size == 0:
         print('No valid images found in this date rage, skipping.')
         return []
+    else:
+        print(f"Found {dataset.size().getInfo()} valid images of {dataset_size} total images in this date range.")
 
+    # take the median across all images in the ImageCollection at every pixel location
     image = dataset.median()
 
     if 'NDVI' in bands:
@@ -145,5 +151,5 @@ def get_download_urls(coords, # [long,lat]
          'scale': scale}
     )
     urls.append(url)
-    print("Found {} sets of images for coords {}".format(len(urls),coords))
+
     return urls

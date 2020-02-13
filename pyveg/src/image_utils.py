@@ -31,7 +31,7 @@ def save_json(dict, output_dir, output_filename):
     with open(output_path, 'w') as fp:
         json.dump(dict, fp)
 
-    print("Saved json file {}".format(output_path))
+    print("Saved json file '{}'".format(output_path))
 
 
 def save_image(image, output_dir, output_filename):
@@ -45,7 +45,7 @@ def save_image(image, output_dir, output_filename):
         os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, output_filename)
     image.save(output_path)
-    print("Saved image {}".format(output_path))
+    print("Saved image '{}'".format(output_path))
 
 
 def image_from_array(input_array, output_size=None, sel_val=200):
@@ -79,7 +79,7 @@ def image_file_to_array(input_filename):
     the one with higher sum(r,g,b) to be "signal".
     """
     im = Image.open(input_filename)
-    return image_to_array(input_image)
+    return image_to_array(im)
 
 
 def image_to_array(im):
@@ -157,8 +157,8 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
     for col in band_dict.keys():
         im = Image.open(input_filebase+"."+band_dict[col]["band"]+".tif")
         pix = im.load()
-        ## find the minimum and maximum pixel values in the original scale
-        print("Found image of size {}".format(im.size))
+        # find the minimum and maximum pixel values in the original scale
+        #print("Found image of size {}".format(im.size))
         for ix in range(im.size[0]):
             for iy in range(im.size[1]):
                 if pix[ix,iy]> band_dict[col]["max_val"]:
@@ -167,9 +167,9 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
                     band_dict[col]["min_val"] = pix[ix,iy]
         band_dict[col]["pix_vals"] = pix
     # Take the overall max of the three bands to be the value to scale down with.
-    print("Max values {} {} {}".format(band_dict["r"]["max_val"],
-                                       band_dict["g"]["max_val"],
-                                       band_dict["b"]["max_val"]))
+    #print("Max values {} {} {}".format(band_dict["r"]["max_val"],
+    #                                   band_dict["g"]["max_val"],
+    #                                   band_dict["b"]["max_val"]))
 
     overall_max = max((band_dict[col]["max_val"] for col in ["r","g","b"]))
 
@@ -197,8 +197,8 @@ def scale_tif(input_filebase, band):
     # load the single band file and extract pixel data
     im = Image.open(input_filebase+"."+band+".tif")
     pix = im.load()
-    ## find the minimum and maximum pixel values in the original scale
-    print("Found image of size {}".format(im.size))
+    # find the minimum and maximum pixel values in the original scale
+    #print("Found image of size {}".format(im.size))
     for ix in range(im.size[0]):
         for iy in range(im.size[1]):
             if pix[ix,iy] > max_val:
