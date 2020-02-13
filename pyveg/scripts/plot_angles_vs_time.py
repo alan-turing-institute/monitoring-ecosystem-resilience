@@ -61,6 +61,7 @@ def make_dataframe(timestamps,azimuths,zeniths):
     df = pd.DataFrame({"date": dates,
                        "azimuthal_angle": azimuths,
                        "zenith_angle": zeniths})
+    df.set_index("date")
     return df
 
 
@@ -80,6 +81,7 @@ def main():
                                       start_date,end_date)
     az, zen, ts = get_angles_times(dataset)
     df = make_dataframe(ts, az, zen)
+    return df
 
 
 if __name__ == "__main__":
