@@ -246,13 +246,16 @@ def convert_to_rgb(input_filebase, bands):
     return new_img
 
 
-def plot_band_values(input_filebase, bands=["B4","B3","B2"], output_dir=None):
+def plot_band_values(input_filebase,
+                     bands=["B4","B3","B2"],
+                     output_dir=None):
     """
     Plot histograms of the values in the chosen bands of the input image.
     Argument input_filebase is the full path of the tif file downloaded from GEE,
     up to but not including the '.<BAND>.tif'  part of the filename.
     """
     num_subplots = len(bands)
+    band_vals = {}
     for i, band in enumerate(bands):
         im = Image.open(input_filebase+"."+band+".tif")
         pix = im.load()
@@ -262,6 +265,7 @@ def plot_band_values(input_filebase, bands=["B4","B3","B2"], output_dir=None):
                 vals.append(pix[ix,iy])
         plt.subplot(1,num_subplots, i+1)
         plt.hist(vals)
+        band_vals[band] = vals
     # if we are given an output directory, save the plot.  Otherwise show it.
     if output_dir:
         output_basename = os.path.basename(input_filebase)+"_band_vals.png"
@@ -269,7 +273,7 @@ def plot_band_values(input_filebase, bands=["B4","B3","B2"], output_dir=None):
         plt.savefig(output_filename)
     else:
         plt.show()
-    return vals
+    return band_vals
 
 
 def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
