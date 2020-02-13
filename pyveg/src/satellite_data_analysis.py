@@ -140,6 +140,12 @@ def write_fullsize_images(tif_filebase, output_dir, output_suffix,
         save_image(bw_ndvi, output_dir, output_filename)
         # save the plot of band values
         band_vals = plot_band_values(tif_filebase, ["NDVI"], output_dir)
+        output_json = os.path.join(output_dir,
+                                   "{}_NDVI_vals.json"\
+                                   .format(os.path.basename(tif_filebase)))
+        print("Writing NDVI values to {}".format(output_json))
+        with open(output_json,"w") as outfile:
+            json.dump(band_vals, outfile)
     # output the full-size black-and-white image
     bw_image = convert_to_bw(ndvi_image_fullscale, threshold)
     output_filename = construct_filename("bw")
