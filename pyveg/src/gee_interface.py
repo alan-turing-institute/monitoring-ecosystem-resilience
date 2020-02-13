@@ -145,10 +145,10 @@ def get_download_urls(coords, # [long,lat]
         print('No valid images found in this date rage, skipping...')
         return [], None
 
+    # if image collection is COPERNICUS/S2 we can get some metadata about the angle of the sun.
     angles = get_solar_angles(dataset)
 
-    print("ANGLES: {}".format(angles))
-
+    # Take the median of the remaining images in the collection.
     image = dataset.median()
 
     if 'NDVI' in bands:
