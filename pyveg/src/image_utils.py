@@ -535,7 +535,7 @@ def adaptive_threshold(img):
     img_thresh = cv.adaptiveThreshold(img, 
                                       255, # max value
                                       cv.ADAPTIVE_THRESH_MEAN_C, 
-                                      cv.THRESH_BINARY, # can perform inverted threholding here
+                                      cv.THRESH_BINARY_INV, # can perform inverted threholding here
                                       local_area_size,
                                       offset)
 
