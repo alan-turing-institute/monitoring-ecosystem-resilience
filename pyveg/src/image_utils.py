@@ -8,18 +8,21 @@ pip install --upgrade pillow
 
 import os
 import sys
-import argparse
 import json
-from PIL import Image
-import matplotlib
-matplotlib.use('PS')
-import matplotlib.pyplot as plt
-import numpy as np
-import imageio
+
 import pandas as pd
+import numpy as np
+
+import cv2 as cv
+from PIL import Image
+import imageio
+
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('PS')
 
 
-def save_json(dict, output_dir, output_filename):
+def save_json(out_dict, output_dir, output_filename):
     """
     Given a dictionary, save
     to requested filename -
@@ -29,7 +32,7 @@ def save_json(dict, output_dir, output_filename):
     output_path = os.path.join(output_dir, output_filename)
 
     with open(output_path, 'w') as fp:
-        json.dump(dict, fp)
+        json.dump(out_dict, fp)
 
     print("Saved json file '{}'".format(output_path))
 
@@ -56,16 +59,16 @@ def image_from_array(input_array, output_size=None, sel_val=200):
     If an output size is specified, rescale to this size.
     """
     size_x, size_y = input_array.shape
-    new_img = Image.new("RGB", (size_x,size_y))
+    new_img = Image.new("RGB", (size_x, size_y))
     # count the number of distinct values in the array
     for ix in range(size_x):
         for iy in range(size_y):
-            val = int(input_array[ix,iy])
+            val = int(input_array[ix, iy])
 
             if val == sel_val:
-                new_img.putpixel((ix,iy),(0,val,val))
+                new_img.putpixel((ix, iy), (0, val, val))
             else:
-                new_img.putpixel((ix,iy),(val,val,val))
+                new_img.putpixel((ix, iy), (val, val, val))
     if output_size:
         new_img = new_img.resize((output_size, output_size), Image.ANTIALIAS)
     return new_img
@@ -79,40 +82,7 @@ def image_file_to_array(input_filename):
     the one with higher sum(r,g,b) to be "signal".
     """
     im = Image.open(input_filename)
-    return image_to_array(im)
-
-
-def image_to_array(im):
-    """
-    convert PIL image to a 2D numpy array, with values
-    0 for background pixels and 255 for signal.
-    Assume that the input image has only two colours, and take
-    the one with higher sum(r,g,b) to be "signal".
-    """
-    x_size, y_size = im.size
-    pix = im.load()
-    sig_col = None
-    bkg_col = None
-    max_sum_rgb = 0
-    # loop through all the pixels and find the colour with the highest sum(r,g,b)
-    for ix in range(x_size):
-        for iy in range(y_size):
-            col = pix[ix,iy]
-            if sum(col) > max_sum_rgb:
-                max_rgb = sum(col)
-                if sig_col:
-                    bkg_col = sig_col
-                sig_col = col
-    # ok, we now know what sig_col is - loop through pixels again and set any that
-    # match this colour to 255.
-    rows = []
-    for iy in range(y_size):
-        row = np.zeros(x_size)
-        for ix in range(x_size):
-            if pix[ix,iy] == sig_col:
-                row[ix] = 255
-        rows.append(row)
-    return np.array(rows)
+    return pillow_to_numpy(im)
 
 
 def invert_binary_image(image):
@@ -123,14 +93,14 @@ def invert_binary_image(image):
     pix = image.load()
     for ix in range(image.size[0]):
         for iy in range(image.size[1]):
-            if sum(pix[ix,iy]) == 0:
-                new_img.putpixel((ix,iy), (255,255,255))
+            if sum(pix[ix, iy]) == 0:
+                new_img.putpixel((ix, iy), (255, 255, 255))
             else:
-                new_img.putpixel((ix,iy), (0,0,0))
+                new_img.putpixel((ix, iy), (0, 0, 0))
     return new_img
 
 
-def combine_tif(input_filebase, bands=["B4","B3","B2"]):
+def combine_tif(input_filebase, bands=["B4", "B3", "B2"]):
     """
     Read tif files in "I" mode - one per specified band, and rescale and combine
     pixel values to r,g,b values betweek 0 and 255 in a combined output image.
@@ -151,7 +121,7 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
                            "min_val": sys.maxsize,
                            "max_val": -1*sys.maxsize,
                            "pix_vals": []}
-        }
+                     }
     else:
         raise RuntimeError("Need three bands to combine into RGB image")
     for col in band_dict.keys():
@@ -161,29 +131,29 @@ def combine_tif(input_filebase, bands=["B4","B3","B2"]):
         #print("Found image of size {}".format(im.size))
         for ix in range(im.size[0]):
             for iy in range(im.size[1]):
-                if pix[ix,iy]> band_dict[col]["max_val"]:
-                    band_dict[col]["max_val"]= pix[ix,iy]
-                elif pix[ix,iy] < band_dict[col]["min_val"]:
-                    band_dict[col]["min_val"] = pix[ix,iy]
+                if pix[ix, iy] > band_dict[col]["max_val"]:
+                    band_dict[col]["max_val"] = pix[ix, iy]
+                elif pix[ix, iy] < band_dict[col]["min_val"]:
+                    band_dict[col]["min_val"] = pix[ix, iy]
         band_dict[col]["pix_vals"] = pix
     # Take the overall max of the three bands to be the value to scale down with.
-    #print("Max values {} {} {}".format(band_dict["r"]["max_val"],
+    # print("Max values {} {} {}".format(band_dict["r"]["max_val"],
     #                                   band_dict["g"]["max_val"],
     #                                   band_dict["b"]["max_val"]))
 
-    overall_max = max((band_dict[col]["max_val"] for col in ["r","g","b"]))
+    overall_max = max((band_dict[col]["max_val"] for col in ["r", "g", "b"]))
 
     # create a new image where we will fill RGB pixel values from 0 to 255
-    get_pix_val = lambda ix, iy, col: \
-        max(0, int(band_dict[col]["pix_vals"][ix,iy] * 255/ \
-#                   band_dict[col]["max_val"]
+    def get_pix_val(ix, iy, col): return \
+        max(0, int(band_dict[col]["pix_vals"][ix, iy] * 255 / \
+                   #                   band_dict[col]["max_val"]
                    (overall_max+1)
-        ))
+                   ))
     new_img = Image.new("RGB", im.size)
     for ix in range(im.size[0]):
         for iy in range(im.size[1]):
-            new_img.putpixel((ix,iy), tuple(get_pix_val(ix,iy,col) \
-                for col in ["r","g","b"]))
+            new_img.putpixel((ix, iy), tuple(get_pix_val(ix, iy, col)
+                                             for col in ["r", "g", "b"]))
     return new_img
 
 
@@ -193,7 +163,7 @@ def scale_tif(input_filebase, band):
     value to all of r,g,b
     """
     max_val = -1*sys.maxsize
-    min_val =  sys.maxsize
+    min_val = sys.maxsize
     # load the single band file and extract pixel data
     im = Image.open(input_filebase+"."+band+".tif")
     pix = im.load()
@@ -201,23 +171,22 @@ def scale_tif(input_filebase, band):
     #print("Found image of size {}".format(im.size))
     for ix in range(im.size[0]):
         for iy in range(im.size[1]):
-            if pix[ix,iy] > max_val:
-                max_val = pix[ix,iy]
-            elif pix[ix,iy] < min_val:
-                min_val = pix[ix,iy]
+            if pix[ix, iy] > max_val:
+                max_val = pix[ix, iy]
+            elif pix[ix, iy] < min_val:
+                min_val = pix[ix, iy]
 
     # create a new image where we will fill RGB pixel values from 0 to 255
-    get_pix_val = lambda ix, iy: \
-        max(0, int((pix[ix,iy]-min_val) * 255/ \
-                (max_val - min_val))
-        )
+    def get_pix_val(ix, iy): return \
+        max(0, int((pix[ix, iy]-min_val) * 255 /
+                   (max_val - min_val))
+            )
     new_img = Image.new("RGB", im.size)
     for ix in range(im.size[0]):
         for iy in range(im.size[1]):
-            new_img.putpixel((ix,iy), tuple(get_pix_val(ix,iy) \
-                                            for col in ["r","g","b"]))
+            new_img.putpixel((ix, iy), tuple(get_pix_val(ix, iy)
+                                             for col in ["r", "g", "b"]))
     return new_img
-
 
 
 def convert_to_rgb(input_filebase, bands):
@@ -233,11 +202,12 @@ def convert_to_rgb(input_filebase, bands):
     elif len(bands) == 1:
         new_img = scale_tif(input_filebase, bands[0])
     else:
-        raise RuntimeError("Can't convert to RGB with {} bands".format(len(bands)))
+        raise RuntimeError(
+            "Can't convert to RGB with {} bands".format(len(bands)))
     return new_img
 
 
-def plot_band_values(input_filebase, bands=["B4","B3","B2"]):
+def plot_band_values(input_filebase, bands=["B4", "B3", "B2"]):
     """
     Plot histograms of the values in the chosen bands of the input image
     """
@@ -248,8 +218,8 @@ def plot_band_values(input_filebase, bands=["B4","B3","B2"]):
         vals = []
         for ix in range(im.size[0]):
             for iy in range(im.size[1]):
-                vals.append(pix[ix,iy])
-        plt.subplot(1,num_subplots, i+1)
+                vals.append(pix[ix, iy])
+        plt.subplot(1, num_subplots, i+1)
         plt.hist(vals)
     plt.show()
 
@@ -261,7 +231,7 @@ def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
     If region_size and coordinates are provided, we want to return the
     coordinates of the sub-images along with the sub-images themselves.
     """
-    ## if n_pix_y not specified, assume we want equal x,y
+    # if n_pix_y not specified, assume we want equal x,y
     if not n_pix_y:
         n_pix_y = n_pix_x
 
@@ -299,19 +269,17 @@ def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
     return sub_images
 
 
-
 def crop_image_nparts(input_image, n_parts_x, n_parts_y=None):
     """
     Divide an image into n_parts_x*n_parts_y equal smaller sub-images.
     """
-    ## if n_parts_y not specified, assume we want equal x,y
+    # if n_parts_y not specified, assume we want equal x,y
     if not n_parts_y:
         n_parts_y = n_parts_x
 
     xsize, ysize = input_image.size
     x_sub = int(xsize / n_parts_x)
     y_sub = int(ysize / n_parts_y)
-
 
     sub_images = []
     for ix in range(n_parts_x):
@@ -332,7 +300,7 @@ def convert_to_bw(input_image, threshold, invert=False):
     new_img = Image.new("RGB", input_image.size)
     for ix in range(input_image.size[0]):
         for iy in range(input_image.size[1]):
-            p = pix[ix,iy]
+            p = pix[ix, iy]
             try:
                 total = 0
                 for col in p:
@@ -341,11 +309,10 @@ def convert_to_bw(input_image, threshold, invert=False):
                 total = p
             if (invert and (total > threshold)) or \
                ((not invert) and (total < threshold)):
-                new_img.putpixel((ix,iy), (255,255,255))
+                new_img.putpixel((ix, iy), (255, 255, 255))
             else:
-                new_img.putpixel((ix,iy), (0,0,0))
+                new_img.putpixel((ix, iy), (0, 0, 0))
     return new_img
-
 
 
 def crop_and_convert_to_bw(input_filename, output_dir, threshold=470, num_x=50, num_y=50):
@@ -355,12 +322,12 @@ def crop_and_convert_to_bw(input_filename, output_dir, threshold=470, num_x=50, 
     orig_image = Image.open(input_filename)
     bw_image = convert_to_bw(orig_image, threshold)
     sub_images = crop_image_npix(bw_image, num_x, num_y)
-    ## strip the file extension from the input_filename
+    # strip the file extension from the input_filename
     filename_elements = os.path.basename(input_filename).split(".")
     file_ext = filename_elements[-1]
     new_filename_base = ""
     for el in filename_elements[:-1]:
-        new_filename_base+= el
+        new_filename_base += el
 
     for i, sub_image in enumerate(sub_images):
         new_filename = "{}_{}.{}".format(new_filename_base,
@@ -369,13 +336,13 @@ def crop_and_convert_to_bw(input_filename, output_dir, threshold=470, num_x=50, 
         save_image(sub_image, output_dir, new_filename)
 
 
-
 def create_gif_from_images(directory_path, output_name, condition_filename=''):
     """
-       Loop through a whole directory and convert all images in it into a gif chronologically
-       """
+    Loop through a whole directory and convert all images in it into a gif chronologically
+    """
 
-    file_names = [f for f in os.listdir(directory_path) if (os.path.isfile(os.path.join(directory_path, f)) and f.endswith(".png"))]
+    file_names = [f for f in os.listdir(directory_path) if (
+        os.path.isfile(os.path.join(directory_path, f)) and f.endswith(".png"))]
 
     images = []
     date = []
@@ -385,12 +352,14 @@ def create_gif_from_images(directory_path, output_name, condition_filename=''):
         # only use images with certain name (optional)
         if condition_filename in filename:
 
-            images.append(imageio.imread(os.path.join(directory_path, filename)))
+            images.append(imageio.imread(
+                os.path.join(directory_path, filename)))
 
-            # the name of each file should end with the date of the image (this is true in the gee images)
+            # the name of each file should end with the date of the image 
+            # (this is true in the gee images)
             date.append(filename[-14:-4])
 
-    if len(images)==0:
+    if len(images) == 0:
         raise RuntimeError('No images found')
     else:
         image_dates_df = pd.DataFrame()
@@ -398,9 +367,8 @@ def create_gif_from_images(directory_path, output_name, condition_filename=''):
         image_dates_df['images'] = images
 
         image_dates_df.sort_values(by=['date'], inplace=True, ascending=True)
-        imageio.mimsave(os.path.join(directory_path,output_name + '.gif'), image_dates_df['images'], duration=1)
-
-
+        imageio.mimsave(os.path.join(directory_path, output_name +
+                                     '.gif'), image_dates_df['images'], duration=1)
 
 
 def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=50, num_y=50):
@@ -417,7 +385,7 @@ def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=50, num_y=5
                                threshold, num_x, num_y)
 
 
-def image_file_all_same_colour(image_filename, colour=(255,255,255), threshold=0.99):
+def image_file_all_same_colour(image_filename, colour=(255, 255, 255), threshold=0.99):
     """
     Wrapper for image_all_same_colour that opens and closes the image file
     """
@@ -427,7 +395,7 @@ def image_file_all_same_colour(image_filename, colour=(255,255,255), threshold=0
     return is_same_colour
 
 
-def image_all_same_colour(image, colour=(255,255,255), threshold=0.99):
+def image_all_same_colour(image, colour=(255, 255, 255), threshold=0.99):
     """
     Return true if all (or nearly all) pixels are same colour
     """
@@ -436,7 +404,7 @@ def image_all_same_colour(image, colour=(255,255,255), threshold=0.99):
     pix = image.load()
     for ix in range(image.size[0]):
         for iy in range(image.size[1]):
-            if pix[ix,iy] != colour:
+            if pix[ix, iy] != colour:
                 num_different += 1
                 if 1.0 - float(num_different/num_total) < threshold:
                     return False
@@ -449,7 +417,7 @@ def compare_binary_image_files(filename1, filename2):
     """
     img1 = Image.open(filename1)
     img2 = Image.open(filename2)
-    frac = compare_binary_images(img1,img2)
+    frac = compare_binary_images(img1, img2)
     img1.close()
     img2.close()
     return frac
@@ -467,6 +435,128 @@ def compare_binary_images(image1, image2):
     num_total = image1.size[0] * image1.size[1]
     for ix in range(image1.size[0]):
         for iy in range(image1.size[1]):
-            if pix1[ix,iy] == pix2[ix,iy]:
+            if pix1[ix, iy] == pix2[ix, iy]:
                 num_same += 1
     return float(num_same / num_total)
+
+
+# ---------------------------------------------------------------------
+# Image processing functionality
+# ---------------------------------------------------------------------
+def pillow_to_numpy(pil_image):
+    """
+    Convert a PIL Image object to a 2D numpy array (used by openCV).
+
+    @param img PIL Image object to convert
+    @return 2D numpy array
+    """
+    if issubclass(type(pil_image), type(Image.Image)):
+        raise TypeError('Input should be a PIL Image object')
+
+    numpy_image = np.array(pil_image)
+
+    # if the array is already 2D, return it
+    if numpy_image.ndim == 2:
+        return numpy_image
+
+    # check that 3rd index is equal
+    r, g, b = numpy_image[:, :, 0], numpy_image[:, :, 1], numpy_image[:, :, 2]
+    if not (b == g).all() and (b == r).all():
+        raise ValueError('Input should be a grayscale image')
+
+    # return with 3rd index removed
+    return numpy_image[:, :, 0]
+
+
+def numpy_to_pillow(numpy_image):
+    """
+    Convert a 2D numpy array to a PIL Image object.
+
+    @param img 2D numpy array to convert
+    @return PIL Image object
+    """
+    if not isinstance(numpy_image, np.ndarray):
+        raise TypeError('Input should be a NumPy array')
+
+    if numpy_image.ndim != 2:
+        raise ValueError('Input should be a grayscale image')
+
+    return Image.fromarray(numpy_image)
+
+
+def hist_eq(img, clip_limit=2):
+    """
+    Perform contrast limited local histogram equalisation on an imput
+    image.
+
+    @param img 2D numpy array representing a grayscale image
+    @param clip_limit controls the strength of the equalisation
+    @return 2D numpy array representing the equalised image
+    """
+    if img.ndim != 2:
+        raise ValueError("The input image should be a 2D numpy array \
+                          repersenting a grayscale image")
+
+    clahe = cv.createCLAHE(clipLimit=clip_limit, tileGridSize=(11, 11))
+    return clahe.apply(img)
+
+
+def median_filter(img, r=3):
+    """
+    Convolve a median filter over the image.
+
+    @param img 2D numpy array representing a grayscale image
+    @param r the size of the grid to convolve
+    @return 2D numpy array representing the smoothed image
+    """
+    if img.ndim != 2:
+        raise ValueError("The input image should be a 2D numpy array \
+                          repersenting a grayscale image")
+
+    return cv.medianBlur(img, r)
+
+
+def adaptive_threshold(img):
+    """
+    Threshold a grayscale image using the mean pixel value of a local area
+    to set the threshold at each pixel location. At the moment set above
+    average brightness pixels to the max (255) and vice versa for below
+    average brightness pixels.
+
+    @param img 2D numpy array representing a grayscale image
+    @return thresholded image
+    """
+    if img.ndim != 2:
+        raise ValueError("The input image should be a 2D numpy array \
+                          repersenting a grayscale image")
+
+    local_area_size = 51  # must be odd
+    offset = -5  # threshold = mean + offset
+
+    img_thresh = cv.adaptiveThreshold(img,
+                                      255,  # max value
+                                      cv.ADAPTIVE_THRESH_MEAN_C,
+                                      cv.THRESH_BINARY,  # can perform inverted threholding here
+                                      local_area_size,
+                                      offset)
+
+    return img_thresh
+
+
+def process_image(img, r=3):
+    """
+    Perform histogram equalisation, adaptive thresholding, and median
+    filtering on an input PIL Image. Return the result converted
+    back to a PIL Image.
+
+    @param img input PIL Image object
+    @return processed PIL Image
+    """
+
+    img = pillow_to_numpy(img)
+    img = hist_eq(img)
+    img = adaptive_threshold(img)
+    img = median_filter(img, r)
+
+    return numpy_to_pillow(img)
+# ---------------------------------------------------------------------

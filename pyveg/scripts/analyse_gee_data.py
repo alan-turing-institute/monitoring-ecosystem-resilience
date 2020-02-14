@@ -41,7 +41,22 @@ def main():
     """
     use command line arguments to choose images.
     """
-    parser = argparse.ArgumentParser(description="download from EE")
+
+    example_command = """Example usage:
+
+    python analyse_gee_data.py \\
+        --image_coll COPERNICUS/S2 \\
+        --start_date 2016-01-01 \\
+        --end_date 2019-01-01 \\
+        --coords 27.99,11.2878 \\
+        --bands B2,B3,B4,NDVI \\
+        --region_size 0.1 \\
+        --num_time_points 10 \\
+        --mask_cloud \\
+        --output_dir output
+    """
+    parser = argparse.ArgumentParser(description="download from EE", epilog=example_command, 
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--image_coll",help="image collection", default="LANDSAT/LC08/C01/T1_SR")
     parser.add_argument("--start_date",help="YYYY-MM-DD", default="2013-03-30")
     parser.add_argument("--end_date",help="YYYY-MM-DD", default="2013-04-01")

@@ -9,7 +9,7 @@ numpy
 matplotlib
 datetime
 dateparser
-casadi
 python-igraph
 imageio
 geopandas
+opencv-python

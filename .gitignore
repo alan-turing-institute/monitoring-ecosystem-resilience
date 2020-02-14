@@ -90,4 +90,8 @@ ipython_config.py
 
 # data
 output_dir/
+output/
 
+# macos 
+.DS_Store
+.vscode/
