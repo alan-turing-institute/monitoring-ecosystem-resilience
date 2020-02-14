@@ -33,7 +33,7 @@ import os
 
 import argparse
 
-from pyveg.src.satellite_data_analysis import get_time_series
+from pyveg.src.satellite_data_analysis import get_time_series,divide_time_period_in_n_day_portions
 
 
 
@@ -46,6 +46,8 @@ def main():
     parser.add_argument("--start_date",help="YYYY-MM-DD", default="2013-03-30")
     parser.add_argument("--end_date",help="YYYY-MM-DD", default="2013-04-01")
     parser.add_argument("--num_time_points",help="Get a time series with this many divisions between start_date and end_date", type=int, default=1)
+    parser.add_argument("--num_days_per_point",help="Get a time series with using portions of this number of days between start_date and end_date. This option supersedes the -num_time_points option", type=int,default=0)
+
     parser.add_argument("--coords",help="'long,lat'")
     parser.add_argument("--bands",help="string containing comma-separated list", default="B2,B3,B4,B5,B6,B7")
     parser.add_argument("--region_size", help="size of output region in long/lat", default=0.1, type=float)
@@ -69,6 +71,11 @@ def main():
     network_centrality = True if args.network_centrality else False
 
     num_time_points = args.num_time_points
+
+    # if the --num_days_per_point option exists, overwrite any existing option from num_time_points
+    if args.num_days_per_point!=0:
+        num_time_points = divide_time_period_in_n_day_portions(start_date,end_date,args.num_days_per_point)
+
     coords = [float(x) for x in args.coords.split(",")]
 
     get_time_series(num_time_points,
