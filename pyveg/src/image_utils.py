@@ -499,7 +499,7 @@ def hist_eq(img, clip_limit=2):
         raise ValueError("The input image should be a 2D numpy array \
                           repersenting a grayscale image")
 
-    clahe = cv.createCLAHE(clipLimit=clip_lim, tileGridSize=(11,11))
+    clahe = cv.createCLAHE(clipLimit=clip_limit, tileGridSize=(11,11))
     return clahe.apply(img)
 
 
@@ -521,8 +521,8 @@ def median_filter(img, r=3):
 def adaptive_threshold(img):
     """
     Threshold a grayscale image using the mean pixel value of a local area
-    to set the threshold at each pixel location. At the moment set above 
-    average brightness pixels to the max (255) and vice versa for below 
+    to set the threshold at each pixel location. At the moment set above
+    average brightness pixels to the max (255) and vice versa for below
     average brightness pixels.
 
     @param img 2D numpy array representing a grayscale image
@@ -538,7 +538,7 @@ def adaptive_threshold(img):
     img_thresh = cv.adaptiveThreshold(img, 
                                       255, # max value
                                       cv.ADAPTIVE_THRESH_MEAN_C, 
-                                      cv.THRESH_BINARY_INV, # can perform inverted threholding here
+                                      cv.THRESH_BINARY, # can perform inverted threholding here
                                       local_area_size,
                                       offset)
 

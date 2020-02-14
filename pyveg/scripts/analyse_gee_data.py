@@ -52,7 +52,8 @@ def main():
         --bands B2,B3,B4,NDVI \\
         --region_size 0.1 \\
         --num_time_points 10 \\
-        --mask_cloud 
+        --mask_cloud \\
+        --output_dir output
     """
     parser = argparse.ArgumentParser(description="download from EE", epilog=example_command, 
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
