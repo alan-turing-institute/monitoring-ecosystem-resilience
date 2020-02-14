@@ -198,7 +198,7 @@ def process_coords(coords,
                     sub_coords = image[1]
                     output_filename = os.path.basename(tif_filebase)
                     output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
-                    output_filename += output_suffix
+                    output_filename += '_' + output_suffix
 
                     # save sub image
                     save_image(sub_image, output_dir, output_filename)
