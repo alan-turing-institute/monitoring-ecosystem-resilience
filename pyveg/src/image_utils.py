@@ -475,7 +475,7 @@ def numpy_to_pillow(numpy_image):
     @param img 2D numpy array to convert
     @return PIL Image object
     """
-    if isinstance(numpy_image, np.ndarray):
+    if not isinstance(numpy_image, np.ndarray):
         raise TypeError('Input should be a NumPy array')
 
     if numpy_image.ndim != 2:
