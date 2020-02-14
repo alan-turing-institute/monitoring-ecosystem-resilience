@@ -318,7 +318,7 @@ class PatternGenerator(object):
             threshold = (self.plant_biomass.max() + self.plant_biomass.min()) / 2.
         new_list_x = []
         for row in self.plant_biomass:
-            new_list_y = np.array([255*int(val > threshold) for val in row])
+            new_list_y = np.array([255*int(val < threshold) for val in row])
             new_list_x.append(new_list_y)
         return np.array(new_list_x)
 
