@@ -49,7 +49,7 @@ def main():
         --start_date 2016-01-01 \\
         --end_date 2019-01-01 \\
         --coords 27.99,11.2878 \\
-        --bands B2,B3,B4,NDVI \\
+        --bands B4,B3,B2,NDVI \\
         --region_size 0.1 \\
         --num_time_points 10 \\
         --mask_cloud \\
