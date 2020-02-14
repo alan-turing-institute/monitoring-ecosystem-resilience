@@ -10,13 +10,16 @@ import os
 import sys
 import argparse
 import json
-from PIL import Image
 import matplotlib
 matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import numpy as np
 import imageio
 import pandas as pd
+
+# image libraries
+from PIL import Image
+import cv2 as cv
 
 
 def save_json(dict, output_dir, output_filename):
@@ -554,8 +557,8 @@ def process_image(img, r=3):
 
     img = pillow_to_numpy(img)
     img = hist_eq(img)
-    img = adaptive_threshold(img, r)
-    img = median_filter(img)
+    img = adaptive_threshold(img)
+    img = median_filter(img, r)
 
     return numpy_to_pillow(img)
 # ---------------------------------------------------------------------
