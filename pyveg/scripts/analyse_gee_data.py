@@ -32,7 +32,7 @@ pip install --upgrade pillow
 import os
 
 import argparse
-
+import warnings
 from pyveg.src.satellite_data_analysis import get_time_series,divide_time_period_in_n_day_portions
 
 
@@ -78,9 +78,14 @@ def main():
 
     num_time_points = args.num_time_points
 
-    # if the --num_days_per_point option exists, overwrite any existing option from num_time_points
     if args.num_days_per_point!=0:
         num_time_points = divide_time_period_in_n_day_portions(start_date,end_date,args.num_days_per_point)
+
+        # if the --num_days_per_point option exists, overwrite any existing option from num_time_points
+        if num_time_points != 0:
+            warnings.warn(
+                'Both --num_days_per_point and --num_time_points options are enables. Only the --num_days_per_point will be'
+                'considered')
 
     coords = [float(x) for x in args.coords.split(",")]
 
