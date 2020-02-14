@@ -91,7 +91,7 @@ def main():
         num_time_points = divide_time_period_in_n_day_portions(start_date,end_date,args.num_days_per_point)
 
         # if the --num_days_per_point option exists, overwrite any existing option from num_time_points
-        if num_time_points != 0:
+        if args.num_time_points != 1:
             warnings.warn(
                 'Both --num_days_per_point and --num_time_points options are enables. Only the --num_days_per_point will be'
                 'considered')
