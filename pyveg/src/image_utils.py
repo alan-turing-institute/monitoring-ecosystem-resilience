@@ -79,41 +79,8 @@ def image_file_to_array(input_filename):
     the one with higher sum(r,g,b) to be "signal".
     """
     im = Image.open(input_filename)
-    return image_to_array(im)
-
-
-def image_to_array(im):
-    """
-    convert PIL image to a 2D numpy array, with values
-    0 for background pixels and 255 for signal.
-    Assume that the input image has only two colours, and take
-    the one with higher sum(r,g,b) to be "signal".
-    """
-    x_size, y_size = im.size
-    pix = im.load()
-    sig_col = None
-    bkg_col = None
-    max_sum_rgb = 0
-    # loop through all the pixels and find the colour with the highest sum(r,g,b)
-    for ix in range(x_size):
-        for iy in range(y_size):
-            col = pix[ix,iy]
-            if sum(col) > max_sum_rgb:
-                max_rgb = sum(col)
-                if sig_col:
-                    bkg_col = sig_col
-                sig_col = col
-    # ok, we now know what sig_col is - loop through pixels again and set any that
-    # match this colour to 255.
-    rows = []
-    for iy in range(y_size):
-        row = np.zeros(x_size)
-        for ix in range(x_size):
-            if pix[ix,iy] == sig_col:
-                row[ix] = 255
-        rows.append(row)
-    return np.array(rows)
-
+    return pillow_to_numpy(im)
+    
 
 def invert_binary_image(image):
     """

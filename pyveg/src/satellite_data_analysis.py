@@ -24,8 +24,8 @@ from .image_utils import (
     save_image,
     convert_to_rgb,
     scale_tif,
-    image_to_array,
     save_json,
+    pillow_to_numpy,
     process_image
 )
 
@@ -198,7 +198,7 @@ def process_coords(coords,
                     save_image(sub_image, output_dir, output_filename)
 
                     # run network centrality
-                    image_array = image_to_array(sub_image)
+                    image_array = pillow_to_numpy(sub_image)
                     feature_vec, sel_pixels = subgraph_centrality(image_array)
                     feature_vec_metrics = feature_vector_metrics(feature_vec)
                     feature_vec_metrics['latitude'] = sub_coords[0]
