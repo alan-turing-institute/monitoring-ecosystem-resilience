@@ -91,3 +91,5 @@ ipython_config.py
 # data
 output_dir/
 
+# macos 
+.DS_Store
