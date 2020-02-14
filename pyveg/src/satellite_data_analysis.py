@@ -111,23 +111,26 @@ def write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix
         filename += "_10kmLargeImage_{}_{}".format(image_type,output_suffix)
         filename = output_prefix + '_' + filename
         return filename
+    
     # output the full-size colour image
     merged_image = convert_to_rgb(tif_filebase, bands)
     output_filename = construct_filename("colour")
     save_image(merged_image, output_dir, output_filename)
+    
     # if we have NDVI, rescale this and output it.
     if "NDVI" in bands:
         ndvi_image = scale_tif(tif_filebase, "NDVI")
         output_filename = construct_filename("ndvi")
         save_image(ndvi_image, output_dir, output_filename)
-        #bw_ndvi = convert_to_bw(ndvi_image, threshold)
-        bw_ndvi = process_image(ndvi_image)
+        #bw_ndvi = convert_to_bw(ndvi_image, threshold) # old method
+        bw_ndvi = process_image(ndvi_image) # new adaptive threshold
         output_filename = construct_filename("ndvibw")
         save_image(bw_ndvi, output_dir, output_filename)
+    
     # output the full-size black-and-white image
-    bw_image = convert_to_bw(merged_image, threshold)
-    output_filename = construct_filename("bw")
-    save_image(bw_image, output_dir, output_filename)
+    #bw_image = convert_to_bw(merged_image, threshold)
+    #output_filename = construct_filename("bw")
+    #save_image(bw_image, output_dir, output_filename)
 
 
 def process_coords(coords,
@@ -162,6 +165,7 @@ def process_coords(coords,
     # loop through these URLS, download zip files, and combine tif files
     # for each band into RGB output images.
     for i, url in enumerate(download_urls):
+        
         # construct a temp directory name based on coords and index
         # of this url in the list
         tmpdir = os.path.join(TMPDIR, "gee_"+str(coords[0])+"_"\
@@ -169,6 +173,7 @@ def process_coords(coords,
         tif_filebases = download_and_unzip(url,tmpdir)
         if not tif_filebases:
             continue
+        
         # Now should have lots of .tif files in a temp dir - merge them
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
@@ -187,7 +192,8 @@ def process_coords(coords,
 
                 # loop through sub images
                 for n, image in enumerate(sub_images):
-                    sub_image = convert_to_bw(image[0], threshold)
+                    #sub_image = convert_to_bw(image[0], threshold) # old harccoded threshold
+                    sub_image = process_image(image[0]) # new adaptive threshold
 
                     sub_coords = image[1]
                     output_filename = os.path.basename(tif_filebase)
