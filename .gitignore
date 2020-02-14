@@ -93,3 +93,4 @@ output_dir/
 
 # macos 
 .DS_Store
+.vscode/
