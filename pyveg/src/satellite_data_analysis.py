@@ -9,6 +9,7 @@ import requests
 import argparse
 import dateparser
 from datetime import datetime, timedelta
+import numpy as np
 
 
 from .gee_interface import (
