@@ -445,10 +445,10 @@ def compare_binary_images(image1, image2):
 # ---------------------------------------------------------------------
 def pillow_to_numpy(pil_image):
     """
-    Convert a PIL Image object to a 2D numpy array (used by openCV).
+    Convert a PIL Image object to a numpy array (used by openCV).
 
     @param img PIL Image object to convert
-    @return 2D numpy array
+    @return 2D or 3D numpy array (depending on input image)
     """
     if issubclass(type(pil_image), type(Image.Image)):
         raise TypeError('Input should be a PIL Image object')
