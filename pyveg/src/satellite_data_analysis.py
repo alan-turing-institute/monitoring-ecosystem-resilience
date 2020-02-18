@@ -9,6 +9,7 @@ import requests
 import argparse
 import dateparser
 from datetime import datetime, timedelta
+import numpy as np
 
 
 from .gee_interface import (
@@ -184,7 +185,7 @@ def process_coords(coords,
     # loop through these URLS, download zip files, and combine tif files
     # for each band into RGB output images.
     for i, url in enumerate(download_urls):
-        
+
         # construct a temp directory name based on coords and index
         # of this url in the list
         tmpdir = os.path.join(TMPDIR, "gee_"+str(coords[0])+"_"\
@@ -196,13 +197,25 @@ def process_coords(coords,
         # Now should have lots of .tif files in a temp dir - merge them
         # into RGB image files in our chosen output directory
         for tif_filebase in tif_filebases:
+            
+            merged_image = convert_to_rgb(tif_filebase, bands)
+            ndvi_image = scale_tif(tif_filebase, "NDVI")
+
+            img_array = pillow_to_numpy(merged_image)
+            black = [0,0,0]
+            black_pix_threshold = 0.1
+            n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
+
+            if n_black_pix / (img_array.shape[0]*img_array.shape[1]) > black_pix_threshold:
+                print('Detected a low quality image, skipping to next date.')
+                continue
+
             write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix,
                                   coords, bands, threshold)
-            merged_image = convert_to_rgb(tif_filebase, bands)
 
             # if requested, divide into smaller sub-images
             if network_centrality:
-                sub_images = crop_image_npix(merged_image,
+                sub_images = crop_image_npix(ndvi_image,
                                                 sub_image_size[0],
                                                 sub_image_size[1],
                                                 region_size,

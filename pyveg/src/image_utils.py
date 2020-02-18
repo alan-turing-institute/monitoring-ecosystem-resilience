@@ -461,11 +461,11 @@ def pillow_to_numpy(pil_image):
 
     # check that 3rd index is equal
     r, g, b = numpy_image[:, :, 0], numpy_image[:, :, 1], numpy_image[:, :, 2]
-    if not (b == g).all() and (b == r).all():
-        raise ValueError('Input should be a grayscale image')
 
-    # return with 3rd index removed
-    return numpy_image[:, :, 0]
+    if (b == g).all() and (b == r).all(): 
+        return numpy_image[:, :, 0] # return with 3rd index removed
+    else: 
+        return numpy_image # return colour image
 
 
 def numpy_to_pillow(numpy_image):
