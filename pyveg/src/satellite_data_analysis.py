@@ -199,7 +199,8 @@ def process_coords(coords,
         for tif_filebase in tif_filebases:
             
             merged_image = convert_to_rgb(tif_filebase, bands)
-            
+            ndvi_image = scale_tif(tif_filebase, "NDVI")
+
             img_array = pillow_to_numpy(merged_image)
             black = [0,0,0]
             black_pix_threshold = 0.1
@@ -214,7 +215,7 @@ def process_coords(coords,
 
             # if requested, divide into smaller sub-images
             if network_centrality:
-                sub_images = crop_image_npix(merged_image,
+                sub_images = crop_image_npix(ndvi_image,
                                                 sub_image_size[0],
                                                 sub_image_size[1],
                                                 region_size,
