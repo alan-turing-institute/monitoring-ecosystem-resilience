@@ -8,14 +8,10 @@ The code in this repository is intended to perform three inter-related tasks:
 * Generate simulated vegetation patterns.
 * Calculate graph metrics to quantify the interconnectedness of vegetation in real and simulated images.
 
-### Python
+### Python Setup
 
-The tasks above are all implemented in Python in the *pyveg* package.  This can be installed by doing
-```
-pip install .
-```
-from this directory.  See the README.md in the `pyveg` subdirectory for further details.
+The tasks above are all implemented in Python in the *pyveg* package. See the [README.md](pyveg/README.md) in the `pyveg` subdirectory for details on installation and usage.
 
 ### R
 
-The pattern-generation and graph-modelling are implemented in R in the `rveg` package.  See the README.md in that directory for further details.
+The pattern-generation and graph-modelling are implemented in R in the `rveg` package.  See the [README.md](rveg/README.md) in that directory for further details.
