@@ -50,18 +50,17 @@ def main():
     # get all figures into a gif file
     create_gif_from_images(output_dir, output_name)
 
+
     # create gif evolution for the 10km images for reference
     create_gif_from_images(input_dir, output_name+"_Images10Km_ndvi","10kmLargeImage_ndvi_")
 
-    create_gif_from_images(input_dir, output_name+"_Images10Km_colour_","10kmLargeImage_colour_")
+    create_gif_from_images(input_dir, output_name+"_Images10Km_colour_","10kmLargeImage_colour")
 
-    create_gif_from_images(input_dir, output_name+"_Images10Km_ndvibw_","10kmLargeImage_ndvibw_")
+    create_gif_from_images(input_dir, output_name+"_Images10Km_ndvibw_","10kmLargeImage_ndvibw")
 
-    create_gif_from_images(input_dir, output_name+"_Images10Km_bw_","10kmLargeImage_bw_")
 
 
     print("Done")
-
 
 
 

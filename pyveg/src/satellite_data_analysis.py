@@ -241,10 +241,10 @@ def process_coords(coords,
                     feature_vec_metrics = feature_vector_metrics(feature_vec)
                     feature_vec_metrics['latitude'] = sub_coords[0]
                     feature_vec_metrics['longitude'] = sub_coords[1]
-                    feature_vec_metrics['date']= output_suffix[1:-4]
+                    feature_vec_metrics['date']= output_prefix
                     output_filename = os.path.basename(tif_filebase)
                     output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
-                    output_filename += "_{}".format(output_suffix[1:-4])
+                    output_filename += "_{}".format(output_prefix)
                     output_filename += '.json'
                     save_json(feature_vec_metrics, output_dir, output_filename)
 
