@@ -6,7 +6,8 @@ This page contains an installation guide, and some usage examples for this packa
 
 To install, start by fresh `conda` environment.
 ```
-conda create -n pyveg python
+conda create -n veg python
+conda activate veg
 ```
 Get the source.
 ```
