@@ -1,13 +1,8 @@
-# pyveg
+# The pyveg Package
 
-## Google Earth Engine
+This page contains an installation guide, and some examples of the usage of this package.
 
-[Google Earth Engine](https://earthengine.google.com) is a powerful tool for obtaining and analysing satellite imagery.
-This directory contains some useful scripts for interacting with the Earth Engine API. 
-The earth engine API is installed automatically as part of the `pyveg` package installation. 
-If you wish to install it separately, you can follow the instructions [here](https://developers.google.com/earth-engine/python_install_manual).
-
-### Installation
+## Installation
 
 To install, start by fresh `conda` environment:
 ```
@@ -34,6 +29,13 @@ earthengine authenticate
 ```
 A new browser window will open. Copy the token from this window to the terminal prompt to complete the authentication process.
 
+
+## Google Earth Engine Related Tools
+
+[Google Earth Engine](https://earthengine.google.com) is a powerful tool for obtaining and analysing satellite imagery.
+This directory contains some useful scripts for interacting with the Earth Engine API. 
+The earth engine API is installed automatically as part of the `pyveg` package installation. 
+If you wish to install it separately, you can follow the instructions [here](https://developers.google.com/earth-engine/python_install_manual).
 
 ### Downloading and analysing images from GEE:
 
