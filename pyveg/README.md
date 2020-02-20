@@ -1,14 +1,14 @@
-# The pyveg Package
+# The `pyveg` Package
 
-This page contains an installation guide, and some examples of the usage of this package.
+This page contains an installation guide, and some usage examples for this package.
 
 ## Installation
 
-To install, start by fresh `conda` environment:
+To install, start by fresh `conda` environment.
 ```
 conda create -n pyveg python
 ```
-Clone the source.
+Get the source.
 ```
 git clone git@github.com:alan-turing-institute/monitoring-ecosystem-resilience.git
 ```
@@ -36,6 +36,7 @@ A new browser window will open. Copy the token from this window to the terminal 
 This directory contains some useful scripts for interacting with the Earth Engine API. 
 The earth engine API is installed automatically as part of the `pyveg` package installation. 
 If you wish to install it separately, you can follow the instructions [here](https://developers.google.com/earth-engine/python_install_manual).
+Note that the `pyveg` package has some compatibility issues with the latest version of the Earth Engine API. If in doubt, install version `0.1.210`.
 
 ### Downloading and analysing images from GEE:
 
