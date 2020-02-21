@@ -64,6 +64,7 @@ def create_network_figures(data_df, metric, output_dir, output_name):
     """
     if set(['date','longitude','latitude',metric]).issubset(data_df.columns):
 
+        data_df['abs_metric'] = data_df[metric]*-1
 
         # turn lat, long into geopandas
         data_df['geometry'] = [Point(xy) for xy in zip(data_df.latitude, data_df.longitude)]
@@ -72,8 +73,8 @@ def create_network_figures(data_df, metric, output_dir, output_name):
         data_geo_pd = gpd.GeoDataFrame(data_df, crs=crs, geometry=data_df['geometry'])
 
         # get min and max values observed in the data to create a range
-        vmin = min(data_df[metric])
-        vmax = max(data_df[metric])
+        vmin = 0
+        vmax = 1000
 
         # get all dates avalaibles
         list_of_dates = np.unique(data_geo_pd['date'])
@@ -83,8 +84,12 @@ def create_network_figures(data_df, metric, output_dir, output_name):
             # create figure and axes for Matplotlib
             fig, ax = plt.subplots(1, figsize=(6, 6))
 
-            data_geo_pd[data_geo_pd['date'] == date].plot(marker='o', ax=ax, alpha=.5, markersize=100, column=metric, \
-                                                          figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap='Reds')
+            import matplotlib.cm as cm
+
+            cmap = cm.summer
+
+            data_geo_pd[data_geo_pd['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column='abs_metric', \
+                                                          figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
 
             # ridiculous step
             date_str = pd.to_datetime(str(date)).strftime('%Y-%m-%d')
@@ -95,7 +100,10 @@ def create_network_figures(data_df, metric, output_dir, output_name):
                         fontsize=25)
 
             # Create colorbar as a legend
-            sm = plt.cm.ScalarMappable(cmap='Reds', norm=plt.Normalize(vmin=vmin, vmax=vmax))
+
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+
+
             sm._A = []
             fig.colorbar(sm)
 
@@ -112,3 +120,46 @@ def create_network_figures(data_df, metric, output_dir, output_name):
 
 
 
+def create_network_time_series(data_df, metric, output_dir, output_name):
+
+
+    # get data for each unique pair of lat, long
+    unique_coords = data_df[['latitude','longitude',metric,'date']].groupby(['latitude','longitude'])
+
+    fig, ax = plt.subplots(1, figsize=(12, 6))
+
+    count = 0
+
+    # get time series
+    for name, group in unique_coords:
+
+        if group.shape[0]>1:
+
+            plt.plot(group['date'], group['offset50'],label = str(round(name[0],2))+","+str(round(name[1],2)))
+            count = count +1
+
+        if count > 10:
+
+            plt.title('Network Centrality Measure')
+            plt.ylabel('offset50');
+            plt.legend();
+            ax.tick_params(axis='x', rotation=45)
+            plt.ylim((-1200, 0))
+            fig.savefig(os.path.join(output_dir,output_name+"_"+str(round(name[0],2))+","+str(round(name[1],2))+"_time_series.png"), dpi=100)
+            plt.clf()
+
+            count = 0
+
+
+
+
+def create_general_network_time_series(data_df, metric):
+
+
+    unique_dates = data_df[['latitude','longitude',metric,'date']].groupby(['date'])[metric].agg(['mean', 'std'])
+
+    fig, ax = plt.subplots(2, figsize=(12, 6))
+    ax[0].plot(unique_dates.index, unique_dates['mean'])
+    ax[0].set_ylim((-800,-400))
+    ax[1].plot(unique_dates.index, unique_dates['std'])
+    fig.savefig('test.png', dpi=100)
