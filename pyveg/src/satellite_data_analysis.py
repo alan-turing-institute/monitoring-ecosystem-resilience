@@ -11,13 +11,7 @@ import dateparser
 from datetime import datetime, timedelta
 import numpy as np
 
-
-from .gee_interface import (
-    apply_mask_cloud,
-    add_NDVI,
-    download_and_unzip,
-    get_download_urls
-    )
+from .gee_interface import ee_download
 
 from .image_utils import (
     convert_to_bw,
@@ -58,7 +52,7 @@ def find_mid_period(start_time, end_time):
     return mid.split("T")[0]
 
 
-def divide_time_period(start_date, end_date, n):
+def slice_time_period(start_date, end_date, n):
     """
     Divide the full period between the start_date and end_date into n equal-length
     (to the nearest day) chunks.
@@ -86,7 +80,7 @@ def divide_time_period(start_date, end_date, n):
     return output_list
 
 
-def divide_time_period_in_n_day_portions(start_date, end_date, days_per_chunk):
+def get_num_n_day_slices(start_date, end_date, days_per_chunk):
     """
     Divide the full period between the start_date and end_date into n equal-length
     (to the nearest day) chunks. The size of the chunk is defined by days_per_chunk.
@@ -104,7 +98,7 @@ def divide_time_period_in_n_day_portions(start_date, end_date, days_per_chunk):
 
     return  n
 
-
+'''# can remove this function - should go into gee_interface
 def construct_region_string(point, size=0.1):
     """
     convert a list of two floats [long, lat]
@@ -117,7 +111,7 @@ def construct_region_string(point, size=0.1):
     bottom = point[1] - size/2
     coords =  str([[left,top],[right,top],[right,bottom],[left,bottom]])
     return coords
-
+'''
 
 def write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix,
                           coords, bands, threshold):
@@ -152,7 +146,7 @@ def write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix
     #output_filename = construct_filename("bw")
     #save_image(bw_image, output_dir, output_filename)
 
-
+'''
 def process_coords(coords,
                    image_coll,
                    bands,
@@ -247,8 +241,44 @@ def process_coords(coords,
                     output_filename += "_{}".format(output_prefix)
                     output_filename += '.json'
                     save_json(feature_vec_metrics, output_dir, output_filename)
+'''
 
 
+def get_vegetation(collection_dict, coords, date_range, region_size=0.1, scale=10):
+    """
+    
+    """
+
+    download_path = ee_download(collection_dict, coords, date_range, region_size, scale)
+
+    # check all expected .tif files are present in the download folder
+    
+    # extract files
+    
+    # split_into_sub_images()    
+    
+    # get_network_centrality()    
+
+    # return grid_of_netwwork_centralities
+
+
+
+def get_rainfall(collection_dict, coords, date_range, region_size=0.1, scale=10):
+    """
+    
+    """
+
+    download_path = ee_download(collection_dict, coords, date_range, region_size, scale)
+
+    # check all expected .tif files are present in the download folder
+    
+    # extract files
+    
+    # get mean of whole image
+    
+
+
+''' # will be replaced
 def get_time_series(num_time_periods,
                     coords, # could be None if we have an input_file listing coords
                     image_coll,
@@ -290,3 +320,34 @@ def get_time_series(num_time_periods,
 
         print(f"Finihsed processing the time period between {period[0]} and {period[1]}.")
     return True
+'''
+
+
+def process_single_collection(collection_dict, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+
+    # unpack date range
+    start_date, end_date = date_range
+
+    # get the list of time intervals
+    num_slices = get_num_n_day_slices(start_date, end_date, n_days_per_slice)
+    date_ranges = slice_time_period(date_range[0], date_range[1], num_slices)
+
+    # for each time interval
+    for date_range in date_ranges:
+        
+        if collection_dict['type'] == 'vegetation':
+            get_vegetation(collection_dict, coords, date_range, region_size, scale)
+        else:
+            get_rainfall(collection_dict, coords, date_range, region_size, scale)
+
+            
+
+def process_all_collections(collections, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+
+    for collection_dict in collections: # possible to parallelise?
+
+        process_single_collection(collection_dict, coords, date_range, n_days_per_slice, region_size, scale)
+
+    # wait for everything to finish
+
+    #make_json_from_results()
