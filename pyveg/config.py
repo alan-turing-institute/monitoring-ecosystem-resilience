@@ -26,17 +26,17 @@ data_sources = [
     },
     {
         'collection_name': 'NOAA/PERSIANN-CDR',
-        'type': 'weather',
+        'type': 'precipitation',
         'precipitation_band': 'precipitation'
     },
     {
         'collection_name': 'NASA/GPM_L3/IMERG_V06',
-        'type': 'weather',
+        'type': 'precipitation',
         'precipitation_band': 'precipitationCal'
     },
     {
         'collection_name': 'ECMWF/ERA5/MONTHLY',
-        'type': 'weather',
+        'type': 'unsupported',
         'precipitation_band': 'total_precipitation',
         'temperature_band': 'mean_2m_air_temperature'
     }
