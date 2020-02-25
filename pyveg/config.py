@@ -9,6 +9,9 @@ date_range = ('2016-01-01', '2017-01-01')
 
 num_days_per_point = 30
 
+collections_to_use = ['Landsat', 'Copernicus']
+
+
 data_collections = {
     'Copernicus' : {
         'collection_name': 'COPERNICUS/S2',
@@ -42,4 +45,7 @@ data_collections = {
     }
 }
 
+data_collections = {key : value for key,value in data_collections.items() if key in collections_to_use}
+
 cloudy_pixel_percent = 10
+
