@@ -181,7 +181,7 @@ def ee_prep_data(collection_dict,
 
         # select only RGB + NDVI bands to download
         bands_to_select = list(collection_dict['RGB_bands']) + ['NDVI']
-        renamed_bands = [collection_dict['collection_name'].split('/')[0] + band for band in bands_to_select]
+        renamed_bands = [collection_dict['collection_name'].split('/')[0] + '-' + band for band in bands_to_select]
         image = image.select(bands_to_select, renamed_bands)
 
     # for precipitation data
