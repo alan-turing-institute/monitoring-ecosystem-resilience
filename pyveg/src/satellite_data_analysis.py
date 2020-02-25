@@ -304,7 +304,7 @@ def process_single_collection(output_dir,collection_dict, coords, date_range, n_
 
             
 
-def process_all_collections(collections, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+def process_all_collections(output_dir, collections, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
 
     for name, collection_dict in collections.items(): # possible to parallelise?
 

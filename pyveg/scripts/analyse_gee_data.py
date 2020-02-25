@@ -69,7 +69,7 @@ def main():
         print(collection_dict)
     print('\n')
 
-    process_all_collections(input_collections,
+    process_all_collections(config.output_dir,input_collections,
                             coords,
                             (start_date,end_date),
                             config.num_days_per_point)
