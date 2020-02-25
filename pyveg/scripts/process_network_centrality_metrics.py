@@ -58,7 +58,7 @@ def main():
 
     create_gif_from_images(input_dir, output_name+"_Images10Km_ndvibw_","10kmLargeImage_ndvibw")
 
-
+    metrics_df.to_csv(output_dir+"metrics_df.csv")
 
     print("Done")
 
