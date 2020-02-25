@@ -278,7 +278,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     download_path = ee_download(output_dir, collection_dict, coords, date_range, region_size, scale)
 
     # save the rgb image
-    # should change this to remove the URI for the the filename (and put something in the foldername)
+    # ?should change this to remove the URI for the the filename (and put something in the foldername)?
     filenames = [filename for filename in os.listdir(download_path) if filename.endswith(".tif")]
 
     if len(filenames) == 0:
@@ -287,22 +287,27 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     # extract this to feed into `convert_to_rgb()`
     gee_URI = filenames[0].split('.')[0]
 
-    # make the rgb image
+    # save the rgb image
     rgb_image = convert_to_rgb(os.path.join(download_path, gee_URI), collection_dict['RGB_bands'])
+    rgb_filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'RGB')
+    save_image(rgb_image, os.path.dirname(rgb_filepath), os.path.basename(rgb_filepath))
 
-    # get filepath
-    filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'RGB')
-    dirname = os.path.dirname(filepath)
-    basename = os.path.basename(filepath)
+    # save the NDVI image
+    ndvi_image = scale_tif(os.path.join(download_path, gee_URI), "NDVI")
+    ndvi_filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'NDVI')
+    save_image(ndvi_image, os.path.dirname(ndvi_filepath), os.path.basename(ndvi_filepath))
 
-    # save rgb image
-    save_image(rgb_image, dirname, basename)
+    # check image quality on the colour image
+    img_array = pillow_to_numpy(rgb_image)
+    black = [0,0,0]
+    black_pix_threshold = 0.1
+    n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
+
+    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) > black_pix_threshold:
+        print('Detected a low quality image, skipping to next date.')
+        return
 
 
-    # check all expected .tif files are present in the download folder
-    
-    # extract files
-    
     # split_into_sub_images()    
     
     # get_network_centrality()    
