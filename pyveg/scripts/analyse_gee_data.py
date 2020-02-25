@@ -69,14 +69,13 @@ def main():
 
     coords = [float(x) for x in args.coords.split(",")]
 
-    process_all_collections(config.data_sources,
-                    coords,
-                    (start_date,end_date),
-                    config.num_days_per_point)
+    process_all_collections(config.data_collections.values(),
+                            coords,
+                            (start_date,end_date),
+                            config.num_days_per_point)
 
 
     print("Done")
-
 
 
 

@@ -269,10 +269,11 @@ def ee_download(collection_dict, coords, date_range, region_size=0.1, scale=10):
     # download files and unzip to temporary directory
     download_and_unzip(download_url, download_dir)
 
-    for file in os.listdir(download_dir):
-        if file.endswith(".tif"):
-            print(file)
-            print(cv.imread(os.path.join(download_dir, file), cv.IMREAD_ANYDEPTH))
+    # do in caller function
+    #for file in os.listdir(download_dir):
+    #    if file.endswith(".tif"):
+    #        print(file)
+    #        print(cv.imread(os.path.join(download_dir, file), cv.IMREAD_ANYDEPTH))
 
     # confirm download completed as expected?
 
