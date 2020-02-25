@@ -113,6 +113,32 @@ def construct_region_string(point, size=0.1):
     return coords
 '''
 
+def construct_image_savepath(output_dir, collection_name, coords, date_range, image_type):
+    """
+    Function to abstract output image filename construction. Current approach is to create 
+    a new dir inside `output_dir` for the satellite, and then save date and coordinate 
+    stamped images in this dir.
+    """
+
+    # make a new dir inside `output_dir`
+    output_subdir = os.path.join(output_dir, collection_name.split('/')[0])
+
+    if not os.path.exists(output_subdir):
+        os.makedirs(output_subdir, exist_ok=True)
+
+    # get the mid point of the date range
+    mid_period_string = find_mid_period(date_range[0], date_range[1])
+
+    # filename is the date, coordinates, and image type
+    filename = f'{mid_period_string}_{coords[0]}-{coords[1]}_{image_type}.png'
+
+    # full path is dir + filename
+    full_path = os.path.join(output_subdir, filename)
+
+    return full_path
+
+
+
 def write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix,
                           coords, bands, threshold):
     """
@@ -244,18 +270,34 @@ def process_coords(coords,
 '''
 
 
-def get_vegetation(collection_dict, coords, date_range, region_size=0.1, scale=10):
+def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
     """
     
     """
     # download vegetation data for this time period
-    download_path = ee_download(collection_dict, coords, date_range, region_size, scale)
+    download_path = ee_download(output_dir, collection_dict, coords, date_range, region_size, scale)
 
     # save the rgb image
-    for filename in os.listdir(download_path):
-        if filename.endswith(".tif") and any(f'.{band}.' in filename for band in collection_dict['RGB_bands']):
-            print(file)
-    #rgb_arrays = [cv.imread(os.path.join(download_dir, file), cv.IMREAD_ANYDEPTH)]
+    # should change this to remove the URI for the the filename (and put something in the foldername)
+    filenames = [filename for filename in os.listdir(download_path) if filename.endswith(".tif")]
+
+    if len(filenames) == 0:
+        return 
+
+    # extract this to feed into `convert_to_rgb()`
+    gee_URI = filenames[0].split('.')[0]
+
+    # make the rgb image
+    rgb_image = convert_to_rgb(os.path.join(download_path, gee_URI), collection_dict['RGB_bands'])
+
+    # get filepath
+    filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'RGB')
+    dirname = os.path.dirname(filepath)
+    basename = os.path.basename(filepath)
+
+    # save rgb image
+    save_image(rgb_image, dirname, basename)
+
 
     # check all expected .tif files are present in the download folder
     
@@ -332,7 +374,7 @@ def get_time_series(num_time_periods,
 '''
 
 
-def process_single_collection(collection_dict, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+def process_single_collection(output_dir, collection_dict, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
 
     # unpack date range
     start_date, end_date = date_range
@@ -345,17 +387,17 @@ def process_single_collection(collection_dict, coords, date_range, n_days_per_sl
     for date_range in date_ranges:
         
         if collection_dict['type'] == 'vegetation':
-            get_vegetation(collection_dict, coords, date_range, region_size, scale)
+            get_vegetation(output_dir, collection_dict, coords, date_range, region_size, scale)
         else:
             get_rainfall(collection_dict, coords, date_range, region_size, scale)
 
             
 
-def process_all_collections(collections, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+def process_all_collections(output_dir, collections, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
 
-    for name, collection_dict in collections.items(): # possible to parallelise?
+    for _, collection_dict in collections.items(): # possible to parallelise?
 
-        process_single_collection(collection_dict, coords, date_range, n_days_per_slice, region_size, scale)
+        process_single_collection(output_dir, collection_dict, coords, date_range, n_days_per_slice, region_size, scale)
 
     # wait for everything to finish
 
