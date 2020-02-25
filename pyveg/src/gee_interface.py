@@ -189,7 +189,7 @@ def ee_prep_data(collection_dict,
         image = dataset.sum()
 
         # select precipitation and rename band
-        image = image.select(collection_dict['precipitation_band'], 'precipitation')
+        image = image.select(list(collection_dict['precipitation_band']))
 
     # get a URL from which we can download the resulting data
     url = image.getDownloadURL(
@@ -225,7 +225,7 @@ def get_region_string(point, size=0.1):
     return coords
 
 
-def ee_download(collection_dict, coords, date_range, region_size=0.1, scale=10):
+def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
     """
     General function to download various kinds of data from Google Earth Engine. We can get
     vegetation and weather data through this function. Cloud masking logic is performed for
@@ -264,7 +264,7 @@ def ee_download(collection_dict, coords, date_range, region_size=0.1, scale=10):
         return
 
     # path to temporary directory to download data
-    download_dir = os.path.join(TMPDIR, f'gee_{coords[0]}_{coords[1]}')
+    download_dir = os.path.join(output_dir, f'gee_{coords[0]}_{coords[1]}')
 
     # download files and unzip to temporary directory
     download_and_unzip(download_url, download_dir)

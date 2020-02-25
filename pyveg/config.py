@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-output_dir = 'test'
 
 coordinates = (27.99,11.29) # initial
 #coordinates = (28.37,11.12) # labyrinths
@@ -9,8 +8,9 @@ date_range = ('2016-01-01', '2017-01-01')
 
 num_days_per_point = 30
 
-collections_to_use = ['Landsat', 'Copernicus']
+collections_to_use = ['unsupported']
 
+output_dir = 'test'
 
 data_collections = {
     'Copernicus' : {
@@ -30,18 +30,18 @@ data_collections = {
     'NOAA' : {
         'collection_name': 'NOAA/PERSIANN-CDR',
         'type': 'precipitation',
-        'precipitation_band': 'precipitation'
+        'precipitation_band': ['precipitation']
     },
     'NASA' : {
         'collection_name': 'NASA/GPM_L3/IMERG_V06',
         'type': 'precipitation',
-        'precipitation_band': 'precipitationCal'
+        'precipitation_band': ['precipitationCal']
     },
     'unsupported' : {
-        'collection_name': 'ECMWF/ERA5/MONTHLY',
-        'type': 'unsupported',
-        'precipitation_band': 'total_precipitation',
-        'temperature_band': 'mean_2m_air_temperature'
+        'collection_name': "ECMWF/ERA5/DAILY",
+        'type': 'precipitation',
+        'precipitation_band': ['total_precipitation'],
+        'temperature_band': ['mean_2m_air_temperature']
     }
 }
 

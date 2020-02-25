@@ -10,6 +10,7 @@ import argparse
 import dateparser
 from datetime import datetime, timedelta
 import numpy as np
+import cv2 as cv
 
 from .gee_interface import ee_download
 
@@ -244,12 +245,12 @@ def process_coords(coords,
 '''
 
 
-def get_vegetation(collection_dict, coords, date_range, region_size=0.1, scale=10):
+def get_vegetation(output_dir , collection_dict, coords, date_range, region_size=0.1, scale=10):
     """
     
     """
 
-    download_path = ee_download(collection_dict, coords, date_range, region_size, scale)
+    download_path = ee_download(output_dir,collection_dict, coords, date_range, region_size, scale)
 
     # check all expected .tif files are present in the download folder
     
@@ -263,72 +264,28 @@ def get_vegetation(collection_dict, coords, date_range, region_size=0.1, scale=1
 
 
 
-def get_rainfall(collection_dict, coords, date_range, region_size=0.1, scale=10):
+def get_rainfall(output_dir,collection_dict, coords, date_range, region_size=0.1, scale=10):
     """
     
     """
 
-    download_path = ee_download(collection_dict, coords, date_range, region_size, scale)
+    download_path = ee_download(output_dir,collection_dict, coords, date_range, region_size, scale)
 
-    print (download_path)
+    metrics_dict = {}
 
-    # check all expected .tif files are present in the download folder
-    # and also check download path is not none
-    
-    # extract files
-    
-    # get mean of whole image
+    for file in os.listdir(download_path):
+        if file.endswith(".tif"):
+            name_variable = (file.split('.'))[1]
+            variable_array = cv.imread(os.path.join(download_path, file), cv.IMREAD_ANYDEPTH)
 
-    # return mean value of rainfall
-    
+            metrics_dict[name_variable] = variable_array.mean()
 
-
-''' # will be replaced
-def get_time_series(num_time_periods,
-                    coords, # could be None if we have an input_file listing coords
-                    image_coll,
-                    bands,
-                    region_size, ## dimensions of output image in longitude/latitude
-                    scale, # size of each pixel in output image (in m)
-                    start_date,
-                    end_date,
-                    mask_cloud=False, ## EXPERIMENTAL - false by default
-                    output_dir=".",
-                    output_suffix=".png", # end of output filename, including file extension
-                    network_centrality = False,
-                    sub_image_size=[50,50],
-                    threshold=470):
-    """
-    Divide the time between start_date and end_date into num_time_periods periods
-    and call download_images.process coords for each.
-    """
-    time_periods = divide_time_period(start_date, end_date, num_time_periods)
-    
-    for period in time_periods:
-        print(f"\nProcessing the time period between {period[0]} and {period[1]}...")
-        mid_period_string = find_mid_period(period[0], period[1])
-        output_prefix = mid_period_string
-
-        process_coords(coords,
-                       image_coll,
-                       bands,
-                       region_size,
-                       scale,
-                       period[0],
-                       period[1],
-                       mask_cloud,
-                       output_dir,
-                       output_prefix,
-                       output_suffix,
-                       network_centrality,
-                       threshold=threshold)
-
-        print(f"Finihsed processing the time period between {period[0]} and {period[1]}.")
-    return True
-'''
+    print (metrics_dict)
+    return metrics_dict
 
 
-def process_single_collection(collection_dict, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+
+def process_single_collection(output_dir,collection_dict, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
 
     # unpack date range
     start_date, end_date = date_range
@@ -341,9 +298,9 @@ def process_single_collection(collection_dict, coords, date_range, n_days_per_sl
     for date_range in date_ranges:
         
         if collection_dict['type'] == 'vegetation':
-            get_vegetation(collection_dict, coords, date_range, region_size, scale)
+            get_vegetation(output_dir,collection_dict, coords, date_range, region_size, scale)
         else:
-            get_rainfall(collection_dict, coords, date_range, region_size, scale)
+            get_rainfall(output_dir,collection_dict, coords, date_range, region_size, scale)
 
             
 
@@ -351,7 +308,7 @@ def process_all_collections(collections, coords, date_range, n_days_per_slice, r
 
     for name, collection_dict in collections.items(): # possible to parallelise?
 
-        process_single_collection(collection_dict, coords, date_range, n_days_per_slice, region_size, scale)
+         process_single_collection(output_dir,collection_dict, coords, date_range, n_days_per_slice, region_size, scale)
 
     # wait for everything to finish
 

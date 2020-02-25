@@ -1,4 +1,4 @@
-from pyveg.src.satellite_data_analysis import get_vegetation
+from pyveg.src.satellite_data_analysis import get_vegetation, get_rainfall
 
 coordinates = (27.99,11.29)
 date_range = ('2016-01-01', '2017-01-01')
@@ -27,7 +27,7 @@ data_collections = {
     'NASA' : {
         'collection_name': 'NASA/GPM_L3/IMERG_V06',
         'type': 'precipitation',
-        'precipitation_band': 'precipitationCal'
+        'precipitation_band': ('precipitationCal','precipitationUncal')
     },
     'unsupported' : {
         'collection_name': 'ECMWF/ERA5/MONTHLY',
@@ -39,4 +39,13 @@ data_collections = {
 
 def test_get_vegetation():
     result = get_vegetation(data_collections['Copernicus'], coordinates, date_range)
-    assert(isinstance(result, float)))
+    assert(isinstance(result, float))
+
+
+def test_get_rainfall():
+
+    result = get_rainfall(data_collections['NOAA'], coordinates, date_range)
+
+
+    assert (len(result.items())!=0)
+

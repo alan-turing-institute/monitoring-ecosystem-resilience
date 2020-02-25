@@ -52,6 +52,8 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--start_date",help="YYYY-MM-DD", default="2013-03-30")
     parser.add_argument("--end_date",help="YYYY-MM-DD", default="2013-04-01")
+    #parser.add_argument("--num_time_points",help="Get a time series with this many divisions between start_date and end_date", type=int, default=1)
+
     parser.add_argument("--coords",help="'long,lat'")
 
     args = parser.parse_args()
@@ -73,7 +75,8 @@ def main():
                             config.num_days_per_point)
 
 
-    print('Done!')
+    print("Done")
+
 
 
 if __name__ == "__main__":
