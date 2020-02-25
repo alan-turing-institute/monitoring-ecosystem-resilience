@@ -39,4 +39,4 @@ data_collections = {
 
 def test_get_vegetation():
     result = get_vegetation(data_collections['Copernicus'], coordinates, date_range)
-    assert(isinstance(result, float)))
+    assert(isinstance(result, float))
