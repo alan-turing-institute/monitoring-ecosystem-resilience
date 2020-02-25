@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-output_dir = 'test'
+output_dir = 'TEST_OUT'
 
 coordinates = (27.99,11.29) # initial
 #coordinates = (28.37,11.12) # labyrinths
