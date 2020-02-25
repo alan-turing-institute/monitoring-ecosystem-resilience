@@ -349,7 +349,7 @@ def process_single_collection(collection_dict, coords, date_range, n_days_per_sl
 
 def process_all_collections(collections, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
 
-    for collection_dict in collections: # possible to parallelise?
+    for name, collection_dict in collections.items(): # possible to parallelise?
 
         process_single_collection(collection_dict, coords, date_range, n_days_per_slice, region_size, scale)
 
