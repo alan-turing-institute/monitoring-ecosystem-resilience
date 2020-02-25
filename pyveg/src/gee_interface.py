@@ -259,6 +259,10 @@ def ee_download(collection_dict, coords, date_range, region_size=0.1, scale=10):
                                 region_size,
                                 scale)
 
+    # didn't find any valid images in this date range
+    if download_url is None:
+        return
+
     # path to temporary directory to download data
     download_dir = os.path.join(TMPDIR, f'gee_{coords[0]}_{coords[1]}')
 
@@ -269,9 +273,9 @@ def ee_download(collection_dict, coords, date_range, region_size=0.1, scale=10):
         if file.endswith(".tif"):
             print(file)
             print(cv.imread(os.path.join(download_dir, file), cv.IMREAD_ANYDEPTH))
+
+    # confirm download completed as expected?
+
     # return the path so downloaded files can be handled by caller
     return download_dir
 
- # can use these lines to temporarily test
-#import config
-#ee_download(config.data_sources[0],  (27.99, 11.29), ('2015-01-01', '2016-01-01'))

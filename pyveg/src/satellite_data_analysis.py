@@ -271,10 +271,13 @@ def get_rainfall(collection_dict, coords, date_range, region_size=0.1, scale=10)
     download_path = ee_download(collection_dict, coords, date_range, region_size, scale)
 
     # check all expected .tif files are present in the download folder
+    # and also check download path is not none
     
     # extract files
     
     # get mean of whole image
+
+    # return mean value of rainfall
     
 
 
