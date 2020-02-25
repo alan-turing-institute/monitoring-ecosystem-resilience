@@ -180,7 +180,9 @@ def ee_prep_data(collection_dict,
         image = add_NDVI(image, collection_dict['RGB_bands'][0], collection_dict['NIR_band'])
 
         # select only RGB + NDVI bands to download
-        image = image.select(list(collection_dict['RGB_bands']) + ['NDVI'])
+        bands_to_select = list(collection_dict['RGB_bands']) + ['NDVI']
+        renamed_bands = [collection_dict['collection_name'].split('/')[0] + band for band in bands_to_select]
+        image = image.select(bands_to_select, renamed_bands)
 
     # for precipitation data
     if data_type == 'precipitation':
