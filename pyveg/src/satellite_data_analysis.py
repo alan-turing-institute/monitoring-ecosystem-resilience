@@ -248,8 +248,14 @@ def get_vegetation(collection_dict, coords, date_range, region_size=0.1, scale=1
     """
     
     """
-
+    # download vegetation data for this time period
     download_path = ee_download(collection_dict, coords, date_range, region_size, scale)
+
+    # save the rgb image
+    for filename in os.listdir(download_path):
+        if filename.endswith(".tif") and any(f'.{band}.' in filename for band in collection_dict['RGB_bands']):
+            print(file)
+    #rgb_arrays = [cv.imread(os.path.join(download_dir, file), cv.IMREAD_ANYDEPTH)]
 
     # check all expected .tif files are present in the download folder
     
