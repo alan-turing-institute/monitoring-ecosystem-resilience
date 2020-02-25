@@ -96,10 +96,13 @@ def download_and_unzip(url, output_tmpdir):
                  if filename.endswith(".tif")]
     if len(tif_files) == 0:
         raise RuntimeError("No files extracted")
+    
     # get the filename before the "Bx" band identifier
     tif_filebases = [tif_file.split(".")[0] for tif_file in tif_files]
+    
     # get the unique list
     tif_filebases = set(tif_filebases)
+    
     # prepend the directory name to each of the filebases
     return [os.path.join(output_tmpdir, tif_filebase) \
             for tif_filebase in tif_filebases]
@@ -181,8 +184,8 @@ def ee_prep_data(collection_dict,
 
         # select only RGB + NDVI bands to download
         bands_to_select = list(collection_dict['RGB_bands']) + ['NDVI']
-        renamed_bands = [collection_dict['collection_name'].split('/')[0] + '-' + band for band in bands_to_select]
-        image = image.select(bands_to_select, renamed_bands)
+        #renamed_bands = [collection_dict['collection_name'].split('/')[0] + '-' + band for band in bands_to_select]
+        image = image.select(bands_to_select)
 
     # for precipitation data
     if data_type == 'precipitation':
