@@ -230,7 +230,7 @@ def get_region_string(point, size=0.1):
     return coords
 
 
-def ee_download(collection_dict, coords, date_range, region_size=0.1, scale=10):
+def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
     """
     General function to download various kinds of data from Google Earth Engine. We can get
     vegetation and weather data through this function. Cloud masking logic is performed for
@@ -238,6 +238,9 @@ def ee_download(collection_dict, coords, date_range, region_size=0.1, scale=10):
 
     Parameters
     ----------
+    output_dir : str
+        Path to the directory where ee files will be downloaded 
+        and extracted to.
     collection_dict : dict
         Dictionary containing information about the collection (name, 
         type, bands, etc). Follows structure in the config file.
@@ -269,7 +272,7 @@ def ee_download(collection_dict, coords, date_range, region_size=0.1, scale=10):
         return
 
     # path to temporary directory to download data
-    download_dir = os.path.join(TMPDIR, f'gee_{coords[0]}_{coords[1]}')
+    download_dir = os.path.join(output_dir, f'gee_{coords[0]}_{coords[1]}')
 
     # download files and unzip to temporary directory
     download_and_unzip(download_url, download_dir)
