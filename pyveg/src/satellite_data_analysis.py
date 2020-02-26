@@ -113,6 +113,32 @@ def construct_region_string(point, size=0.1):
     return coords
 '''
 
+def construct_image_savepath(output_dir, collection_name, coords, date_range, image_type):
+    """
+    Function to abstract output image filename construction. Current approach is to create 
+    a new dir inside `output_dir` for the satellite, and then save date and coordinate 
+    stamped images in this dir.
+    """
+
+    # make a new dir inside `output_dir`
+    output_subdir = os.path.join(output_dir, collection_name.split('/')[0])
+
+    if not os.path.exists(output_subdir):
+        os.makedirs(output_subdir, exist_ok=True)
+
+    # get the mid point of the date range
+    mid_period_string = find_mid_period(date_range[0], date_range[1])
+
+    # filename is the date, coordinates, and image type
+    filename = f'{mid_period_string}_{coords[0]}-{coords[1]}_{image_type}.png'
+
+    # full path is dir + filename
+    full_path = os.path.join(output_subdir, filename)
+
+    return full_path
+
+
+
 def write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix,
                           coords, bands, threshold):
     """
@@ -244,20 +270,86 @@ def process_coords(coords,
 '''
 
 
-def get_vegetation(collection_dict, coords, date_range, region_size=0.1, scale=10):
+def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
     """
     
     """
+    # download vegetation data for this time period
+    download_path = ee_download(output_dir, collection_dict, coords, date_range, region_size, scale)
 
-    download_path = ee_download(collection_dict, coords, date_range, region_size, scale)
+    # save the rgb image
+    # ?should change this to remove the URI for the the filename (and put something in the foldername)?
+    filenames = [filename for filename in os.listdir(download_path) if filename.endswith(".tif")]
 
-    # check all expected .tif files are present in the download folder
-    
-    # extract files
-    
-    # split_into_sub_images()    
-    
-    # get_network_centrality()    
+    if len(filenames) == 0:
+        return 
+
+    # extract this to feed into `convert_to_rgb()`
+    tif_filebase = os.path.join(download_path, filenames[0].split('.')[0])
+
+    # save the rgb image
+    rgb_image = convert_to_rgb(tif_filebase, collection_dict['RGB_bands'])
+    rgb_filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'RGB')
+    save_image(rgb_image, os.path.dirname(rgb_filepath), os.path.basename(rgb_filepath))
+
+    # save the NDVI image
+    ndvi_image = scale_tif(tif_filebase, "NDVI")
+    ndvi_filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'NDVI')
+    save_image(ndvi_image, os.path.dirname(ndvi_filepath), os.path.basename(ndvi_filepath))
+
+    # check image quality on the colour image
+    img_array = pillow_to_numpy(rgb_image)
+    black = [0,0,0]
+    black_pix_threshold = 0.1
+    n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
+
+    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) > black_pix_threshold:
+        print('Detected a low quality image, skipping to next date.')
+        return
+
+
+    # the image looks ok, we can run network centrality on the sub-images
+    if collection_dict['do_network_centrality']:
+
+        # define sub image size
+        sub_image_size = [50,50]
+        output_prefix = find_mid_period(date_range[0], date_range[1])
+        output_suffix = '.png'
+        nc_output_dir = os.path.join(output_dir, collection_dict['collection_name'].split('/')[0], 'network_centrality')
+
+        # start by dividing the image into smaller sub-images
+        sub_images = crop_image_npix(ndvi_image,
+                                     sub_image_size[0],
+                                     sub_image_size[1],
+                                     region_size,
+                                     coords)
+
+        # loop through sub images
+        for image in sub_images:
+
+            sub_image = process_image(image[0]) # new adaptive threshold
+
+            sub_coords = image[1]
+            output_filename = os.path.basename(tif_filebase)
+            output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+            output_filename += '_' + output_suffix
+
+            # save sub image
+            save_image(sub_image, nc_output_dir, output_filename)
+
+            # run network centrality
+            image_array = pillow_to_numpy(sub_image)
+            feature_vec, sel_pixels = subgraph_centrality(image_array)
+            feature_vec_metrics = feature_vector_metrics(feature_vec)
+            feature_vec_metrics['latitude'] = sub_coords[0]
+            feature_vec_metrics['longitude'] = sub_coords[1]
+            feature_vec_metrics['date']= output_prefix
+            output_filename = os.path.basename(tif_filebase)
+            output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+            output_filename += "_{}".format(output_prefix)
+            output_filename += '.json'
+            save_json(feature_vec_metrics, nc_output_dir, output_filename)
+
 
     # return grid_of_netwwork_centralities
 
@@ -326,7 +418,7 @@ def get_time_series(num_time_periods,
 '''
 
 
-def process_single_collection(collection_dict, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+def process_single_collection(output_dir, collection_dict, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
 
     # unpack date range
     start_date, end_date = date_range
@@ -339,17 +431,17 @@ def process_single_collection(collection_dict, coords, date_range, n_days_per_sl
     for date_range in date_ranges:
         
         if collection_dict['type'] == 'vegetation':
-            get_vegetation(collection_dict, coords, date_range, region_size, scale)
+            get_vegetation(output_dir, collection_dict, coords, date_range, region_size, scale)
         else:
             get_rainfall(collection_dict, coords, date_range, region_size, scale)
 
             
 
-def process_all_collections(collections, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+def process_all_collections(output_dir, collections, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
 
-    for name, collection_dict in collections.items(): # possible to parallelise?
+    for _, collection_dict in collections.items(): # possible to parallelise?
 
-        process_single_collection(collection_dict, coords, date_range, n_days_per_slice, region_size, scale)
+        process_single_collection(output_dir, collection_dict, coords, date_range, n_days_per_slice, region_size, scale)
 
     # wait for everything to finish
 
