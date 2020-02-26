@@ -75,8 +75,8 @@ def download_and_unzip(url, output_tmpdir):
     r = requests.get(url)
     if not r.status_code == 200:
         raise RuntimeError(" HTTP Error getting download link {}".format(url))
-    # remove output directory and recreate it
-    shutil.rmtree(output_tmpdir, ignore_errors=True)
+    # DO NOT remove output directory and recreate it
+    #shutil.rmtree(output_tmpdir, ignore_errors=True)
     os.makedirs(output_tmpdir, exist_ok=True)
     output_zipfile = os.path.join(output_tmpdir,"gee.zip")
     with open(output_zipfile, "wb") as outfile:
@@ -170,6 +170,9 @@ def ee_prep_data(collection_dict,
     else:
         print(f'Found {dataset.size().getInfo()} valid images of {dataset_size} total images in this date range.')
 
+
+    image_list = []
+
     # if we are looking at vegetation
     if data_type == 'vegetation':
 
@@ -182,22 +185,33 @@ def ee_prep_data(collection_dict,
         # select only RGB + NDVI bands to download
         image = image.select(list(collection_dict['RGB_bands']) + ['NDVI'])
 
+        image_list.append(image)
+
     # for precipitation data
-    if data_type == 'precipitation':
-        
-        # sum the precipitation across all dates
-        image = dataset.sum()
+    if data_type == 'weather':
 
-        # select precipitation and rename band
-        image = image.select(list(collection_dict['precipitation_band']))
+        if 'precipitation_band' in collection_dict.keys():
+            # sum the precipitation across all dates
+            image_weather = dataset.select(list(collection_dict['precipitation_band'])).sum()
+            image_list.append(image_weather)
 
-    # get a URL from which we can download the resulting data
-    url = image.getDownloadURL(
-        {'region': region,
-         'scale': scale}
-    )
+        if 'temperature_band' in collection_dict.keys():
 
-    return url
+            image_temp = dataset.select(list(collection_dict['temperature_band'])).mean()
+            image_list.append(image_temp)
+
+
+    url_list =[]
+
+    for image in image_list:
+        # get a URL from which we can download the resulting data
+        url = image.getDownloadURL(
+            {'region': region,
+            'scale': scale}
+         )
+        url_list.append(url)
+
+    return url_list
 
 
 def get_region_string(point, size=0.1):
@@ -253,29 +267,23 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
     """
 
     # get download URL for all images at these coords
-    download_url = ee_prep_data(collection_dict,
+    download_urls = ee_prep_data(collection_dict,
                                 coords,
                                 date_range,
                                 region_size,
                                 scale)
 
     # didn't find any valid images in this date range
-    if download_url is None:
+    if len(download_urls) == 0:
         return
 
     # path to temporary directory to download data
-    download_dir = os.path.join(output_dir, f'gee_{coords[0]}_{coords[1]}')
+    sub_dir = 'gee_{coords[0]}_{coords[1]}'+"_"+collection_dict['collection_name'].split('/')[0]
+    download_dir = os.path.join(output_dir, sub_dir)
 
-    # download files and unzip to temporary directory
-    download_and_unzip(download_url, download_dir)
-
-    # do in caller function
-    #for file in os.listdir(download_dir):
-    #    if file.endswith(".tif"):
-    #        print(file)
-    #        print(cv.imread(os.path.join(download_dir, file), cv.IMREAD_ANYDEPTH))
-
-    # confirm download completed as expected?
+    for download_url in download_urls:
+        # download files and unzip to temporary directory
+        download_and_unzip(download_url, download_dir)
 
     # return the path so downloaded files can be handled by caller
     return download_dir

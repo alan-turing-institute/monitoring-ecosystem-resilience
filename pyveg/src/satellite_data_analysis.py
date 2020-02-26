@@ -290,9 +290,11 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
 
 
 
-def get_rainfall(output_dir,collection_dict, coords, date_range, region_size=0.1, scale=10):
+def get_weather(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
+
     """
-    
+    Function to get weather data from a given image collection, coordinates and date range.
+    The weather measurements are returned as a dictionary with the summary value for that region and date.
     """
 
     download_path = ee_download(output_dir,collection_dict, coords, date_range, region_size, scale)
@@ -326,7 +328,7 @@ def process_single_collection(output_dir,collection_dict, coords, date_range, n_
         if collection_dict['type'] == 'vegetation':
             get_vegetation(output_dir, collection_dict, coords, date_range, region_size, scale)
         else:
-            get_rainfall(output_dir,collection_dict, coords, date_range, region_size, scale)
+            get_weather(output_dir, collection_dict, coords, date_range, region_size, scale)
 
             
 

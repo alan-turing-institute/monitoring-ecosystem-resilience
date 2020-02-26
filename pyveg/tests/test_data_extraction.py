@@ -1,4 +1,4 @@
-from pyveg.src.satellite_data_analysis import get_vegetation, get_rainfall
+from pyveg.src.satellite_data_analysis import get_vegetation, get_weather
 
 coordinates = (27.99,11.29)
 date_range = ('2016-01-01', '2017-01-01')
@@ -44,7 +44,7 @@ def test_get_vegetation():
 
 def test_get_rainfall():
 
-    result = get_rainfall(data_collections['NOAA'], coordinates, date_range)
+    result = get_weather(data_collections['NOAA'], coordinates, date_range)
 
 
     assert (len(result.items())!=0)
