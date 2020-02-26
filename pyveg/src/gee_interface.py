@@ -32,8 +32,6 @@ LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 
 
 
-
-# EXPERIMENTAL Cloud masking function.  To be applied to Images (not ImageCollections)
 def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     """
     Different input_collections need different steps to be taken to handle
