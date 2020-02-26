@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+output_dir = 'test'
+
 coordinates = (27.99,11.29) # initial
 #coordinates = (28.37,11.12) # labyrinths
  
@@ -9,7 +11,6 @@ num_days_per_point = 30
 
 collections_to_use = ['NASA']
 
-output_dir = 'test'
 
 data_collections = {
     'Copernicus' : {
@@ -36,7 +37,6 @@ data_collections = {
         'type': 'weather',
         'precipitation_band': ['precipitationCal'],
         'temperature_band': ['probabilityLiquidPrecipitation']
-
     },
     'unsupported' : {
         'collection_name': "ECMWF/ERA5/DAILY",
