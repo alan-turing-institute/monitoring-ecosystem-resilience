@@ -278,13 +278,79 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     # download vegetation data for this time period
     download_path = ee_download(output_dir, collection_dict, coords, date_range, region_size, scale)
 
-    # check all expected .tif files are present in the download folder
-    
-    # extract files
-    
-    # split_into_sub_images()    
-    
-    # get_network_centrality()    
+    # save the rgb image
+    # ?should change this to remove the URI for the the filename (and put something in the foldername)?
+    filenames = [filename for filename in os.listdir(download_path) if filename.endswith(".tif")]
+
+    if len(filenames) == 0:
+        return 
+
+    # extract this to feed into `convert_to_rgb()`
+    tif_filebase = os.path.join(download_path, filenames[0].split('.')[0])
+
+    # save the rgb image
+    rgb_image = convert_to_rgb(tif_filebase, collection_dict['RGB_bands'])
+    rgb_filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'RGB')
+    save_image(rgb_image, os.path.dirname(rgb_filepath), os.path.basename(rgb_filepath))
+
+    # save the NDVI image
+    ndvi_image = scale_tif(tif_filebase, "NDVI")
+    ndvi_filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'NDVI')
+    save_image(ndvi_image, os.path.dirname(ndvi_filepath), os.path.basename(ndvi_filepath))
+
+    # check image quality on the colour image
+    img_array = pillow_to_numpy(rgb_image)
+    black = [0,0,0]
+    black_pix_threshold = 0.1
+    n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
+
+    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) > black_pix_threshold:
+        print('Detected a low quality image, skipping to next date.')
+        return
+
+
+    # the image looks ok, we can run network centrality on the sub-images
+    if collection_dict['do_network_centrality']:
+
+        # define sub image size
+        sub_image_size = [50,50]
+        output_prefix = find_mid_period(date_range[0], date_range[1])
+        output_suffix = '.png'
+        nc_output_dir = os.path.join(output_dir, collection_dict['collection_name'].split('/')[0], 'network_centrality')
+
+        # start by dividing the image into smaller sub-images
+        sub_images = crop_image_npix(ndvi_image,
+                                     sub_image_size[0],
+                                     sub_image_size[1],
+                                     region_size,
+                                     coords)
+
+        # loop through sub images
+        for image in sub_images:
+
+            sub_image = process_image(image[0]) # new adaptive threshold
+
+            sub_coords = image[1]
+            output_filename = os.path.basename(tif_filebase)
+            output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+            output_filename += '_' + output_suffix
+
+            # save sub image
+            save_image(sub_image, nc_output_dir, output_filename)
+
+            # run network centrality
+            image_array = pillow_to_numpy(sub_image)
+            feature_vec, sel_pixels = subgraph_centrality(image_array)
+            feature_vec_metrics = feature_vector_metrics(feature_vec)
+            feature_vec_metrics['latitude'] = sub_coords[0]
+            feature_vec_metrics['longitude'] = sub_coords[1]
+            feature_vec_metrics['date']= output_prefix
+            output_filename = os.path.basename(tif_filebase)
+            output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+            output_filename += "_{}".format(output_prefix)
+            output_filename += '.json'
+            save_json(feature_vec_metrics, nc_output_dir, output_filename)
+
 
     # return grid_of_netwwork_centralities
 
