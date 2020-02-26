@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-output_dir = 'test'
+output_dir = 'TEST_OUT'
 
 coordinates = (27.99,11.29) # initial
 #coordinates = (28.37,11.12) # labyrinths
@@ -11,6 +11,7 @@ num_days_per_point = 30
 
 collections_to_use = ['NASA']
 
+do_network_centrality = True
 
 data_collections = {
     'Copernicus' : {
@@ -18,14 +19,16 @@ data_collections = {
         'type': 'vegetation',
         'RGB_bands': ('B4','B3','B2'),
         'NIR_band': 'B8',
-        'cloudy_pix_flag': 'CLOUDY_PIXEL_PERCENTAGE'
+        'cloudy_pix_flag': 'CLOUDY_PIXEL_PERCENTAGE',
+        'do_network_centrality': do_network_centrality
     },
     'Landsat' : {
         'collection_name': 'LANDSAT/LC08/C01/T1_SR',
         'type': 'vegetation',
         'RGB_bands': ('B4','B3','B2'),
         'NIR_band': 'B5',
-        'cloudy_pix_flag': 'CLOUD_COVER'
+        'cloudy_pix_flag': 'CLOUD_COVER',
+        'do_network_centrality': do_network_centrality
     },
     'NOAA' : {
         'collection_name': 'NOAA/PERSIANN-CDR',
