@@ -21,21 +21,24 @@ data_collections = {
     },
     'NOAA' : {
         'collection_name': 'NOAA/PERSIANN-CDR',
-        'type': 'precipitation',
-        'precipitation_band': 'precipitation'
+        'type': 'weather',
+        'precipitation_band': ['precipitation']
     },
     'NASA' : {
         'collection_name': 'NASA/GPM_L3/IMERG_V06',
-        'type': 'precipitation',
-        'precipitation_band': ('precipitationCal','precipitationUncal')
+        'type': 'weather',
+        'precipitation_band': ['precipitationCal'],
+        'temperature_band': ['probabilityLiquidPrecipitation']
+
     },
     'unsupported' : {
-        'collection_name': 'ECMWF/ERA5/MONTHLY',
-        'type': 'unsupported',
-        'precipitation_band': 'total_precipitation',
-        'temperature_band': 'mean_2m_air_temperature'
+        'collection_name': "ECMWF/ERA5/DAILY",
+        'type': 'weather',
+        'precipitation_band': ['total_precipitation'],
+        'temperature_band': ['mean_2m_air_temperature']
     }
 }
+
 
 def test_get_vegetation():
     result = get_vegetation(data_collections['Copernicus'], coordinates, date_range)
@@ -44,8 +47,7 @@ def test_get_vegetation():
 
 def test_get_rainfall():
 
-    result = get_weather(data_collections['NOAA'], coordinates, date_range)
-
+    result = get_weather('test',data_collections['NOAA'], coordinates, date_range)
 
     assert (len(result.items())!=0)
 
