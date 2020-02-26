@@ -32,26 +32,52 @@ LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 
 
 
-
-# EXPERIMENTAL Cloud masking function.  To be applied to Images (not ImageCollections)
-def apply_mask_cloud(image, input_coll):
+def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     """
-    Different input_collections need different steps to be taken to filter
-    out cloud.
-    """
-    if input_coll=='LANDSAT/LC08/C01/T1_SR':
-        mask_func = cloud_mask.landsat8SRPixelQA()
-        image = image.map(mask_func)
-        return image
+    Different input_collections need different steps to be taken to handle
+    cloudy image. The first step is to reject images that more than X% 
+    cloudy pixels (here X=5). The next step is to mask cloudy pixels. This 
+    will hopefully mean that when we take the median of the ImageCollection, 
+    we ignore cloudy pixels.
 
-    elif input_coll=='COPERNICUS/S2':
+    Parameters
+    ----------
+    image_coll : ee.ImageCollection
+        The ImageCollection of images from which we want to remove cloud.
+    collection_name : str
+        Name of the collection so that we can apply collection specific 
+        masking.
+    cloud_pix_flag : str
+        Name of the flag which details the fraction of cloudy pixels in each 
+        image.
+
+    Returns
+    ----------
+    image_coll
+        Image collection with very cloudy images removed, and masked images 
+        containing a tolerable amount of cloud.
+    """
+
+    # construct cloud mask if availible
+    if collection_name=='LANDSAT/LC08/C01/T1_SR':
+        mask_func = cloud_mask.landsat8SRPixelQA() 
+    elif collection_name=='COPERNICUS/S2':
         mask_func = cloud_mask.sentinel2()
-        image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",5)).map(mask_func)
-        return image
     else:
         print("No cloud mask logic defined for input collection {}"\
-              .format(input_coll))
-        return image
+              .format(collection_name))
+        return image_coll
+
+    # images with more than this percent of cloud pixels are removed
+    cloud_pix_frac = 10
+
+    # remove images that have more than 5% cloudy pixels
+    image_coll = image_coll.filter(ee.Filter.lt(cloudy_pix_flag, cloud_pix_frac))
+
+    # apply per pixel cloud mask
+    image_coll = image_coll.map(mask_func)
+
+    return image_coll
 
 
 def add_NDVI(image, red_band, near_infrared_band):
@@ -164,7 +190,7 @@ def ee_prep_data(collection_dict,
 
     # mask clouds in images
     if mask_cloud and data_type == 'vegetation':
-        dataset = apply_mask_cloud(dataset, collection_name)
+        dataset = apply_mask_cloud(dataset, collection_name, collection_dict['cloudy_pix_flag'])
 
     # check we have enough images to work with after cloud masking
     if dataset.size().getInfo() == 0:
