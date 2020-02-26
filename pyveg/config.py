@@ -9,7 +9,7 @@ date_range = ('2016-01-01', '2017-01-01')
 
 num_days_per_point = 30
 
-collections_to_use = ['NASA']
+collections_to_use = ['unsupported']
 
 
 data_collections = {
