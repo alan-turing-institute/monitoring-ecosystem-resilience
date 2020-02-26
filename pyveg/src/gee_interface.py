@@ -170,9 +170,7 @@ def ee_prep_data(collection_dict,
     else:
         print(f'Found {dataset.size().getInfo()} valid images of {dataset_size} total images in this date range.')
 
-
     image_list = []
-
     # if we are looking at vegetation
     if data_type == 'vegetation':
 
@@ -186,7 +184,6 @@ def ee_prep_data(collection_dict,
         image = image.select(list(collection_dict['RGB_bands']) + ['NDVI'])
 
         image_list.append(image)
-
     # for precipitation data
     if data_type == 'weather':
 
@@ -202,7 +199,6 @@ def ee_prep_data(collection_dict,
 
 
     url_list =[]
-
     for image in image_list:
         # get a URL from which we can download the resulting data
         url = image.getDownloadURL(
@@ -284,6 +280,14 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
     for download_url in download_urls:
         # download files and unzip to temporary directory
         download_and_unzip(download_url, download_dir)
+
+    # do in caller function
+    #for file in os.listdir(download_dir):
+    #    if file.endswith(".tif"):
+    #        print(file)
+    #        print(cv.imread(os.path.join(download_dir, file), cv.IMREAD_ANYDEPTH))
+
+    # confirm download completed as expected?
 
     # return the path so downloaded files can be handled by caller
     return download_dir

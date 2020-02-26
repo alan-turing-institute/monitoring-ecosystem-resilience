@@ -16,6 +16,8 @@ data_collections = {
         'collection_name': 'LANDSAT/LC08/C01/T1_SR',
         'type': 'vegetation',
         'RGB_bands': ('B4','B3','B2'),
+
+
         'NIR_band': 'B5',
         'cloudy_pix_flag': 'CLOUD_COVER'
     },
@@ -29,7 +31,6 @@ data_collections = {
         'type': 'weather',
         'precipitation_band': ['precipitationCal'],
         'temperature_band': ['probabilityLiquidPrecipitation']
-
     },
     'unsupported' : {
         'collection_name': "ECMWF/ERA5/DAILY",
@@ -38,7 +39,6 @@ data_collections = {
         'temperature_band': ['mean_2m_air_temperature']
     }
 }
-
 
 def test_get_vegetation():
     result = get_vegetation(data_collections['Copernicus'], coordinates, date_range)
