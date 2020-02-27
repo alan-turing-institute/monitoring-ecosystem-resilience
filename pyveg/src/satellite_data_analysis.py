@@ -8,6 +8,7 @@ import shutil
 import requests
 import argparse
 import dateparser
+import json
 from datetime import datetime, timedelta
 import numpy as np
 import cv2 as cv
@@ -294,6 +295,84 @@ def check_image_ok(rgb_image):
         return True
 
 
+def run_network_centrality(output_dir, image, coords, date_range, region_size, sub_image_size=[50,50]):
+    """
+    !! SVS: Suggest that this function should be moved to the subgraph_centrality.py module
+
+    Given an input image, divide the image up into smaller sub-images
+    and run network centrality on each.
+
+    Parameters
+    ----------
+    image : Pillow.Image
+        Full size binary thresholded input image.
+    output_dir : str
+        Path to save results to.
+    coords : str
+        Coordinates of the `image` argument. Used to calcualte
+        coordinates of sub-images which are used to ID them.
+    date_range : tuple of str
+        (Start date, end data) for filenames. Date strings 
+        must be formatted as 'YYYY-MM-DD'.
+    sub_image_size : list, optional
+        Defines the size of the sub-images which network
+        centrality will be run on.
+
+    Returns
+    ----------
+    dict
+        Single dictionary containing the results for each sub-image.
+        Note that the results have already been written to disk as a
+        json file.
+    """
+
+    date_range_midpoint = find_mid_period(date_range[0], date_range[1])
+    base_filename = date_range_midpoint
+    sub_image_output_dir = os.path.join(output_dir, date_range_midpoint)
+
+    # start by dividing the image into smaller sub-images
+    sub_images = crop_image_npix(image,
+                                 sub_image_size[0],
+                                 sub_image_size[1],
+                                 region_size,
+                                 coords)
+
+    # store results
+    nc_results = {}
+    save_json(nc_results, output_dir, 'network_centralities.json')
+
+    # loop through sub images
+    for i, (sub_image, sub_coords) in enumerate(sub_images):
+
+        # save sub image
+        output_filename = f'sub{i}_'
+        output_filename += "{0:.3f}-{1:.3f}".format(sub_coords[0], sub_coords[1])
+        output_filename += '.png'
+        save_image(sub_image, sub_image_output_dir, output_filename)
+
+        # run network centrality
+        image_array = pillow_to_numpy(sub_image)
+        feature_vec, sel_pixels = subgraph_centrality(image_array)
+        nc_result = feature_vector_metrics(feature_vec)
+        
+        nc_result['latitude'] = round(sub_coords[0], 4)
+        nc_result['longitude'] = round(sub_coords[1], 4)
+        nc_result['date'] = date_range_midpoint
+        
+        # incrementally write json file so we don't have to wait
+        # for the full image to be processed before getting results
+        with open(os.path.join(output_dir, 'network_centralities.json')) as json_file:
+            nc_results = json.load(json_file)
+            
+            # keep track of the result for this sub-image
+            nc_results[i] = nc_result
+
+            # update json output
+            save_json(nc_results, output_dir, 'network_centralities.json')
+
+    return nc_results
+
+
 def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
     """
     Download vegetation data from Earth Engine. Save RGB, NDVI and thresholded NDVI images. If
@@ -359,54 +438,13 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
 
     # run network centrality on the sub-images
     if collection_dict['do_network_centrality']:
+        nc_output_dir = os.path.join(output_dir, 'network_centrality')
+        nc_results = run_network_centrality(nc_output_dir, processed_ndvi, coords, date_range, region_size)
 
-        # define sub image size
-        sub_image_size = [50,50]
-        output_prefix = find_mid_period(date_range[0], date_range[1])
-        output_suffix = '.png'
-        nc_output_dir = os.path.join(output_dir, collection_dict['collection_name'].split('/')[0], 'network_centrality')
-
-        # start by dividing the image into smaller sub-images
-        sub_images = crop_image_npix(ndvi_image,
-                                     sub_image_size[0],
-                                     sub_image_size[1],
-                                     region_size,
-                                     coords)
-
-        # loop through sub images
-        for image in sub_images:
-
-            # histogram eq and adaptive thesholding
-            sub_image = image[0]
-
-            sub_coords = image[1]
-            output_filename = os.path.basename(tif_filebase)
-            output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
-            output_filename += '_' + output_suffix
-
-            # save sub image
-            save_image(sub_image, nc_output_dir, output_filename)
-
-            # run network centrality
-            image_array = pillow_to_numpy(sub_image)
-            feature_vec, sel_pixels = subgraph_centrality(image_array)
-            feature_vec_metrics = feature_vector_metrics(feature_vec)
-            feature_vec_metrics['latitude'] = sub_coords[0]
-            feature_vec_metrics['longitude'] = sub_coords[1]
-            feature_vec_metrics['date']= output_prefix
-            output_filename = os.path.basename(tif_filebase)
-            output_filename += "_{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
-            output_filename += "_{}".format(output_prefix)
-            output_filename += '.json'
-            save_json(feature_vec_metrics, nc_output_dir, output_filename)
-
-
-    # return grid_of_netwwork_centralities
-
+    return nc_results
 
 
 def get_weather(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
-
     """
     Function to get weather data from a given image collection, coordinates and date range.
     The weather measurements are returned as a dictionary with the summary value for that region and date.
