@@ -452,6 +452,9 @@ def get_time_series(num_time_periods,
 
 def process_single_collection(output_dir, collection_dict, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
 
+    print(f'''\nProcessing collection "{collection_dict['collection_name']}".''')
+    print('-'*50)
+
     # unpack date range
     start_date, end_date = date_range
 
@@ -462,10 +465,14 @@ def process_single_collection(output_dir, collection_dict, coords, date_range, n
     # for each time interval
     for date_range in date_ranges:
         
+        print(f'Looking for data in the date range {date_range}...')
+        
         if collection_dict['type'] == 'vegetation':
             get_vegetation(output_dir, collection_dict, coords, date_range, region_size, scale)
         else:
             get_weather(output_dir, collection_dict, coords, date_range, region_size, scale)
+
+    print(f'''Finished processing collection "{collection_dict['collection_name']}".''')
 
             
 

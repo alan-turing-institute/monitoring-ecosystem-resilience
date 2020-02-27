@@ -43,7 +43,10 @@ def main():
     use command line arguments to choose images.
     """
 
-    example_command = """Example usage:
+    help_text = """Options should be specified in the config 
+    file where possible, but can be overwritten using this CLI.
+    
+    Example usage:
 
     python analyse_gee_data.py \\
         --start_date 2016-01-01 \\
@@ -52,7 +55,7 @@ def main():
     """
 
     # crate argparse
-    parser = argparse.ArgumentParser(description="download from EE", epilog=example_command, 
+    parser = argparse.ArgumentParser(description="download from EE", epilog=help_text, 
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
     # add arguments - keep it minimal here, but overwrite value from config 
@@ -98,7 +101,7 @@ def main():
                             config.date_range,
                             config.num_days_per_point)
 
-    print('Finished all.')
+    print('\nFinished all.')
 
 
 if __name__ == "__main__":
