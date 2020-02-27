@@ -121,12 +121,6 @@ def construct_image_savepath(output_dir, collection_name, coords, date_range, im
     stamped images in this dir.
     """
 
-    # make a new dir inside `output_dir`
-    output_subdir = os.path.join(output_dir, collection_name.split('/')[0])
-
-    if not os.path.exists(output_subdir):
-        os.makedirs(output_subdir, exist_ok=True)
-
     # get the mid point of the date range
     mid_period_string = find_mid_period(date_range[0], date_range[1])
 
@@ -134,7 +128,7 @@ def construct_image_savepath(output_dir, collection_name, coords, date_range, im
     filename = f'{mid_period_string}_{coords[0]}-{coords[1]}_{image_type}.png'
 
     # full path is dir + filename
-    full_path = os.path.join(output_subdir, filename)
+    full_path = os.path.join(output_dir, filename)
 
     return full_path
 
@@ -353,7 +347,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
         for image in sub_images:
 
             # histogram eq and adaptive thesholding
-            sub_image = process_image(image[0]) 
+            sub_image = process_image(image[0])
 
             sub_coords = image[1]
             output_filename = os.path.basename(tif_filebase)
@@ -451,9 +445,17 @@ def get_time_series(num_time_periods,
 
 
 def process_single_collection(output_dir, collection_dict, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+    """
+    Process all dates for a single Earth Engine collection.
+    """
 
     print(f'''\nProcessing collection "{collection_dict['collection_name']}".''')
     print('-'*50)
+
+    # make a new dir inside `output_dir`
+    output_subdir = os.path.join(output_dir, collection_dict['collection_name'].split('/')[0])
+    if not os.path.exists(output_subdir):
+        os.makedirs(output_subdir, exist_ok=True)
 
     # unpack date range
     start_date, end_date = date_range
@@ -464,19 +466,21 @@ def process_single_collection(output_dir, collection_dict, coords, date_range, n
 
     # for each time interval
     for date_range in date_ranges:
-        
+
         print(f'Looking for data in the date range {date_range}...')
         
         if collection_dict['type'] == 'vegetation':
-            get_vegetation(output_dir, collection_dict, coords, date_range, region_size, scale)
+            get_vegetation(output_subdir, collection_dict, coords, date_range, region_size, scale)
         else:
-            get_weather(output_dir, collection_dict, coords, date_range, region_size, scale)
+            get_weather(output_subdir, collection_dict, coords, date_range, region_size, scale)
 
     print(f'''Finished processing collection "{collection_dict['collection_name']}".''')
 
-            
 
 def process_all_collections(output_dir, collections, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+    """
+    Process all dates for all specified Earth Engine collections.
+    """
 
     for _, collection_dict in collections.items(): # possible to parallelise?
 
