@@ -41,8 +41,9 @@ data_collections = {
 }
 
 def test_get_vegetation():
-    result = get_vegetation(data_collections['Copernicus'], coordinates, date_range)
-    assert(isinstance(result, float))
+    print('Warning: this test is expected to take a while to run...')
+    nc_results = get_vegetation(data_collections['Copernicus'], coordinates, date_range)
+    assert( len(nc_results) != 0 )
 
 
 def test_get_rainfall():
