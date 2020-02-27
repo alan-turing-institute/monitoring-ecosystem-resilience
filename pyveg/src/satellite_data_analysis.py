@@ -10,6 +10,7 @@ import argparse
 import dateparser
 from datetime import datetime, timedelta
 import numpy as np
+import cv2 as cv
 
 from .gee_interface import ee_download
 
@@ -115,8 +116,8 @@ def construct_region_string(point, size=0.1):
 
 def construct_image_savepath(output_dir, collection_name, coords, date_range, image_type):
     """
-    Function to abstract output image filename construction. Current approach is to create 
-    a new dir inside `output_dir` for the satellite, and then save date and coordinate 
+    Function to abstract output image filename construction. Current approach is to create
+    a new dir inside `output_dir` for the satellite, and then save date and coordinate
     stamped images in this dir.
     """
 
@@ -355,22 +356,28 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
 
 
 
-def get_rainfall(collection_dict, coords, date_range, region_size=0.1, scale=10):
+def get_weather(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
+
     """
-    
+    Function to get weather data from a given image collection, coordinates and date range.
+    The weather measurements are returned as a dictionary with the summary value for that region and date.
     """
 
-    download_path = ee_download(collection_dict, coords, date_range, region_size, scale)
+    download_path = ee_download(output_dir,collection_dict, coords, date_range, region_size, scale)
 
-    # check all expected .tif files are present in the download folder
-    # and also check download path is not none
-    
-    # extract files
-    
-    # get mean of whole image
+    metrics_dict = {}
 
-    # return mean value of rainfall
-    
+    for file in os.listdir(download_path):
+        if file.endswith(".tif"):
+            name_variable = (file.split('.'))[1]
+            variable_array = cv.imread(os.path.join(download_path, file), cv.IMREAD_ANYDEPTH)
+
+            metrics_dict[name_variable] = variable_array.mean()
+
+    print (metrics_dict)
+    return metrics_dict
+
+
 
 
 ''' # will be replaced
@@ -433,7 +440,7 @@ def process_single_collection(output_dir, collection_dict, coords, date_range, n
         if collection_dict['type'] == 'vegetation':
             get_vegetation(output_dir, collection_dict, coords, date_range, region_size, scale)
         else:
-            get_rainfall(collection_dict, coords, date_range, region_size, scale)
+            get_weather(output_dir, collection_dict, coords, date_range, region_size, scale)
 
             
 

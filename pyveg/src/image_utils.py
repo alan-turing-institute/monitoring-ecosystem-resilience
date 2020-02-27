@@ -18,8 +18,8 @@ from PIL import Image
 import imageio
 
 import matplotlib
-import matplotlib.pyplot as plt
 matplotlib.use('PS')
+import matplotlib.pyplot as plt
 
 
 def save_json(out_dict, output_dir, output_filename):
