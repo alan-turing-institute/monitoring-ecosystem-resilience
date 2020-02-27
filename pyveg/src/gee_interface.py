@@ -163,6 +163,13 @@ def ee_prep_data(collection_dict,
     mask_cloud : bool, optional
         Remove cloud from images using the geetools package.
 
+    Returns
+    ----------
+    list
+        URLs from which we can download the data. For vegetation
+        we should only get a single URL in the list, but for 
+        precipitation it is possible to get separate URLs for e.g.
+        precipitation and weather data.
     """
 
     # string respresenting 4 corners of the region of interest
