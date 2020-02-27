@@ -22,7 +22,7 @@ from .image_utils import (
     scale_tif,
     save_json,
     pillow_to_numpy,
-    process_image
+    process_and_threshold
 )
 
 from .subgraph_centrality import (
@@ -158,7 +158,7 @@ def write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix
         output_filename = construct_filename("ndvi")
         save_image(ndvi_image, output_dir, output_filename)
         #bw_ndvi = convert_to_bw(ndvi_image, threshold) # old method
-        bw_ndvi = process_image(ndvi_image) # new adaptive threshold
+        bw_ndvi = process_and_threshold(ndvi_image) # new adaptive threshold
         output_filename = construct_filename("ndvibw")
         save_image(bw_ndvi, output_dir, output_filename)
     
@@ -264,6 +264,35 @@ def process_coords(coords,
                     save_json(feature_vec_metrics, output_dir, output_filename)
 '''
 
+def check_image_ok(rgb_image):
+    """
+    Check the quality of an RGB image. Currently checking if we have 
+    > 10% pixels being masked. This indicates problems with cloud masking
+    in previous steps.
+
+    Parameters
+    ----------
+    rgb_image : Pillow.Image
+        Input image to check the quality of
+
+    Returns
+    ---------- 
+    bool
+        `True` if image passes quality requirements, 
+        else `False`.
+    """
+
+    img_array = pillow_to_numpy(rgb_image)
+    
+    black = [0,0,0]
+    black_pix_threshold = 0.1
+    n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
+
+    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) > black_pix_threshold:
+        return False
+    else:
+        return True
+
 
 def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
     """
@@ -308,6 +337,13 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
 
     # save the rgb image
     rgb_image = convert_to_rgb(tif_filebase, collection_dict['RGB_bands'])
+
+    # check image quality on the colour image
+    if not check_image_ok(rgb_image):
+        print('Detected a low quality image, skipping to next date.')
+        return
+
+    # if the image looks good, we can save it
     rgb_filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'RGB')
     save_image(rgb_image, os.path.dirname(rgb_filepath), os.path.basename(rgb_filepath))
 
@@ -316,18 +352,12 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     ndvi_filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'NDVI')
     save_image(ndvi_image, os.path.dirname(ndvi_filepath), os.path.basename(ndvi_filepath))
 
-    # check image quality on the colour image
-    img_array = pillow_to_numpy(rgb_image)
-    black = [0,0,0]
-    black_pix_threshold = 0.1
-    n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
+    # preprocess and theshold the NDVI image
+    processed_ndvi = process_and_threshold(ndvi_image)
+    ndvi_bw_filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'BWNDVI')
+    save_image(processed_ndvi, os.path.dirname(ndvi_bw_filepath), os.path.basename(ndvi_bw_filepath))
 
-    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) > black_pix_threshold:
-        print('Detected a low quality image, skipping to next date.')
-        return
-
-
-    # the image looks ok, we can run network centrality on the sub-images
+    # run network centrality on the sub-images
     if collection_dict['do_network_centrality']:
 
         # define sub image size
@@ -347,7 +377,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
         for image in sub_images:
 
             # histogram eq and adaptive thesholding
-            sub_image = process_image(image[0])
+            sub_image = image[0]
 
             sub_coords = image[1]
             output_filename = os.path.basename(tif_filebase)
@@ -469,6 +499,7 @@ def process_single_collection(output_dir, collection_dict, coords, date_range, n
 
         print(f'Looking for data in the date range {date_range}...')
         
+        # process the collection
         if collection_dict['type'] == 'vegetation':
             get_vegetation(output_subdir, collection_dict, coords, date_range, region_size, scale)
         else:
