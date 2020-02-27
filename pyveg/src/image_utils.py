@@ -543,7 +543,7 @@ def adaptive_threshold(img):
     return img_thresh
 
 
-def process_image(img, r=3):
+def process_and_threshold(img, r=3):
     """
     Perform histogram equalisation, adaptive thresholding, and median
     filtering on an input PIL Image. Return the result converted
