@@ -9,9 +9,9 @@ date_range = ('2016-01-01', '2016-01-11')
 
 num_days_per_point = 10
 
-collections_to_use = ['Copernicus', 'Landsat', 'NASA']
+collections_to_use = ['Copernicus']
 
-do_network_centrality = False
+do_network_centrality = True
 
 data_collections = {
     'Copernicus' : {
