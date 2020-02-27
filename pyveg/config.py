@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
-output_dir = 'TEST_OUT'
+output_dir = 'TEST'
 
 coordinates = (27.99,11.29) # initial
 #coordinates = (28.37,11.12) # labyrinths
  
-date_range = ('2016-01-01', '2017-01-01')
+date_range = ('2016-01-01', '2016-01-11')
 
-num_days_per_point = 30
+num_days_per_point = 10
 
-collections_to_use = ['Copernicus']
+collections_to_use = ['Copernicus', 'Landsat', 'NASA']
 
 do_network_centrality = False
 
@@ -39,7 +39,6 @@ data_collections = {
         'collection_name': 'NASA/GPM_L3/IMERG_V06',
         'type': 'weather',
         'precipitation_band': ['precipitationCal'],
-        'temperature_band': ['probabilityLiquidPrecipitation']
     },
     'unsupported' : {
         'collection_name': "ECMWF/ERA5/DAILY",
