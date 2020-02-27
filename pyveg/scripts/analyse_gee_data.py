@@ -89,11 +89,6 @@ def main():
     print('Running analyse_gee_data.py')
     print('-'*35)
 
-    print('The following collections will be used:')
-    for name, collection_dict in config.data_collections.items():
-        print(collection_dict)
-    print('\n')
-
     # run!
     process_all_collections(config.output_dir,
                             config.data_collections,
