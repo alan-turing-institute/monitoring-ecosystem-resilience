@@ -32,7 +32,7 @@ def save_json(out_dict, output_dir, output_filename):
     output_path = os.path.join(output_dir, output_filename)
 
     with open(output_path, 'w') as fp:
-        json.dump(out_dict, fp)
+        json.dump(out_dict, fp, indent=2)
 
     print("Saved json file '{}'".format(output_path))
 
