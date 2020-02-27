@@ -151,7 +151,7 @@ def write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix
         save_image(bw_ndvi, output_dir, output_filename)
 
 
-def run_network_centrality(output_dir, image, coords, date_range, region_size, sub_image_size=[50,50]):
+def run_network_centrality(output_dir, image, coords, date_range, region_size, sub_image_size=[50,50], n_sub_images=-1):
     """
     !! SVS: Suggest that this function should be moved to the subgraph_centrality.py module
 
@@ -173,6 +173,10 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
     sub_image_size : list, optional
         Defines the size of the sub-images which network
         centrality will be run on.
+    n_sub_images : int, optional
+        The nubmer of sub-images to process. This is useful for 
+        testing and speeding up computation. Default is -1 which
+        means process the entirety of the larger image.
 
     Returns
     ----------
@@ -199,6 +203,9 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
 
     # loop through sub images
     for i, (sub_image, sub_coords) in enumerate(sub_images):
+
+        if i > n_sub_images and n_sub_images != -1:
+            return nc_results
 
         # save sub image
         output_filename = f'sub{i}_'
@@ -229,7 +236,7 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
     return nc_results
 
 
-def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
+def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10, n_sub_images=-1):
     """
     Download vegetation data from Earth Engine. Save RGB, NDVI and thresholded NDVI images. If
     request, also get network centrality metrics on the thresholded NDVI image.
@@ -250,6 +257,10 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
         Size of the output image (default is 0.1, or 1km).
     scale : int, optional
         Size of each pixel in meters (default 10).
+    n_sub_images : int, optional
+        The nubmer of sub-images to process. This is useful for 
+        testing and speeding up computation. Default is -1 which
+        means process the entirety of the larger image.
 
     Returns
     ----------
@@ -295,7 +306,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     # run network centrality on the sub-images
     if collection_dict['do_network_centrality']:
         nc_output_dir = os.path.join(output_dir, 'network_centrality')
-        nc_results = run_network_centrality(nc_output_dir, processed_ndvi, coords, date_range, region_size)
+        nc_results = run_network_centrality(nc_output_dir, processed_ndvi, coords, date_range, region_size, n_sub_images=n_sub_images)
 
     return nc_results
 
@@ -317,7 +328,6 @@ def get_weather(output_dir, collection_dict, coords, date_range, region_size=0.1
 
             metrics_dict[name_variable] = variable_array.mean()
 
-    print (metrics_dict)
     return metrics_dict
 
 
@@ -348,9 +358,9 @@ def process_single_collection(output_dir, collection_dict, coords, date_range, n
         
         # process the collection
         if collection_dict['type'] == 'vegetation':
-            get_vegetation(output_subdir, collection_dict, coords, date_range, region_size, scale)
+            nc_dict = get_vegetation(output_subdir, collection_dict, coords, date_range, region_size, scale)
         else:
-            get_weather(output_subdir, collection_dict, coords, date_range, region_size, scale)
+            weather_dict = get_weather(output_subdir, collection_dict, coords, date_range, region_size, scale)
 
     print(f'''Finished processing collection "{collection_dict['collection_name']}".''')
 
