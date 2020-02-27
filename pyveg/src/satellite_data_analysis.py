@@ -273,7 +273,31 @@ def process_coords(coords,
 
 def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
     """
-    
+    Download vegetation data from Earth Engine. Save RGB, NDVI and thresholded NDVI images. If
+    request, also get network centrality metrics on the thresholded NDVI image.
+
+    Parameters
+    ----------
+    output_dir : str
+        Where to save output images and network centrality results
+    collection_dict : dict
+        Dictionary containing information about the collection (name, 
+        type, bands, etc). Follows structure in the config file.
+    coords : tuple of float
+        (Latitude, longitude) coordinates.
+    date_range : tuple of str
+        (Start date, end data) for data filtering. Date strings 
+        must be formatted as 'YYYY-MM-DD'.
+    region_size : float, optional
+        Size of the output image (default is 0.1, or 1km).
+    scale : int, optional
+        Size of each pixel in meters (default 10).
+
+    Returns
+    ----------
+    dict
+        If network centrality is run, we return the results in
+        a dict. Other return values is `None`.
     """
     # download vegetation data for this time period
     download_path = ee_download(output_dir, collection_dict, coords, date_range, region_size, scale)
@@ -328,7 +352,8 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
         # loop through sub images
         for image in sub_images:
 
-            sub_image = process_image(image[0]) # new adaptive threshold
+            # histogram eq and adaptive thesholding
+            sub_image = process_image(image[0]) 
 
             sub_coords = image[1]
             output_filename = os.path.basename(tif_filebase)
