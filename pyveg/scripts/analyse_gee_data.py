@@ -32,8 +32,11 @@ pip install --upgrade pillow
 import os
 import argparse
 import warnings
+import time
+from shutil import copyfile
 from pyveg.src.satellite_data_analysis import process_all_collections
 from pyveg import config
+
 
 def main():
     """
@@ -69,6 +72,15 @@ def main():
         coordinates = args.coordinates.split(',')
         config.coordinates = (float(coordinates[0]), float(coordinates[1]))
 
+    # parse output directory 
+    config.output_dir += '__' + time.strftime("%Y-%m-%d_%H-%M-%S") 
+    config.output_dir = os.path.join('output', config.output_dir) # force into .gitignore
+
+    # before we run anythin, save the current config to the output dir
+    if not os.path.exists(config.output_dir):
+        os.makedirs(config.output_dir, exist_ok=True)
+    copyfile(config.__file__, os.path.join(config.output_dir, 'config_cached.py'))
+
     # print which collections we are running with
     print('-'*35)
     print('Running analyse_gee_data.py')
@@ -78,7 +90,8 @@ def main():
     for name, collection_dict in config.data_collections.items():
         print(collection_dict)
     print('\n')
-    print(config.num_days_per_point)
+
+    # run!
     process_all_collections(config.output_dir,
                             config.data_collections,
                             config.coordinates,
