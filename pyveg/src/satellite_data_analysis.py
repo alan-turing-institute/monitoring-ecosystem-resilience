@@ -23,7 +23,8 @@ from .image_utils import (
     scale_tif,
     save_json,
     pillow_to_numpy,
-    process_and_threshold
+    process_and_threshold,
+    check_image_ok
 )
 
 from .subgraph_centrality import (
@@ -264,35 +265,6 @@ def process_coords(coords,
                     output_filename += '.json'
                     save_json(feature_vec_metrics, output_dir, output_filename)
 '''
-
-def check_image_ok(rgb_image):
-    """
-    Check the quality of an RGB image. Currently checking if we have 
-    > 10% pixels being masked. This indicates problems with cloud masking
-    in previous steps.
-
-    Parameters
-    ----------
-    rgb_image : Pillow.Image
-        Input image to check the quality of
-
-    Returns
-    ---------- 
-    bool
-        `True` if image passes quality requirements, 
-        else `False`.
-    """
-
-    img_array = pillow_to_numpy(rgb_image)
-    
-    black = [0,0,0]
-    black_pix_threshold = 0.1
-    n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
-
-    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) > black_pix_threshold:
-        return False
-    else:
-        return True
 
 
 def run_network_centrality(output_dir, image, coords, date_range, region_size, sub_image_size=[50,50]):
