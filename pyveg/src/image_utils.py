@@ -32,7 +32,7 @@ def save_json(out_dict, output_dir, output_filename):
     output_path = os.path.join(output_dir, output_filename)
 
     with open(output_path, 'w') as fp:
-        json.dump(out_dict, fp)
+        json.dump(out_dict, fp, indent=2)
 
     print("Saved json file '{}'".format(output_path))
 
@@ -543,7 +543,7 @@ def adaptive_threshold(img):
     return img_thresh
 
 
-def process_image(img, r=3):
+def process_and_threshold(img, r=3):
     """
     Perform histogram equalisation, adaptive thresholding, and median
     filtering on an input PIL Image. Return the result converted
@@ -560,3 +560,33 @@ def process_image(img, r=3):
 
     return numpy_to_pillow(img)
 # ---------------------------------------------------------------------
+
+
+def check_image_ok(rgb_image):
+    """
+    Check the quality of an RGB image. Currently checking if we have 
+    > 10% pixels being masked. This indicates problems with cloud masking
+    in previous steps.
+
+    Parameters
+    ----------
+    rgb_image : Pillow.Image
+        Input image to check the quality of
+
+    Returns
+    ---------- 
+    bool
+        `True` if image passes quality requirements, 
+        else `False`.
+    """
+
+    img_array = pillow_to_numpy(rgb_image)
+    
+    black = [0,0,0]
+    black_pix_threshold = 0.1
+    n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
+
+    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) > black_pix_threshold:
+        return False
+    else:
+        return True

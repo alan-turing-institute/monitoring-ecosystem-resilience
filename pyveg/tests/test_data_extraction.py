@@ -1,8 +1,15 @@
+import shutil
+import sys
+
 from pyveg.src.satellite_data_analysis import get_vegetation, get_weather
 
 coordinates = (27.99,11.29)
-date_range = ('2016-01-01', '2017-01-01')
+
+# get one data point for the test
+date_range = ('2016-01-01', '2016-01-31')
 num_days_per_point = 30
+
+do_network_centrality = True
 
 data_collections = {
     'Copernicus' : {
@@ -10,16 +17,16 @@ data_collections = {
         'type': 'vegetation',
         'RGB_bands': ('B4','B3','B2'),
         'NIR_band': 'B8',
-        'cloudy_pix_flag': 'CLOUDY_PIXEL_PERCENTAGE'
+        'cloudy_pix_flag': 'CLOUDY_PIXEL_PERCENTAGE',
+        'do_network_centrality': do_network_centrality
     },
     'Landsat' : {
         'collection_name': 'LANDSAT/LC08/C01/T1_SR',
         'type': 'vegetation',
         'RGB_bands': ('B4','B3','B2'),
-
-
         'NIR_band': 'B5',
-        'cloudy_pix_flag': 'CLOUD_COVER'
+        'cloudy_pix_flag': 'CLOUD_COVER',
+        'do_network_centrality': do_network_centrality
     },
     'NOAA' : {
         'collection_name': 'NOAA/PERSIANN-CDR',
@@ -30,7 +37,6 @@ data_collections = {
         'collection_name': 'NASA/GPM_L3/IMERG_V06',
         'type': 'weather',
         'precipitation_band': ['precipitationCal'],
-        'temperature_band': ['probabilityLiquidPrecipitation']
     },
     'unsupported' : {
         'collection_name': "ECMWF/ERA5/DAILY",
@@ -40,14 +46,17 @@ data_collections = {
     }
 }
 
+test_out_dir = 'test_out'
+
 def test_get_vegetation():
-    result = get_vegetation(data_collections['Copernicus'], coordinates, date_range)
-    assert(isinstance(result, float))
+    print('Warning: this test is expected to take a while to run...')
+    nc_results = get_vegetation(test_out_dir, data_collections['Copernicus'], coordinates, date_range, n_sub_images=1)
+    assert( len(nc_results) != 0 )
+    shutil.rmtree(test_out_dir, ignore_errors=True)
 
 
 def test_get_rainfall():
-
-    result = get_weather('test',data_collections['NOAA'], coordinates, date_range)
-
+    print('Warning: this test is expected to take a while to run...')
+    result = get_weather(test_out_dir, data_collections['NOAA'], coordinates, date_range)
     assert (len(result.items())!=0)
-
+    shutil.rmtree(test_out_dir, ignore_errors=True)

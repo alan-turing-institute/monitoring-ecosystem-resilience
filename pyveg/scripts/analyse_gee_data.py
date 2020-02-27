@@ -30,53 +30,73 @@ pip install --upgrade pillow
 """
 
 import os
-
 import argparse
 import warnings
+import time
+from shutil import copyfile
 from pyveg.src.satellite_data_analysis import process_all_collections
 from pyveg import config
+
 
 def main():
     """
     use command line arguments to choose images.
     """
 
-    example_command = """Example usage:
+    help_text = """Options should be specified in the config 
+    file where possible, but can be overwritten using this CLI.
+    
+    Example usage:
 
     python analyse_gee_data.py \\
         --start_date 2016-01-01 \\
         --end_date 2019-01-01 \\
-        --coords 27.99,11.2878 \\
+        --coords 27.99,11.29 \\
     """
-    parser = argparse.ArgumentParser(description="download from EE", epilog=example_command, 
+
+    # crate argparse
+    parser = argparse.ArgumentParser(description="download from EE", epilog=help_text, 
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--start_date",help="YYYY-MM-DD", default="2013-03-30")
-    parser.add_argument("--end_date",help="YYYY-MM-DD", default="2013-04-01")
-    parser.add_argument("--coords",help="'long,lat'")
+
+    # add arguments - keep it minimal here, but overwrite value from config 
+    # if option is given here
+    parser.add_argument("--start_date",help="YYYY-MM-DD")
+    parser.add_argument("--end_date",help="YYYY-MM-DD")
+    parser.add_argument("--coordinates",help="'long,lat'")
 
     args = parser.parse_args()
 
-    start_date = args.start_date
-    end_date = args.end_date
+    # overwrite dates if specified
+    if args.start_date is not None and args.end_date is not None:
+        config.date_range = (args.start_date, args.end_date)
 
-    coords = [float(x) for x in args.coords.split(",")]
-    
-    input_collections = config.data_collections
-    print('Running with the following collections:')
-    for name, collection_dict in input_collections.items():
-        print(collection_dict)
-    print('\n')
+    # overwrite coords if specified
+    if args.coordinates is not None:
+        coordinates = args.coordinates.split(',')
+        config.coordinates = (float(coordinates[0]), float(coordinates[1]))
 
-    output_dir = config.output_dir
+    # parse output directory 
+    config.output_dir += '__' + time.strftime("%Y-%m-%d_%H-%M-%S") 
+    config.output_dir = os.path.join('output', config.output_dir) # force into .gitignore
 
-    process_all_collections(output_dir,
-                            input_collections,
-                            coords,
-                            (start_date,end_date),
+    # before we run anythin, save the current config to the output dir
+    if not os.path.exists(config.output_dir):
+        os.makedirs(config.output_dir, exist_ok=True)
+    copyfile(config.__file__, os.path.join(config.output_dir, 'config_cached.py'))
+
+    # print which collections we are running with
+    print('-'*35)
+    print('Running analyse_gee_data.py')
+    print('-'*35)
+
+    # run!
+    process_all_collections(config.output_dir,
+                            config.data_collections,
+                            config.coordinates,
+                            config.date_range,
                             config.num_days_per_point)
 
-
-    print('Done!')
+    print('\nFinished all.')
 
 
 if __name__ == "__main__":
