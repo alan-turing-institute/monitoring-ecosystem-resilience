@@ -328,7 +328,7 @@ def get_weather(output_dir, collection_dict, coords, date_range, region_size=0.1
             name_variable = (file.split('.'))[1]
             variable_array = cv.imread(os.path.join(download_path, file), cv.IMREAD_ANYDEPTH)
 
-            metrics_dict[name_variable] = variable_array.mean()
+            metrics_dict[name_variable] = variable_array.mean().astype(np.float64)
 
     return metrics_dict
 

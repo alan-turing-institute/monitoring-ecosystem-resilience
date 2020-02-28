@@ -9,7 +9,7 @@ date_range = ('2016-01-01', '2016-03-11')
 
 num_days_per_point = 30
 
-collections_to_use = ['Copernicus', 'Landsat', 'NASA']
+collections_to_use = ['ERA5']
 
 do_network_centrality = True
 
@@ -40,8 +40,8 @@ data_collections = {
         'type': 'weather',
         'precipitation_band': ['precipitationCal'],
     },
-    'unsupported' : {
-        'collection_name': "ECMWF/ERA5/DAILY",
+    'ERA5' : {
+        'collection_name': 'ECMWF/ERA5/DAILY',
         'type': 'weather',
         'precipitation_band': ['total_precipitation'],
         'temperature_band': ['mean_2m_air_temperature']
