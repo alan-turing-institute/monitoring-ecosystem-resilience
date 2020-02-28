@@ -5,11 +5,11 @@ output_dir = 'TEST'
 coordinates = (27.99,11.29) # initial
 #coordinates = (28.37,11.12) # labyrinths
  
-date_range = ('2016-01-01', '2016-01-11')
+date_range = ('2016-01-01', '2016-03-11')
 
-num_days_per_point = 10
+num_days_per_point = 30
 
-collections_to_use = ['Copernicus']
+collections_to_use = ['Copernicus', 'Landsat', 'NASA']
 
 do_network_centrality = True
 

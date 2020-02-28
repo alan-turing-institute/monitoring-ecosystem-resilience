@@ -202,9 +202,10 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
     save_json(nc_results, output_dir, 'network_centralities.json')
 
     # loop through sub images
-    for i, (sub_image, sub_coords) in enumerate(sub_images):
-
-        if i > n_sub_images and n_sub_images != -1:
+    for i, (sub_image, sub_coords) in enumerate(sub_images): # possible to parallelise?
+        
+        # if we already got enough results, return early
+        if i >= n_sub_images and n_sub_images != -1:
             return nc_results
 
         # save sub image
@@ -305,6 +306,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
 
     # run network centrality on the sub-images
     if collection_dict['do_network_centrality']:
+        n_sub_images = 10 # do this for speedup while testing
         nc_output_dir = os.path.join(output_dir, 'network_centrality')
         nc_results = run_network_centrality(nc_output_dir, processed_ndvi, coords, date_range, region_size, n_sub_images=n_sub_images)
 
@@ -331,7 +333,7 @@ def get_weather(output_dir, collection_dict, coords, date_range, region_size=0.1
     return metrics_dict
 
 
-def process_single_collection(output_dir, collection_dict, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+def process_single_collection(output_dir, collection_dict, coords, date_ranges, region_size=0.1, scale=10):
     """
     Process all dates for a single Earth Engine collection.
     """
@@ -344,12 +346,10 @@ def process_single_collection(output_dir, collection_dict, coords, date_range, n
     if not os.path.exists(output_subdir):
         os.makedirs(output_subdir, exist_ok=True)
 
-    # unpack date range
-    start_date, end_date = date_range
-
-    # get the list of time intervals
-    num_slices = get_num_n_day_slices(start_date, end_date, n_days_per_slice)
-    date_ranges = slice_time_period(date_range[0], date_range[1], num_slices)
+    # store the results by date in this dict
+    results = {}
+    results['time-series-data'] = {}
+    results['type'] = collection_dict['type']
 
     # for each time interval
     for date_range in date_ranges:
@@ -358,11 +358,15 @@ def process_single_collection(output_dir, collection_dict, coords, date_range, n
         
         # process the collection
         if collection_dict['type'] == 'vegetation':
-            nc_dict = get_vegetation(output_subdir, collection_dict, coords, date_range, region_size, scale)
+            result = get_vegetation(output_subdir, collection_dict, coords, date_range, region_size, scale)
         else:
-            weather_dict = get_weather(output_subdir, collection_dict, coords, date_range, region_size, scale)
+            result = get_weather(output_subdir, collection_dict, coords, date_range, region_size, scale)
+
+        results['time-series-data'][find_mid_period(date_range[0], date_range[1])] = result
 
     print(f'''Finished processing collection "{collection_dict['collection_name']}".''')
+    
+    return results
 
 
 def process_all_collections(output_dir, collections, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
@@ -370,10 +374,22 @@ def process_all_collections(output_dir, collections, coords, date_range, n_days_
     Process all dates for all specified Earth Engine collections.
     """
 
+    # unpack date range
+    start_date, end_date = date_range
+
+    # get the list of time intervals
+    num_slices = get_num_n_day_slices(start_date, end_date, n_days_per_slice)
+    date_ranges = slice_time_period(date_range[0], date_range[1], num_slices)
+
+    # place to store results
+    results_collection = {}
+
     for _, collection_dict in collections.items(): # possible to parallelise?
 
-        process_single_collection(output_dir, collection_dict, coords, date_range, n_days_per_slice, region_size, scale)
+        results = process_single_collection(output_dir, collection_dict, coords, date_ranges, region_size, scale)
+
+        results_collection[collection_dict['collection_name']] = results
 
     # wait for everything to finish
-
-    #make_json_from_results()
+    print('\nSummarising results...')
+    save_json(results_collection, output_dir, 'results_summary.json')

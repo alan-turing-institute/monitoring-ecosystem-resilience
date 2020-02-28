@@ -207,6 +207,7 @@ def ee_prep_data(collection_dict,
         print(f'Found {dataset.size().getInfo()} valid images of {dataset_size} total images in this date range.')
 
     image_list = []
+
     # if we are looking at vegetation
     if data_type == 'vegetation':
 
@@ -222,7 +223,8 @@ def ee_prep_data(collection_dict,
         image = image.select(bands_to_select)
 
         image_list.append(image)
-    # for precipitation data
+
+    # for weather data
     if data_type == 'weather':
 
         if 'precipitation_band' in collection_dict.keys():
@@ -231,10 +233,10 @@ def ee_prep_data(collection_dict,
             image_list.append(image_weather)
 
         if 'temperature_band' in collection_dict.keys():
-
+            # average the temperature across all dates, may want to include 
+            # temperature range, min and max, in future
             image_temp = dataset.select(list(collection_dict['temperature_band'])).mean()
             image_list.append(image_temp)
-
 
     url_list =[]
     for image in image_list:
@@ -318,16 +320,9 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
     sub_dir = f'gee_{coords[0]}_{coords[1]}'+"_"+collection_dict['collection_name'].split('/')[0]
     download_dir = os.path.join(output_dir, sub_dir)
 
-
+    # download files and unzip to temporary directory
     for download_url in download_urls:
-        # download files and unzip to temporary directory
         download_and_unzip(download_url, download_dir)
-
-    # do in caller function
-    #for file in os.listdir(download_dir):
-    #    if file.endswith(".tif"):
-    #        print(file)
-    #        print(cv.imread(os.path.join(download_dir, file), cv.IMREAD_ANYDEPTH))
 
     # confirm download completed as expected?
 
