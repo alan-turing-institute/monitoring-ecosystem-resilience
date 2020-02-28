@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+#Define directory to save all outputs
 output_dir = 'TEST'
 
 coordinates = (27.99,11.29) # initial
@@ -9,7 +10,7 @@ date_range = ('2016-01-01', '2016-03-11')
 
 num_days_per_point = 30
 
-collections_to_use = ['ERA5']
+collections_to_use = ['Copernicus','Landsat','NASA','ERA5']
 
 do_network_centrality = True
 

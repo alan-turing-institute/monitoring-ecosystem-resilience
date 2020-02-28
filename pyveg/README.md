@@ -46,21 +46,25 @@ For a list of command line arguments do
 pyveg_gee_analysis --help
 ```
 
+Options should be specified in the config.py file, but options like *start_date*,*end_date*, and *coords* can be overwritten using the CLI.
+
 ### Examples:
 ```
-pyveg_gee_analysis --image_coll COPERNICUS/S2 --start_date 2016-01-01 --end_date 2016-06-30 --coords 27.95,11.57 --bands B2,B3,B4 --region_size 0.1 --output_dir /tmp/TEST_IMAGES
+pyveg_gee_analysis --start_date 2016-01-01 --end_date 2016-06-30 --coords 27.95,11.57 
 ```
 
 Note that by default the image downloaded from GEE will be split up into 50x50 pixel images, which will also be
 converted into monochrome based on the sum of r,g,b pixel values.
 
-### Getting a time series of images
+### Config.py file
 
-The ```start_date``` and ```end_date``` can be used in conjunction with the ```--num_time_points``` argument to divide the time period into this number of (approx) equal length periods, and download images for all of them.
+This file contains the relevant options for the pyveg_gee_analysis script. These are
+the following:
 
-```
-pyveg_gee_analysis --image_coll COPERNICUS/S2 --start_date 2016-01-01 --end_date 2017-01-01 --coords 27.95,11.57 --bands B2,B3,B4 --region_size 0.1 --output_dir /tmp/TEST_IMAGES --num_time_points 12
-```
+- *output_dir*: Define directory to save all outputs 
+- *coordinates*: long,lat coordinates (can be overwriten by the CLI option) 
+- *date_range*: 
+
 
 ## Pattern simulation
 
