@@ -187,8 +187,7 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
     """
 
     date_range_midpoint = find_mid_period(date_range[0], date_range[1])
-    base_filename = date_range_midpoint
-    sub_image_output_dir = os.path.join(output_dir, date_range_midpoint)
+    output_subdir = os.path.join(output_dir, date_range_midpoint)
 
     # start by dividing the image into smaller sub-images
     sub_images = crop_image_npix(image,
@@ -199,7 +198,7 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
 
     # store results
     nc_results = {}
-    save_json(nc_results, output_dir, 'network_centralities.json')
+    save_json(nc_results, output_subdir, 'network_centralities.json')
 
     # loop through sub images
     for i, (sub_image, sub_coords) in enumerate(sub_images): # possible to parallelise?
@@ -212,7 +211,7 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
         output_filename = f'sub{i}_'
         output_filename += "{0:.3f}-{1:.3f}".format(sub_coords[0], sub_coords[1])
         output_filename += '.png'
-        save_image(sub_image, sub_image_output_dir, output_filename)
+        save_image(sub_image, output_subdir, output_filename)
 
         # run network centrality
         image_array = pillow_to_numpy(sub_image)
@@ -225,14 +224,14 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
         
         # incrementally write json file so we don't have to wait
         # for the full image to be processed before getting results
-        with open(os.path.join(output_dir, 'network_centralities.json')) as json_file:
+        with open(os.path.join(output_subdir, 'network_centralities.json')) as json_file:
             nc_results = json.load(json_file)
             
             # keep track of the result for this sub-image
             nc_results[i] = nc_result
 
             # update json output
-            save_json(nc_results, output_dir, 'network_centralities.json')
+            save_json(nc_results, output_subdir, 'network_centralities.json')
 
     return nc_results
 
