@@ -2,6 +2,8 @@ Package: rveg
 Title: Code to simulate and model patterns of vegetation
 Version: 0.0.1
 Description: What the package does (one paragraph).
+Author: The Alan Turing Institute
+Maintainer: Nick Barlow <nbarlow@turing.ac.uk>
 License: MIT
 Encoding: UTF-8
 LazyData: true
@@ -12,3 +14,5 @@ Imports:
    jsonlite,
    dplyr
 RoxygenNote: 7.0.2
+Suggests:
+    testthat
