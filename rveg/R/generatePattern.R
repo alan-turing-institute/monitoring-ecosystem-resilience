@@ -11,10 +11,24 @@
 #' @param configFile Name of the JSON file containing configuration parameters
 #' @return config an environment containing the configured parameters.
 #' @export
-loadConfig <- function(configFile="patternConfig.json") {
+loadConfig <- function(configFile=file.path("..","testdata","patternConfig.json")) {
     config <- jsonlite::read_json(configFile)
     return(config)
 }
+
+#' Given a 2D array of floats, return a 2D array (same dimensions) of 1s and 0s.
+#' By default, take the threshold to be halfway between min and max values.
+#' @param pattern Matrix of floats representing biomass in each square of a grid
+#' @param threshold Optionally specify a threshold above which we will put a 1 in the output matrix.
+binarizePattern <- function(pattern, threshold=NULL) {
+    if (is.null(threshold)) {
+        threshold = (max(pattern) + min(pattern)) / 2
+    }
+    binaryPattern = (pattern > threshold)*1
+    return(binaryPattern)
+
+}
+
 
 #' Load a CSV file containing a 2D array of 1s and zeros, representing a starting pattern.
 #' If no file is given, start with all zeros.
@@ -23,9 +37,9 @@ loadConfig <- function(configFile="patternConfig.json") {
 #' @return pattern m*m matrix of 1s and 0s.
 #' @export
 getStartingPattern <- function(patternFile=NULL,m=50) {
-    pattern = matrix(0,m,m);
+    pattern <- matrix(0,m,m);
     if (! is.null(patternFile)) {
-        pattern <- as.matrix(read.csv(patternFile))
+        pattern <- as.matrix(read.csv(patternFile, header=FALSE))
         pattern <- pattern[1:m, 1:m]
     }
     return(pattern)
@@ -37,8 +51,9 @@ getStartingPattern <- function(patternFile=NULL,m=50) {
 #' @param patternFile CSV file containing initial pattern (if not provided, will be all 0s).
 #' @return popP Final pattern - a 2D array.
 #' @export
-generatePattern <- function(configFile="patternConfig.json", startingPatternFilename=NULL) {
-
+generatePattern <- function(configFile=file.path("..","testdata","patternGenConfig.json"),
+                            startingPatternFilename=NULL) {
+    print(getwd())
     config <- loadConfig(configFile)
     ## System discretisation
     DeltaX <- config$DeltaX # (m)
