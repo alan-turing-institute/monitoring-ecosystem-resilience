@@ -202,7 +202,7 @@ def ee_prep_data(collection_dict,
     # check we have enough images to work with after cloud masking
     if dataset.size().getInfo() == 0:
         print('No valid images found in this date rage, skipping.')
-        return
+        return []
     else:
         print(f'Found {dataset.size().getInfo()} valid images of {dataset_size} total images in this date range.')
 
