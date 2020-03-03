@@ -92,6 +92,10 @@ ipython_config.py
 output_dir/
 output/
 
-# macos 
+# macos
 .DS_Store
 .vscode/
+
+# R stuff
+.RData
+.Rhistory
