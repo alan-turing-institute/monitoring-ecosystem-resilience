@@ -75,8 +75,9 @@ def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     # images with more than this percent of cloud pixels are removed
     cloud_pix_frac = 10
 
-    # remove images that have more than 5% cloudy pixels
-    image_coll = image_coll.filter(ee.Filter.lt(cloudy_pix_flag, cloud_pix_frac))
+    # remove images that have more than `cloud_pix_frac`% cloudy pixels
+    if cloudy_pix_flag != 'None'    
+        image_coll = image_coll.filter(ee.Filter.lt(cloudy_pix_flag, cloud_pix_frac))
 
     # apply per pixel cloud mask
     image_coll = image_coll.map(mask_func)
