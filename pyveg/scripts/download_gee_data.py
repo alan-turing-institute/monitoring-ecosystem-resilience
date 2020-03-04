@@ -34,7 +34,7 @@ import argparse
 import warnings
 import time
 from shutil import copyfile
-from pyveg.src.satellite_data_analysis import process_all_collections
+from pyveg.src.process_satellite_data import process_all_collections
 from pyveg import config
 
 
@@ -48,7 +48,7 @@ def main():
     
     Example usage:
 
-    python analyse_gee_data.py \\
+    python download_gee_data.py \\
         --start_date 2016-01-01 \\
         --end_date 2019-01-01 \\
         --coords 27.99,11.29 \\
@@ -86,7 +86,7 @@ def main():
 
     # print which collections we are running with
     print('-'*35)
-    print('Running analyse_gee_data.py')
+    print('Running download_gee_data.py')
     print('-'*35)
 
     # run!
