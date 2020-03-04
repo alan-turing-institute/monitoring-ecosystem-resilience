@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
 #Define directory to save all outputs
-output_dir = 'TEST'
+output_dir = 'RUN1'
 
-coordinates = (27.99,11.29) # initial
-#coordinates = (28.37,11.12) # labyrinths
+#coordinates = (27.99,11.29) # initial
+coordinates = (28.37,11.12) # labyrinths
  
-date_range = ('2016-01-01', '2016-03-11')
+date_range = ('2015-01-01', '2020-001-01')
 
-num_days_per_point = 30
+num_days_per_point = 90
 
-collections_to_use = ['Landsat4','Landsat5']
+collections_to_use = ['Copernicus','Landsat8', 'ERA5']
 
 do_network_centrality = True
 
