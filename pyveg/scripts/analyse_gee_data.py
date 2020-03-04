@@ -34,7 +34,7 @@ import argparse
 import warnings
 import time
 from shutil import copyfile
-from pyveg.src.satellite_data_analysis import process_all_collections
+from pyveg.src.process_satellite_data import process_all_collections
 from pyveg import config
 
 

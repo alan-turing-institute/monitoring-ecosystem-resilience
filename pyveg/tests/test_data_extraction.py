@@ -1,7 +1,7 @@
 import shutil
 import sys
 
-from pyveg.src.satellite_data_analysis import get_vegetation, get_weather
+from pyveg.src.process_satellite_data import get_vegetation, get_weather
 
 coordinates = (27.99,11.29)
 

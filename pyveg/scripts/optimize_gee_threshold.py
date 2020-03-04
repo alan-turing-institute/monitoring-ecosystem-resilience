@@ -29,7 +29,7 @@ import re
 import argparse
 from PIL import Image
 
-from pyveg.src.satellite_data_analysis import get_time_series
+from pyveg.src.process_satellite_data import get_time_series
 from pyveg.src.image_utils import image_file_all_same_colour, compare_binary_image_files
 
 if os.name == "posix":
