@@ -312,10 +312,10 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
 
     # get download URL for all images at these coords
     download_urls = ee_prep_data(collection_dict,
-                                coords,
-                                date_range,
-                                region_size,
-                                scale)
+                                 coords,
+                                 date_range,
+                                 region_size,
+                                 scale)
 
     # didn't find any valid images in this date range
     if len(download_urls) == 0:
@@ -323,7 +323,7 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
 
     # path to temporary directory to download data
     sub_dir = f'gee_{coords[0]}_{coords[1]}'+"_"+collection_dict['collection_name'].replace('/', '-')
-    download_dir = os.path.join(output_dir, sub_dir)
+    download_dir = os.path.join(output_dir, sub_dir, date_range[0])
 
     # download files and unzip to temporary directory
     for download_url in download_urls:
