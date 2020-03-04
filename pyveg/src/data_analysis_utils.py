@@ -6,7 +6,7 @@ from os.path import isfile, join
 import geopandas as gpd
 from shapely.geometry import Point
 import matplotlib
-matplotlib.use('PS')
+#matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -84,6 +84,99 @@ def read_json_to_dataframe(filename):
 
     return data_geo_pd
 
+
+def make_patch_spines_invisible(ax):
+    ax.set_frame_on(True)
+    ax.patch.set_visible(False)
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+
+
+def make_time_series():
+
+
+    filename = '/Users/svanstroud/work/ds4sd/monitoring-ecosystem-resilience/output/RUN1__2020-03-04_14-38-04/results_summary.json'
+
+    df = read_json_to_dataframe(filename)
+
+    df = df.groupby('date').mean()
+
+    return df
+
+
+def plot_time_series():
+    #
+    """
+    turn into two functions
+    one just process the dataframe into a time series (may be still df)
+    the other does the plotting
+    """
+
+
+    filename = '/Users/svanstroud/work/ds4sd/monitoring-ecosystem-resilience/pyveg/output/RUN1__2020-03-04_15-41-47/results_summary.json'
+
+    df = read_json_to_dataframe(filename)
+
+    df = df.groupby('date').mean()
+
+    xs = df.index
+    ys1 = df['COPERNICUS/S2_offset50']
+    ys2 = df['total_precipitation']
+    ys3 = df['mean_2m_air_temperature'] - 273.15
+    ys4 = df['LANDSAT/LC08/C01/T1_SR_offset50']
+
+
+
+
+    fig, ax1 = plt.subplots()
+    fig.subplots_adjust(right=0.75)
+
+    color = 'tab:green'
+    ax1.set_xlabel('date')
+    ax1.set_ylabel('COPERNICUS', color=color)
+    ax1.plot(xs, ys1, color=color)
+    ax1.tick_params(axis='y', labelcolor=color)
+
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+    color = 'tab:blue'
+    ax2.set_ylabel('precipitation', color=color)  # we already handled the x-label with ax1
+    ax2.plot(xs, ys2, color=color)
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    ax3 = ax1.twinx()
+    ax3.spines["right"].set_position(("axes", 1.2))
+    make_patch_spines_invisible(ax3)
+    ax3.spines["right"].set_visible(True)
+
+    color = 'tab:red'
+    ax3.set_ylabel('temp', color=color)  # we already handled the x-label with ax1
+    ax3.plot(xs, ys3, color=color)
+    ax3.tick_params(axis='y', labelcolor=color)
+
+
+
+    ax4 = ax1.twinx()
+    
+    ax4.spines["left"].set_position(("axes", -0.2))
+    make_patch_spines_invisible(ax4)
+    ax4.spines["left"].set_visible(True)
+
+    color = 'tab:purple'
+    ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
+    ax4.yaxis.tick_left()
+    ax4.plot(xs, ys4, color=color)
+    ax4.tick_params(axis='y', labelcolor=color)
+    
+
+
+    fig.tight_layout()  # otherwise the right y-label is slightly clipped
+    plt.show()
+
+
+
+
+plot_time_series()
 
 def create_network_figures(data_df, metric, output_dir, output_name):
 
