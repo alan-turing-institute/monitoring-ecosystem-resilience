@@ -3,20 +3,15 @@ Functions to download and process satellite imagery from Google Earth Engine.
 """
 
 import os
-import sys
-import shutil
-import requests
-import argparse
 import dateparser
-import json
 from datetime import datetime, timedelta
+import json
 import numpy as np
 import cv2 as cv
 
 from .gee_interface import ee_download
 
 from .image_utils import (
-    convert_to_bw,
     crop_image_npix,
     save_image,
     convert_to_rgb,
@@ -30,16 +25,7 @@ from .image_utils import (
 from .subgraph_centrality import (
     subgraph_centrality,
     feature_vector_metrics,
-    generate_sc_images,
-    text_file_to_array,
 )
-
-from pyveg.src.subgraph_centrality import subgraph_centrality
-
-if os.name == "posix":
-    TMPDIR = "/tmp/"
-else:
-    TMPDIR = "%TMP%"
 
 
 def find_mid_period(start_time, end_time):
@@ -121,36 +107,6 @@ def construct_image_savepath(output_dir, collection_name, coords, date_range, im
     return full_path
 
 
-
-def write_fullsize_images(tif_filebase, output_dir, output_prefix, output_suffix,
-                          coords, bands, threshold):
-    """
-    Output black-and-white and colour, and possibly rescaled NDVI,
-    images before dividing into sub-images.
-    """
-    def construct_filename(image_type):
-        filename = os.path.basename(tif_filebase)
-        filename += "_{0:.3f}_{1:.3f}".format(coords[0], coords[1])
-        filename += "_10kmLargeImage_{}_{}".format(image_type,output_suffix)
-        filename = output_prefix + '_' + filename
-        return filename
-    
-    # output the full-size colour image
-    merged_image = convert_to_rgb(tif_filebase, bands)
-    output_filename = construct_filename("colour")
-    save_image(merged_image, output_dir, output_filename)
-    
-    # if we have NDVI, rescale this and output it.
-    if "NDVI" in bands:
-        ndvi_image = scale_tif(tif_filebase, "NDVI")
-        output_filename = construct_filename("ndvi")
-        save_image(ndvi_image, output_dir, output_filename)
-        #bw_ndvi = convert_to_bw(ndvi_image, threshold) # old method
-        bw_ndvi = process_and_threshold(ndvi_image) # new adaptive threshold
-        output_filename = construct_filename("ndvibw")
-        save_image(bw_ndvi, output_dir, output_filename)
-
-
 def run_network_centrality(output_dir, image, coords, date_range, region_size, sub_image_size=[50,50], n_sub_images=-1):
     """
     !! SVS: Suggest that this function should be moved to the subgraph_centrality.py module
@@ -215,7 +171,7 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
 
         # run network centrality
         image_array = pillow_to_numpy(sub_image)
-        feature_vec, sel_pixels = subgraph_centrality(image_array)
+        feature_vec, _ = subgraph_centrality(image_array)
         nc_result = feature_vector_metrics(feature_vec)
         
         nc_result['latitude'] = round(sub_coords[0], 4)
