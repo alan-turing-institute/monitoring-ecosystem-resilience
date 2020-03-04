@@ -24,6 +24,7 @@ install:
 
 script:
  - pytest -s
+ - cd rveg; Rscript -e "devtools::test()"; cd -;
 
 after_failure:
  - cat config.log

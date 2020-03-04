@@ -65,6 +65,7 @@ def main():
     create_network_time_series(metrics_df, metric= metric_name, output_dir = output_dir, output_name= output_name)
 
     create_general_network_time_series(metrics_df, metric= metric_name)
+    metrics_df.to_csv(output_dir+"metrics_df.csv")
 
     print("Done")
 

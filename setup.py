@@ -9,7 +9,7 @@ setup(
     version="0.0.1",
     description="Vegetation patterns study.",
     url="https://github.com/alan-turing-institute/monitoring-ecosystem-resilience",
-    author="Nick Barlow and Camila Rangel Smith",
+    author="Nick Barlow, Camila Rangel Smith and Samuel Van Stroud",
     license="MIT",
     include_package_data=True,
     packages=["pyveg",

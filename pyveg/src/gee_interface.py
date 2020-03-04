@@ -11,6 +11,7 @@ import dateparser
 from datetime import datetime, timedelta
 from zipfile import ZipFile, BadZipFile
 from geetools import cloud_mask
+import cv2 as cv
 
 import ee
 ee.Initialize()
@@ -31,34 +32,57 @@ LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 
 
 
-
-# EXPERIMENTAL Cloud masking function.  To be applied to Images (not ImageCollections)
-def apply_mask_cloud(image, input_coll):
+def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     """
-    Different input_collections need different steps to be taken to filter
-    out cloud.
-    """
-    if input_coll=='LANDSAT/LC08/C01/T1_SR':
-        mask_func = cloud_mask.landsat8SRPixelQA()
-        image = image.map(mask_func)
-        return image
+    Different input_collections need different steps to be taken to handle
+    cloudy image. The first step is to reject images that more than X% 
+    cloudy pixels (here X=5). The next step is to mask cloudy pixels. This 
+    will hopefully mean that when we take the median of the ImageCollection, 
+    we ignore cloudy pixels.
 
-    elif input_coll=='COPERNICUS/S2':
+    Parameters
+    ----------
+    image_coll : ee.ImageCollection
+        The ImageCollection of images from which we want to remove cloud.
+    collection_name : str
+        Name of the collection so that we can apply collection specific 
+        masking.
+    cloud_pix_flag : str
+        Name of the flag which details the fraction of cloudy pixels in each 
+        image.
+
+    Returns
+    ----------
+    image_coll
+        Image collection with very cloudy images removed, and masked images 
+        containing a tolerable amount of cloud.
+    """
+
+    # construct cloud mask if availible
+    if collection_name=='LANDSAT/LC08/C01/T1_SR':
+        mask_func = cloud_mask.landsat8SRPixelQA() 
+    elif collection_name=='COPERNICUS/S2':
         mask_func = cloud_mask.sentinel2()
-        image = image.filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",5)).map(mask_func)
-        return image
     else:
         print("No cloud mask logic defined for input collection {}"\
-              .format(input_coll))
-        return image
+              .format(collection_name))
+        return image_coll
+
+    # images with more than this percent of cloud pixels are removed
+    cloud_pix_frac = 10
+
+    # remove images that have more than 5% cloudy pixels
+    image_coll = image_coll.filter(ee.Filter.lt(cloudy_pix_flag, cloud_pix_frac))
+
+    # apply per pixel cloud mask
+    image_coll = image_coll.map(mask_func)
+
+    return image_coll
 
 
-def add_NDVI(image):
+def add_NDVI(image, red_band, near_infrared_band):
     try:
-        #nir = image.select('B8')
-        #red = image.select('B4')
-        #image_ndvi = nir.subtract(red).divide(nir.add(red)).rename('NDVI');
-        image_ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI')
+        image_ndvi = image.normalizedDifference([near_infrared_band, red_band]).rename('NDVI')
         return ee.Image(image).addBands(image_ndvi)
     except:
         print ("Something went wrong in the NDVI variable construction")
@@ -77,8 +101,8 @@ def download_and_unzip(url, output_tmpdir):
     r = requests.get(url)
     if not r.status_code == 200:
         raise RuntimeError(" HTTP Error getting download link {}".format(url))
-    # remove output directory and recreate it
-    shutil.rmtree(output_tmpdir, ignore_errors=True)
+    # DO NOT remove output directory and recreate it
+    #shutil.rmtree(output_tmpdir, ignore_errors=True)
     os.makedirs(output_tmpdir, exist_ok=True)
     output_zipfile = os.path.join(output_tmpdir,"gee.zip")
     with open(output_zipfile, "wb") as outfile:
@@ -98,27 +122,65 @@ def download_and_unzip(url, output_tmpdir):
                  if filename.endswith(".tif")]
     if len(tif_files) == 0:
         raise RuntimeError("No files extracted")
+    
     # get the filename before the "Bx" band identifier
     tif_filebases = [tif_file.split(".")[0] for tif_file in tif_files]
+    
     # get the unique list
     tif_filebases = set(tif_filebases)
+    
     # prepend the directory name to each of the filebases
     return [os.path.join(output_tmpdir, tif_filebase) \
             for tif_filebase in tif_filebases]
 
 
-def get_download_urls(coords, # [long,lat]
-                      region,   # string representation of 4 sets of [long,lat] forming rectangle around coords
-                      image_collection, # name
-                      bands, # []
-                      scale, # output pixel size in m
-                      start_date, # 'yyyy-mm-dd'
-                      end_date, # 'yyyy-mm-dd'
-                      mask_cloud=True):
+def ee_prep_data(collection_dict,
+                 coords,
+                 date_range,
+                 region_size=0.1,
+                 scale=10,
+                 mask_cloud=True):
     """
-    Download specified image to output directory
+    Use the Earth Engine API to prepare data for download.
+
+    Parameters
+    ----------
+    collection_dict : dict
+        Dictionary containing information about the collection (name, 
+        type, bands, etc). Follows structure in the config file.
+    coords : tuple of float
+        (Latitude, longitude) coordinates.
+    region : str
+         String representation of 4 sets of [long,lat] forming rectangle 
+         around the point specified in coords.
+    date_range : tuple of str
+        (Start date, end data) for data filtering. Date strings 
+        must be formatted as 'YYYY-MM-DD'.
+    region_size : float, optional
+        Size of the output image (default is 0.1, or 1km).
+    scale : int, optional
+        Size of each pixel in meters (default 10).
+    mask_cloud : bool, optional
+        Remove cloud from images using the geetools package.
+
+    Returns
+    ----------
+    list
+        URLs from which we can download the data. For vegetation
+        we should only get a single URL in the list, but for 
+        precipitation it is possible to get separate URLs for e.g.
+        precipitation and weather data.
     """
-    image_coll = ee.ImageCollection(image_collection)
+
+    # string respresenting 4 corners of the region of interest
+    region = get_region_string(coords, region_size)
+
+    # unpack the date range
+    start_date, end_date = date_range
+
+    collection_name = collection_dict['collection_name']
+
+    image_coll = ee.ImageCollection(collection_name)
     geom = ee.Geometry.Point(coords)
 
     # gather relevant images
@@ -130,31 +192,140 @@ def get_download_urls(coords, # [long,lat]
         print('No images found in this date rage, skipping.')
         return []
 
-    # mask cloudy images
-    if mask_cloud:
-        dataset = apply_mask_cloud(dataset, image_collection)
+    # store the type of data we are working with
+    data_type = collection_dict['type']
+
+    # mask clouds in images
+    if mask_cloud and data_type == 'vegetation':
+        dataset = apply_mask_cloud(dataset, collection_name, collection_dict['cloudy_pix_flag'])
 
     # check we have enough images to work with after cloud masking
     if dataset.size().getInfo() == 0:
-        print('No valid images found in this date rage after cloud masking, skipping.')
+        print('No valid images found in this date rage, skipping.')
         return []
     else:
-        print(f"Found {dataset.size().getInfo()} valid images of {dataset_size} total images in this date range.")
+        print(f'Found {dataset.size().getInfo()} valid images of {dataset_size} total images in this date range.')
 
-    # take the median across all images in the ImageCollection at every pixel location
-    image = dataset.median()
+    image_list = []
 
-    if 'NDVI' in bands:
-        image = add_NDVI(image)
+    # if we are looking at vegetation
+    if data_type == 'vegetation':
 
-    image = image.select(bands)
+        # take the median across time of every pixel in the image
+        image = dataset.median()
 
-    urls = []
+        # construct NDVI band from the red and near infrared bands
+        image = add_NDVI(image, collection_dict['RGB_bands'][0], collection_dict['NIR_band'])
 
-    url = image.getDownloadURL(
-        {'region': region,
-         'scale': scale}
-    )
-    urls.append(url)
+        # select only RGB + NDVI bands to download
+        bands_to_select = list(collection_dict['RGB_bands']) + ['NDVI']
+        #renamed_bands = [collection_dict['collection_name'].split('/')[0] + '-' + band for band in bands_to_select]
+        image = image.select(bands_to_select)
 
-    return urls
+        image_list.append(image)
+
+    # for weather data
+    if data_type == 'weather':
+
+        if 'precipitation_band' in collection_dict.keys():
+            # sum the precipitation across all dates
+            image_weather = dataset.select(list(collection_dict['precipitation_band'])).sum()
+            image_list.append(image_weather)
+
+        if 'temperature_band' in collection_dict.keys():
+            # average the temperature across all dates, may want to include 
+            # temperature range, min and max, in future
+            image_temp = dataset.select(list(collection_dict['temperature_band'])).mean()
+            image_list.append(image_temp)
+
+    url_list =[]
+    for image in image_list:
+        # get a URL from which we can download the resulting data
+        url = image.getDownloadURL(
+            {'region': region,
+            'scale': scale}
+         )
+        url_list.append(url)
+
+    return url_list
+
+
+def get_region_string(point, size=0.1):
+    """
+    Construct a string of coordinates that create a box around the specified point.
+
+    Parameters
+    ----------
+    point : list of float
+        Latitude and longitude of the specified point.
+    size : float, optional
+        Side length of the output square.
+
+    Returns
+    ----------
+    str
+        A string with coordinates for each corner of the box. Can be passed to Earth
+        Engine.
+    """
+    left = point[0] - size/2
+    right = point[0] + size/2
+    top = point[1] + size/2
+    bottom = point[1] - size/2
+    coords =  str([[left,top],[right,top],[right,bottom],[left,bottom]])
+    return coords
+
+
+def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
+    """
+    General function to download various kinds of data from Google Earth Engine. We can get
+    vegetation and weather data through this function. Cloud masking logic is performed for
+    spectral data if possible.
+
+    Parameters
+    ----------
+    output_dir : str
+        Path to the directory where ee files will be downloaded 
+        and extracted to.
+    collection_dict : dict
+        Dictionary containing information about the collection (name, 
+        type, bands, etc). Follows structure in the config file.
+    coords : tuple of float
+        (Latitude, longitude) coordinates.
+    date_range : tuple of str
+        (Start date, end data) for data filtering. Date strings 
+        must be formatted as 'YYYY-MM-DD'.
+    region_size : float, optional
+        Size of the output image (default is 0.1, or 1km).
+    scale : int, optional
+        Size of each pixel in meters (default 10).
+
+    Returns
+    ----------
+    str
+        Path to download .tif files.
+    """
+
+    # get download URL for all images at these coords
+    download_urls = ee_prep_data(collection_dict,
+                                coords,
+                                date_range,
+                                region_size,
+                                scale)
+
+    # didn't find any valid images in this date range
+    if len(download_urls) == 0:
+        return
+
+    # path to temporary directory to download data
+    sub_dir = f'gee_{coords[0]}_{coords[1]}'+"_"+collection_dict['collection_name'].split('/')[0]
+    download_dir = os.path.join(output_dir, sub_dir)
+
+    # download files and unzip to temporary directory
+    for download_url in download_urls:
+        download_and_unzip(download_url, download_dir)
+
+    # confirm download completed as expected?
+
+    # return the path so downloaded files can be handled by caller
+    return download_dir
+

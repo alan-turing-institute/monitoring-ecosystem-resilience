@@ -16,7 +16,7 @@
 #' @return Array of neighbouring pixel's x-y coordinates.
 #' @export
 get_neighbours <- function(x,y,m,n,diag=TRUE) {
-    #find indicdes of surrounding neihgbours of point x,y in an m x n array
+    #find indices of surrounding neighbours of point x,y in an m x n array
     #diagonal neighbours also returned as default
     #indices which lie outside of the boundaries are removed
     if (diag == TRUE) {
@@ -36,8 +36,14 @@ get_neighbours <- function(x,y,m,n,diag=TRUE) {
         neighbours[3,] <- c(x+1,y)
         neighbours[4,] <- c(x,y-1)
     }
-    if (length(which(neighbours[,1] > m | neighbours[,1] < 1 | neighbours[,2] > n | neighbours[,2] < 1)) > 0) {
-        neighbours <- neighbours[-which(neighbours[,1] > m | neighbours[,1] < 1 | neighbours[,2] > n | neighbours[,2] < 1),]
+    if (length(which(neighbours[,1] > m |
+                     neighbours[,1] < 1 |
+                     neighbours[,2] > n |
+                     neighbours[,2] < 1)) > 0) {
+        neighbours <- neighbours[-which(neighbours[,1] > m |
+                                        neighbours[,1] < 1 |
+                                        neighbours[,2] > n |
+                                        neighbours[,2] < 1),]
     }
     return(neighbours)
 }
