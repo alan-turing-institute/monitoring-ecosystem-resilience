@@ -322,7 +322,7 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
         return
 
     # path to temporary directory to download data
-    sub_dir = f'gee_{coords[0]}_{coords[1]}'+"_"+collection_dict['collection_name'].split('/')[0]
+    sub_dir = f'gee_{coords[0]}_{coords[1]}'+"_"+collection_dict['collection_name'].replace('/', '-')
     download_dir = os.path.join(output_dir, sub_dir)
 
     # download files and unzip to temporary directory
