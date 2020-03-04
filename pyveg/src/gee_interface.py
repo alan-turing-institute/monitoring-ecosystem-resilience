@@ -59,10 +59,14 @@ def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     """
 
     # construct cloud mask if availible
-    if collection_name=='LANDSAT/LC08/C01/T1_SR':
-        mask_func = cloud_mask.landsat8SRPixelQA() 
-    elif collection_name=='COPERNICUS/S2':
+    if collection_name == 'COPERNICUS/S2':
         mask_func = cloud_mask.sentinel2()
+    elif collection_name == 'LANDSAT/LC08/C01/T1_SR':
+        mask_func = cloud_mask.landsat8SRPixelQA()
+    elif ( collection_name == 'LANDSAT/LE07/C01/T1_SR' or
+           collection_name == 'LANDSAT/LT05/C01/T1_SR' or
+           collection_name == 'LANDSAT/LT04/C01/T1_SR' ):
+        mask_func = cloud_mask.landsat457SRPixelQA() 
     else:
         print("No cloud mask logic defined for input collection {}"\
               .format(collection_name))
