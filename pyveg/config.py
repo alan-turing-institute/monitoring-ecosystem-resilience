@@ -6,7 +6,7 @@ output_dir = 'RUN1'
 #coordinates = (27.99,11.29) # initial
 coordinates = (28.37,11.12) # labyrinths
  
-date_range = ('2015-01-01', '2020-001-01')
+date_range = ('2015-01-01', '2020-01-01')
 
 num_days_per_point = 90
 
