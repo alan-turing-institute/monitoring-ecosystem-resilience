@@ -3,12 +3,9 @@ Functions to help interface with GEE, in particular to download images.
 """
 
 import os
-import sys
 import shutil
 import requests
-import argparse
-import dateparser
-from datetime import datetime, timedelta
+from datetime import datetime
 from zipfile import ZipFile, BadZipFile
 from geetools import cloud_mask
 import cv2 as cv
