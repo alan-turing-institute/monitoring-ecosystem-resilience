@@ -257,7 +257,7 @@ def fill_feature_vector(pix_indices, coords, adj_matrix, num_quantiles=20):
     step = (end-start)/num_quantiles
     x = [i for i in range(start,end+1,int(step))]
     # create feature vector of size num_quantiles
-    feature_vector = np.zeros(num_quantiles);
+    feature_vector = np.zeros(num_quantiles)
     # create a dictionary of selected pixels for each quantile.
     selected_pixels = {}
     # Loop through the quantiles to fill the feature vector

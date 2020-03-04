@@ -12,7 +12,7 @@ Finally a GIF file is produced with all of the network metric images, as well as
 import argparse
 
 from pyveg.src.data_analysis_utils import (
-    process_json_metrics_to_dataframe,
+    read_json_to_dataframe,
     create_network_figures
 )
 
@@ -42,7 +42,7 @@ def main():
     metric_name = args.metric_name
 
     # read all json files in the directory and produce a dataframe
-    metrics_df = process_json_metrics_to_dataframe(input_dir)
+    metrics_df = read_json_to_dataframe(input_dir)
 
     # from the dataframe, produce network metric figure for each avalaible date
     create_network_figures(metrics_df, metric= metric_name, output_dir = output_dir, output_name= output_name)

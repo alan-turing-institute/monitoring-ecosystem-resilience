@@ -10,66 +10,79 @@ matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import numpy as np
 
-def process_json_metrics_to_dataframe(input_json):
-
-    """
-    Read JSON files produced by GEE and get output metrics into a dataframe
-    """
-
-    # find all json files in a given directory
 
 
-    # in case the directory do not contain json files
-    with open(input_json) as json_file:
-        data_dict = json.load(json_file)
+def read_json_to_dataframe(filename):
 
+    #filename = '/Users/svanstroud/work/ds4sd/monitoring-ecosystem-resilience/output/RUN1__2020-03-04_14-38-04/results_summary.json'
 
+    # output dataframe
+    df = pd.DataFrame(columns=['date', 'lat', 'long'])
 
-    satelite_names = [key for key in data_dict]
+    # json read
+    data = None
+    with open(filename) as json_file:
+        data = json.load(json_file)
 
-    dates= [key for key in data_dict[satelite_names[0]]['time-series-data']]
+    # index
+    i = 0
 
-    network_n = [key for key in  data_dict[satelite_names[0]]['time-series-data'][dates[0]]]
+    # loop over collections
+    for collection_name, coll_results in data.items():
 
+        # for vegetation
+        if coll_results['type'] == 'vegetation':
 
-    for n in network_n:
+            # loop over time series
+            for time_point in coll_results['time-series-data'].values():
 
-        for date in dates:
+                # check we have data
+                if time_point is None:
+                    continue
 
-            row = []
-            for satellite in satelite_names:
+                # for each space point
+                for space_point in time_point.values():
+                    date = space_point['date']
+                    lat = space_point['latitude']
+                    long = space_point['longitude']
 
-                try:
-                    json_data= (data_dict[satellite]['time-series-data'][date][n]['offset50'])
-                    json_data['offset50_'+satellite] = (data_dict[satellite]['time-series-data'][date][n]['offset50'])
+                    matched_indices = df.index[(df['date'] == date) & (df['lat'] == lat) & (df['long'] == long)].tolist()
 
-                except:
-                    json_data = (data_dict[satellite]['time-series-data'][date])
+                    if len(matched_indices) == 0:
+                        df.loc[i, 'date'] = space_point['date']
+                        df.loc[i, 'lat'] = space_point['latitude']
+                        df.loc[i, 'long'] = space_point['longitude']
+                        df.loc[i, f'{collection_name}_offset50'] = space_point['offset50']
+                        i += 1
 
-                print (date)
-                print (json_data)
-                print ()
-                row.append(json_data)
+                    elif len(matched_indices) == 1:
+                        index = matched_indices[0]
+                        df.loc[index, f'{collection_name}_offset50'] = space_point['offset50']
 
+                    else:
+                        raise RuntimeError
 
-    # turn metrics into dataframe
-    #data_df = pd.DataFrame.from_dict(data)
+        # for vegetation
+        elif coll_results['type'] == 'weather':
 
-    #        data_df["date"]= data_df["date"].astype('datetime64[ns]')
+            # loop over time series
+            for date, values in coll_results['time-series-data'].items():
 
-            # Add a year variable
+                # check we have data
+                if values is None:
+                    continue
 
-    #        data_df.sort_values(by=['date'], inplace=True, ascending=True)
+                matched_indices = df.index[(df['date'] == date)]
 
-    #    else:
-    #        raise RuntimeError('Faulty json files in' + directory_path)
+                for metric, value in values.items():
+                    df.loc[matched_indices, metric] = value
 
+    # turn lat, long into geopandas
+    df['geometry'] = [Point(xy) for xy in zip(df.lat, df.long)]
+    crs = {'init': 'epsg:4326'}
+    data_geo_pd = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
 
-    return data_df
-
-
-
-
+    return data_geo_pd
 
 
 def create_network_figures(data_df, metric, output_dir, output_name):
@@ -90,6 +103,7 @@ def create_network_figures(data_df, metric, output_dir, output_name):
         data_geo_pd = gpd.GeoDataFrame(data_df, crs=crs, geometry=data_df['geometry'])
 
         # get min and max values observed in the data to create a range
+
         vmin = 0
         vmax = 1000
 
@@ -101,6 +115,8 @@ def create_network_figures(data_df, metric, output_dir, output_name):
             # create figure and axes for Matplotlib
             fig, ax = plt.subplots(1, figsize=(6, 6))
 
+            data_geo_pd[data_geo_pd['date'] == date].plot(marker='o', ax=ax, alpha=.5, markersize=100, column=metric, \
+                                                          figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap='Reds')
             import matplotlib.cm as cm
 
             cmap = cm.summer
@@ -134,52 +150,6 @@ def create_network_figures(data_df, metric, output_dir, output_name):
     else:
         raise RuntimeError("Expected variables not present in input dataframe")
 
-
-
-
-def create_network_time_series(data_df, metric, output_dir, output_name):
-
-
-    # get data for each unique pair of lat, long
-    unique_coords = data_df[['latitude','longitude',metric,'date']].groupby(['latitude','longitude'])
-
-    fig, ax = plt.subplots(1, figsize=(12, 6))
-
-    count = 0
-
-    # get time series
-    for name, group in unique_coords:
-
-        if group.shape[0]>1:
-
-            plt.plot(group['date'], group['offset50'],label = str(round(name[0],2))+","+str(round(name[1],2)))
-            count = count +1
-
-        if count > 10:
-
-            plt.title('Network Centrality Measure')
-            plt.ylabel('offset50');
-            plt.legend();
-            ax.tick_params(axis='x', rotation=45)
-            plt.ylim((-1200, 0))
-            fig.savefig(os.path.join(output_dir,output_name+"_"+str(round(name[0],2))+","+str(round(name[1],2))+"_time_series.png"), dpi=100)
-            plt.clf()
-
-            count = 0
-
-
-
-
-def create_general_network_time_series(data_df, metric):
-
-
-    unique_dates = data_df[['latitude','longitude',metric,'date']].groupby(['date'])[metric].agg(['mean', 'std'])
-
-    fig, ax = plt.subplots(2, figsize=(12, 6))
-    ax[0].plot(unique_dates.index, unique_dates['mean'])
-    ax[0].set_ylim((-800,-400))
-    ax[1].plot(unique_dates.index, unique_dates['std'])
-    fig.savefig('test.png', dpi=100)
 
 
 
