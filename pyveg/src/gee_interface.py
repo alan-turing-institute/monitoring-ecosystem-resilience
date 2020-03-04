@@ -56,10 +56,14 @@ def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     """
 
     # construct cloud mask if availible
-    if collection_name=='LANDSAT/LC08/C01/T1_SR':
-        mask_func = cloud_mask.landsat8SRPixelQA() 
-    elif collection_name=='COPERNICUS/S2':
+    if collection_name == 'COPERNICUS/S2':
         mask_func = cloud_mask.sentinel2()
+    elif collection_name == 'LANDSAT/LC08/C01/T1_SR':
+        mask_func = cloud_mask.landsat8SRPixelQA()
+    elif ( collection_name == 'LANDSAT/LE07/C01/T1_SR' or
+           collection_name == 'LANDSAT/LT05/C01/T1_SR' or
+           collection_name == 'LANDSAT/LT04/C01/T1_SR' ):
+        mask_func = cloud_mask.landsat457SRPixelQA() 
     else:
         print("No cloud mask logic defined for input collection {}"\
               .format(collection_name))
@@ -68,8 +72,9 @@ def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     # images with more than this percent of cloud pixels are removed
     cloud_pix_frac = 10
 
-    # remove images that have more than 5% cloudy pixels
-    image_coll = image_coll.filter(ee.Filter.lt(cloudy_pix_flag, cloud_pix_frac))
+    # remove images that have more than `cloud_pix_frac`% cloudy pixels
+    if cloudy_pix_flag != 'None':
+        image_coll = image_coll.filter(ee.Filter.lt(cloudy_pix_flag, cloud_pix_frac))
 
     # apply per pixel cloud mask
     image_coll = image_coll.map(mask_func)
@@ -304,18 +309,18 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
 
     # get download URL for all images at these coords
     download_urls = ee_prep_data(collection_dict,
-                                coords,
-                                date_range,
-                                region_size,
-                                scale)
+                                 coords,
+                                 date_range,
+                                 region_size,
+                                 scale)
 
     # didn't find any valid images in this date range
     if len(download_urls) == 0:
         return
 
     # path to temporary directory to download data
-    sub_dir = f'gee_{coords[0]}_{coords[1]}'+"_"+collection_dict['collection_name'].split('/')[0]
-    download_dir = os.path.join(output_dir, sub_dir)
+    sub_dir = f'gee_{coords[0]}_{coords[1]}'+"_"+collection_dict['collection_name'].replace('/', '-')
+    download_dir = os.path.join(output_dir, sub_dir, date_range[0])
 
     # download files and unzip to temporary directory
     for download_url in download_urls:

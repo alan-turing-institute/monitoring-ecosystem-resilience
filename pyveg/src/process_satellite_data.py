@@ -265,7 +265,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
         nc_output_dir = os.path.join(output_dir, 'network_centrality')
         nc_results = run_network_centrality(nc_output_dir, processed_ndvi, coords, date_range, region_size, n_sub_images=n_sub_images)
 
-    return nc_results
+        return nc_results
 
 
 def get_weather(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
@@ -297,7 +297,7 @@ def process_single_collection(output_dir, collection_dict, coords, date_ranges, 
     print('-'*50)
 
     # make a new dir inside `output_dir`
-    output_subdir = os.path.join(output_dir, collection_dict['collection_name'].split('/')[0])
+    output_subdir = os.path.join(output_dir, collection_dict['collection_name'].replace('/', '-'))
     if not os.path.exists(output_subdir):
         os.makedirs(output_subdir, exist_ok=True)
 
