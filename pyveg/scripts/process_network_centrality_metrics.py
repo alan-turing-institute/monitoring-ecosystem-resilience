@@ -13,7 +13,7 @@ import argparse
 
 from pyveg.src.data_analysis_utils import (
     read_json_to_dataframe,
-    create_network_figures
+    create_lat_long_metric_figures
 )
 
 from pyveg.src.image_utils import (
@@ -45,7 +45,7 @@ def main():
     metrics_df = read_json_to_dataframe(input_dir)
 
     # from the dataframe, produce network metric figure for each avalaible date
-    create_network_figures(metrics_df, metric= metric_name, output_dir = output_dir, output_name= output_name)
+    create_lat_long_metric_figures(metrics_df, metric= metric_name, output_dir = output_dir, output_name= output_name)
 
     # get all figures into a gif file
     create_gif_from_images(output_dir, output_name)

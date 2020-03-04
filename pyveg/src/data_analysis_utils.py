@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import numpy as np
-
+import matplotlib.cm as cm
 
 
 def read_json_to_dataframe(filename):
@@ -85,22 +85,16 @@ def read_json_to_dataframe(filename):
     return data_geo_pd
 
 
-def create_network_figures(data_df, metric, output_dir, output_name):
+def create_lat_long_metric_figures(data_df, metric,output_dir):
 
     """
     From input dataframe with processed network metrics create figure for each date avalaible using geopandas.
 
 
     """
-    if set(['date','longitude','latitude',metric]).issubset(data_df.columns):
+    if set(['date','lat','long',metric]).issubset(data_df.columns):
 
         data_df['abs_metric'] = data_df[metric]*-1
-
-        # turn lat, long into geopandas
-        data_df['geometry'] = [Point(xy) for xy in zip(data_df.latitude, data_df.longitude)]
-
-        crs = {'init': 'epsg:4326'}
-        data_geo_pd = gpd.GeoDataFrame(data_df, crs=crs, geometry=data_df['geometry'])
 
         # get min and max values observed in the data to create a range
 
@@ -108,45 +102,48 @@ def create_network_figures(data_df, metric, output_dir, output_name):
         vmax = 1000
 
         # get all dates avalaibles
-        list_of_dates = np.unique(data_geo_pd['date'])
+        list_of_dates = np.unique(data_df['date'])
 
         for date in list_of_dates:
 
-            # create figure and axes for Matplotlib
-            fig, ax = plt.subplots(1, figsize=(6, 6))
+            print (date)
+            try:
+                # create figure and axes for Matplotlib
+                fig, ax = plt.subplots(1, figsize=(6, 6))
 
-            data_geo_pd[data_geo_pd['date'] == date].plot(marker='o', ax=ax, alpha=.5, markersize=100, column=metric, \
-                                                          figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap='Reds')
-            import matplotlib.cm as cm
 
-            cmap = cm.summer
+                cmap = cm.summer
 
-            data_geo_pd[data_geo_pd['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column='abs_metric', \
+
+                data_df[data_df['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column='abs_metric', \
                                                           figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
 
-            # ridiculous step
-            date_str = pd.to_datetime(str(date)).strftime('%Y-%m-%d')
+                # ridiculous step
+                date_str = pd.to_datetime(str(date)).strftime('%Y-%m-%d')
 
-            # create a date annotation on the figure
-            ax.annotate(date_str, xy=(0.15, 0.08), xycoords='figure fraction',
+                # create a date annotation on the figure
+                ax.annotate(date_str, xy=(0.15, 0.08), xycoords='figure fraction',
                         horizontalalignment='left', verticalalignment='top',
                         fontsize=25)
 
-            # Create colorbar as a legend
+                # Create colorbar as a legend
 
-            sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+                sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
 
 
-            sm._A = []
-            fig.colorbar(sm)
+                sm._A = []
+                fig.colorbar(sm)
 
-            # create output directoriy
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
+                # create output directoriy
+                if not os.path.exists(output_dir):
+                    os.makedirs(output_dir)
 
-            # this saves the figure as a high-res png in the output path.
-            filepath = os.path.join(output_dir, output_name + '_network_values' + date_str + '.png')
-            fig.savefig(filepath, dpi=300)
+                # this saves the figure as a high-res png in the output path.
+                filepath = os.path.join(output_dir, 'network_values' + date_str + '.png')
+                fig.savefig(filepath, dpi=300)
+
+            except:
+                print ('Something')
     else:
         raise RuntimeError("Expected variables not present in input dataframe")
 
@@ -155,4 +152,6 @@ def create_network_figures(data_df, metric, output_dir, output_name):
 
 
 if __name__ == "__main__":
-    process_json_metrics_to_dataframe('/Users/crangelsmith/PycharmProjects/monitoring-ecosystem-resilience/results_summary.json')
+    data_df = read_json_to_dataframe('/Users/crangelsmith/PycharmProjects/monitoring-ecosystem-resilience/results_summary')
+    data_df["date"] = data_df["date"].astype('datetime64[ns]')
+    create_lat_long_metric_figures(data_df, 'LANDSAT/LC08/C01/T1_SR_offset50','.')
