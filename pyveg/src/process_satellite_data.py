@@ -303,8 +303,8 @@ def process_single_collection(output_dir, collection_dict, coords, date_ranges, 
 
     # store the results by date in this dict
     results = {}
-    results['time-series-data'] = {}
     results['type'] = collection_dict['type']
+    results['time-series-data'] = {}
 
     # for each time interval
     for date_range in date_ranges:
