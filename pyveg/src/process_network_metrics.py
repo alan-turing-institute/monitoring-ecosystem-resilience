@@ -10,49 +10,79 @@ matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import numpy as np
 
-def process_json_metrics_to_dataframe(directory_path):
-
-    """
-    Read JSON files produced by GEE and get output metrics into a dataframe
-    """
-
-    # find all json files in a given directory
-    list_json_files = [f for f in os.listdir(directory_path) if (isfile(join(directory_path, f)) and f.endswith(".json"))]
 
 
-    # in case the directory do not contain json files
-    if len(list_json_files) == 0:
-        raise RuntimeError("No json files in " + directory_path )
+def read_json_to_dataframe(filename):
 
-    else:
+    #filename = '/Users/svanstroud/work/ds4sd/monitoring-ecosystem-resilience/output/RUN1__2020-03-04_14-38-04/results_summary.json'
+    
+    # output dataframe
+    df = pd.DataFrame(columns=['date', 'lat', 'long'])
+    
+    # json read
+    data = None
+    with open(filename) as json_file:
+        data = json.load(json_file)
 
-        metrics = []
+    # index
+    i = 0
 
-        #loop by each json file and get metrics
-        for file_json in list_json_files:
-            try:
-                with open(os.path.join(directory_path , file_json)) as f:
-                    d = json.load(f)
-                    metrics.append(d)
-            except:
-                print('Issue with file', os.path.join(directory_path , file_json))
-                continue
+    # loop over collections
+    for collection_name, coll_results in data.items():
 
-        if len(metrics) != 0:
-            # turn metrics into dataframe
-            data_df = pd.DataFrame.from_dict(metrics)
+        # for vegetation
+        if coll_results['type'] == 'vegetation':
 
-            data_df["date"]= data_df["date"].astype('datetime64[ns]')
+            # loop over time series
+            for time_point in coll_results['time-series-data'].values():
 
-            # Add a year variable
+                # check we have data
+                if time_point is None:
+                    continue
+                
+                # for each space point
+                for space_point in time_point.values():
+                    date = space_point['date']
+                    lat = space_point['latitude']
+                    long = space_point['longitude']
 
-            data_df.sort_values(by=['date'], inplace=True, ascending=True)
+                    matched_indices = df.index[(df['date'] == date) & (df['lat'] == lat) & (df['long'] == long)].tolist()
 
-        else:
-            raise RuntimeError('Faulty json files in' + directory_path)
+                    if len(matched_indices) == 0:
+                        df.loc[i, 'date'] = space_point['date']
+                        df.loc[i, 'lat'] = space_point['latitude']
+                        df.loc[i, 'long'] = space_point['longitude']
+                        df.loc[i, f'{collection_name}_offset50'] = space_point['offset50']
+                        i += 1
 
+                    elif len(matched_indices) == 1:
+                        index = matched_indices[0]
+                        df.loc[index, f'{collection_name}_offset50'] = space_point['offset50']
 
-    return data_df
+                    else:
+                        raise RuntimeError
+
+        # for vegetation
+        elif coll_results['type'] == 'weather':
+
+            # loop over time series
+            for date, values in coll_results['time-series-data'].items():
+
+                # check we have data
+                if values is None:
+                    continue
+
+                matched_indices = df.index[(df['date'] == date)]
+
+                for metric, value in values.items():
+                    df.loc[matched_indices, metric] = value
+    
+    # turn lat, long into geopandas
+    df['geometry'] = [Point(xy) for xy in zip(df.lat, df.long)]
+    crs = {'init': 'epsg:4326'}
+    data_geo_pd = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
+
+    return data_geo_pd
 
 
 def create_network_figures(data_df, metric, output_dir, output_name):
