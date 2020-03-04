@@ -76,7 +76,7 @@ def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     cloud_pix_frac = 10
 
     # remove images that have more than `cloud_pix_frac`% cloudy pixels
-    if cloudy_pix_flag != 'None'    
+    if cloudy_pix_flag != 'None':
         image_coll = image_coll.filter(ee.Filter.lt(cloudy_pix_flag, cloud_pix_frac))
 
     # apply per pixel cloud mask
