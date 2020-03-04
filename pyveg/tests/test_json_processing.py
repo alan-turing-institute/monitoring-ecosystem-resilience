@@ -6,10 +6,10 @@ from pyveg.src.process_network_metrics import *
 
 
 
-def test_process_json_metrics_to_dataframe():
-    test_df = process_json_metrics_to_dataframe(os.path.join(os.path.dirname(__file__),"..","..","testdata","network_json_data/"))
-    assert (test_df.shape[0]==5)
-    assert (test_df.shape[1]>=8)
+def test_read_json_to_dataframe():
+    test_df = read_json_to_dataframe(os.path.join(os.path.dirname(__file__),"..","..","testdata","test-results_summary.json"))
+    assert (test_df.shape[0] == 7)
+    assert (test_df.shape[1] == 90)
 
 
 def test_create_network_figures():
