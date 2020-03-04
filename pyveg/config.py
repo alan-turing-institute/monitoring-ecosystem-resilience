@@ -3,14 +3,14 @@
 #Define directory to save all outputs
 output_dir = 'TEST'
 
-coordinates = (27.99,11.29) # initial
-#coordinates = (28.37,11.12) # labyrinths
- 
-date_range = ('2016-01-01', '2016-03-11')
+#coordinates = (27.99,11.29) # initial
+coordinates = (28.37,11.12) # labyrinths
 
-num_days_per_point = 30
+date_range = ('1999-05-01', '2003-03-11')
 
-collections_to_use = ['Copernicus','Landsat','NASA','ERA5']
+num_days_per_point = 180
+
+collections_to_use = ['LANDSAT7']
 
 do_network_centrality = True
 
@@ -46,6 +46,15 @@ data_collections = {
         'type': 'weather',
         'precipitation_band': ['total_precipitation'],
         'temperature_band': ['mean_2m_air_temperature']
+    },
+
+    'LANDSAT7':{ 'collection_name': 'LANDSAT/LE07/C01/T1_SR',
+        'type': 'vegetation',
+        'RGB_bands': ('B4','B3','B2'),
+        'NIR_band': 'B5',
+        'cloudy_pix_flag': 'CLOUD_COVER',
+        'do_network_centrality': do_network_centrality
+
     }
 }
 

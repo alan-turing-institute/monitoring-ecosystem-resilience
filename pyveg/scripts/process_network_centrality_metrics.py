@@ -11,7 +11,7 @@ Finally a GIF file is produced with all of the network metric images, as well as
 
 import argparse
 
-from pyveg.src.process_network_metrics import (
+from pyveg.src.data_analysis_utils import (
     process_json_metrics_to_dataframe,
     create_network_figures
 )

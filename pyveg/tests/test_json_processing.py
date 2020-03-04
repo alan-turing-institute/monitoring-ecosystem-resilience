@@ -1,8 +1,8 @@
 """
-Test the functions in process_network_metrics.py
+Test the functions in data_analysis_utils.py
 """
 
-from pyveg.src.process_network_metrics import *
+from pyveg.src.data_analysis_utils import *
 
 
 
