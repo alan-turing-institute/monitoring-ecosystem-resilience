@@ -10,7 +10,7 @@ date_range = ('2016-01-01', '2016-03-11')
 
 num_days_per_point = 30
 
-collections_to_use = ['Copernicus','Landsat','NASA','ERA5']
+collections_to_use = ['Landsat4','Landsat5']
 
 do_network_centrality = True
 
@@ -23,12 +23,28 @@ data_collections = {
         'cloudy_pix_flag': 'CLOUDY_PIXEL_PERCENTAGE',
         'do_network_centrality': do_network_centrality
     },
-    'Landsat' : {
+    'Landsat8' : {
         'collection_name': 'LANDSAT/LC08/C01/T1_SR',
         'type': 'vegetation',
         'RGB_bands': ('B4','B3','B2'),
         'NIR_band': 'B5',
         'cloudy_pix_flag': 'CLOUD_COVER',
+        'do_network_centrality': do_network_centrality
+    },
+    'Landsat5' : {
+        'collection_name': 'LANDSAT/LT05/C01/T1_SR',
+        'type': 'vegetation',
+        'RGB_bands': ('B3','B2','B1'),
+        'NIR_band': 'B4',
+        'cloudy_pix_flag': 'None',
+        'do_network_centrality': do_network_centrality
+    },
+    'Landsat4' : {
+        'collection_name': 'LANDSAT/LT04/C01/T1_SR',
+        'type': 'vegetation',
+        'RGB_bands': ('B3','B2','B1'),
+        'NIR_band': 'B4',
+        'cloudy_pix_flag': 'None',
         'do_network_centrality': do_network_centrality
     },
     'NOAA' : {
