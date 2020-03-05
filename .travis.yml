@@ -2,13 +2,14 @@ matrix:
  include:
   - language: python
     python:
-     - 3.5
-     - 3.6
-     - 3.7
+     - "3.5"
+     - "3.6"
+     - "3.7"
     install:
      - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
      - bash miniconda.sh -b -p $HOME/miniconda
      - export PATH="$HOME/miniconda/bin:$PATH"
+     - export TRAVIS=true
      - hash -r
      - conda config --set always_yes yes --set changeps1 no
      - conda update -q conda
@@ -20,7 +21,11 @@ matrix:
      - pytest -s
 
   - language: r
-    r_binary_packages: devtools
+    r:
+     - devel
+    cache: packages
+    before_install:
+     - R -e 'source("https://install-github.me/r-lib/remotes")'
     install:
      - cd rveg; Rscript -e "devtools::load_all()"; cd -;
     script:
