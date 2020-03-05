@@ -13,70 +13,135 @@ import numpy as np
 
 
 def read_json_to_dataframe(filename):
+    """
+    Read a json file and convert the result to a Geopandas DataFrame.
 
-    #filename = '/Users/svanstroud/work/ds4sd/monitoring-ecosystem-resilience/output/RUN1__2020-03-04_14-38-04/results_summary.json'
-    
-    # output dataframe
-    df = pd.DataFrame(columns=['date', 'lat', 'long'])
-    
+    Parameters
+    ----------
+    filename : str
+        Full path to input json file.
+
+    Returns
+    ----------
+    DataFrame
+        The saved results in a DataFrame format.
+    """
+    # check file exists
+    if not os.path.exists(filename):
+        raise FileNotFoundError
+
     # json read
     data = None
     with open(filename) as json_file:
         data = json.load(json_file)
 
-    # index
+    # start with empty output dataframes
+    veg_df = pd.DataFrame(columns=['date', 'lat', 'long'])
+    weather_df = pd.DataFrame(columns=['date'])
+    
+    # dataframe index
+    i = 0
+
+    # first loop over collections and put vegetation results into one 
+    # dataframe
+    for collection_name, coll_results in data.items():
+
+        # skip non-vegetation data
+        if coll_results['type'] != 'vegetation':
+            continue
+
+        # loop over time series
+        for time_point in coll_results['time-series-data'].values():
+
+            # check we have data for this time point
+            if time_point is None:
+                continue
+            
+            # for each space point
+            for space_point in time_point.values():
+
+                # get coordinates
+                date = space_point['date']
+                lat = space_point['latitude']
+                long = space_point['longitude']
+
+                # find other indices in the dataframe which match the date and coordinates
+                match_criteria = (veg_df['date'] == date) & (veg_df['lat'] == lat) & (veg_df['long'] == long)
+                matched_indices = veg_df.index[match_criteria].tolist()
+
+                # if there is no matching entry
+                if len(matched_indices) == 0:
+
+                    # add a new entry to the dataframe
+                    veg_df.loc[i, 'date'] = space_point['date']
+                    veg_df.loc[i, 'lat'] = space_point['latitude']
+                    veg_df.loc[i, 'long'] = space_point['longitude']
+                    veg_df.loc[i, f'{collection_name}_offset50'] = space_point['offset50']
+
+                    # increment dataframe index
+                    i += 1
+
+                # if we find a row that matches the date and coordinates
+                elif len(matched_indices) == 1:
+
+                    # get the index of the matched row
+                    index = matched_indices[0]
+
+                    # add information in a new column
+                    veg_df.loc[index, f'{collection_name}_offset50'] = space_point['offset50']
+
+                else:
+                    raise RuntimeError('Error when building DataFrame, check input json.')
+
+    # next, loop again and put weather data into another dataframe
+    # reset dataframe index
     i = 0
 
     # loop over collections
     for collection_name, coll_results in data.items():
 
-        # for vegetation
+        # skip vegetation data
         if coll_results['type'] == 'vegetation':
+            continue
+        
+        # loop over time series
+        for date, values in coll_results['time-series-data'].items():
 
-            # loop over time series
-            for time_point in coll_results['time-series-data'].values():
+            # check we have data
+            if values is None:
+                continue
+            
+            # check if this we already have a row with this date
+            matched_indices = weather_df.index[(weather_df['date'] == date)]
 
-                # check we have data
-                if time_point is None:
-                    continue
-                
-                # for each space point
-                for space_point in time_point.values():
-                    date = space_point['date']
-                    lat = space_point['latitude']
-                    long = space_point['longitude']
+            # if there is no matching entry
+            if len(matched_indices) == 0:
 
-                    matched_indices = df.index[(df['date'] == date) & (df['lat'] == lat) & (df['long'] == long)].tolist()
-
-                    if len(matched_indices) == 0:
-                        df.loc[i, 'date'] = space_point['date']
-                        df.loc[i, 'lat'] = space_point['latitude']
-                        df.loc[i, 'long'] = space_point['longitude']
-                        df.loc[i, f'{collection_name}_offset50'] = space_point['offset50']
-                        i += 1
-
-                    elif len(matched_indices) == 1:
-                        index = matched_indices[0]
-                        df.loc[index, f'{collection_name}_offset50'] = space_point['offset50']
-
-                    else:
-                        raise RuntimeError
-
-        # for vegetation
-        elif coll_results['type'] == 'weather':
-
-            # loop over time series
-            for date, values in coll_results['time-series-data'].items():
-
-                # check we have data
-                if values is None:
-                    continue
-
-                matched_indices = df.index[(df['date'] == date)]
-
+                # loop over weather data and add to the same date
                 for metric, value in values.items():
-                    df.loc[matched_indices, metric] = value
-    
+                    weather_df.loc[i, 'date'] = date
+                    weather_df.loc[i, metric] = value
+                
+                i += 1
+
+            # if we find a row that matches the date and coordinates
+            elif len(matched_indices) == 1:
+
+                # get the index of the matched row
+                index = matched_indices[0]
+                
+                # loop over weather data and add to the same date
+                for metric, value in values.items():
+
+                    # add information in a new column
+                    weather_df.loc[index, metric] = value
+
+            else:
+                raise RuntimeError('Error when building DataFrame, check input json.')
+
+    # combine dataframes in a missing value friendly way
+    df = pd.merge(veg_df, weather_df, on='date', how='outer')
+
     # turn lat, long into geopandas
     df['geometry'] = [Point(xy) for xy in zip(df.lat, df.long)]
     crs = {'init': 'epsg:4326'}
@@ -176,7 +241,7 @@ def plot_time_series():
 
 
 
-plot_time_series()
+#plot_time_series()
 
 def create_network_figures(data_df, metric, output_dir, output_name):
 
