@@ -2,12 +2,14 @@ import json
 import pandas as pd
 import os
 from os.path import isfile, join
+import datetime
 
 import geopandas as gpd
 from shapely.geometry import Point
 import matplotlib
 #matplotlib.use('PS')
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import numpy as np
 
 
@@ -150,93 +152,128 @@ def read_json_to_dataframe(filename):
     return data_geo_pd
 
 
-def make_patch_spines_invisible(ax):
-    ax.set_frame_on(True)
-    ax.patch.set_visible(False)
-    for sp in ax.spines.values():
-        sp.set_visible(False)
+def make_time_series(df):
+    """
+    Given a DataFrame which may contian many rows per time point (corresponding
+    to the network centrality values of different sub-locations), collapse this
+    into a time series by calculating the mean and std of the different sub-
+    locations at each date.
 
+    Parameters
+    ----------
+    df : DataFrame
+        Input DataFrame read by `read_json_to_dataframe`.
 
-def make_time_series():
+    Returns
+    ----------
+    DataFrame
+        The time-series results averaged over sub-locations.
+    """
 
+    # group by date to collapse all network centrality measurements
+    groups = df.groupby('date')
+    
+    # get summaries
+    means = groups.mean()
+    stds = groups.std()
 
-    filename = '/Users/svanstroud/work/ds4sd/monitoring-ecosystem-resilience/output/RUN1__2020-03-04_14-38-04/results_summary.json'
+    # rename columns
+    means = means.rename(columns={'COPERNICUS/S2_offset50': 'Copernicus_offset50_mean',
+                  'LANDSAT/LC08/C01/T1_SR_offset50': 'Landsat8_offset50_mean'})
 
-    df = read_json_to_dataframe(filename)
+    stds = stds.rename(columns={'COPERNICUS/S2_offset50': 'Copernicus_offset50_std',
+                  'LANDSAT/LC08/C01/T1_SR_offset50': 'Landsat8_offset50_std'})
 
-    df = df.groupby('date').mean()
+    # merge
+    stds = stds[['Copernicus_offset50_std', 'Landsat8_offset50_std']]
+    df = pd.merge(means, stds, on='date', how='inner')
 
     return df
 
 
-def plot_time_series():
+def plot_time_series(df, output_dir):
     #
     """
-    turn into two functions
-    one just process the dataframe into a time series (may be still df)
-    the other does the plotting
+    Given a DataFrame where each row corresponds to a different time point
+    (constructed with `make_time_series`) plot the time series.
+
+    Parameters
+    ----------
+    df : DataFrame
+         The time-series results averaged over sub-locations.
     """
 
+    # auxiliary function to help with plotting
+    def make_patch_spines_invisible(ax):
+        ax.set_frame_on(True)
+        ax.patch.set_visible(False)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
 
-    filename = '/Users/svanstroud/work/ds4sd/monitoring-ecosystem-resilience/pyveg/output/RUN1__2020-03-04_15-41-47/results_summary.json'
+    # prepare data
+    dates = df.index
+    xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
+    
+    cop_means = df['Copernicus_offset50_mean']
+    cop_stds = df['Copernicus_offset50_std']
+    l8_means = df['Landsat8_offset50_mean']
 
-    df = read_json_to_dataframe(filename)
+    precip = df['total_precipitation'] * 1000 # convert to mm
+    temp = df['mean_2m_air_temperature'] - 273.15 # convert to Celcius
 
-    df = df.groupby('date').mean()
+    # setup plot
+    fig, ax1 = plt.subplots(figsize=(13,5))
+    fig.subplots_adjust(right=0.9)
+    
+    # set up x axis to handle dates
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
+    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
+    ax1.set_xlabel('Time')
 
-    xs = df.index
-    ys1 = df['COPERNICUS/S2_offset50']
-    ys2 = df['total_precipitation']
-    ys3 = df['mean_2m_air_temperature'] - 273.15
-    ys4 = df['LANDSAT/LC08/C01/T1_SR_offset50']
-
-
-
-
-    fig, ax1 = plt.subplots()
-    fig.subplots_adjust(right=0.75)
-
+    # add copernicus
     color = 'tab:green'
-    ax1.set_xlabel('date')
-    ax1.set_ylabel('COPERNICUS', color=color)
-    ax1.plot(xs, ys1, color=color)
+    ax1.set_ylabel('Copernicus Offset50', color=color)
+    ax1.plot(xs, cop_means, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
+    plt.fill_between(xs, cop_means-cop_stds, cop_means+cop_stds, 
+                     facecolor='green', alpha=0.2)
 
+    # add precip
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-
     color = 'tab:blue'
-    ax2.set_ylabel('precipitation', color=color)  # we already handled the x-label with ax1
-    ax2.plot(xs, ys2, color=color)
+    ax2.set_ylabel('Precipitation [??]', color=color)  # we already handled the x-label with ax1
+    ax2.plot(xs, precip, color=color)
     ax2.tick_params(axis='y', labelcolor=color)
 
+    # add temp
     ax3 = ax1.twinx()
-    ax3.spines["right"].set_position(("axes", 1.2))
+    ax3.spines["right"].set_position(("axes", 1.075))
     make_patch_spines_invisible(ax3)
     ax3.spines["right"].set_visible(True)
-
     color = 'tab:red'
-    ax3.set_ylabel('temp', color=color)  # we already handled the x-label with ax1
-    ax3.plot(xs, ys3, color=color)
+    ax3.set_ylabel('Mean Temperature [$^\circ$C]', color=color)  # we already handled the x-label with ax1
+    ax3.plot(xs, temp, color=color, alpha=0.5)
     ax3.tick_params(axis='y', labelcolor=color)
 
-
-
+    """
+    # add l8
     ax4 = ax1.twinx()
-    
     ax4.spines["left"].set_position(("axes", -0.2))
     make_patch_spines_invisible(ax4)
     ax4.spines["left"].set_visible(True)
-
     color = 'tab:purple'
     ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
     ax4.yaxis.tick_left()
-    ax4.plot(xs, ys4, color=color)
+    ax4.plot(xs, l8_means, color=color)
     ax4.tick_params(axis='y', labelcolor=color)
-    
+    """
 
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    plt.show()
+
+    # save the plot
+    output_filename = 'time-series-full.png'
+    plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
 
 
 
