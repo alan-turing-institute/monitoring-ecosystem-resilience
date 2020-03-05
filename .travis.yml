@@ -2,7 +2,6 @@ matrix:
  include:
   - language: python
     python:
-     - "3.5"
      - "3.6"
      - "3.7"
     install:
@@ -24,8 +23,6 @@ matrix:
     r:
      - devel
     cache: packages
-    before_install:
-     - R -e 'source("https://install-github.me/r-lib/remotes")'
     install:
      - cd rveg; Rscript -e "devtools::load_all()"; cd -;
     script:
