@@ -22,6 +22,7 @@ matrix:
   - language: r
     r:
      - devel
+    r_packages: devtools
     cache: packages
     install:
      - cd rveg; Rscript -e "devtools::load_all()"; cd -;
