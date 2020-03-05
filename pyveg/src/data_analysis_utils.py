@@ -217,6 +217,7 @@ def plot_time_series(df, output_dir):
     cop_means = df['Copernicus_offset50_mean']
     cop_stds = df['Copernicus_offset50_std']
     l8_means = df['Landsat8_offset50_mean']
+    l8_stds = df['Landsat8_offset50_std']
 
     precip = df['total_precipitation'] * 1000 # convert to mm
     temp = df['mean_2m_air_temperature'] - 273.15 # convert to Celcius
@@ -255,10 +256,15 @@ def plot_time_series(df, output_dir):
     ax3.plot(xs, temp, color=color, alpha=0.5)
     ax3.tick_params(axis='y', labelcolor=color)
 
-    """
+    fig.tight_layout()  # otherwise the right y-label is slightly clipped
+
+    # save the plot
+    output_filename = 'time-series.png'
+    plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
+
     # add l8
     ax4 = ax1.twinx()
-    ax4.spines["left"].set_position(("axes", -0.2))
+    ax4.spines["left"].set_position(("axes", -0.1))
     make_patch_spines_invisible(ax4)
     ax4.spines["left"].set_visible(True)
     color = 'tab:purple'
@@ -266,13 +272,44 @@ def plot_time_series(df, output_dir):
     ax4.yaxis.tick_left()
     ax4.plot(xs, l8_means, color=color)
     ax4.tick_params(axis='y', labelcolor=color)
-    """
 
+    # save the plot
+    output_filename = 'time-series-full.png'
+    plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
+
+
+    # ------------------------------------------------
+    # setup plot
+    fig, ax1 = plt.subplots(figsize=(13,5))
+    fig.subplots_adjust(right=0.9)
+    
+    # set up x axis to handle dates
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
+    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
+    ax1.set_xlabel('Time')
+
+    # add copernicus
+    color = 'tab:green'
+    ax1.set_ylabel('Copernicus Offset50', color=color)
+    ax1.plot(xs, cop_means, color=color)
+    ax1.tick_params(axis='y', labelcolor=color)
+    plt.fill_between(xs, cop_means-cop_stds, cop_means+cop_stds, 
+                     facecolor='green', alpha=0.2)
+
+    # add l8
+    ax4 = ax1.twinx()
+    color = 'tab:purple'
+    ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
+    #ax4.yaxis.tick_left()
+    ax4.plot(xs, l8_means, color=color)
+    ax4.tick_params(axis='y', labelcolor=color)
+    plt.fill_between(xs, l8_means-l8_stds, l8_means+l8_stds, 
+                     facecolor='purple', alpha=0.2)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
 
     # save the plot
-    output_filename = 'time-series-full.png'
+    output_filename = 'time-series-offsets-only.png'
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
 
 
