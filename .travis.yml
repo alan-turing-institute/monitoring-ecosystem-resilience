@@ -25,7 +25,7 @@ matrix:
     r_packages: devtools
     cache: packages
     install:
-     - cd rveg; Rscript -e "install.packages('devtools')"; Rscript -e "install.packages('dplyr')"; Rscript -e "install.packages('png')"; Rscript -e "devtools::load_all()"; cd -;
+     - cd rveg; Rscript -e "install.packages('devtools')"; Rscript -e "install.packages('dplyr')"; Rscript -e "install.packages('png')";Rscript -e "install.packages('igraph')"; Rscript -e "devtools::load_all()"; cd -;
     script:
      - cd rveg; Rscript -e "devtools::test()"; cd -;
 
