@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 
 #Define directory to save all outputs
-output_dir = 'RUN2'
+output_dir = 'RUN2-SPOTS'
 
-#coordinates = (27.99,11.29) # initial
-coordinates = (28.37,11.12) # labyrinths
- 
-date_range = ('2015-01-01', '2020-01-01')
+#coordinates = (27.99,11.29) # dense spots
+#coordinates = (28.37,11.12) # labyrinths
+#coordinates = (23.54,11.34) # beautiful rivers
+coordinates = (27.94,11.58) # spots
+
+date_range = ('2010-01-01', '2020-01-01')
 
 collections_to_use = ['Copernicus','Landsat8', 'ERA5', 'NASA']
 
 do_network_centrality = True
-num_days_per_point = -2
 
 data_collections = {
     'Copernicus' : {
@@ -21,7 +22,7 @@ data_collections = {
         'NIR_band': 'B8',
         'cloudy_pix_flag': 'CLOUDY_PIXEL_PERCENTAGE',
         'do_network_centrality': do_network_centrality,
-        'num_days_per_point': 60
+        'num_days_per_point': 30
     },
     'Landsat8' : {
         'collection_name': 'LANDSAT/LC08/C01/T1_SR',
@@ -30,7 +31,7 @@ data_collections = {
         'NIR_band': 'B5',
         'cloudy_pix_flag': 'CLOUD_COVER',
         'do_network_centrality': do_network_centrality,
-        'num_days_per_point': 120
+        'num_days_per_point': 182
     },
     'Landsat5' : {
         'collection_name': 'LANDSAT/LT05/C01/T1_SR',
@@ -38,7 +39,8 @@ data_collections = {
         'RGB_bands': ('B3','B2','B1'),
         'NIR_band': 'B4',
         'cloudy_pix_flag': 'None',
-        'do_network_centrality': do_network_centrality
+        'do_network_centrality': do_network_centrality,
+        'num_days_per_point': 182
     },
     'Landsat4' : {
         'collection_name': 'LANDSAT/LT04/C01/T1_SR',
@@ -46,12 +48,14 @@ data_collections = {
         'RGB_bands': ('B3','B2','B1'),
         'NIR_band': 'B4',
         'cloudy_pix_flag': 'None',
-        'do_network_centrality': do_network_centrality
+        'do_network_centrality': do_network_centrality,
+        'num_days_per_point': 182
     },
     'NOAA' : {
         'collection_name': 'NOAA/PERSIANN-CDR',
         'type': 'weather',
-        'precipitation_band': ['precipitation']
+        'precipitation_band': ['precipitation'],
+        'num_days_per_point': 30
     },
     'NASA' : {
         'collection_name': 'NASA/GPM_L3/IMERG_V06',
@@ -72,4 +76,3 @@ data_collections = {key : value for key,value in data_collections.items() if key
 
 # not currently used
 # cloudy_pixel_percent = 10 
-
