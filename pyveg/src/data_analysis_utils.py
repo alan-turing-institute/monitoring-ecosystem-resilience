@@ -102,6 +102,7 @@ def create_lat_long_metric_figures(data_df, metric,output_dir):
         vmax = 1000
 
         # get all dates avalaibles
+
         list_of_dates = np.unique(data_df['date'])
 
         for date in list_of_dates:
@@ -148,43 +149,52 @@ def create_lat_long_metric_figures(data_df, metric,output_dir):
         raise RuntimeError("Expected variables not present in input dataframe")
 
 
-def coarse_dataframe(data_df, size_square ):
+def coarse_dataframe(data_df, side_square):
+    """
 
+    Coarse the granularity of a dataframe by grouping lat,long points that are close to each other in a square of L = size_square
+    :param data_df:  Input dataframe
+    :param side_square: Side of the square
+    :return: a coarser dataframe
+    """
+
+    # initialise the categories
     data_df['category'] = -1
 
     category = 0
-
     for n in range(data_df.shape[0]):
 
+        # only process lat,long point that do not have a category
         if data_df['category'].iloc[n] == -1:
 
-            print (n)
-
+            # find the closest points and sort
             distances = [(i, pt.distance(data_df['geometry'].iloc[n]),data_df['category'].iloc[n]) for i, pt in enumerate(data_df['geometry'])]
-
             distances.sort(key=lambda x: x[1])
 
+            # only use point that do not have a category assigned
             distances = [i for i in distances if i[2] == -1]
 
-            print (np.unique([dist[1] for dist in distances]))
+            # find the max distance observed in the given squared
+            max_dist = np.max(np.unique([dist[1] for dist in distances])[:2 * side_square])
 
-            max_dist = np.max(np.unique([dist[1] for dist in distances])[:2*size_square])
+            # find the indexes of point in the dataframe that are within that max distance
+            indexes = [dist[0] for dist in distances if (dist[1] <= max_dist)]
 
-            print (max_dist)
-            indexes = [dist[0] for dist in distances if (dist[1] <= max_dist and dist[2]==-1)]
-
-            print (indexes)
+            # assing them all to the same categorty
             data_df['category'].iloc[indexes] = str(category)
 
             category = category + 1
 
-            print (category)
-
-    print ('out')
+    # create unique categories per date
     data_df['category'] =  data_df['category'].str.cat(data_df['date'],sep="_")
 
-    data_df = data_df.dissolve(by='category', aggfunc='mean')
-    return data_df
+    data_df2 = data_df.dissolve(by=['category','date'], aggfunc='mean')
+
+    # reassing the date because we are losing it
+    date = [i[1] for i in data_df2.index]
+    data_df2['date']= date
+
+    return data_df2
 
 
 
@@ -195,8 +205,12 @@ def coarse_dataframe(data_df, size_square ):
 if __name__ == "__main__":
     data_df = read_json_to_dataframe('/Users/crangelsmith/PycharmProjects/monitoring-ecosystem-resilience/results_summary')
     #data_df["datetime"] = data_df["date"].astype('datetime64[ns]')
+    data_df['lat'] = data_df['lat'].astype('float64', copy=False)
+    data_df['long'] = data_df['long'].astype('float64', copy=False)
 
-    data_df = coarse_dataframe(data_df,2)
+    #data_df["date"] = data_df["date"].astype('datetime64[ns]')
+
+    data_df = coarse_dataframe(data_df,12)
 
     print (data_df.columns)
     create_lat_long_metric_figures(data_df, 'LANDSAT/LC08/C01/T1_SR_offset50','.')
