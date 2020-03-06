@@ -188,26 +188,28 @@ def variable_read_json_to_dataframe(filename):
         rows_list = []
 
         # loop over time series
-        for date, time_point in coll_results['time-series-data'].items():
-
-            # the key of each object in the time series is the date, and data
-            # for this date should be the values. Here we just add the date 
-            # as a value to enable us to add the whole row in one go later.
-            time_point['date'] = date
+        for date, time_point in coll_results['time-series-data'].items():\
 
             # check we have data for this time point
             if time_point is None  or time_point == {}:
                 continue
-            
+
             # if we are looking at veg data, loop over space points
             if isinstance(list(time_point.values())[0], dict):
                 for space_point in time_point.values():
+                    print(space_point)
                     rows_list.append(space_point)
             
             # otherwise, just add the row
             else:
+                # the key of each object in the time series is the date, and data
+                # for this date should be the values. Here we just add the date 
+                # as a value to enable us to add the whole row in one go later.
+                time_point['date'] = date
+
                 rows_list.append(time_point)
         
+        print(rows_list)
         # make a DataFrame and add it to the dict of DataFrames
         df = pd.DataFrame(rows_list)
         dfs[collection_name] = df

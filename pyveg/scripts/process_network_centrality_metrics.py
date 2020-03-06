@@ -60,10 +60,10 @@ def main():
 
     # ------------------------------------------------
     # convert to time series
-    #time_series_df = make_time_series(df)
+    time_series_dfs = make_time_series(dfs)
 
     # make the time series plot
-    plot_time_series(dfs, output_dir)
+    plot_time_series(time_series_dfs, output_dir)
     # ------------------------------------------------
 
     # from the dataframe, produce network metric figure for each avalaible date
