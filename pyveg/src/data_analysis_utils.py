@@ -210,7 +210,7 @@ if __name__ == "__main__":
 
     #data_df["date"] = data_df["date"].astype('datetime64[ns]')
 
-    data_df = coarse_dataframe(data_df,12)
+    data_df = coarse_dataframe(data_df,3)
 
     print (data_df.columns)
     create_lat_long_metric_figures(data_df, 'LANDSAT/LC08/C01/T1_SR_offset50','.')
