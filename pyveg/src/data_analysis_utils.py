@@ -372,7 +372,6 @@ def plot_time_series(dfs, output_dir):
     # save the plot
     output_filename = 'time-series-full.png'
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
-
     
     # ------------------------------------------------
     # setup plot
@@ -408,10 +407,6 @@ def plot_time_series(dfs, output_dir):
     output_filename = 'time-series-offsets-only.png'
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
 
-
-
-
-#plot_time_series()
 
 def create_network_figures(data_df, metric, output_dir, output_name):
 
