@@ -92,7 +92,7 @@ def create_lat_long_metric_figures(data_df, metric,output_dir):
 
 
     """
-    if set(['date','lat','long',metric]).issubset(data_df.columns):
+    if set(['date',metric]).issubset(data_df.columns):
 
         data_df['abs_metric'] = data_df[metric]*-1
 
@@ -148,10 +148,55 @@ def create_lat_long_metric_figures(data_df, metric,output_dir):
         raise RuntimeError("Expected variables not present in input dataframe")
 
 
+def coarse_dataframe(data_df, size_square ):
+
+    data_df['category'] = -1
+
+    category = 0
+
+    for n in range(data_df.shape[0]):
+
+        if data_df['category'].iloc[n] == -1:
+
+            print (n)
+
+            distances = [(i, pt.distance(data_df['geometry'].iloc[n]),data_df['category'].iloc[n]) for i, pt in enumerate(data_df['geometry'])]
+
+            distances.sort(key=lambda x: x[1])
+
+            distances = [i for i in distances if i[2] == -1]
+
+            print (np.unique([dist[1] for dist in distances]))
+
+            max_dist = np.max(np.unique([dist[1] for dist in distances])[:2*size_square])
+
+            print (max_dist)
+            indexes = [dist[0] for dist in distances if (dist[1] <= max_dist and dist[2]==-1)]
+
+            print (indexes)
+            data_df['category'].iloc[indexes] = str(category)
+
+            category = category + 1
+
+            print (category)
+
+    print ('out')
+    data_df['category'] =  data_df['category'].str.cat(data_df['date'],sep="_")
+
+    data_df = data_df.dissolve(by='category', aggfunc='mean')
+    return data_df
+
+
+
+
 
 
 
 if __name__ == "__main__":
     data_df = read_json_to_dataframe('/Users/crangelsmith/PycharmProjects/monitoring-ecosystem-resilience/results_summary')
-    data_df["date"] = data_df["date"].astype('datetime64[ns]')
+    #data_df["datetime"] = data_df["date"].astype('datetime64[ns]')
+
+    data_df = coarse_dataframe(data_df,2)
+
+    print (data_df.columns)
     create_lat_long_metric_figures(data_df, 'LANDSAT/LC08/C01/T1_SR_offset50','.')
