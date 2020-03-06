@@ -12,7 +12,8 @@ Imports:
    ggplot2,
    reshape2,
    jsonlite,
-   dplyr
+   dplyr,
+   igraph
 RoxygenNote: 7.0.2
 Suggests:
     testthat
