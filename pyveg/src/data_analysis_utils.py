@@ -156,7 +156,7 @@ def read_json_to_dataframe(filename):
 
 def variable_read_json_to_dataframe(filename):
     """
-    Read a json file and convert the result to a Geopandas DataFrame.
+    Read a json file and convert the result to Geopandas DataFrame(s).
 
     Parameters
     ----------
@@ -165,81 +165,76 @@ def variable_read_json_to_dataframe(filename):
 
     Returns
     ----------
-    DataFrame
-        The saved results in a DataFrame format.
+    dict
+        A dict of the saved results in a DataFrame format. Keys are 
+        names of collections and the values are DataFrame of results
+        for that collection.
     """
     # check file exists
     if not os.path.exists(filename):
         raise FileNotFoundError
 
     # json read
-    data = None
-    with open(filename) as json_file:
-        data = json.load(json_file)
+    json_file = open(filename)
+    data = json.load(json_file)
 
     # start with empty output dataframes
     dfs = {}
 
-    # dataframe index
-    i = 0
-
-    # first loop over collections and put vegetation results into one 
-    # dataframe
+    # loop over collections and make a DataFrame from the results of each
     for collection_name, coll_results in data.items():
-        print(collection_name)
+
         df = pd.DataFrame()
         rows_list = []
-
-
 
         # loop over time series
         for date, time_point in coll_results['time-series-data'].items():
 
+            # the key of each object in the time series is the date, and data
+            # for this date should be the values. Here we just add the date 
+            # as a value to enable us to add the whole row in one go later.
+            time_point['date'] = date
+
             # check we have data for this time point
             if time_point is None  or time_point == {}:
                 continue
-            print(time_point)
+            
+            # if we are looking at veg data, loop over space points
             if isinstance(list(time_point.values())[0], dict):
-
-                # for each space point
                 for space_point in time_point.values():
-
                     rows_list.append(space_point)
+            
+            # otherwise, just add the row
             else:
-                time_point['date'] = date
                 rows_list.append(time_point)
         
+        # make a DataFrame and add it to the dict of DataFrames
         df = pd.DataFrame(rows_list)
         dfs[collection_name] = df
-
-    for col_name, df in dfs.items():
-        if col_name == 'COPERNICUS/S2' or col_name == 'LANDSAT/LC08/C01/T1_SR':
-            print(df)
-            groups = df.groupby('date')
-            means = groups.mean()
-            stds = groups.std()
-            stds = stds.rename(columns={'offset50': 'offset50_std'})
-            stds = stds[['offset50_std']]
-            df = pd.merge(means, stds, on='date', how='inner')
-            dfs[col_name] = df
-            print(df)
-
-    # combine dataframes in a missing value friendly way
-    #df = pd.merge(veg_df, weather_df, on='date', how='outer')
-
-    # turn lat, long into geopandas
-    #df['geometry'] = [Point(xy) for xy in zip(df.lat, df.long)]
-    #crs = {'init': 'epsg:4326'}
-    #data_geo_pd = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
 
     return dfs
 
 
+def convert_to_geopandas(df):
+    """
+    Given a pandas DatFrame with `lat` and `long` columns, convert 
+    to geopandas DataFrame.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Pandas DatFrame with `lat` and `long` columns.
+
+    Returns
+    ----------
+    geopandas DataFrame
+    """
+    df['geometry'] = [Point(xy) for xy in zip(df.lat, df.long)]
+    crs = {'init': 'epsg:4326'}
+    df = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
 
 
-
-
-def make_time_series(df):
+def make_time_series(dfs):
     """
     Given a DataFrame which may contian many rows per time point (corresponding
     to the network centrality values of different sub-locations), collapse this
@@ -257,25 +252,28 @@ def make_time_series(df):
         The time-series results averaged over sub-locations.
     """
 
-    # group by date to collapse all network centrality measurements
-    groups = df.groupby('date')
-    
-    # get summaries
-    means = groups.mean()
-    stds = groups.std()
+    # loop over collections
+    for col_name, df in dfs.items():
+        
+        # if vegetation data
+        if col_name == 'COPERNICUS/S2' or  'LANDSAT' in col_name:
 
-    # rename columns
-    means = means.rename(columns={'COPERNICUS/S2_offset50': 'Copernicus_offset50_mean',
-                  'LANDSAT/LC08/C01/T1_SR_offset50': 'Landsat8_offset50_mean'})
+            # group by date to collapse all network centrality measurements
+            groups = df.groupby('date')
 
-    stds = stds.rename(columns={'COPERNICUS/S2_offset50': 'Copernicus_offset50_std',
-                  'LANDSAT/LC08/C01/T1_SR_offset50': 'Landsat8_offset50_std'})
+            # get summaries
+            means = groups.mean()
+            stds = groups.std()
 
-    # merge
-    stds = stds[['Copernicus_offset50_std', 'Landsat8_offset50_std']]
-    df = pd.merge(means, stds, on='date', how='inner')
+            # rename columns
+            stds = stds.rename(columns={'offset50': 'offset50_std'})
 
-    return df
+            # merge
+            stds = stds[['offset50_std']]
+            df = pd.merge(means, stds, on='date', how='inner')
+            dfs[col_name] = df
+
+    return dfs
 
 
 def plot_time_series(dfs, output_dir):
@@ -301,8 +299,6 @@ def plot_time_series(dfs, output_dir):
     l8 = 'LANDSAT/LC08/C01/T1_SR'
 
     # prepare data
-
-    
     cop_means = dfs[s2]['offset50']
     cop_stds = dfs[s2]['offset50_std']
     cop_dates = dfs[s2].index
