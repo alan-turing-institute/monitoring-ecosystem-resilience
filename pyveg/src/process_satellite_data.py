@@ -324,7 +324,7 @@ def process_single_collection(output_dir, collection_dict, coords, date_ranges, 
     return results
 
 
-def process_all_collections(output_dir, collections, coords, date_range, num_days_per_point, region_size=0.1, scale=10):
+def process_all_collections(output_dir, collections, coords, date_range, region_size=0.1, scale=10):
     """
     Process all dates for all specified Earth Engine collections.
     """
