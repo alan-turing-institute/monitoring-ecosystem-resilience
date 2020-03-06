@@ -152,6 +152,93 @@ def read_json_to_dataframe(filename):
     return data_geo_pd
 
 
+
+
+def variable_read_json_to_dataframe(filename):
+    """
+    Read a json file and convert the result to a Geopandas DataFrame.
+
+    Parameters
+    ----------
+    filename : str
+        Full path to input json file.
+
+    Returns
+    ----------
+    DataFrame
+        The saved results in a DataFrame format.
+    """
+    # check file exists
+    if not os.path.exists(filename):
+        raise FileNotFoundError
+
+    # json read
+    data = None
+    with open(filename) as json_file:
+        data = json.load(json_file)
+
+    # start with empty output dataframes
+    dfs = {}
+
+    # dataframe index
+    i = 0
+
+    # first loop over collections and put vegetation results into one 
+    # dataframe
+    for collection_name, coll_results in data.items():
+        print(collection_name)
+        df = pd.DataFrame()
+        rows_list = []
+
+
+
+        # loop over time series
+        for date, time_point in coll_results['time-series-data'].items():
+
+            # check we have data for this time point
+            if time_point is None  or time_point == {}:
+                continue
+            print(time_point)
+            if isinstance(list(time_point.values())[0], dict):
+
+                # for each space point
+                for space_point in time_point.values():
+
+                    rows_list.append(space_point)
+            else:
+                time_point['date'] = date
+                rows_list.append(time_point)
+        
+        df = pd.DataFrame(rows_list)
+        dfs[collection_name] = df
+
+    for col_name, df in dfs.items():
+        if col_name == 'COPERNICUS/S2' or col_name == 'LANDSAT/LC08/C01/T1_SR':
+            print(df)
+            groups = df.groupby('date')
+            means = groups.mean()
+            stds = groups.std()
+            stds = stds.rename(columns={'offset50': 'offset50_std'})
+            stds = stds[['offset50_std']]
+            df = pd.merge(means, stds, on='date', how='inner')
+            dfs[col_name] = df
+            print(df)
+
+    # combine dataframes in a missing value friendly way
+    #df = pd.merge(veg_df, weather_df, on='date', how='outer')
+
+    # turn lat, long into geopandas
+    #df['geometry'] = [Point(xy) for xy in zip(df.lat, df.long)]
+    #crs = {'init': 'epsg:4326'}
+    #data_geo_pd = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
+
+    return dfs
+
+
+
+
+
+
 def make_time_series(df):
     """
     Given a DataFrame which may contian many rows per time point (corresponding
@@ -191,7 +278,7 @@ def make_time_series(df):
     return df
 
 
-def plot_time_series(df, output_dir):
+def plot_time_series(dfs, output_dir):
     #
     """
     Given a DataFrame where each row corresponds to a different time point
@@ -210,17 +297,26 @@ def plot_time_series(df, output_dir):
         for sp in ax.spines.values():
             sp.set_visible(False)
 
-    # prepare data
-    dates = df.index
-    xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
-    
-    cop_means = df['Copernicus_offset50_mean']
-    cop_stds = df['Copernicus_offset50_std']
-    l8_means = df['Landsat8_offset50_mean']
-    l8_stds = df['Landsat8_offset50_std']
+    s2 = 'COPERNICUS/S2'
+    l8 = 'LANDSAT/LC08/C01/T1_SR'
 
-    precip = df['total_precipitation'] * 1000 # convert to mm
-    temp = df['mean_2m_air_temperature'] - 273.15 # convert to Celcius
+    # prepare data
+
+    
+    cop_means = dfs[s2]['offset50']
+    cop_stds = dfs[s2]['offset50_std']
+    cop_dates = dfs[s2].index
+    cop_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in cop_dates]
+
+    l8_means = dfs[l8]['offset50']
+    l8_stds = dfs[l8]['offset50_std']
+    l8_dates = dfs[l8].index
+    l8_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in l8_dates]
+
+    precip = dfs['ECMWF/ERA5/MONTHLY']['total_precipitation'] * 1000 # convert to mm
+    temp = dfs['ECMWF/ERA5/MONTHLY']['mean_2m_air_temperature'] - 273.15 # convert to Celcius
+    weather_dates = dfs['ECMWF/ERA5/MONTHLY']['date']
+    w_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in weather_dates]
 
     # setup plot
     fig, ax1 = plt.subplots(figsize=(13,5))
@@ -234,16 +330,16 @@ def plot_time_series(df, output_dir):
     # add copernicus
     color = 'tab:green'
     ax1.set_ylabel('Copernicus Offset50', color=color)
-    ax1.plot(xs, cop_means, color=color)
+    ax1.plot(cop_xs, cop_means, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(xs, cop_means-cop_stds, cop_means+cop_stds, 
-                     facecolor='green', alpha=0.2)
+    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds, 
+                     facecolor='green', alpha=0.1)
 
     # add precip
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     color = 'tab:blue'
     ax2.set_ylabel('Precipitation [??]', color=color)  # we already handled the x-label with ax1
-    ax2.plot(xs, precip, color=color)
+    ax2.plot(w_xs, precip, color=color, alpha=0.5)
     ax2.tick_params(axis='y', labelcolor=color)
 
     # add temp
@@ -253,7 +349,7 @@ def plot_time_series(df, output_dir):
     ax3.spines["right"].set_visible(True)
     color = 'tab:red'
     ax3.set_ylabel('Mean Temperature [$^\circ$C]', color=color)  # we already handled the x-label with ax1
-    ax3.plot(xs, temp, color=color, alpha=0.5)
+    ax3.plot(w_xs, temp, color=color, alpha=0.2)
     ax3.tick_params(axis='y', labelcolor=color)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
@@ -270,14 +366,16 @@ def plot_time_series(df, output_dir):
     color = 'tab:purple'
     ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
     ax4.yaxis.tick_left()
-    ax4.plot(xs, l8_means, color=color)
+    ax4.plot(l8_xs, l8_means, color=color)
     ax4.tick_params(axis='y', labelcolor=color)
+    plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds, 
+                     facecolor='purple', alpha=0.05)
 
     # save the plot
     output_filename = 'time-series-full.png'
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
 
-
+    
     # ------------------------------------------------
     # setup plot
     fig, ax1 = plt.subplots(figsize=(13,5))
@@ -291,9 +389,9 @@ def plot_time_series(df, output_dir):
     # add copernicus
     color = 'tab:green'
     ax1.set_ylabel('Copernicus Offset50', color=color)
-    ax1.plot(xs, cop_means, color=color)
+    ax1.plot(cop_xs, cop_means, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(xs, cop_means-cop_stds, cop_means+cop_stds, 
+    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds, 
                      facecolor='green', alpha=0.2)
 
     # add l8
@@ -301,9 +399,9 @@ def plot_time_series(df, output_dir):
     color = 'tab:purple'
     ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
     #ax4.yaxis.tick_left()
-    ax4.plot(xs, l8_means, color=color)
+    ax4.plot(l8_xs, l8_means, color=color)
     ax4.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(xs, l8_means-l8_stds, l8_means+l8_stds, 
+    plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds, 
                      facecolor='purple', alpha=0.2)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped

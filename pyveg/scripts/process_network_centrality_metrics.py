@@ -13,7 +13,7 @@ import argparse
 import os
 
 from pyveg.src.data_analysis_utils import (
-    read_json_to_dataframe,
+    variable_read_json_to_dataframe,
     create_network_figures,
     make_time_series,
     plot_time_series
@@ -56,14 +56,14 @@ def main():
         os.makedirs(output_dir, exist_ok=True)
 
     # read all json files in the directory and produce a dataframe
-    df = read_json_to_dataframe(json_summary_path)
+    dfs = variable_read_json_to_dataframe(json_summary_path)
 
     # ------------------------------------------------
     # convert to time series
-    time_series_df = make_time_series(df)
+    #time_series_df = make_time_series(df)
 
     # make the time series plot
-    plot_time_series(time_series_df, output_dir)
+    plot_time_series(dfs, output_dir)
     # ------------------------------------------------
 
     # from the dataframe, produce network metric figure for each avalaible date
