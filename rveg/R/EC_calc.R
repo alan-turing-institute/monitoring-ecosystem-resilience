@@ -80,7 +80,7 @@ make_edges <- function(pattern) {
 #' @return matrix containing 1s and 0s.
 #' @export
 read_from_csv <- function(filename) {
-    df <- read.csv(filename,header=FALSE)
+    df <- utils::read.csv(filename,header=FALSE)
     mat <- as.matrix(df)
     rescaled_mat <- apply(mat, 1:2, function(x){ if (x > 0) return(1) else return(0) })
     return(rescaled_mat)
@@ -121,7 +121,7 @@ calc_EC <- function(pattern, inc=5) {
 
     require('igraph')
     graph_edges <- make_edges(pattern)
-    graph <- graph_from_data_frame(graph_edges, directed = TRUE, vertices = NULL)
+    graph <- igraph::graph_from_data_frame(graph_edges, directed = TRUE, vertices = NULL)
     SC <- subgraph_centrality(graph, diag = FALSE)
 
     pixel_sort <- as.numeric(names(rev(sort(SC))))

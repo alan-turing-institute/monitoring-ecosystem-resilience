@@ -1,7 +1,9 @@
-import shutil
+import os
 import sys
+import shutil
 
-from pyveg.src.process_satellite_data import get_vegetation, get_weather
+
+import unittest
 
 coordinates = (27.99,11.29)
 
@@ -47,15 +49,18 @@ data_collections = {
 }
 
 test_out_dir = 'test_out'
-
+@unittest.skipIf(os.environ.get('TRAVIS') == 'true','Skipping this test on Travis CI.')
 def test_get_vegetation():
+    from pyveg.src.process_satellite_data import get_vegetation, get_weather
     print('Warning: this test is expected to take a while to run...')
     nc_results = get_vegetation(test_out_dir, data_collections['Copernicus'], coordinates, date_range, n_sub_images=1)
     assert( len(nc_results) != 0 )
     shutil.rmtree(test_out_dir, ignore_errors=True)
 
 
+@unittest.skipIf(os.environ.get('TRAVIS') == 'true','Skipping this test on Travis CI.')
 def test_get_rainfall():
+    from pyveg.src.process_satellite_data import get_vegetation, get_weather
     print('Warning: this test is expected to take a while to run...')
     result = get_weather(test_out_dir, data_collections['NOAA'], coordinates, date_range)
     assert (len(result.items())!=0)
