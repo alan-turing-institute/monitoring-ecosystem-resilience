@@ -152,8 +152,6 @@ def read_json_to_dataframe(filename):
     return data_geo_pd
 
 
-
-
 def variable_read_json_to_dataframe(filename):
     """
     Read a json file and convert the result to Geopandas DataFrame(s).
@@ -283,37 +281,12 @@ def make_time_series(dfs):
 
 
 def get_veg_time_series(dfs):
-
-    df_out = pd.DataFrame()
-
+    df_out = pd.DataFrame(columns=['date'])
     for collection_name, df in dfs.items():
-        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in col_name:
-            df_ERA5 = df
-            df_ERA5['total_precipitation'] *= 1e3 # convert to mm
-            df_ERA5['mean_2m_air_temperature'] -= 273.15 # convert to Celcius
-            df_ERA5 = df_ERA5.rename(columns={'total_precipitation': 'ERA5_precipitation', 
-                                    'mean_2m_air_temperature': 'ERA5_temperature'})
-
-        elif collection_name == 'NASA/GPM_L3/IMERG_V06':
-            df_NASA = df
-            df_NASA = df_NASA.rename(columns={'precipitationCal': 'NASA_precipitation'})
-
-    # if we have both satellites
-    if df_ERA5 is not None and df_NASA is not None:
-        # combine precipitation and get error
-        df = pd.merge(df_ERA5, df_NASA, on='date', how='inner')
-        df['precipitation_mean'] = df[['ERA5_precipitation', 'NASA_precipitation']].mean(axis=1)
-        df['precipitation_std'] = df[['ERA5_precipitation', 'NASA_precipitation']].std(axis=1)
-
-        return df.drop(columns=['ERA5_precipitation', 'NASA_precipitation'])
-    
-    # if we only have ERA5
-    elif df_ERA5 is not None:
-        return df_ERA5
-    
-    # if we only have NASA
-    elif df_NASA is not None:
-        return df_NASA
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+            df = df[[col for col in df.columns if 'offset50' in col]]
+            df_out = pd.merge(df, df_out, on='date', how='outer')
+    return df_out
 
 
 def get_weather_time_series(dfs):
@@ -339,7 +312,7 @@ def get_weather_time_series(dfs):
         df = pd.merge(df_ERA5, df_NASA, on='date', how='inner')
         df['precipitation_mean'] = df[['ERA5_precipitation', 'NASA_precipitation']].mean(axis=1)
         df['precipitation_std'] = df[['ERA5_precipitation', 'NASA_precipitation']].std(axis=1)
-
+        print(df)
         return df.drop(columns=['ERA5_precipitation', 'NASA_precipitation'])
     
     # if we only have ERA5
@@ -380,7 +353,8 @@ def plot_time_series(dfs, output_dir):
     plt.gca().xaxis.set_major_locator(mdates.DayLocator())
     ax1.set_xlabel('Time')
 
-    print(get_weather_time_series(dfs))
+    #print(get_weather_time_series(dfs))
+    #print(get_veg_time_series(dfs))
 
     """    
     for collection_name, df in dfs.items():
@@ -402,8 +376,6 @@ def plot_time_series(dfs, output_dir):
         # instantiate a new shared axis
         ax2 = ax1.twinx()
     """
-            
-
 
     s2 = 'COPERNICUS/S2'
     l8 = 'LANDSAT/LC08/C01/T1_SR'
@@ -423,8 +395,6 @@ def plot_time_series(dfs, output_dir):
     temp = dfs['ECMWF/ERA5/MONTHLY']['mean_2m_air_temperature'] - 273.15 # convert to Celcius
     weather_dates = dfs['ECMWF/ERA5/MONTHLY'].index
     w_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in weather_dates]
-
-
 
     # add copernicus
     color = 'tab:green'
@@ -453,8 +423,8 @@ def plot_time_series(dfs, output_dir):
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
 
-    # save the plot
-    output_filename = 'time-series.png'
+    # save the plot before adding Landsat
+    output_filename = 'time-series-S2.png'
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
 
     # add l8
