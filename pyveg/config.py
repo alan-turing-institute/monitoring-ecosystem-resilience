@@ -5,10 +5,17 @@ output_dir = 'TEST'
 
 coordinates = (27.99,11.29) # initial
 #coordinates = (28.37,11.12) # labyrinths
- 
-date_range = ('2016-01-01', '2016-03-11')
+coordinates = (28.198,10.96)
+
+date_range = ('2016-01-01', '2020-01-01')
+
+#lansat 5
+#date_range = ('1988-01-01', '2003-01-01')
 
 num_days_per_point = 30
+
+# lansat 5
+#num_days_per_point = 90
 
 collections_to_use = ['Landsat4','Landsat5']
 
@@ -47,18 +54,8 @@ data_collections = {
         'cloudy_pix_flag': 'None',
         'do_network_centrality': do_network_centrality
     },
-    'NOAA' : {
-        'collection_name': 'NOAA/PERSIANN-CDR',
-        'type': 'weather',
-        'precipitation_band': ['precipitation']
-    },
-    'NASA' : {
-        'collection_name': 'NASA/GPM_L3/IMERG_V06',
-        'type': 'weather',
-        'precipitation_band': ['precipitationCal'],
-    },
     'ERA5' : {
-        'collection_name': 'ECMWF/ERA5/DAILY',
+        'collection_name': 'ECMWF/ERA5/MONTHLY',
         'type': 'weather',
         'precipitation_band': ['total_precipitation'],
         'temperature_band': ['mean_2m_air_temperature']
