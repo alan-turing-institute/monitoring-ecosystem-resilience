@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
 #Define directory to save all outputs
-output_dir = 'RUN2-SPOTS'
+output_dir = 'TEST'
 
 #coordinates = (27.99,11.29) # dense spots
 #coordinates = (28.37,11.12) # labyrinths
 #coordinates = (23.54,11.34) # beautiful rivers
 coordinates = (27.94,11.58) # spots
 
-date_range = ('2010-01-01', '2020-01-01')
+date_range = ('2011-01-01', '2012-01-01')
 
-collections_to_use = ['Copernicus','Landsat8', 'ERA5', 'NASA']
+collections_to_use = ['Copernicus', 'ERA5']
 
 do_network_centrality = True
 
@@ -50,18 +50,6 @@ data_collections = {
         'cloudy_pix_flag': 'None',
         'do_network_centrality': do_network_centrality,
         'num_days_per_point': 182
-    },
-    'NOAA' : {
-        'collection_name': 'NOAA/PERSIANN-CDR',
-        'type': 'weather',
-        'precipitation_band': ['precipitation'],
-        'num_days_per_point': 30
-    },
-    'NASA' : {
-        'collection_name': 'NASA/GPM_L3/IMERG_V06',
-        'type': 'weather',
-        'precipitation_band': ['precipitationCal'],
-        'num_days_per_point': 30
     },
     'ERA5' : {
         'collection_name': 'ECMWF/ERA5/MONTHLY',
