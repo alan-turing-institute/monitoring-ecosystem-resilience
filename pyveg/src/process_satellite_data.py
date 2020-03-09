@@ -346,8 +346,9 @@ def process_all_collections(output_dir, collections, coords, date_range, region_
         results = process_single_collection(output_dir, collection_dict, coords, date_ranges, region_size, scale)
 
         # save an intermediate file for each collection in case of crash
-        output_subdir = os.path.join(output_dir, collection_dict['collection_name'].replace('/', '-'))
-        save_json(results, output_subdir, f'{collection_dict['collection_name']}_results.json')
+        pathsafe_collection_name = collection_dict['collection_name'].replace('/', '-')
+        output_subdir = os.path.join(output_dir, pathsafe_collection_name)
+        save_json(results, output_subdir, pathsafe_collection_name+'_results.json')
 
         # store in final dict
         results_collection[collection_dict['collection_name']] = results
