@@ -235,6 +235,8 @@ def convert_to_geopandas(df):
     crs = {'init': 'epsg:4326'}
     df = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
 
+    return df
+
 
 def make_time_series(dfs):
     """
