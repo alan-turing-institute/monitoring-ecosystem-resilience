@@ -197,7 +197,6 @@ def variable_read_json_to_dataframe(filename):
             # if we are looking at veg data, loop over space points
             if isinstance(list(time_point.values())[0], dict):
                 for space_point in time_point.values():
-                    print(space_point)
                     rows_list.append(space_point)
             
             # otherwise, just add the row
@@ -209,7 +208,6 @@ def variable_read_json_to_dataframe(filename):
 
                 rows_list.append(time_point)
         
-        print(rows_list)
         # make a DataFrame and add it to the dict of DataFrames
         df = pd.DataFrame(rows_list)
         dfs[collection_name] = df
@@ -260,7 +258,7 @@ def make_time_series(dfs):
     for col_name, df in dfs.items():
         
         # if vegetation data
-        if col_name == 'COPERNICUS/S2' or  'LANDSAT' in col_name:
+        if col_name == 'COPERNICUS/S2' or 'LANDSAT' in col_name:
 
             # group by date to collapse all network centrality measurements
             groups = df.groupby('date')
@@ -277,27 +275,135 @@ def make_time_series(dfs):
             df = pd.merge(means, stds, on='date', how='inner')
             dfs[col_name] = df
 
+        else: # assume weather data
+            df = df.set_index('date')
+            dfs[col_name] = df
+
     return dfs
+
+
+def get_veg_time_series(dfs):
+
+    df_out = pd.DataFrame()
+
+    for collection_name, df in dfs.items():
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in col_name:
+            df_ERA5 = df
+            df_ERA5['total_precipitation'] *= 1e3 # convert to mm
+            df_ERA5['mean_2m_air_temperature'] -= 273.15 # convert to Celcius
+            df_ERA5 = df_ERA5.rename(columns={'total_precipitation': 'ERA5_precipitation', 
+                                    'mean_2m_air_temperature': 'ERA5_temperature'})
+
+        elif collection_name == 'NASA/GPM_L3/IMERG_V06':
+            df_NASA = df
+            df_NASA = df_NASA.rename(columns={'precipitationCal': 'NASA_precipitation'})
+
+    # if we have both satellites
+    if df_ERA5 is not None and df_NASA is not None:
+        # combine precipitation and get error
+        df = pd.merge(df_ERA5, df_NASA, on='date', how='inner')
+        df['precipitation_mean'] = df[['ERA5_precipitation', 'NASA_precipitation']].mean(axis=1)
+        df['precipitation_std'] = df[['ERA5_precipitation', 'NASA_precipitation']].std(axis=1)
+
+        return df.drop(columns=['ERA5_precipitation', 'NASA_precipitation'])
+    
+    # if we only have ERA5
+    elif df_ERA5 is not None:
+        return df_ERA5
+    
+    # if we only have NASA
+    elif df_NASA is not None:
+        return df_NASA
+
+
+def get_weather_time_series(dfs):
+
+    df_ERA5 = None
+    df_NASA = None
+
+    for collection_name, df in dfs.items():
+        if collection_name == 'ECMWF/ERA5/MONTHLY':
+            df_ERA5 = df
+            df_ERA5['total_precipitation'] *= 1e3 # convert to mm
+            df_ERA5['mean_2m_air_temperature'] -= 273.15 # convert to Celcius
+            df_ERA5 = df_ERA5.rename(columns={'total_precipitation': 'ERA5_precipitation', 
+                                    'mean_2m_air_temperature': 'ERA5_temperature'})
+
+        elif collection_name == 'NASA/GPM_L3/IMERG_V06':
+            df_NASA = df
+            df_NASA = df_NASA.rename(columns={'precipitationCal': 'NASA_precipitation'})
+
+    # if we have both satellites
+    if df_ERA5 is not None and df_NASA is not None:
+        # combine precipitation and get error
+        df = pd.merge(df_ERA5, df_NASA, on='date', how='inner')
+        df['precipitation_mean'] = df[['ERA5_precipitation', 'NASA_precipitation']].mean(axis=1)
+        df['precipitation_std'] = df[['ERA5_precipitation', 'NASA_precipitation']].std(axis=1)
+
+        return df.drop(columns=['ERA5_precipitation', 'NASA_precipitation'])
+    
+    # if we only have ERA5
+    elif df_ERA5 is not None:
+        return df_ERA5
+    
+    # if we only have NASA
+    elif df_NASA is not None:
+        return df_NASA
 
 
 def plot_time_series(dfs, output_dir):
     #
     """
-    Given a DataFrame where each row corresponds to a different time point
-    (constructed with `make_time_series`) plot the time series.
+    Given a dict of DataFrames, of which each row corresponds to
+    a different time point (constructed with `make_time_series`), 
+    plot the time series of each DataFrame on the same plot.
 
     Parameters
     ----------
-    df : DataFrame
-         The time-series results averaged over sub-locations.
+    dfs : dict of DataFrame
+        The time-series results averaged over sub-locations.
     """
 
-    # auxiliary function to help with plotting
+    # function to help plot many y axes
     def make_patch_spines_invisible(ax):
         ax.set_frame_on(True)
         ax.patch.set_visible(False)
         for sp in ax.spines.values():
             sp.set_visible(False)
+
+    # setup plot
+    fig, ax1 = plt.subplots(figsize=(13,5))
+    fig.subplots_adjust(right=0.9)
+    
+    # set up x axis to handle dates
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
+    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
+    ax1.set_xlabel('Time')
+
+    print(get_weather_time_series(dfs))
+
+    """    
+    for collection_name, df in dfs.items():
+
+        if 'offset50' in df.columns:
+            # prepare data
+            dates = df.index
+            xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
+            means = df['offset50']
+            stds = df['offset50_std']
+        else: # assume 
+            # prepare data
+            dates = df.index
+            xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
+            print(df.values)
+            # if there are multiple data columns, use them all
+            ys_list = []
+
+        # instantiate a new shared axis
+        ax2 = ax1.twinx()
+    """
+            
+
 
     s2 = 'COPERNICUS/S2'
     l8 = 'LANDSAT/LC08/C01/T1_SR'
@@ -315,17 +421,10 @@ def plot_time_series(dfs, output_dir):
 
     precip = dfs['ECMWF/ERA5/MONTHLY']['total_precipitation'] * 1000 # convert to mm
     temp = dfs['ECMWF/ERA5/MONTHLY']['mean_2m_air_temperature'] - 273.15 # convert to Celcius
-    weather_dates = dfs['ECMWF/ERA5/MONTHLY']['date']
+    weather_dates = dfs['ECMWF/ERA5/MONTHLY'].index
     w_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in weather_dates]
 
-    # setup plot
-    fig, ax1 = plt.subplots(figsize=(13,5))
-    fig.subplots_adjust(right=0.9)
-    
-    # set up x axis to handle dates
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
-    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
-    ax1.set_xlabel('Time')
+
 
     # add copernicus
     color = 'tab:green'
@@ -336,7 +435,7 @@ def plot_time_series(dfs, output_dir):
                      facecolor='green', alpha=0.1)
 
     # add precip
-    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+    ax2 = ax1.twinx()
     color = 'tab:blue'
     ax2.set_ylabel('Precipitation [??]', color=color)  # we already handled the x-label with ax1
     ax2.plot(w_xs, precip, color=color, alpha=0.5)
