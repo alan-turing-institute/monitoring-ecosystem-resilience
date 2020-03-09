@@ -336,10 +336,18 @@ def crop_and_convert_to_bw(input_filename, output_dir, threshold=470, num_x=50, 
         save_image(sub_image, output_dir, new_filename)
 
 
-def create_gif_from_images(directory_path, output_name, condition_filename=''):
+def create_gif_from_images(directory_path, output_name, string_in_filename=""):
+
     """
-    Loop through a whole directory and convert all images in it into a gif chronologically
+        Loop through a directory and convert all images in it into a gif chronologically
+
+    :param directory_path:  directory where all the files are.
+    :param output_name: name to be given to the output gif
+    :param string_in_filename: select only files that containsa particular string, default is "" which implies all in directory files are selected
+
+    :return:
     """
+
 
     file_names = [f for f in os.listdir(directory_path) if (
         os.path.isfile(os.path.join(directory_path, f)) and f.endswith(".png"))]
@@ -350,7 +358,7 @@ def create_gif_from_images(directory_path, output_name, condition_filename=''):
     for filename in file_names:
 
         # only use images with certain name (optional)
-        if condition_filename in filename:
+        if string_in_filename in filename:
 
             images.append(imageio.imread(
                 os.path.join(directory_path, filename)))
@@ -369,6 +377,9 @@ def create_gif_from_images(directory_path, output_name, condition_filename=''):
         image_dates_df.sort_values(by=['date'], inplace=True, ascending=True)
         imageio.mimsave(os.path.join(directory_path, output_name +
                                      '.gif'), image_dates_df['images'], duration=1)
+
+    print("Saved gif file containing '{}' images in directory '{}'".format(image_dates_df.shape[0],directory_path))
+
 
 
 def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=50, num_y=50):
