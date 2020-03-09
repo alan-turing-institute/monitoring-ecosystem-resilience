@@ -332,19 +332,24 @@ def process_all_collections(output_dir, collections, coords, date_range, region_
     # unpack date range
     start_date, end_date = date_range
 
-
-
     # place to store results
     results_collection = {}
 
     for _, collection_dict in collections.items(): # possible to parallelise?
-        num_days_per_point = collection_dict['num_days_per_point']
+
         # get the list of time intervals
+        num_days_per_point = collection_dict['num_days_per_point']
         num_slices = get_num_n_day_slices(start_date, end_date, num_days_per_point)
         date_ranges = slice_time_period(date_range[0], date_range[1], num_slices)
 
+        # get the data
         results = process_single_collection(output_dir, collection_dict, coords, date_ranges, region_size, scale)
 
+        # save an intermediate file for each collection in case of crash
+        output_subdir = os.path.join(output_dir, collection_dict['collection_name'].replace('/', '-'))
+        save_json(results, output_subdir, f'{collection_dict['collection_name']}_results.json')
+
+        # store in final dict
         results_collection[collection_dict['collection_name']] = results
 
     # wait for everything to finish
