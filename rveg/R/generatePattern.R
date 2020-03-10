@@ -39,7 +39,7 @@ binarizePattern <- function(pattern, threshold=NULL) {
 getStartingPattern <- function(patternFile=NULL,m=50) {
     pattern <- matrix(0,m,m);
     if (! is.null(patternFile)) {
-        pattern <- as.matrix(read.csv(patternFile, header=FALSE))
+        pattern <- as.matrix(utils::read.csv(patternFile, header=FALSE))
         pattern <- pattern[1:m, 1:m]
     }
     return(pattern)
@@ -112,7 +112,7 @@ generatePattern <- function(configFile=file.path("..","testdata","patternGenConf
     ## Initial state
     for (i in 1:m) {
         for (j in 1:m) {
-            if (runif(1) > frac) {
+            if (stats::runif(1) > frac) {
                 popO[i,j] <- R/(alpha*W0); # Homogeneous equilibrium surface water in absence of plants
                 popW[i,j]<-R/rw; # Homogeneous equilibrium soil water in absence of plants
                 popP[i,j]<-90; # Initial plant biomass
