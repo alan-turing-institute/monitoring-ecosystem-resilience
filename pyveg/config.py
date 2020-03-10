@@ -3,19 +3,20 @@
 #Define directory to save all outputs
 output_dir = 'TEST'
 
-#coordinates = (27.99,11.29) # dense spots
-#coordinates = (28.37,11.12) # labyrinths
 #coordinates = (23.54,11.34) # beautiful rivers
+#coordinates = (27.99,11.29) # dense spots with river
+#coordinates = (28.37,11.12) # labyrinths
+# coordinates = (28.198,10.96) # gaps
 coordinates = (27.94,11.58) # spots
 
-date_range = ('2011-01-01', '2012-01-01')
+date_range = ('2015-01-01', '2020-01-01')
 
-collections_to_use = ['Copernicus', 'ERA5']
+collections_to_use = ['Sentinel2', 'Landsat8', 'ERA5']
 
 do_network_centrality = True
 
 data_collections = {
-    'Copernicus' : {
+    'Sentinel2' : {
         'collection_name': 'COPERNICUS/S2',
         'type': 'vegetation',
         'RGB_bands': ('B4','B3','B2'),
@@ -31,7 +32,7 @@ data_collections = {
         'NIR_band': 'B5',
         'cloudy_pix_flag': 'CLOUD_COVER',
         'do_network_centrality': do_network_centrality,
-        'num_days_per_point': 182
+        'num_days_per_point': 90
     },
     'Landsat5' : {
         'collection_name': 'LANDSAT/LT05/C01/T1_SR',
@@ -40,7 +41,7 @@ data_collections = {
         'NIR_band': 'B4',
         'cloudy_pix_flag': 'None',
         'do_network_centrality': do_network_centrality,
-        'num_days_per_point': 182
+        'num_days_per_point': 90
     },
     'Landsat4' : {
         'collection_name': 'LANDSAT/LT04/C01/T1_SR',
@@ -49,7 +50,7 @@ data_collections = {
         'NIR_band': 'B4',
         'cloudy_pix_flag': 'None',
         'do_network_centrality': do_network_centrality,
-        'num_days_per_point': 182
+        'num_days_per_point': 90
     },
     'ERA5' : {
         'collection_name': 'ECMWF/ERA5/MONTHLY',
