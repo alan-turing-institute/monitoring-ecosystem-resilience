@@ -531,7 +531,7 @@ def adaptive_threshold(img):
                           repersenting a grayscale image")
 
     local_area_size = 51  # must be odd
-    offset = -5  # threshold = mean + offset
+    offset = -30  # threshold = mean + offset
 
     img_thresh = cv.adaptiveThreshold(img,
                                       255,  # max value
@@ -565,7 +565,7 @@ def process_and_threshold(img, r=3):
 def check_image_ok(rgb_image):
     """
     Check the quality of an RGB image. Currently checking if we have 
-    > 10% pixels being masked. This indicates problems with cloud masking
+    > 5% pixels being masked. This indicates problems with cloud masking
     in previous steps.
 
     Parameters
@@ -583,7 +583,7 @@ def check_image_ok(rgb_image):
     img_array = pillow_to_numpy(rgb_image)
     
     black = [0,0,0]
-    black_pix_threshold = 0.1
+    black_pix_threshold = 0.05
     n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
 
     if n_black_pix / (img_array.shape[0]*img_array.shape[1]) > black_pix_threshold:
