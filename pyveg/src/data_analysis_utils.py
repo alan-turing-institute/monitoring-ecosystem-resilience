@@ -386,10 +386,10 @@ def plot_time_series(dfs, output_dir):
     cop_dates = dfs[s2].index
     cop_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in cop_dates]
 
-    l8_means = dfs[l8]['offset50']
-    l8_stds = dfs[l8]['offset50_std']
-    l8_dates = dfs[l8].index
-    l8_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in l8_dates]
+    #l8_means = dfs[l8]['offset50']
+    #l8_stds = dfs[l8]['offset50_std']
+    #l8_dates = dfs[l8].index
+    #l8_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in l8_dates]
 
     precip = dfs['ECMWF/ERA5/MONTHLY']['total_precipitation'] * 1000 # convert to mm
     temp = dfs['ECMWF/ERA5/MONTHLY']['mean_2m_air_temperature'] - 273.15 # convert to Celcius
@@ -399,16 +399,18 @@ def plot_time_series(dfs, output_dir):
     # add copernicus
     color = 'tab:green'
     ax1.set_ylabel('Copernicus Offset50', color=color)
-    ax1.plot(cop_xs, cop_means, color=color)
+    ax1.plot(cop_xs, cop_means, color=color, linewidth=2)
     ax1.tick_params(axis='y', labelcolor=color)
+    ax1.set_ylim([-900, -400])
     plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds, 
                      facecolor='green', alpha=0.1)
 
     # add precip
     ax2 = ax1.twinx()
     color = 'tab:blue'
-    ax2.set_ylabel('Precipitation [??]', color=color)  # we already handled the x-label with ax1
-    ax2.plot(w_xs, precip, color=color, alpha=0.5)
+    ax2.set_ylabel('Precipitation [mm]', color=color)  # we already handled the x-label with ax1
+    ax2.set_ylim([-10, 250])
+    ax2.plot(w_xs, precip, color=color, alpha=0.5, linewidth=2)
     ax2.tick_params(axis='y', labelcolor=color)
 
     # add temp
@@ -416,9 +418,10 @@ def plot_time_series(dfs, output_dir):
     ax3.spines["right"].set_position(("axes", 1.075))
     make_patch_spines_invisible(ax3)
     ax3.spines["right"].set_visible(True)
+    ax3.set_ylim([22, 36])
     color = 'tab:red'
     ax3.set_ylabel('Mean Temperature [$^\circ$C]', color=color)  # we already handled the x-label with ax1
-    ax3.plot(w_xs, temp, color=color, alpha=0.2)
+    ax3.plot(w_xs, temp, color=color, alpha=0.2, linewidth=2)
     ax3.tick_params(axis='y', labelcolor=color)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
@@ -428,23 +431,23 @@ def plot_time_series(dfs, output_dir):
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
 
     # add l8
-    ax4 = ax1.twinx()
-    ax4.spines["left"].set_position(("axes", -0.1))
-    make_patch_spines_invisible(ax4)
-    ax4.spines["left"].set_visible(True)
-    color = 'tab:purple'
-    ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
-    ax4.yaxis.tick_left()
-    ax4.plot(l8_xs, l8_means, color=color)
-    ax4.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds, 
-                     facecolor='purple', alpha=0.05)
+    #ax4 = ax1.twinx()
+    #ax4.spines["left"].set_position(("axes", -0.1))
+    #ax4.spines["left"].set_visible(True)
+    #make_patch_spines_invisible(ax4)
+    #color = 'tab:purple'
+    #ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
+    #ax4.plot(l8_xs, l8_means, color=color)
+    #ax4.tick_params(axis='y', labelcolor=color)
+    #ax4.yaxis.tick_left()
+    #plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds, 
+    #                 facecolor='purple', alpha=0.05)
 
     # save the plot
-    output_filename = 'time-series-full.png'
-    plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
+    #output_filename = 'time-series-full.png'
+    #plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
     
-    # ------------------------------------------------
+    """# ------------------------------------------------
     # setup plot
     fig, ax1 = plt.subplots(figsize=(13,5))
     fig.subplots_adjust(right=0.9)
@@ -477,7 +480,7 @@ def plot_time_series(dfs, output_dir):
     # save the plot
     output_filename = 'time-series-offsets-only.png'
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
-
+    """
 
 def create_network_figures(data_df, metric, output_dir, output_name):
 
