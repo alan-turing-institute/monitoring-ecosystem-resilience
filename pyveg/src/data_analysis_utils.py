@@ -491,6 +491,7 @@ def create_network_figures(data_df, metric, output_dir, output_name):
     """
     if set(['date','longitude','latitude',metric]).issubset(data_df.columns):
 
+        data_df['abs_metric'] = data_df[metric]*-1
 
         # turn lat, long into geopandas
         data_df['geometry'] = [Point(xy) for xy in zip(data_df.latitude, data_df.longitude)]
@@ -499,8 +500,9 @@ def create_network_figures(data_df, metric, output_dir, output_name):
         data_geo_pd = gpd.GeoDataFrame(data_df, crs=crs, geometry=data_df['geometry'])
 
         # get min and max values observed in the data to create a range
-        vmin = min(data_df[metric])
-        vmax = max(data_df[metric])
+
+        vmin = 0
+        vmax = 1000
 
         # get all dates avalaibles
         list_of_dates = np.unique(data_geo_pd['date'])
@@ -512,6 +514,12 @@ def create_network_figures(data_df, metric, output_dir, output_name):
 
             data_geo_pd[data_geo_pd['date'] == date].plot(marker='o', ax=ax, alpha=.5, markersize=100, column=metric, \
                                                           figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap='Reds')
+            import matplotlib.cm as cm
+
+            cmap = cm.summer
+
+            data_geo_pd[data_geo_pd['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column='abs_metric', \
+                                                          figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
 
             # ridiculous step
             date_str = pd.to_datetime(str(date)).strftime('%Y-%m-%d')
@@ -522,7 +530,10 @@ def create_network_figures(data_df, metric, output_dir, output_name):
                         fontsize=25)
 
             # Create colorbar as a legend
-            sm = plt.cm.ScalarMappable(cmap='Reds', norm=plt.Normalize(vmin=vmin, vmax=vmax))
+
+            sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+
+
             sm._A = []
             fig.colorbar(sm)
 
@@ -535,7 +546,5 @@ def create_network_figures(data_df, metric, output_dir, output_name):
             fig.savefig(filepath, dpi=300)
     else:
         raise RuntimeError("Expected variables not present in input dataframe")
-
-
 
 

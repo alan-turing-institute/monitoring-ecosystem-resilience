@@ -48,7 +48,7 @@ getStartingPattern <- function(patternFile=NULL,m=50) {
 #' Use the model to evolve the starting pattern through several timesteps
 #' keeping track of surface and soil water.  Return the final pattern.
 #' @param configFile JSON configuration file
-#' @param patternFile CSV file containing initial pattern (if not provided, will be all 0s).
+#' @param startingPatternFilename CSV file containing initial pattern (if not provided, will be all 0s).
 #' @return popP Final pattern - a 2D array.
 #' @export
 generatePattern <- function(configFile=file.path("..","testdata","patternGenConfig.json"),

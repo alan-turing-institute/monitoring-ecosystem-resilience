@@ -9,9 +9,19 @@ output_dir = 'Presentation-results-X'
 # coordinates = (28.198,10.96) # gaps
 coordinates = (27.94,11.58) # spots
 
+# date range for Copernicus
 date_range = ('2015-01-01', '2020-01-01')
 
-collections_to_use = ['Sentinel2', 'Landsat8', 'ERA5']
+#date range for landsat 5
+#date_range = ('1988-01-01', '2003-01-01')
+
+
+# collections for Copernicus
+collections_to_use = ['Sentinel2', 'ERA5']
+
+# collections to use for old Landsat
+#collections_to_use = ['Landsat4','Landsat5']
+
 
 do_network_centrality = True
 
