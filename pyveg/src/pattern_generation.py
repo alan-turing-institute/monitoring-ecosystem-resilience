@@ -17,7 +17,7 @@ class PatternGenerator(object):
 
     def __init__(self):
         default_config_file = os.path.join(os.path.dirname(__file__),
-                                           "..","..","testdata",
+                                           "..","testdata",
                                            "patternGenConfig.json")
         self.load_config(default_config_file)
         self.plant_biomass = None
