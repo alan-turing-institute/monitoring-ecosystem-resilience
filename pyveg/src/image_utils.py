@@ -531,7 +531,7 @@ def adaptive_threshold(img):
                           repersenting a grayscale image")
 
     local_area_size = 51  # must be odd
-    offset = -30  # threshold = mean + offset
+    offset = -5  # threshold = mean + offset
 
     img_thresh = cv.adaptiveThreshold(img,
                                       255,  # max value
