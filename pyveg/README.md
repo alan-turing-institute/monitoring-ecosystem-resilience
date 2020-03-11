@@ -43,14 +43,14 @@ Note that the `pyveg` package has some compatibility issues with the latest vers
 
 For a list of command line arguments do
 ```
-pyveg_gee_analysis --help
+pyveg_gee_download --help
 ```
 
 Options should be specified in the config.py file, but options like *start_date*,*end_date*, and *coords* can be overwritten using the CLI.
 
 ### Examples:
 ```
-pyveg_gee_analysis --start_date 2016-01-01 --end_date 2016-06-30 --coords 27.95,11.57 
+pyveg_gee_download --start_date 2016-01-01 --end_date 2016-06-30 --coords 27.95,11.57 
 ```
 
 Note that by default the image downloaded from GEE will be split up into 50x50 pixel images, which will also be
@@ -58,7 +58,7 @@ converted into monochrome based on the sum of r,g,b pixel values.
 
 ### Config.py file
 
-This file contains the relevant options for the pyveg_gee_analysis script. These are
+This file contains the relevant options for the pyveg_gee_download script. These are
 the following:
 
 - *output_dir*: Define directory to save all outputs 
