@@ -2,12 +2,14 @@ import json
 import pandas as pd
 import os
 from os.path import isfile, join
-import math
+import datetime
+
 import geopandas as gpd
 from shapely.geometry import Point
 import matplotlib
-matplotlib.use('PS')
+#matplotlib.use('PS')
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import numpy as np
 import matplotlib.cm as cm
 
@@ -225,7 +227,7 @@ def convert_to_geopandas(df):
     ----------
     geopandas DataFrame
     """
-    df['geometry'] = [Point(xy) for xy in zip(df.latitude, df.longitude)]
+    df['geometry'] = [Point(xy) for xy in zip(df.lat, df.long)]
     crs = {'init': 'epsg:4326'}
     df = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
 
@@ -483,7 +485,6 @@ def plot_time_series(dfs, output_dir):
 def create_network_figures(data_df, metric, output_dir, output_name):
 
     """
-
     From input data-frame with processed network metrics create 2D gird figure for each date available using Geopandas.
 
     :param data_df -- input dataframe
