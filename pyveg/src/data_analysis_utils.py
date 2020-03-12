@@ -2,7 +2,7 @@ import json
 import pandas as pd
 import os
 from os.path import isfile, join
-
+import math
 import geopandas as gpd
 from shapely.geometry import Point
 import matplotlib
@@ -64,6 +64,8 @@ def read_json_to_dataframe(filename):
                 date = space_point['date']
                 lat = space_point['latitude']
                 long = space_point['longitude']
+
+                print(space_point)
 
                 # find other indices in the dataframe which match the date and coordinates
                 match_criteria = (veg_df['date'] == date) & (veg_df['lat'] == lat) & (veg_df['long'] == long)
@@ -150,6 +152,16 @@ def read_json_to_dataframe(filename):
     return data_geo_pd
 
 
+def allowed_distances(L):
+
+    d = []
+    for i in range(L):
+        for j in range(L):
+            d.append(math.sqrt(i*i + j*j))
+
+    return np.unique(d)
+
+
 
 
 def variable_read_json_to_dataframe(filename):
@@ -195,7 +207,6 @@ def variable_read_json_to_dataframe(filename):
             # if we are looking at veg data, loop over space points
             if isinstance(list(time_point.values())[0], dict):
                 for space_point in time_point.values():
-                    print(space_point)
                     rows_list.append(space_point)
 
             # otherwise, just add the row
@@ -207,7 +218,6 @@ def variable_read_json_to_dataframe(filename):
 
                 rows_list.append(time_point)
 
-        print(rows_list)
         # make a DataFrame and add it to the dict of DataFrames
         df = pd.DataFrame(rows_list)
         dfs[collection_name] = df
@@ -229,9 +239,11 @@ def convert_to_geopandas(df):
     ----------
     geopandas DataFrame
     """
-    df['geometry'] = [Point(xy) for xy in zip(df.lat, df.long)]
+    df['geometry'] = [Point(xy) for xy in zip(df.latitude, df.longitude)]
     crs = {'init': 'epsg:4326'}
     df = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
+
+    return df
 
 
 def make_time_series(dfs):
@@ -291,6 +303,7 @@ def create_lat_long_metric_figures(data_df, metric,output_dir):
 
     :return:
     """
+    fig, ax = plt.subplots(1, figsize=(6, 6))
 
     if set(['date',metric]).issubset(data_df.columns):
 
@@ -298,7 +311,7 @@ def create_lat_long_metric_figures(data_df, metric,output_dir):
 
         # get min and max values observed in the data to create a range
 
-        vmin = 0
+        vmin = min(data_df[metric])
         vmax = max(data_df[metric])
 
         # get all dates available
@@ -306,8 +319,6 @@ def create_lat_long_metric_figures(data_df, metric,output_dir):
         list_of_dates = np.unique(data_df['date'])
 
         for date in list_of_dates:
-
-            fig, ax = plt.subplots(1, figsize=(6, 6))
 
 
             if (data_df[data_df['date'] == date][metric].isnull().values.any()):
@@ -341,13 +352,13 @@ def create_lat_long_metric_figures(data_df, metric,output_dir):
             # this saves the figure as a high-res png in the output path.
             filepath = os.path.join(output_dir, metric_output_name+'_network_2D_grid_' + date_str + '.png')
             fig.savefig(filepath, dpi=200)
-            fig.clear()
+            plt.cla()
 
     else:
         raise RuntimeError("Expected variables not present in input dataframe")
 
 
-def coarse_dataframe(data_df, side_square):
+def coarse_dataframe(data_df_all, side_square):
     """
 
     Coarse the granularity of a dataframe by grouping lat,long points that are close to each other in a square of L = size_square
@@ -357,42 +368,62 @@ def coarse_dataframe(data_df, side_square):
     """
 
     # initialise the categories
-    data_df['category'] = -1
+
+    data_df_all['category'] = -1
+
+    # do calculations on the first date, then extrapolate to the rest
+    data_df = data_df_all[data_df_all['date']==np.unique(data_df_all['date'])[0]]
+
+    data_df = data_df.sort_values(by=['latitude', 'longitude'])
+
+    n_grids = int(math.sqrt(data_df.shape[0]))
+
 
     category = 0
+
     for n in range(data_df.shape[0]):
 
         # only process lat,long point that do not have a category
-        if data_df['category'].iloc[n] == -1:
+        if data_df.loc[n,'category'] == -1:
 
-            # find the closest points and sort
-            distances = [(i, pt.distance(data_df['geometry'].iloc[n]),data_df['category'].iloc[n]) for i, pt in enumerate(data_df['geometry'])]
-            distances.sort(key=lambda x: x[1])
+            # get the side_square^2 nearest indexes to the point.
+            indexes = []
+            for i in range(side_square):
+                for j in range(side_square):
 
-            # only use point that do not have a category assigned
-            distances = [i for i in distances if i[2] == -1]
-
-            # find the max distance observed in the given squared
-            max_dist = np.max(np.unique([dist[1] for dist in distances])[:2 * side_square])
-
-            # find the indexes of point in the dataframe that are within that max distance
-            indexes = [dist[0] for dist in distances if (dist[1] <= max_dist)]
-
+                    if n + n_grids*i + j < n_grids*n_grids and data_df['category'].iloc[n + n_grids*i + j]==-1:
+                            indexes.append(n + n_grids*i + j)
 
             # assing them all to the same categorty
             data_df.loc[indexes,'category'] = str(category)
 
+            # get the geometry points of that catery
+            cat_geometry = data_df[data_df['category']==str(category)]['geometry']
+
+            # get indexes of each point belonging to the category
+            indexes_all = []
+            for point in cat_geometry:
+                indexes_all.append(data_df_all[data_df_all['geometry'] == point].index.tolist())
+
+            indexes_all_flat = [item for sublist in indexes_all for item in sublist]
+
+            data_df_all.loc[indexes_all_flat,'category'] = str(category)
+
             category = category + 1
 
-    # create unique categories per date
-    data_df['category'] =  data_df['category'].str.cat(data_df['date'],sep="_")
 
-    data_df = data_df.dissolve(by=['category','date'], aggfunc='mean')
+
+    data_df_all['category'] =  (data_df_all['category'].astype(str)).str.cat(data_df_all['date'],sep="_")
+
+    data_df_all = data_df_all.dissolve(by=['category','date'], aggfunc='mean')
 
     # re-assing the date because we are losing it
-    data_df['date']= [i[1] for i in data_df.index]
+    data_df_all['date']= [i[1] for i in data_df_all.index]
 
-    return data_df
+    data_df_all['category'] =  [i[0] for i in data_df_all.index]
+
+
+    return data_df_all
 
 
 
@@ -401,21 +432,15 @@ def coarse_dataframe(data_df, side_square):
 
 
 if __name__ == "__main__":
-    data_df = read_json_to_dataframe('/Users/crangelsmith/PycharmProjects/monitoring-ecosystem-resilience/results_summary')
-    data_df['lat'] = data_df['lat'].astype('float64', copy=False)
-    data_df['long'] = data_df['long'].astype('float64', copy=False)
+    data_df = variable_read_json_to_dataframe(os.path.join(os.path.dirname(__file__),"..","..","testdata","network_json_data/test-results-summary.json"))
 
+    #data_df = read_json_to_dataframe('/Users/crangelsmith/PycharmProjects/monitoring-ecosystem-resilience/output/labyrinths/results_summary.json')
 
-    print (data_df.shape)
-    data_df = coarse_dataframe(data_df,1)
+    data_df = convert_to_geopandas(data_df['COPERNICUS/S2'])
 
-    print (data_df.columns)
-    create_lat_long_metric_figures(data_df, 'LANDSAT/LC08/C01/T1_SR_offset50','/Users/crangelsmith/PycharmProjects/monitoring-ecosystem-resilience/output/')
+    data_df = coarse_dataframe(data_df,11)
 
-    from pyveg.src.image_utils import (
-    create_gif_from_images
-    )
-
-    create_gif_from_images('/Users/crangelsmith/PycharmProjects/monitoring-ecosystem-resilience/output/', 'LANDSAT_LC08_C01_T1_SR_offset50_dates.gif','LANDSAT_LC08_C01_T1_SR_offset50')
-
+    test = len(np.unique([i for i in data_df['category']])) / len(np.unique(data_df['date']))
+    #print (data_df.columns)
+    create_lat_long_metric_figures(data_df, 'offset50','/Users/crangelsmith/PycharmProjects/monitoring-ecosystem-resilience/output/copernicus_lab_new11/')
 
