@@ -428,19 +428,3 @@ def coarse_dataframe(data_df_all, side_square):
 
 
 
-
-
-
-if __name__ == "__main__":
-    data_df = variable_read_json_to_dataframe(os.path.join(os.path.dirname(__file__),"..","..","testdata","network_json_data/test-results-summary.json"))
-
-    #data_df = read_json_to_dataframe('/Users/crangelsmith/PycharmProjects/monitoring-ecosystem-resilience/output/labyrinths/results_summary.json')
-
-    data_df = convert_to_geopandas(data_df['COPERNICUS/S2'])
-
-    data_df = coarse_dataframe(data_df,11)
-
-    test = len(np.unique([i for i in data_df['category']])) / len(np.unique(data_df['date']))
-    #print (data_df.columns)
-    create_lat_long_metric_figures(data_df, 'offset50','/Users/crangelsmith/PycharmProjects/monitoring-ecosystem-resilience/output/copernicus_lab_new11/')
-
