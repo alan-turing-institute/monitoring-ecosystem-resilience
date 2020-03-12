@@ -243,14 +243,14 @@ def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
     sub_image_coords = []
     if coords and region_size:
         left_start = coords[0] - region_size/2
-        bottom_start = coords[1] - region_size/2
+        top_start = coords[1] + region_size/2
         sub_image_size_x = region_size / x_parts
         sub_image_size_y = region_size / y_parts
         for ix in range(x_parts):
             for iy in range(y_parts):
                 sub_image_coords.append(
                     (left_start + sub_image_size_x/2 + (ix*sub_image_size_x),
-                     bottom_start + sub_image_size_y/2 + (iy*sub_image_size_y))
+                     top_start - sub_image_size_y/2 - (iy*sub_image_size_y))
                 )
 
     # now do the actual cropping
@@ -355,7 +355,7 @@ def create_gif_from_images(directory_path, output_name, condition_filename=''):
             images.append(imageio.imread(
                 os.path.join(directory_path, filename)))
 
-            # the name of each file should end with the date of the image 
+            # the name of each file should end with the date of the image
             # (this is true in the gee images)
             date.append(filename[-14:-4])
 
@@ -462,9 +462,9 @@ def pillow_to_numpy(pil_image):
     # check that 3rd index is equal
     r, g, b = numpy_image[:, :, 0], numpy_image[:, :, 1], numpy_image[:, :, 2]
 
-    if (b == g).all() and (b == r).all(): 
+    if (b == g).all() and (b == r).all():
         return numpy_image[:, :, 0] # return with 3rd index removed
-    else: 
+    else:
         return numpy_image # return colour image
 
 
@@ -564,7 +564,7 @@ def process_and_threshold(img, r=3):
 
 def check_image_ok(rgb_image):
     """
-    Check the quality of an RGB image. Currently checking if we have 
+    Check the quality of an RGB image. Currently checking if we have
     > 5% pixels being masked. This indicates problems with cloud masking
     in previous steps.
 
@@ -574,14 +574,14 @@ def check_image_ok(rgb_image):
         Input image to check the quality of
 
     Returns
-    ---------- 
+    ----------
     bool
-        `True` if image passes quality requirements, 
+        `True` if image passes quality requirements,
         else `False`.
     """
 
     img_array = pillow_to_numpy(rgb_image)
-    
+
     black = [0,0,0]
     black_pix_threshold = 0.05
     n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
