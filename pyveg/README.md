@@ -80,7 +80,9 @@ Each type has its own config options, e.g:
         'RGB_bands': ('B4','B3','B2'),
         'NIR_band': 'B5',
         'cloudy_pix_flag': 'CLOUD_COVER',
-        'do_network_centrality': do_network_centrality
+        'do_network_centrality': do_network_centrality,
+        'num_days_per_point': 30
+
     
    **Weather**:
 
