@@ -92,7 +92,15 @@ Each type has its own config options, e.g:
         'temperature_band': ['mean_2m_air_temperature']
         }  
 
+### Analyse the data downloaded from GEE
 
+Once you have downloaded the data from GEE, the script pyveg_gee_analysis can make some simple time series and network centrality plots.
+
+To run it:
+
+pyveg_gee_analysis --input_dir path_to_GEE_downloaded_data
+
+the outputs will be saved on an "analysis" subdirectory inside the path_to_GEE_downloaded_data path.
 
 ## Pattern simulation
 
