@@ -7,7 +7,7 @@ from pyveg.src.data_analysis_utils import *
 
 
 def test_read_json_to_dataframe():
-    test_df = read_json_to_dataframe(os.path.join(os.path.dirname(__file__),"..","..","testdata","network_json_data","test-results-summary.json"))
+    test_df = read_json_to_dataframe(os.path.join(os.path.dirname(__file__),"..","testdata","network_json_data","test-results-summary.json"))
 
     assert (test_df.shape[0] == 484)
     assert (test_df.shape[1] == 7)
@@ -16,7 +16,7 @@ def test_read_json_to_dataframe():
 def test_coarse_dataframe():
 
 
-    test_df = variable_read_json_to_dataframe(os.path.join(os.path.dirname(__file__),"..","..","testdata","network_json_data/test-results-summary.json"))
+    test_df = variable_read_json_to_dataframe(os.path.join(os.path.dirname(__file__),"..","testdata","network_json_data/test-results-summary.json"))
 
     data_df = convert_to_geopandas(test_df['COPERNICUS/S2'])
 
@@ -31,9 +31,9 @@ def test_coarse_dataframe():
 
 def test_create_lat_long_metric_figures():
 
-    dir_path = os.path.join(os.path.dirname(__file__),"..","..","testdata","network_json_data/")
+    dir_path = os.path.join(os.path.dirname(__file__),"..","testdata","network_json_data/")
 
-    test_df = variable_read_json_to_dataframe(os.path.join(os.path.dirname(__file__),"..","..","testdata","network_json_data/test-results-summary.json"))
+    test_df = variable_read_json_to_dataframe(os.path.join(os.path.dirname(__file__),"..","testdata","network_json_data/test-results-summary.json"))
 
     data_df = convert_to_geopandas(test_df['COPERNICUS/S2'])
 
@@ -48,7 +48,7 @@ def test_create_lat_long_metric_figures():
 
 def test_variable_read_json_to_dataframe():
 
-    test_df_dict = variable_read_json_to_dataframe(os.path.join(os.path.dirname(__file__),"..","..","testdata","network_json_data/test-results-summary.json"))
+    test_df_dict = variable_read_json_to_dataframe(os.path.join(os.path.dirname(__file__),"..","testdata","network_json_data/test-results-summary.json"))
 
     dict_len = len(test_df_dict.keys())
 
