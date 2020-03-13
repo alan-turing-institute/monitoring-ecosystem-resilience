@@ -86,3 +86,16 @@ ipython_config.py
 
 # emacs autosave
 *~
+.Rproj.user
+
+# data
+output_dir/
+output/
+
+# macos
+.DS_Store
+.vscode/
+
+# R stuff
+.RData
+.Rhistory
