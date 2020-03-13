@@ -3,11 +3,11 @@ import pandas as pd
 import os
 from os.path import isfile, join
 import datetime
-
+import math
 import geopandas as gpd
 from shapely.geometry import Point
 import matplotlib
-#matplotlib.use('PS')
+matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
@@ -228,9 +228,10 @@ def convert_to_geopandas(df):
     ----------
     geopandas DataFrame
     """
-    df['geometry'] = [Point(xy) for xy in zip(df.lat, df.long)]
+    df['geometry'] = [Point(xy) for xy in zip(df.latitude, df.longitude)]
     crs = {'init': 'epsg:4326'}
     df = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
+
 
     return df
 
@@ -483,7 +484,7 @@ def plot_time_series(dfs, output_dir):
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
     """
 
-def create_network_figures(data_df, metric, output_dir, output_name):
+def create_lat_long_metric_figures(data_df, metric, output_dir):
 
     """
     From input data-frame with processed network metrics create 2D gird figure for each date available using Geopandas.
@@ -494,11 +495,8 @@ def create_network_figures(data_df, metric, output_dir, output_name):
 
     :return:
     """
-    fig, ax = plt.subplots(1, figsize=(6, 6))
 
     if set(['date',metric]).issubset(data_df.columns):
-
-        #data_df['abs_metric'] = data_df[metric]*-1
 
         # get min and max values observed in the data to create a range
 
@@ -506,44 +504,15 @@ def create_network_figures(data_df, metric, output_dir, output_name):
         vmax = max(data_df[metric])
 
         # get all dates available
-
         list_of_dates = np.unique(data_df['date'])
 
         for date in list_of_dates:
 
-
             if (data_df[data_df['date'] == date][metric].isnull().values.any()):
-                print('Problem with date ' + date_str + ' nan entries found.')
+                print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') + ' nan entries found.')
                 continue
 
-
-            cmap = cm.coolwarm
-            data_df[data_df['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column=metric, \
-                                                          figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
-
-            # from datetime type to a string
-            date_str = pd.to_datetime(str(date)).strftime('%Y-%m-%d')
-
-            # create a date annotation on the figure
-            ax.annotate(date_str, xy=(0.15, 0.08), xycoords='figure fraction',
-                        horizontalalignment='left', verticalalignment='top',
-                        fontsize=25)
-
-            # Create colorbar as a legend
-            sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
-            sm._A = []
-            fig.colorbar(sm)
-
-            # create output directory
-            if not os.path.exists(output_dir):
-               os.makedirs(output_dir)
-
-            metric_output_name = metric.replace("/", "_")
-
-            # this saves the figure as a high-res png in the output path.
-            filepath = os.path.join(output_dir, metric_output_name+'_network_2D_grid_' + date_str + '.png')
-            fig.savefig(filepath, dpi=200)
-            plt.cla()
+            network_figure(data_df,date,metric,vmin,vmax,output_dir)
 
     else:
         raise RuntimeError("Expected variables not present in input dataframe")
@@ -615,3 +584,50 @@ def coarse_dataframe(data_df_all, side_square):
 
 
     return data_df_all
+
+
+def network_figure(data_df, date, metric, vmin, vmax, output_dir):
+    '''
+
+    Make 2D heatmap plot with network centrality measures
+
+    :param data_df: input dataframe
+    :param date: date to be plot
+    :param metric: which metric is going to be plot
+    :param vmin: colorbar minimum values
+    :param vmax: colorbar max values
+    :param output_dir: dir where to save the plots
+    :return:
+    '''
+
+
+    fig, ax = plt.subplots(1, figsize=(6, 6))
+
+    cmap = cm.coolwarm
+    data_df[data_df['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column=metric, \
+                                          figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
+
+    # from datetime type to a string
+    date_str = pd.to_datetime(str(date)).strftime('%Y-%m-%d')
+
+    # create a date annotation on the figure
+    ax.annotate(date_str, xy=(0.15, 0.08), xycoords='figure fraction',
+                horizontalalignment='left', verticalalignment='top',
+                fontsize=25)
+
+    # Create colorbar as a legend
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+    sm._A = []
+    fig.colorbar(sm)
+
+    # create output directory
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    metric_output_name = metric.replace("/", "_")
+
+    # this saves the figure as a high-res png in the output path.
+    filepath = os.path.join(output_dir, metric_output_name + '_network_2D_grid_' + date_str + '.png')
+    fig.savefig(filepath, dpi=200)
+
+    plt.close(fig)
