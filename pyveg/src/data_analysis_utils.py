@@ -3,15 +3,15 @@ import pandas as pd
 import os
 from os.path import isfile, join
 import datetime
-
+import math
 import geopandas as gpd
 from shapely.geometry import Point
 import matplotlib
-#matplotlib.use('PS')
+matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
-
+import matplotlib.cm as cm
 
 
 def read_json_to_dataframe(filename):
@@ -40,11 +40,11 @@ def read_json_to_dataframe(filename):
     # start with empty output dataframes
     veg_df = pd.DataFrame(columns=['date', 'lat', 'long'])
     weather_df = pd.DataFrame(columns=['date'])
-    
+
     # dataframe index
     i = 0
 
-    # first loop over collections and put vegetation results into one 
+    # first loop over collections and put vegetation results into one
     # dataframe
     for collection_name, coll_results in data.items():
 
@@ -58,7 +58,7 @@ def read_json_to_dataframe(filename):
             # check we have data for this time point
             if time_point is None:
                 continue
-            
+
             # for each space point
             for space_point in time_point.values():
 
@@ -99,20 +99,21 @@ def read_json_to_dataframe(filename):
     # reset dataframe index
     i = 0
 
-    # loop over collections
+    # first loop over collections and put vegetation results into one
+    # dataframe
     for collection_name, coll_results in data.items():
 
         # skip vegetation data
         if coll_results['type'] == 'vegetation':
             continue
-        
+
         # loop over time series
         for date, values in coll_results['time-series-data'].items():
 
             # check we have data
             if values is None:
                 continue
-            
+
             # check if this we already have a row with this date
             matched_indices = weather_df.index[(weather_df['date'] == date)]
 
@@ -123,7 +124,7 @@ def read_json_to_dataframe(filename):
                 for metric, value in values.items():
                     weather_df.loc[i, 'date'] = date
                     weather_df.loc[i, metric] = value
-                
+
                 i += 1
 
             # if we find a row that matches the date and coordinates
@@ -131,7 +132,7 @@ def read_json_to_dataframe(filename):
 
                 # get the index of the matched row
                 index = matched_indices[0]
-                
+
                 # loop over weather data and add to the same date
                 for metric, value in values.items():
 
@@ -164,7 +165,7 @@ def variable_read_json_to_dataframe(filename):
     Returns
     ----------
     dict
-        A dict of the saved results in a DataFrame format. Keys are 
+        A dict of the saved results in a DataFrame format. Keys are
         names of collections and the values are DataFrame of results
         for that collection.
     """
@@ -196,16 +197,16 @@ def variable_read_json_to_dataframe(filename):
             if isinstance(list(time_point.values())[0], dict):
                 for space_point in time_point.values():
                     rows_list.append(space_point)
-            
+
             # otherwise, just add the row
             else:
                 # the key of each object in the time series is the date, and data
-                # for this date should be the values. Here we just add the date 
+                # for this date should be the values. Here we just add the date
                 # as a value to enable us to add the whole row in one go later.
                 time_point['date'] = date
 
                 rows_list.append(time_point)
-        
+
         # make a DataFrame and add it to the dict of DataFrames
         df = pd.DataFrame(rows_list)
         dfs[collection_name] = df
@@ -215,7 +216,7 @@ def variable_read_json_to_dataframe(filename):
 
 def convert_to_geopandas(df):
     """
-    Given a pandas DatFrame with `lat` and `long` columns, convert 
+    Given a pandas DatFrame with `lat` and `long` columns, convert
     to geopandas DataFrame.
 
     Parameters
@@ -227,9 +228,10 @@ def convert_to_geopandas(df):
     ----------
     geopandas DataFrame
     """
-    df['geometry'] = [Point(xy) for xy in zip(df.lat, df.long)]
+    df['geometry'] = [Point(xy) for xy in zip(df.latitude, df.longitude)]
     crs = {'init': 'epsg:4326'}
     df = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
+
 
     return df
 
@@ -254,7 +256,7 @@ def make_time_series(dfs):
 
     # loop over collections
     for col_name, df in dfs.items():
-        
+
         # if vegetation data
         if col_name == 'COPERNICUS/S2' or 'LANDSAT' in col_name:
 
@@ -299,7 +301,7 @@ def get_weather_time_series(dfs):
             df_ERA5 = df
             df_ERA5['total_precipitation'] *= 1e3 # convert to mm
             df_ERA5['mean_2m_air_temperature'] -= 273.15 # convert to Celcius
-            df_ERA5 = df_ERA5.rename(columns={'total_precipitation': 'ERA5_precipitation', 
+            df_ERA5 = df_ERA5.rename(columns={'total_precipitation': 'ERA5_precipitation',
                                     'mean_2m_air_temperature': 'ERA5_temperature'})
 
         elif collection_name == 'NASA/GPM_L3/IMERG_V06':
@@ -314,11 +316,11 @@ def get_weather_time_series(dfs):
         df['precipitation_std'] = df[['ERA5_precipitation', 'NASA_precipitation']].std(axis=1)
         print(df)
         return df.drop(columns=['ERA5_precipitation', 'NASA_precipitation'])
-    
+
     # if we only have ERA5
     elif df_ERA5 is not None:
         return df_ERA5
-    
+
     # if we only have NASA
     elif df_NASA is not None:
         return df_NASA
@@ -328,7 +330,7 @@ def plot_time_series(dfs, output_dir):
     #
     """
     Given a dict of DataFrames, of which each row corresponds to
-    a different time point (constructed with `make_time_series`), 
+    a different time point (constructed with `make_time_series`),
     plot the time series of each DataFrame on the same plot.
 
     Parameters
@@ -347,7 +349,7 @@ def plot_time_series(dfs, output_dir):
     # setup plot
     fig, ax1 = plt.subplots(figsize=(13,5))
     fig.subplots_adjust(right=0.9)
-    
+
     # set up x axis to handle dates
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
     plt.gca().xaxis.set_major_locator(mdates.DayLocator())
@@ -356,7 +358,7 @@ def plot_time_series(dfs, output_dir):
     #print(get_weather_time_series(dfs))
     #print(get_veg_time_series(dfs))
 
-    """    
+    """
     for collection_name, df in dfs.items():
 
         if 'offset50' in df.columns:
@@ -365,7 +367,7 @@ def plot_time_series(dfs, output_dir):
             xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
             means = df['offset50']
             stds = df['offset50_std']
-        else: # assume 
+        else: # assume
             # prepare data
             dates = df.index
             xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
@@ -402,7 +404,7 @@ def plot_time_series(dfs, output_dir):
     ax1.plot(cop_xs, cop_means, color=color, linewidth=2)
     ax1.tick_params(axis='y', labelcolor=color)
     ax1.set_ylim([-900, -400])
-    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds, 
+    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds,
                      facecolor='green', alpha=0.1)
 
     # add precip
@@ -440,18 +442,18 @@ def plot_time_series(dfs, output_dir):
     #ax4.plot(l8_xs, l8_means, color=color)
     #ax4.tick_params(axis='y', labelcolor=color)
     #ax4.yaxis.tick_left()
-    #plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds, 
+    #plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds,
     #                 facecolor='purple', alpha=0.05)
 
     # save the plot
     #output_filename = 'time-series-full.png'
     #plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
-    
+
     """# ------------------------------------------------
     # setup plot
     fig, ax1 = plt.subplots(figsize=(13,5))
     fig.subplots_adjust(right=0.9)
-    
+
     # set up x axis to handle dates
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
     plt.gca().xaxis.set_major_locator(mdates.DayLocator())
@@ -462,7 +464,7 @@ def plot_time_series(dfs, output_dir):
     ax1.set_ylabel('Copernicus Offset50', color=color)
     ax1.plot(cop_xs, cop_means, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds, 
+    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds,
                      facecolor='green', alpha=0.2)
 
     # add l8
@@ -472,7 +474,7 @@ def plot_time_series(dfs, output_dir):
     #ax4.yaxis.tick_left()
     ax4.plot(l8_xs, l8_means, color=color)
     ax4.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds, 
+    plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds,
                      facecolor='purple', alpha=0.2)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
@@ -482,69 +484,150 @@ def plot_time_series(dfs, output_dir):
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
     """
 
-def create_network_figures(data_df, metric, output_dir, output_name):
+def create_lat_long_metric_figures(data_df, metric, output_dir):
 
     """
-    From input dataframe with processed network metrics create figure for each date avalaible using geopandas.
+    From input data-frame with processed network metrics create 2D gird figure for each date available using Geopandas.
 
+    :param data_df -- input dataframe
+    :param metric -- variable to plot
+    :param output_dir -- directory to save the figures
 
+    :return:
     """
-    if set(['date','longitude','latitude',metric]).issubset(data_df.columns):
 
-        data_df['abs_metric'] = data_df[metric]*-1
-
-        # turn lat, long into geopandas
-        data_df['geometry'] = [Point(xy) for xy in zip(data_df.latitude, data_df.longitude)]
-
-        crs = {'init': 'epsg:4326'}
-        data_geo_pd = gpd.GeoDataFrame(data_df, crs=crs, geometry=data_df['geometry'])
+    if set(['date',metric]).issubset(data_df.columns):
 
         # get min and max values observed in the data to create a range
 
-        vmin = 0
-        vmax = 1000
+        vmin = min(data_df[metric])
+        vmax = max(data_df[metric])
 
-        # get all dates avalaibles
-        list_of_dates = np.unique(data_geo_pd['date'])
+        # get all dates available
+        list_of_dates = np.unique(data_df['date'])
 
         for date in list_of_dates:
 
-            # create figure and axes for Matplotlib
-            fig, ax = plt.subplots(1, figsize=(6, 6))
+            if (data_df[data_df['date'] == date][metric].isnull().values.any()):
+                print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') + ' nan entries found.')
+                continue
 
-            data_geo_pd[data_geo_pd['date'] == date].plot(marker='o', ax=ax, alpha=.5, markersize=100, column=metric, \
-                                                          figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap='Reds')
-            import matplotlib.cm as cm
+            network_figure(data_df,date,metric,vmin,vmax,output_dir)
 
-            cmap = cm.summer
-
-            data_geo_pd[data_geo_pd['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column='abs_metric', \
-                                                          figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
-
-            # ridiculous step
-            date_str = pd.to_datetime(str(date)).strftime('%Y-%m-%d')
-
-            # create a date annotation on the figure
-            ax.annotate(date_str, xy=(0.15, 0.08), xycoords='figure fraction',
-                        horizontalalignment='left', verticalalignment='top',
-                        fontsize=25)
-
-            # Create colorbar as a legend
-
-            sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
-
-
-            sm._A = []
-            fig.colorbar(sm)
-
-            # create output directoriy
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
-
-            # this saves the figure as a high-res png in the output path.
-            filepath = os.path.join(output_dir, output_name + '_network_values' + date_str + '.png')
-            fig.savefig(filepath, dpi=300)
     else:
         raise RuntimeError("Expected variables not present in input dataframe")
 
 
+def coarse_dataframe(data_df_all, side_square):
+    """
+
+    Coarse the granularity of a dataframe by grouping lat,long points that are close to each other in a square of L = size_square
+    :param data_df:  Input dataframe
+    :param side_square: Side of the square
+    :return: a coarser dataframe
+    """
+
+    # initialise the categories
+
+    data_df_all['category'] = -1
+
+    # do calculations on the first date, then extrapolate to the rest
+    data_df = data_df_all[data_df_all['date']==np.unique(data_df_all['date'])[0]]
+
+    data_df = data_df.sort_values(by=['latitude', 'longitude'])
+
+    n_grids = int(math.sqrt(data_df.shape[0]))
+
+
+    category = 0
+
+    for n in range(data_df.shape[0]):
+
+        # only process lat,long point that do not have a category
+        if data_df.loc[n,'category'] == -1:
+
+            # get the side_square^2 nearest indexes to the point.
+            indexes = []
+            for i in range(side_square):
+                for j in range(side_square):
+
+                    if n + n_grids*i + j < n_grids*n_grids and data_df['category'].iloc[n + n_grids*i + j]==-1:
+                            indexes.append(n + n_grids*i + j)
+
+            # assing them all to the same categorty
+            data_df.loc[indexes,'category'] = str(category)
+
+            # get the geometry points of that catery
+            cat_geometry = data_df[data_df['category']==str(category)]['geometry']
+
+            # get indexes of each point belonging to the category
+            indexes_all = []
+            for point in cat_geometry:
+                indexes_all.append(data_df_all[data_df_all['geometry'] == point].index.tolist())
+
+            indexes_all_flat = [item for sublist in indexes_all for item in sublist]
+
+            data_df_all.loc[indexes_all_flat,'category'] = str(category)
+
+            category = category + 1
+
+
+
+    data_df_all['category'] =  (data_df_all['category'].astype(str)).str.cat(data_df_all['date'],sep="_")
+
+    data_df_all = data_df_all.dissolve(by=['category','date'], aggfunc='mean')
+
+    # re-assing the date because we are losing it
+    data_df_all['date']= [i[1] for i in data_df_all.index]
+
+    data_df_all['category'] =  [i[0] for i in data_df_all.index]
+
+
+    return data_df_all
+
+
+def network_figure(data_df, date, metric, vmin, vmax, output_dir):
+    '''
+
+    Make 2D heatmap plot with network centrality measures
+
+    :param data_df: input dataframe
+    :param date: date to be plot
+    :param metric: which metric is going to be plot
+    :param vmin: colorbar minimum values
+    :param vmax: colorbar max values
+    :param output_dir: dir where to save the plots
+    :return:
+    '''
+
+
+    fig, ax = plt.subplots(1, figsize=(6, 6))
+
+    cmap = cm.coolwarm
+    data_df[data_df['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column=metric, \
+                                          figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
+
+    # from datetime type to a string
+    date_str = pd.to_datetime(str(date)).strftime('%Y-%m-%d')
+
+    # create a date annotation on the figure
+    ax.annotate(date_str, xy=(0.15, 0.08), xycoords='figure fraction',
+                horizontalalignment='left', verticalalignment='top',
+                fontsize=25)
+
+    # Create colorbar as a legend
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+    sm._A = []
+    fig.colorbar(sm)
+
+    # create output directory
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    metric_output_name = metric.replace("/", "_")
+
+    # this saves the figure as a high-res png in the output path.
+    filepath = os.path.join(output_dir, metric_output_name + '_network_2D_grid_' + date_str + '.png')
+    fig.savefig(filepath, dpi=200)
+
+    plt.close(fig)
