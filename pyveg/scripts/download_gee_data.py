@@ -93,8 +93,7 @@ def main():
     process_all_collections(config.output_dir,
                             config.data_collections,
                             config.coordinates,
-                            config.date_range,
-                            config.num_days_per_point)
+                            config.date_range)
 
     print('\nFinished all.')
 

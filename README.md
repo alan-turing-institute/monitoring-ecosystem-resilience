@@ -1,3 +1,5 @@
+![Build status](https://api.travis-ci.com/alan-turing-institute/monitoring-ecosystem-resilience.svg?branch=develop)
+
 # monitoring-ecosystem-resilience
 Repository for mini-projects in the Data science for Sustainable development project.
 
@@ -14,4 +16,4 @@ The tasks above are all implemented in Python in the *pyveg* package. See the [R
 
 ### R
 
-The pattern-generation and graph-modelling are implemented in R in the `rveg` package.  See the [README.md](rveg/README.md) in that directory for further details.
+The pattern-generation and graph-modelling are implemented in R in the *rveg* package.  See the [README.md](rveg/README.md) in the `rveg` directory for further details.

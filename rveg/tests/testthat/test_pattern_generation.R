@@ -3,7 +3,7 @@ library(rveg)
 setwd(file.path("..",".."))
 
 test_that("we can load config from json", {
-    configFilename <- file.path("..","testdata","patternGenConfig.json")
+    configFilename <- file.path("inst","extdata","patternGenConfig.json")
     config <- loadConfig(configFilename)
     expect_gt(config$DeltaX, 0)
     expect_gt(config$DeltaY, 0)
@@ -12,7 +12,7 @@ test_that("we can load config from json", {
 
 
 test_that("We can load a starting pattern", {
-    startingPatternFile <- file.path("..","testdata","random-initialisation_m=50.csv")
+    startingPatternFile <- file.path("inst","extdata","random-initialisation_m=50.csv")
     pattern <- getStartingPattern(startingPatternFile)
     expect_equal(dim(pattern),c(50,50))
     expect_equal(min(pattern), 0)
@@ -21,7 +21,7 @@ test_that("We can load a starting pattern", {
 
 
 test_that("We can binarize a matrix of floats", {
-    patternFile <- file.path("..","testdata","test_float_pattern_50x50_1.csv")
+    patternFile <- file.path("inst","extdata","test_float_pattern_50x50_1.csv")
     pattern <- as.matrix(read.csv(patternFile, header=FALSE))
     binaryPattern <- binarizePattern(pattern)
     expect_equal(dim(binaryPattern),c(50,50))
@@ -39,8 +39,8 @@ test_that("We can binarize a matrix of floats", {
 
 test_that("We generate a known pattern from given input", {
     print(getwd())
-    genConfig <- file.path("..","testdata","patternGenConfig.json")
-    startingPatternFile <- file.path("..","testdata","random-initialisation_m=50.csv")
+    genConfig <- file.path("inst","extdata","patternGenConfig.json")
+    startingPatternFile <- file.path("inst","extdata","random-initialisation_m=50.csv")
     pattern <- generatePattern(genConfig, startingPatternFile)
     expect_equal(dim(pattern),c(50,50))
     expect_gt(max(pattern),0)

@@ -261,7 +261,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
 
     # run network centrality on the sub-images
     if collection_dict['do_network_centrality']:
-        #n_sub_images = 10 # do this for speedup while testing
+        #n_sub_images = 20 # do this for speedup while testing
         nc_output_dir = os.path.join(output_dir, 'network_centrality')
         nc_results = run_network_centrality(nc_output_dir, processed_ndvi, coords, date_range, region_size, n_sub_images=n_sub_images)
 
@@ -324,7 +324,7 @@ def process_single_collection(output_dir, collection_dict, coords, date_ranges, 
     return results
 
 
-def process_all_collections(output_dir, collections, coords, date_range, n_days_per_slice, region_size=0.1, scale=10):
+def process_all_collections(output_dir, collections, coords, date_range, region_size=0.1, scale=10):
     """
     Process all dates for all specified Earth Engine collections.
     """
@@ -332,17 +332,25 @@ def process_all_collections(output_dir, collections, coords, date_range, n_days_
     # unpack date range
     start_date, end_date = date_range
 
-    # get the list of time intervals
-    num_slices = get_num_n_day_slices(start_date, end_date, n_days_per_slice)
-    date_ranges = slice_time_period(date_range[0], date_range[1], num_slices)
-
     # place to store results
     results_collection = {}
 
     for _, collection_dict in collections.items(): # possible to parallelise?
 
+        # get the list of time intervals
+        num_days_per_point = collection_dict['num_days_per_point']
+        num_slices = get_num_n_day_slices(start_date, end_date, num_days_per_point)
+        date_ranges = slice_time_period(date_range[0], date_range[1], num_slices)
+
+        # get the data
         results = process_single_collection(output_dir, collection_dict, coords, date_ranges, region_size, scale)
 
+        # save an intermediate file for each collection in case of crash
+        pathsafe_collection_name = collection_dict['collection_name'].replace('/', '-')
+        output_subdir = os.path.join(output_dir, pathsafe_collection_name)
+        save_json(results, output_subdir, pathsafe_collection_name+'_results.json')
+
+        # store in final dict
         results_collection[collection_dict['collection_name']] = results
 
     # wait for everything to finish

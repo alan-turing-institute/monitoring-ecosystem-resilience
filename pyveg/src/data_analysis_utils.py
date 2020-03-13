@@ -99,7 +99,8 @@ def read_json_to_dataframe(filename):
     # reset dataframe index
     i = 0
 
-    # loop over collections
+    # first loop over collections and put vegetation results into one
+    # dataframe
     for collection_name, coll_results in data.items():
 
         # skip vegetation data
@@ -356,7 +357,7 @@ def plot_time_series(dfs, output_dir):
     #print(get_weather_time_series(dfs))
     #print(get_veg_time_series(dfs))
 
-    """    
+    """
     for collection_name, df in dfs.items():
 
         if 'offset50' in df.columns:
@@ -365,7 +366,7 @@ def plot_time_series(dfs, output_dir):
             xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
             means = df['offset50']
             stds = df['offset50_std']
-        else: # assume 
+        else: # assume
             # prepare data
             dates = df.index
             xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
@@ -451,7 +452,7 @@ def plot_time_series(dfs, output_dir):
     # setup plot
     fig, ax1 = plt.subplots(figsize=(13,5))
     fig.subplots_adjust(right=0.9)
-    
+
     # set up x axis to handle dates
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
     plt.gca().xaxis.set_major_locator(mdates.DayLocator())
@@ -462,7 +463,7 @@ def plot_time_series(dfs, output_dir):
     ax1.set_ylabel('Copernicus Offset50', color=color)
     ax1.plot(cop_xs, cop_means, color=color)
     ax1.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds, 
+    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds,
                      facecolor='green', alpha=0.2)
 
     # add l8
@@ -472,7 +473,7 @@ def plot_time_series(dfs, output_dir):
     #ax4.yaxis.tick_left()
     ax4.plot(l8_xs, l8_means, color=color)
     ax4.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds, 
+    plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds,
                      facecolor='purple', alpha=0.2)
 
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
@@ -614,7 +615,3 @@ def coarse_dataframe(data_df_all, side_square):
 
 
     return data_df_all
-
-
-
-
