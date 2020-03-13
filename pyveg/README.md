@@ -64,7 +64,6 @@ the following:
 - *output_dir*: Define directory to save all outputs 
 - *coordinates*: long,lat coordinates (can be overwriten by the CLI option) 
 - *date_range*: start and end date for data selection.
-- *num_days_per_point*: how many days are included in an extrated image/data point.
 - *do_network_centrality*:  estimate network centrality to vegetation images
 - *collections_to_use*: Name of GEE image collections that are used in the data extraction steps,
 these are defined in an dictionary called *data_collections*.
