@@ -97,9 +97,9 @@ Each type has its own config options, e.g:
 Once you have downloaded the data from GEE, the script pyveg_gee_analysis can make some simple time series and network centrality plots.
 
 To run it:
-
+```
 pyveg_gee_analysis --input_dir path_to_GEE_downloaded_data
-
+```
 the outputs will be saved on an "analysis" subdirectory inside the path_to_GEE_downloaded_data path.
 
 ## Pattern simulation
