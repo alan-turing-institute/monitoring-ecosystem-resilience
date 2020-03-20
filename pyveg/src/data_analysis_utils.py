@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
 import matplotlib.cm as cm
-
+from scipy.fftpack import fft
 
 def read_json_to_dataframe(filename):
     """
@@ -238,15 +238,15 @@ def convert_to_geopandas(df):
 
 def make_time_series(dfs):
     """
-    Given a DataFrame which may contian many rows per time point (corresponding
+    Given a dictionary of DataFrames which may contian many rows per time point (corresponding
     to the network centrality values of different sub-locations), collapse this
     into a time series by calculating the mean and std of the different sub-
     locations at each date.
 
     Parameters
     ----------
-    df : DataFrame
-        Input DataFrame read by `read_json_to_dataframe`.
+    dfs : dict of DataFrame
+        Input DataFrame read by `variable_read_json_to_dataframe`.
 
     Returns
     ----------
@@ -631,3 +631,57 @@ def network_figure(data_df, date, metric, vmin, vmax, output_dir):
     fig.savefig(filepath, dpi=200)
 
     plt.close(fig)
+
+
+
+
+def resample_time_series(df, col_name="offset50"):
+    """
+    Resample and interpolate a time series dataframe so we have one row
+    per day (useful for FFT)
+
+    Parameters
+    ----------
+    df: DataFrame with date as index
+    col_name: string, identifying the column we will pull out
+
+    Returns
+    -------
+    new_series: pandas Series with datetime index, and one column, one row per day
+    """
+    series = df[col_name]
+    # just in case the index isn't already datetime type
+    series.index = pd.to_datetime(series.index)
+
+    # resample to get one row per day
+    rseries = series.resample("D")
+    new_series = rseries.interpolate()
+
+    return new_series
+
+
+
+def fft_series(time_series):
+    """
+    Perform Fast Fourier Transform on an input series (assume one row per day).
+
+    Parameters
+    ----------
+    time_series: a pandas Series with one row per day, and datetime index (which we'll ignore)
+
+    Returns
+    -------
+    xvals, yvals: np.arrays of frequencies (1/day) and strengths in frequency space.
+                  Ready to be plotted directly in a matplotlib plot.
+    """
+
+    ts = list(time_series)
+    # Number of points
+    N = len(ts)
+    # Sample spacing (days)
+    T = 1.0
+    fourier = fft(ts)
+    # x-axis values
+    xvals = np.linspace(0.,1.0/(20*T), N//20)
+    yvals = 2.0/N * np.abs(fourier[0:N//20])
+    return xvals, yvals
