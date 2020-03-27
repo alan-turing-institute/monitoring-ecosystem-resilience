@@ -52,7 +52,6 @@ def main():
     dfs = variable_read_json_to_dataframe(json_summary_path)
 
     # from the dataframe, produce network metric figure for each avalaible date
-
     for collection_name, df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
             data_df_geo = convert_to_geopandas(df)
