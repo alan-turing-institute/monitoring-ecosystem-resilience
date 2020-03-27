@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #Define directory to save all outputs
-output_dir = 'Presentation-results-X'
+output_dir = 'X'
 
 #coordinates = (23.54,11.34) # beautiful rivers
 #coordinates = (27.99,11.29) # dense spots with river
