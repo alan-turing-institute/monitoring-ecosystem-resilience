@@ -339,7 +339,7 @@ def get_weather_time_series(dfs):
         return df_NASA
 
 
-def smooth_subimage(df, column='offset50', n=4, it=3, remove_outliers=True):
+def smooth_subimage(df, column='offset50', n=4, it=3):
     """
     Perform LOWESS (Locally Weighted Scatterplot Smoothing) on the time
     series of a single sub-image.
@@ -369,19 +369,6 @@ def smooth_subimage(df, column='offset50', n=4, it=3, remove_outliers=True):
     # add a new column of datetime objects
     df['datetime'] = pd.to_datetime(df['date'], format='%Y/%m/%d') 
 
-    # set to None data points that are far from the mean, these are 
-    # assumed to be unphysical
-    if remove_outliers:
-
-        # calcualte residuals to the mean
-        res = (df[column] - df[column].mean()).abs()
-
-        # determine which are outliers
-        outlier = res > df[column].std()*3
-
-        # set to None
-        df.loc[outlier, column] = None
-
     # extract data
     xs = df['datetime']
     ys = df[column]
@@ -398,7 +385,7 @@ def smooth_subimage(df, column='offset50', n=4, it=3, remove_outliers=True):
     return df
 
 
-def smooth_all_sub_images(df, column='offset50', n=4, it=3, remove_outliers=True):
+def smooth_all_sub_images(df, column='offset50', n=4, it=3):
     """
     Perform LOWESS (Locally Weighted Scatterplot Smoothing) on the time
     series of a set of sub-images.
@@ -434,7 +421,7 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3, remove_outliers=True
     for df in d.values():
 
         # perform smoothing
-        df = smooth_subimage(df, column=column, n=n, it=it, remove_outliers=remove_outliers)
+        df = smooth_subimage(df, column=column, n=n, it=it)
 
     # reconstruct the DataFrame
     df = list(d.values())[0]
@@ -511,10 +498,55 @@ def get_confidence_intervals(df, column, ci_level=0.99):
     return df
 
 
-def drop_outliers_and_smooth(dfs, column='offset50', n=4):
+def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
     """
-    Loop over vegetation DataFrames and remove outliers and 
-    smooth results.
+    Loop over vegetation DataFrames and drop points in the 
+    time series that a significantly far away from the mean
+    of the time series. Such points are assumed to be unphysical.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    column : str
+        Name of the column to drop outliers on.
+    sigmas : float
+        Number of standard deviations a data point has to be 
+        from the mean to be labelled as an outlier and dropped.
+
+    Returns
+    ----------
+    dict of DataFrame
+        Time series data for multiple sub-image locations with 
+        some values in `column` potentially set to NaN.
+    """
+
+    # set to None data points that are far from the mean, these are 
+    # assumed to be unphysical
+    
+    # loop over collections
+    for col_name, df in dfs.items():
+
+        # if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+
+            # calcualte residuals to the mean
+            res = (df[column] - df[column].mean()).abs()
+
+            # determine which are outliers
+            outlier = res > df[column].std()*sigmas
+            #outlier = res > 300
+
+            # set to None
+            df.loc[outlier, column] = None
+
+    return dfs
+
+
+def smooth_veg_data(dfs, column='offset50', n=4):
+    """
+    Loop over vegetation DataFrames and perform LOESS smoothing
+    on the time series of each sub-image.
 
     Parameters
     ----------
@@ -537,7 +569,7 @@ def drop_outliers_and_smooth(dfs, column='offset50', n=4):
         if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
 
             # remove outliers and smooth
-            df = smooth_all_sub_images(df, column=column, n=n, remove_outliers=True)
+            df = smooth_all_sub_images(df, column=column, n=n)
 
             # calculate ci
             df = get_confidence_intervals(df, column=column)
