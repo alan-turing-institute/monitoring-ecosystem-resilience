@@ -286,8 +286,7 @@ def make_time_series(dfs):
             stds = stds.rename(columns={s: s+'_std' for s in stds.columns})
 
             # merge
-            df = pd.merge(means, medians, on='date', how='inner')
-            df = pd.merge(df, stds, on='date', how='inner')
+            df = pd.merge(means, stds, on='date', how='inner')
             dfs[col_name] = df
 
         else: # assume weather data
@@ -329,7 +328,6 @@ def get_weather_time_series(dfs):
         df = pd.merge(df_ERA5, df_NASA, on='date', how='inner')
         df['precipitation_mean'] = df[['ERA5_precipitation', 'NASA_precipitation']].mean(axis=1)
         df['precipitation_std'] = df[['ERA5_precipitation', 'NASA_precipitation']].std(axis=1)
-        print(df)
         return df.drop(columns=['ERA5_precipitation', 'NASA_precipitation'])
 
     # if we only have ERA5
@@ -537,9 +535,6 @@ def drop_outliers_and_smooth(dfs, column='offset50'):
         # if vegetation data
         if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
 
-            # get the relevant collection
-            df = dfs[col_name]
-
             # remove outliers and smooth
             df = smooth_all_sub_images(df, column=column, remove_outliers=True)
 
@@ -550,14 +545,6 @@ def drop_outliers_and_smooth(dfs, column='offset50'):
             dfs[col_name] = df
 
     return dfs
-
-
-
-
-
-
-
-
 
 
 def create_lat_long_metric_figures(data_df, metric, output_dir):
