@@ -528,7 +528,7 @@ def drop_outliers_and_smooth(dfs, column='offset50'):
     ----------
     dict of DataFrame
         Time series data for multiple sub-image locations with 
-        new column for smoothed data.
+        new column for smoothed data and ci.
     """
 
     # loop over collections
