@@ -98,20 +98,25 @@ def main():
         plot_time_series(time_series_dfs, tsa_subdir)
 
         # drop outliers and smooth results
-        dfs_smooth = make_time_series(drop_outliers_and_smooth(dfs.copy()))
+        smoothed_time_series_dfs = make_time_series(drop_outliers_and_smooth(dfs.copy()))
 
         # make a smoothed time series plot
         print('Plotting smoothed time series...')
-        plot_smoothed_time_series(dfs_smooth, tsa_subdir)
+        plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
         
         # write results for easy external analysis
-        veg_df = dfs_smooth['COPERNICUS/S2']    
-        df_summary = dfs_smooth['ECMWF/ERA5/MONTHLY']
-        df_summary.loc[veg_df.index, 'offset50_mean'] = veg_df['offset50_mean']
-        df_summary.loc[veg_df.index, 'offset50_std'] = veg_df['offset50_std']
-        df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
-        df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
-        df_summary.to_csv(os.path.join(output_dir, 'time_series_summary.csv'))
+        for collection_name, veg_df in smoothed_time_series_dfs.items():
+            if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+
+                df_summary = smoothed_time_series_dfs['ECMWF/ERA5/MONTHLY']
+                df_summary.loc[veg_df.index, 'offset50_mean'] = veg_df['offset50_mean']
+                df_summary.loc[veg_df.index, 'offset50_std'] = veg_df['offset50_std']
+                df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
+                df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
+
+                summary_csv_filename = os.path.join(tsa_subdir, collection_name.replace('/', '-')+'_time_series.csv')
+                print(f"Writing '{summary_csv_filename}'...")
+                df_summary.to_csv(summary_csv_filename)
     # ------------------------------------------------
 
     print('Done!')
