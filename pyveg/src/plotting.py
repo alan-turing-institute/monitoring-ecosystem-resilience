@@ -1,16 +1,16 @@
 """
 Plotting code.
 """
+
+import os
+import datetime
+
 import numpy as numpy
 import pandas as pd 
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.cm as cm
-
-
-
-
 
 
 def plot_time_series(dfs, output_dir):
@@ -34,7 +34,7 @@ def plot_time_series(dfs, output_dir):
             sp.set_visible(False)
 
     # setup plot
-    fig, ax1 = plt.subplots(figsize=(13,5))
+    fig, ax1 = plt.subplots(figsize=(15,5))
     fig.subplots_adjust(right=0.9)
 
     # set up x axis to handle dates
@@ -70,10 +70,10 @@ def plot_time_series(dfs, output_dir):
     l8 = 'LANDSAT/LC08/C01/T1_SR'
 
     # prepare data
-    cop_means = dfs[s2]['offset50']
+    cop_means = dfs[s2]['offset50_mean']
     cop_stds = dfs[s2]['offset50_std']
     cop_dates = dfs[s2].index
-    cop_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in cop_dates]
+    cop_xs = [datetime.datetime.strptime(str(d),'%Y-%m-%d').date() for d in cop_dates]
 
     #l8_means = dfs[l8]['offset50']
     #l8_stds = dfs[l8]['offset50_std']
@@ -116,7 +116,7 @@ def plot_time_series(dfs, output_dir):
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
 
     # save the plot before adding Landsat
-    output_filename = 'time-series-S2.png'
+    output_filename = 'time-series.png'
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
 
     # add l8
@@ -170,3 +170,68 @@ def plot_time_series(dfs, output_dir):
     output_filename = 'time-series-offsets-only.png'
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
     """
+
+
+def plot_smoothed_time_series(dfs, output_dir):
+
+    for collection_name, df in dfs.items():
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+
+            # extract x values and convert to datetime objects
+            veg_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in df.index]
+
+            # extract raw means
+            veg_means = df['offset50_mean']
+
+            # extract smoothed mean, std, and ci
+            veg_means_smooth = df['offset50_smooth_mean']
+            veg_stds_smooth = df['offset50_smooth_std']
+            veg_ci = df['ci_mean']
+
+            # extract rainfall data
+            precip_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dfs['ECMWF/ERA5/MONTHLY'].index]
+            precip = dfs['ECMWF/ERA5/MONTHLY']['total_precipitation']
+
+            # create a figure
+            fig, ax = plt.subplots(figsize=(15,5))
+            plt.xlabel('Time', fontsize=12)
+
+            # set up veg y axis
+            color = 'tab:green'
+            ax.set_ylabel(f'{collection_name} Offset50', color=color, fontsize=12)
+            ax.tick_params(axis='y', labelcolor=color)
+
+            # plot unsmoothed vegetation means
+            ax.plot(veg_xs, veg_means, label='Raw', linewidth=1, color='dimgray', linestyle='dotted')
+            
+            # plot LOESS smoothed vegetation means and std
+            ax.plot(veg_xs, veg_means_smooth, label='Smoothed', linewidth=2, color='green')
+            ax.fill_between(veg_xs, veg_means_smooth-veg_stds_smooth, veg_means_smooth+veg_stds_smooth, facecolor='green', alpha=0.1, label='Std Dev')
+            
+            # plot ci of the smoothed mean
+            #ax.plot(veg_xs, veg_means_smooth+veg_ci, label='99% CI', linewidth=1, color='green', linestyle='dashed')
+            #ax.plot(veg_xs, veg_means_smooth-veg_ci, linewidth=1, color='green', linestyle='dashed')
+            
+            # plot legend
+            plt.legend(loc='upper left')
+            
+            # duplicate x-axis for preciptation
+            ax2 = ax.twinx()
+            color = 'tab:blue'
+            ax2.set_ylabel(f'Precipitation', color=color, fontsize=12)
+            ax2.tick_params(axis='y', labelcolor=color)
+
+            # plot precipitation
+            ax2.plot(precip_xs, precip, linewidth=2, color=color)
+
+            raw_corr = veg_means.corr(precip)
+            smoothed_corr = veg_means_smooth.corr(precip)
+            textstr = f'r={round(smoothed_corr, 2)} ({round(raw_corr, 2)})'
+            ax2.text(0.12, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+
+            # layot
+            fig.tight_layout()
+
+            # save the plot before adding Landsat
+            output_filename = 'time-series-smoothed.png'
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
