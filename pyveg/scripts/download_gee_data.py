@@ -95,7 +95,8 @@ def main():
                             config.coordinates,
                             config.date_range)
 
-    print('\nFinished all.')
+    print('\nFinished all. To analyse results, run:')
+    print(f'> pyveg_gee_analysis --input_dir {config.output_dir}\n')
 
 
 if __name__ == "__main__":

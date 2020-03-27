@@ -192,7 +192,8 @@ def ee_prep_data(collection_dict,
     # check we have enough images to work with
     if dataset.size().getInfo() == 0:
         print('No images found in this date rage, skipping.')
-        return []
+        log_msg = 'WARN >>> No data found.'
+        return [], log_msg
 
     # store the type of data we are working with
     data_type = collection_dict['type']
@@ -204,7 +205,8 @@ def ee_prep_data(collection_dict,
     # check we have enough images to work with after cloud masking
     if dataset.size().getInfo() == 0:
         print('No valid images found in this date rage, skipping.')
-        return []
+        log_msg = f'WARN >>> Found 0/{dataset_size} valid images after cloud filtering.'
+        return [], log_msg
     else:
         print(f'Found {dataset.size().getInfo()} valid images of {dataset_size} total images in this date range.')
 
@@ -249,7 +251,8 @@ def ee_prep_data(collection_dict,
          )
         url_list.append(url)
 
-    return url_list
+    log_msg = f'OK   >>> Found {dataset.size().getInfo()}/{dataset_size} valid images after cloud filtering.'
+    return url_list, log_msg
 
 
 def get_region_string(point, size=0.1):
@@ -308,7 +311,7 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
     """
 
     # get download URL for all images at these coords
-    download_urls = ee_prep_data(collection_dict,
+    download_urls, log_msg = ee_prep_data(collection_dict,
                                  coords,
                                  date_range,
                                  region_size,
@@ -316,7 +319,7 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
 
     # didn't find any valid images in this date range
     if len(download_urls) == 0:
-        return
+        return None, log_msg
 
     # path to temporary directory to download data
     sub_dir = f'gee_{coords[0]}_{coords[1]}'+"_"+collection_dict['collection_name'].replace('/', '-')
@@ -326,8 +329,6 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
     for download_url in download_urls:
         download_and_unzip(download_url, download_dir)
 
-    # confirm download completed as expected?
-
     # return the path so downloaded files can be handled by caller
-    return download_dir
+    return download_dir, log_msg
 
