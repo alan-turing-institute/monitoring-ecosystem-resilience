@@ -103,6 +103,15 @@ def main():
         # make a smoothed time series plot
         print('Plotting smoothed time series...')
         plot_smoothed_time_series(dfs_smooth, tsa_subdir)
+        
+        # write results for easy external analysis
+        veg_df = dfs_smooth['COPERNICUS/S2']    
+        df_summary = dfs_smooth['ECMWF/ERA5/MONTHLY']
+        df_summary.loc[veg_df.index, 'offset50_mean'] = veg_df['offset50_mean']
+        df_summary.loc[veg_df.index, 'offset50_std'] = veg_df['offset50_std']
+        df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
+        df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
+        df_summary.to_csv(os.path.join(output_dir, 'time_series_summary.csv'))
     # ------------------------------------------------
 
     print('Done!')
