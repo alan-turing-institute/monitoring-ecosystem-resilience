@@ -104,7 +104,7 @@ def main():
         print('Plotting smoothed time series...')
         plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
         
-        # write results for easy external analysis
+        # write csv for easy external analysis
         for collection_name, veg_df in smoothed_time_series_dfs.items():
             if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
 
