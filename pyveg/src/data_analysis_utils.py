@@ -365,7 +365,7 @@ def smooth_subimage(df, column='offset50', n=4, it=3, remove_outliers=True):
         The time-series DataFrame with a new column containing the
         smoothed results.
     """
-
+    
     # add a new column of datetime objects
     df['datetime'] = pd.to_datetime(df['date'], format='%Y/%m/%d') 
 
@@ -511,7 +511,7 @@ def get_confidence_intervals(df, column, ci_level=0.99):
     return df
 
 
-def drop_outliers_and_smooth(dfs, column='offset50'):
+def drop_outliers_and_smooth(dfs, column='offset50', n=4):
     """
     Loop over vegetation DataFrames and remove outliers and 
     smooth results.
@@ -537,7 +537,7 @@ def drop_outliers_and_smooth(dfs, column='offset50'):
         if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
 
             # remove outliers and smooth
-            df = smooth_all_sub_images(df, column=column, remove_outliers=True)
+            df = smooth_all_sub_images(df, column=column, n=n, remove_outliers=True)
 
             # calculate ci
             df = get_confidence_intervals(df, column=column)

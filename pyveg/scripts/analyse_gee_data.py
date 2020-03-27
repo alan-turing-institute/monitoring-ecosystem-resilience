@@ -98,7 +98,7 @@ def main():
         plot_time_series(time_series_dfs, tsa_subdir)
 
         # drop outliers and smooth results
-        smoothed_time_series_dfs = make_time_series(drop_outliers_and_smooth(dfs.copy()))
+        smoothed_time_series_dfs = make_time_series(drop_outliers_and_smooth(dfs.copy(), n=5)) # increase smoothing with n=5
 
         # make a smoothed time series plot
         print('Plotting smoothed time series...')
