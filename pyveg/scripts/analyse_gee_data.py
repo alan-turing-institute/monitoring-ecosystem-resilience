@@ -67,7 +67,7 @@ def main():
     if args.spatial_plot:
 
         # from the dataframe, produce network metric figure for each avalaible date
-        print('Creating spatial plots...')
+        print('\nCreating spatial plots...')
 
         # create new subdir for time series analysis
         spatial_subdir = os.path.join(output_dir, 'spatial')
@@ -94,14 +94,14 @@ def main():
         time_series_dfs = make_time_series(dfs.copy())
 
         # make the time series plot
-        print('Plotting time series...')
+        print('\nPlotting time series...')
         plot_time_series(time_series_dfs, tsa_subdir)
 
         # drop outliers and smooth results
         smoothed_time_series_dfs = make_time_series(drop_outliers_and_smooth(dfs.copy(), n=5)) # increase smoothing with n=5
 
         # make a smoothed time series plot
-        print('Plotting smoothed time series...')
+        print('\nPlotting smoothed time series...')
         plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
         
         # write csv for easy external analysis
@@ -115,11 +115,11 @@ def main():
                 df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
 
                 summary_csv_filename = os.path.join(tsa_subdir, collection_name.replace('/', '-')+'_time_series.csv')
-                print(f"Writing '{summary_csv_filename}'...")
+                print(f"\nWriting '{summary_csv_filename}'...")
                 df_summary.to_csv(summary_csv_filename)
     # ------------------------------------------------
 
-    print('Done!')
+    print('\nDone!\n')
 
 
 

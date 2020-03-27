@@ -95,7 +95,7 @@ def main():
                             config.coordinates,
                             config.date_range)
 
-    print('\nFinished all.')
+    print('\nFinished all.\n')
 
 
 if __name__ == "__main__":
