@@ -25,6 +25,7 @@ import matplotlib.cm as cm
 
 # stats
 from scipy.fftpack import fft
+from scipy.stats import sem, t
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 def read_json_to_dataframe(filename):
@@ -443,7 +444,112 @@ def smooth_all_sub_images(df, column='offset50', n=5, it=3, remove_outliers=True
         
     return df
 
+def calculate_ci(data, ci_level=0.99):
+    """
+    Calculate the confidence interval on the mean for a set of data.
 
+    Parameters
+    ----------
+    data : Series
+        Series of data to calculate the confidence interval of the mean.
+    ci_level : float, optional
+        Size of the confidence interval to calculate
+
+    Returns
+    ----------
+    float
+        Confidence interval value where the CI is [mu - h, mu + h],
+        where mu is the mean.
+
+    """
+    
+    # remove NaNs
+    ys = data.dropna().values
+
+    # calculate CI
+    n = len(ys)
+    std_err = sem(ys)
+    h = std_err * t.ppf((1 + ci_level) / 2, n - 1)
+    
+    return h
+
+
+def get_confidence_intervals(df, column, ci_level=0.99):
+    """
+    Calculate the confidence interval at each time point of a 
+    DataFrame containing data for a large image.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Time series data for multiple sub-image locations.
+    column : str
+        Name of the column to calculate the CI of.
+    ci_level : float, optional
+        Size of the confidence interval to calculate
+
+    Returns
+    ----------
+    DataFrame
+        Time series data for multiple sub-image locations with
+        added column for the ci.
+    """
+    
+    # group all the data at each date
+    d = {}
+    for name, group in df.groupby(['date']):
+        d[name] = group
+    
+    # for each timepoint, calculate the CI
+    for df in d.values():
+        df['ci'] = calculate_ci(df[column], ci_level=ci_level)
+    
+    # merge results
+    df = list(d.values())[0]
+    for df_ in list(d.values())[1:]:
+        df = df.append(df_)
+
+    return df
+
+
+def drop_outliers_and_smooth(dfs, column='offset50'):
+    """
+    Loop over vegetation DataFrames and remove outliers and 
+    smooth results.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    column : str
+        Name of the column to drop outliers and smooth.
+
+    Returns
+    ----------
+    dict of DataFrame
+        Time series data for multiple sub-image locations with 
+        new column for smoothed data.
+    """
+
+    # loop over collections
+    for col_name, df in dfs.items():
+
+        # if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+
+            # get the relevant collection
+            df = dfs[col_name]
+
+            # remove outliers and smooth
+            df = smooth_all_sub_images(df, column=column, remove_outliers=True)
+
+            # calculate ci
+            df = get_confidence_intervals(df, column=column)
+
+            # replace DataFrame
+            dfs[col_name] = df
+
+    return dfs
 
 
 
