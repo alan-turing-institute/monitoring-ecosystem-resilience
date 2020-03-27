@@ -35,7 +35,7 @@ def main():
     parser = argparse.ArgumentParser(description="process json files with network centrality measures from from GEE images")
     parser.add_argument("--input_dir",help="results directory from `download_gee_data` script, containing `results_summary.json`")
     parser.add_argument('--spatial_plot', action='store_true')
-    parser.add_argument('--time_series_plot', action='store_true')
+    parser.add_argument('--time_series_plot', action='store_true', default=True)
     
     print('-'*35)
     print('Running analyse_gee_data.py')
