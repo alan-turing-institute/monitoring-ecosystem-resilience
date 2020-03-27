@@ -30,10 +30,12 @@ from pyveg.src.image_utils import (
 
 def main():
     """
-    use command line arguments to choose images.
+    CLI interface for gee data analysis.
     """
     parser = argparse.ArgumentParser(description="process json files with network centrality measures from from GEE images")
     parser.add_argument("--input_dir",help="results directory from `download_gee_data` script, containing `results_summary.json`")
+    parser.add_argument('--spatial_plot', action='store_true')
+    parser.add_argument('--time_series_plot', action='store_true')
     
     print('-'*35)
     print('Running analyse_gee_data.py')
@@ -49,40 +51,58 @@ def main():
     # check input file exists
     json_summary_path = os.path.join(input_dir, 'results_summary.json')
     if not os.path.exists(json_summary_path):
-        raise FileNotFoundError(f'Could not find file "{json_summary_path}".')
+        raise FileNotFoundError(f'Could not find file "{os.path.abspath(json_summary_path)}".')
 
     # make output subdir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
     # read all json files in the directory and produce a dataframe
-    print(f"Reading results from '{json_summary_path}'...")
+    print(f"Reading results from '{os.path.abspath(json_summary_path)}'...")
     dfs = variable_read_json_to_dataframe(json_summary_path)
 
-    # from the dataframe, produce network metric figure for each avalaible date
-    print('Creating spatial plots...')
-    for collection_name, df in dfs.items():
-        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-            data_df_geo = convert_to_geopandas(df)
-            data_df_geo_coarse = coarse_dataframe(data_df_geo, 2)
-            create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', output_dir)
 
+    # spatial analysis and plotting 
+    # ------------------------------------------------
+    if args.spatial_plot:
+        
+        # from the dataframe, produce network metric figure for each avalaible date
+        print('Creating spatial plots...')
+
+        # create new subdir for time series analysis
+        spatial_subdir = os.path.join(output_dir, 'spatial')
+        if not os.path.exists(spatial_subdir):
+            os.makedirs(spatial_subdir, exist_ok=True)
+
+        for collection_name, df in dfs.items():
+            if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+                data_df_geo = convert_to_geopandas(df)
+                data_df_geo_coarse = coarse_dataframe(data_df_geo, 2)
+                create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)
+    # ------------------------------------------------
 
     # time series analysis and plotting 
     # ------------------------------------------------
-    # convert to time series
-    time_series_dfs = make_time_series(dfs)
+    if args.time_series_plot:
 
-    # make the time series plot
-    print('Plotting time series...')
-    plot_time_series(time_series_dfs, output_dir)
+        # create new subdir for time series analysis
+        tsa_subdir = os.path.join(output_dir, 'time-series')
+        if not os.path.exists(tsa_subdir):
+            os.makedirs(tsa_subdir, exist_ok=True)
 
-    # drop outliers and smooth results
-    dfs_smooth = drop_outliers_and_smooth(dfs)
+        # convert to time series
+        time_series_dfs = make_time_series(dfs)
 
-    # make a smoothed time series plot
-    print('Plotting smoothed time series...')
-    plot_smoothed_time_series(dfs, output_dir)
+        # make the time series plot
+        print('Plotting time series...')
+        plot_time_series(time_series_dfs, tsa_subdir)
+
+        # drop outliers and smooth results
+        dfs_smooth = drop_outliers_and_smooth(dfs)
+
+        # make a smoothed time series plot
+        print('Plotting smoothed time series...')
+        plot_smoothed_time_series(dfs, tsa_subdir)
     # ------------------------------------------------
 
     print('Done!')
