@@ -258,7 +258,7 @@ def make_time_series(dfs):
     for col_name, df in dfs.items():
 
         # if vegetation data
-        if col_name == 'COPERNICUS/S2' or 'LANDSAT' in col_name:
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
 
             # group by date to collapse all network centrality measurements
             groups = df.groupby('date')
@@ -268,11 +268,12 @@ def make_time_series(dfs):
             stds = groups.std()
 
             # rename columns
-            stds = stds.rename(columns={'offset50': 'offset50_std'})
+            means = means.rename(columns={s: s+'_mean' for s in means.columns})
+            stds = stds.rename(columns={s: s+'_std' for s in stds.columns})
 
             # merge
-            stds = stds[['offset50_std']]
-            df = pd.merge(means, stds, on='date', how='inner')
+            df = pd.merge(means, medians, on='date', how='inner')
+            df = pd.merge(df, stds, on='date', how='inner')
             dfs[col_name] = df
 
         else: # assume weather data
