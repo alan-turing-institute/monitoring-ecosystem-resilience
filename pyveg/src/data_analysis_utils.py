@@ -340,6 +340,120 @@ def get_weather_time_series(dfs):
         return df_NASA
 
 
+def smooth_subimage(df, column='offset50', n=5, it=3, remove_outliers=True):
+    """
+    Perform LOWESS (Locally Weighted Scatterplot Smoothing) on the time
+    series of a single sub-image.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Input DataFrame containing the time series for a single
+        sub-image.
+    column : string, optional
+        Name of the column in df to smooth.
+    n : int, optional
+        Number of data points to use in local smoothing.
+    it : int, optional
+        Number of iterations of LOESS smoothing to perform.
+    remove_outliers : bool, optional
+        Remove datapoints >3 standard deviations
+        from the mean before smoothing.
+
+    Returns
+    ----------
+    DataFrame
+        The time-series DataFrame with a new column containing the
+        smoothed results.
+    """
+
+    # add a new column of datetime objects
+    df['datetime'] = pd.to_datetime(df['date'], format='%Y/%m/%d') 
+
+    # set to None data points that are far from the mean, these are 
+    # assumed to be unphysical
+    if remove_outliers:
+        # calcualte residuals to the mean
+        res = (df[column] - df[column].mean()).abs()
+
+        # determine which are outliers
+        outlier = res > df[column].std()*3
+
+        # set to None
+        df.loc[outlier, column] = None
+
+    # extract data
+    xs = df['datetime']
+    ys = df[column]
+
+    # calculate fraction of data to use if smoothing with n points
+    frac_data = n / len(ys)
+
+    # perform smoothing
+    smoothed_y = lowess(ys, xs, is_sorted=True, return_sorted=False, frac=frac_data, it=it)
+
+    # add to df
+    df[column+'_smooth'] = smoothed_y
+    
+    return df
+
+
+def smooth_all_sub_images(df, column='offset50', n=5, it=3, remove_outliers=True):
+    """
+    Perform LOWESS (Locally Weighted Scatterplot Smoothing) on the time
+    series of a set of sub-images.
+
+    Parameters
+    ----------
+    df : DataFrame
+        DataFrame containing time series results for all sub-images, 
+        with multiple rows per time point and (lat,long) point.
+    column : string, optional
+        Name of the column in df to smooth.
+    n : int, optional
+        Number of data points to use in local smoothing.
+    it : int, optional
+        Number of iterations of LOESS smoothing to perform.
+    remove_outliers : bool, optional
+        Remove datapoints >3 standard deviations
+        from the mean before smoothing.
+
+    Returns
+    ----------
+    Dataframe
+        DataFrame of results with a new column containing a 
+        LOESS smoothed version of the column `column`.
+    """
+
+    # group by (lat, long)
+    d = {}
+    for name, group in df.groupby(['latitude', 'longitude']):
+        d[name] = group
+
+    # for each sub-image
+    for df in d.values():
+
+        # perform smoothing
+        df = smooth_subimage(df, column=column, n=n, it=it, remove_outliers=remove_outliers)
+
+    # reconstruct the DataFrame
+    df = list(d.values())[0]
+    for df_ in list(d.values())[1:]:
+        df = df.append(df_)
+        
+    return df
+
+
+
+
+
+
+
+
+
+
+
+
 def plot_time_series(dfs, output_dir):
     #
     """
