@@ -14,11 +14,12 @@ import os
 
 from pyveg.src.data_analysis_utils import (
     variable_read_json_to_dataframe,
-    create_lat_long_metric_figures,
+    drop_veg_outliers,
+    smooth_veg_data,
     make_time_series,
+    create_lat_long_metric_figures,
     convert_to_geopandas,
-    coarse_dataframe,
-    drop_outliers_and_smooth
+    coarse_dataframe
 )
 
 from pyveg.src.plotting import plot_time_series, plot_smoothed_time_series
@@ -86,22 +87,25 @@ def main():
     if args.time_series_plot:
 
         # create new subdir for time series analysis
-        tsa_subdir = os.path.join(output_dir, 'time-series')
+        #tsa_subdir = os.path.join(output_dir, 'time-series') # if we start to have more and more results
+        tsa_subdir = output_dir
+
         if not os.path.exists(tsa_subdir):
             os.makedirs(tsa_subdir, exist_ok=True)
 
         # convert to time series
         time_series_dfs = make_time_series(dfs.copy())
 
-        # make the time series plot
-        print('\nPlotting time series...')
-        plot_time_series(time_series_dfs, tsa_subdir)
+        # make the old time series plot
+        #print('\nPlotting time series...')
+        #plot_time_series(time_series_dfs, tsa_subdir)
+
+        dfs = drop_veg_outliers(dfs, sigmas=3) # not convinced this is really helping much
 
         # drop outliers and smooth results
-        smoothed_time_series_dfs = make_time_series(drop_outliers_and_smooth(dfs.copy(), n=5)) # increase smoothing with n=5
+        smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=5)) # increase smoothing with n=5
 
         # make a smoothed time series plot
-        print('\nPlotting smoothed time series...')
         plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
         
         # write csv for easy external analysis
