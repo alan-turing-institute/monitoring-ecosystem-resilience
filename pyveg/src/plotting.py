@@ -233,5 +233,5 @@ def plot_smoothed_time_series(dfs, output_dir):
             fig.tight_layout()
 
             # save the plot before adding Landsat
-            output_filename = 'time-series-smoothed.png'
+            output_filename = collection_name.replace('/', '-')+'-time-series-smoothed.png'
             plt.savefig(os.path.join(output_dir, output_filename), dpi=100)

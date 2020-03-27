@@ -339,7 +339,7 @@ def get_weather_time_series(dfs):
         return df_NASA
 
 
-def smooth_subimage(df, column='offset50', n=5, it=3, remove_outliers=True):
+def smooth_subimage(df, column='offset50', n=4, it=3, remove_outliers=True):
     """
     Perform LOWESS (Locally Weighted Scatterplot Smoothing) on the time
     series of a single sub-image.
@@ -352,7 +352,7 @@ def smooth_subimage(df, column='offset50', n=5, it=3, remove_outliers=True):
     column : string, optional
         Name of the column in df to smooth.
     n : int, optional
-        Number of data points to use in local smoothing.
+        Size of smoothing window.
     it : int, optional
         Number of iterations of LOESS smoothing to perform.
     remove_outliers : bool, optional
@@ -372,6 +372,7 @@ def smooth_subimage(df, column='offset50', n=5, it=3, remove_outliers=True):
     # set to None data points that are far from the mean, these are 
     # assumed to be unphysical
     if remove_outliers:
+
         # calcualte residuals to the mean
         res = (df[column] - df[column].mean()).abs()
 
@@ -385,7 +386,7 @@ def smooth_subimage(df, column='offset50', n=5, it=3, remove_outliers=True):
     xs = df['datetime']
     ys = df[column]
 
-    # calculate fraction of data to use if smoothing with n points
+    #num_days_per_timepoint = (xs.iloc[1] - xs.iloc[0]).days
     frac_data = n / len(ys)
 
     # perform smoothing
@@ -397,7 +398,7 @@ def smooth_subimage(df, column='offset50', n=5, it=3, remove_outliers=True):
     return df
 
 
-def smooth_all_sub_images(df, column='offset50', n=5, it=3, remove_outliers=True):
+def smooth_all_sub_images(df, column='offset50', n=4, it=3, remove_outliers=True):
     """
     Perform LOWESS (Locally Weighted Scatterplot Smoothing) on the time
     series of a set of sub-images.
@@ -410,7 +411,7 @@ def smooth_all_sub_images(df, column='offset50', n=5, it=3, remove_outliers=True
     column : string, optional
         Name of the column in df to smooth.
     n : int, optional
-        Number of data points to use in local smoothing.
+        Size of smoothing window.
     it : int, optional
         Number of iterations of LOESS smoothing to perform.
     remove_outliers : bool, optional
