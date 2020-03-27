@@ -117,6 +117,7 @@ def plot_time_series(dfs, output_dir):
 
     # save the plot before adding Landsat
     output_filename = 'time-series.png'
+    print(f'\nPlotting time series "{os.path.abspath(output_filename)}"...')
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
 
     # add l8
@@ -202,7 +203,7 @@ def plot_smoothed_time_series(dfs, output_dir):
             ax.tick_params(axis='y', labelcolor=color)
 
             # plot unsmoothed vegetation means
-            ax.plot(veg_xs, veg_means, label='Raw', linewidth=1, color='dimgray', linestyle='dotted')
+            ax.plot(veg_xs, veg_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
             
             # plot LOESS smoothed vegetation means and std
             ax.plot(veg_xs, veg_means_smooth, label='Smoothed', linewidth=2, color='green')
@@ -211,7 +212,8 @@ def plot_smoothed_time_series(dfs, output_dir):
             # plot ci of the smoothed mean
             #ax.plot(veg_xs, veg_means_smooth+veg_ci, label='99% CI', linewidth=1, color='green', linestyle='dashed')
             #ax.plot(veg_xs, veg_means_smooth-veg_ci, linewidth=1, color='green', linestyle='dashed')
-            
+            ax.set_ylim([-800, -400])
+
             # plot legend
             plt.legend(loc='upper left')
             
@@ -226,12 +228,13 @@ def plot_smoothed_time_series(dfs, output_dir):
 
             raw_corr = veg_means.corr(precip)
             smoothed_corr = veg_means_smooth.corr(precip)
-            textstr = f'r={round(smoothed_corr, 2)} ({round(raw_corr, 2)})'
+            textstr = f'r={round(smoothed_corr, 2)} ({round(raw_corr, 2)} unsmoothed)'
             ax2.text(0.12, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
-            # layot
+            # layout
             fig.tight_layout()
 
-            # save the plot before adding Landsat
+            # save the plot
             output_filename = collection_name.replace('/', '-')+'-time-series-smoothed.png'
+            print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
