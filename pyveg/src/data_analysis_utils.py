@@ -1,18 +1,31 @@
+"""
+Data analysis code including functions to read the .json results file, 
+and functions analyse and plot the data.
+"""
+
+# system imports
 import json
-import pandas as pd
 import os
 from os.path import isfile, join
-import datetime
 import math
+import datetime
+
+# data
+import numpy as np
+import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
+
+# plotting
 import matplotlib
 matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import numpy as np
 import matplotlib.cm as cm
+
+# stats
 from scipy.fftpack import fft
+from statsmodels.nonparametric.smoothers_lowess import lowess
 
 def read_json_to_dataframe(filename):
     """
