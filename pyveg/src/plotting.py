@@ -222,7 +222,7 @@ def plot_smoothed_time_series(dfs, output_dir):
             ax2.tick_params(axis='y', labelcolor=color)
 
             # plot precipitation
-            ax2.plot(precip_xs, precip, linewidth=2, color=color)
+            ax2.plot(precip_xs, precip, linewidth=2, color=color, alpha=0.75)
 
             raw_corr = veg_means.corr(precip)
             smoothed_corr = veg_means_smooth.corr(precip)
