@@ -65,7 +65,7 @@ def main():
     # spatial analysis and plotting 
     # ------------------------------------------------
     if args.spatial_plot:
-        
+
         # from the dataframe, produce network metric figure for each avalaible date
         print('Creating spatial plots...')
 
@@ -91,18 +91,18 @@ def main():
             os.makedirs(tsa_subdir, exist_ok=True)
 
         # convert to time series
-        time_series_dfs = make_time_series(dfs)
+        time_series_dfs = make_time_series(dfs.copy())
 
         # make the time series plot
         print('Plotting time series...')
         plot_time_series(time_series_dfs, tsa_subdir)
 
         # drop outliers and smooth results
-        dfs_smooth = drop_outliers_and_smooth(dfs)
+        dfs_smooth = make_time_series(drop_outliers_and_smooth(dfs.copy()))
 
         # make a smoothed time series plot
         print('Plotting smoothed time series...')
-        plot_smoothed_time_series(dfs, tsa_subdir)
+        plot_smoothed_time_series(dfs_smooth, tsa_subdir)
     # ------------------------------------------------
 
     print('Done!')
