@@ -20,7 +20,8 @@ from pyveg.src.data_analysis_utils import (
     create_lat_long_metric_figures,
     convert_to_geopandas,
     coarse_dataframe,
-    write_slimmed_csv
+    write_slimmed_csv,
+    get_AR1_parameter_estimate
 )
 
 from pyveg.src.plotting import plot_time_series, plot_smoothed_time_series, plot_autocorrelation_function
@@ -111,7 +112,7 @@ def main():
 
         # make autocorrelation plots
         plot_autocorrelation_function(smoothed_time_series_dfs, tsa_subdir)
-        
+
         # write csv for easy external analysis
         write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
     # ------------------------------------------------
