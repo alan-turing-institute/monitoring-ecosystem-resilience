@@ -14,7 +14,6 @@ import matplotlib.cm as cm
 
 
 def plot_time_series(dfs, output_dir):
-    #
     """
     Given a dict of DataFrames, of which each row corresponds to
     a different time point (constructed with `make_time_series`),
@@ -24,6 +23,9 @@ def plot_time_series(dfs, output_dir):
     ----------
     dfs : dict of DataFrame
         The time-series results averaged over sub-locations.
+
+    output_dir : str
+        Directory to save the plot in.
     """
 
     # function to help plot many y axes
@@ -174,6 +176,21 @@ def plot_time_series(dfs, output_dir):
 
 
 def plot_smoothed_time_series(dfs, output_dir):
+    """
+    Given a dict of DataFrames, of which each row corresponds to
+    a different time point (constructed with `make_time_series`),
+    plot the time series of each DataFrame on the same plot. The
+    data is assumed to have been previously smoothed, and so the 
+    smoothed and unsmoothed offset50 valeus are plotted.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        The time-series results averaged over sub-locations.
+
+    output_dir : str
+        Directory to save the plot in.
+    """
 
     for collection_name, df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
@@ -238,3 +255,37 @@ def plot_smoothed_time_series(dfs, output_dir):
             output_filename = collection_name.replace('/', '-')+'-time-series-smoothed.png'
             print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
+
+
+def plot_autocorrelation_function(dfs, output_dir):
+    """
+    Given a dict of DataFrames, of which each row corresponds to
+    a different time point (constructed with `make_time_series`),
+    plot the autocorrelation function of each DataFrame, for the 
+    smoothed and unsmoothed values of offset50.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        The time-series results averaged over sub-locations.
+
+    output_dir : str
+        Directory to save the plot in.
+    """
+
+    for collection_name, df in dfs.items():
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+            
+            plt.figure(figsize=(8,5))
+
+            # make the plots
+            pd.plotting.autocorrelation_plot(df['offset50_mean'], label='Unsmoothed')
+            pd.plotting.autocorrelation_plot(df['offset50_smooth_mean'], label='Smoothed')
+
+            plt.legend()
+
+            # save the plot
+            output_filename = collection_name.replace('/', '-')+'-autocorrelation-function.png'
+            print(f'\nPlotting autocorrelation function "{os.path.abspath(output_filename)}"...')
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
+

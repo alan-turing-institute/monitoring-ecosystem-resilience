@@ -23,7 +23,7 @@ from pyveg.src.data_analysis_utils import (
     write_slimmed_csv
 )
 
-from pyveg.src.plotting import plot_time_series, plot_smoothed_time_series
+from pyveg.src.plotting import plot_time_series, plot_smoothed_time_series, plot_autocorrelation_function
 
 from pyveg.src.image_utils import (
     create_gif_from_images
@@ -104,10 +104,13 @@ def main():
         dfs = drop_veg_outliers(dfs, sigmas=3) # not convinced this is really helping much
 
         # drop outliers and smooth results
-        smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=5)) # increase smoothing with n=5
+        smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=5)) # increase smoothing with n>5
 
         # make a smoothed time series plot
         plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
+
+        # make autocorrelation plots
+        plot_autocorrelation_function(smoothed_time_series_dfs, tsa_subdir)
         
         # write csv for easy external analysis
         write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)

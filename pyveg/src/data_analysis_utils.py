@@ -28,6 +28,7 @@ from scipy.fftpack import fft
 from scipy.stats import sem, t
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
+
 def read_json_to_dataframe(filename):
     """
     Read a json file and convert the result to a Geopandas DataFrame.
