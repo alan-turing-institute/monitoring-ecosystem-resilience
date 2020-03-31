@@ -781,3 +781,20 @@ def fft_series(time_series):
     xvals = np.linspace(0.,1.0/(20*T), N//20)
     yvals = 2.0/N * np.abs(fourier[0:N//20])
     return xvals, yvals
+
+
+def write_slimmed_csv(dfs, output_dir):
+
+    for collection_name, veg_df in dfs.items():
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+
+            df_summary = dfs['ECMWF/ERA5/MONTHLY']
+            df_summary.loc[veg_df.index, 'offset50_mean'] = veg_df['offset50_mean']
+            df_summary.loc[veg_df.index, 'offset50_std'] = veg_df['offset50_std']
+            df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
+            df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
+
+            summary_csv_filename = os.path.join(output_dir, collection_name.replace('/', '-')+'_time_series.csv')
+
+            print(f"\nWriting '{summary_csv_filename}'...")
+            df_summary.to_csv(summary_csv_filename)

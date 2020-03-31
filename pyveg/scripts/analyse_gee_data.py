@@ -19,7 +19,8 @@ from pyveg.src.data_analysis_utils import (
     make_time_series,
     create_lat_long_metric_figures,
     convert_to_geopandas,
-    coarse_dataframe
+    coarse_dataframe,
+    write_slimmed_csv
 )
 
 from pyveg.src.plotting import plot_time_series, plot_smoothed_time_series
@@ -109,18 +110,7 @@ def main():
         plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
         
         # write csv for easy external analysis
-        for collection_name, veg_df in smoothed_time_series_dfs.items():
-            if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-
-                df_summary = smoothed_time_series_dfs['ECMWF/ERA5/MONTHLY']
-                df_summary.loc[veg_df.index, 'offset50_mean'] = veg_df['offset50_mean']
-                df_summary.loc[veg_df.index, 'offset50_std'] = veg_df['offset50_std']
-                df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
-                df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
-
-                summary_csv_filename = os.path.join(tsa_subdir, collection_name.replace('/', '-')+'_time_series.csv')
-                print(f"\nWriting '{summary_csv_filename}'...")
-                df_summary.to_csv(summary_csv_filename)
+        write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
     # ------------------------------------------------
 
     print('\nDone!\n')
