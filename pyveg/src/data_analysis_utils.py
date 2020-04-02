@@ -28,6 +28,7 @@ from scipy.fftpack import fft
 from scipy.stats import sem, t
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
+
 def read_json_to_dataframe(filename):
     """
     Read a json file and convert the result to a Geopandas DataFrame.
@@ -781,3 +782,84 @@ def fft_series(time_series):
     xvals = np.linspace(0.,1.0/(20*T), N//20)
     yvals = 2.0/N * np.abs(fourier[0:N//20])
     return xvals, yvals
+
+
+def write_slimmed_csv(dfs, output_dir):
+
+    for collection_name, veg_df in dfs.items():
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+
+            df_summary = dfs['ECMWF/ERA5/MONTHLY']
+            df_summary.loc[veg_df.index, 'offset50_mean'] = veg_df['offset50_mean']
+            df_summary.loc[veg_df.index, 'offset50_std'] = veg_df['offset50_std']
+            df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
+            df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
+
+            summary_csv_filename = os.path.join(output_dir, collection_name.replace('/', '-')+'_time_series.csv')
+
+            print(f"\nWriting '{summary_csv_filename}'...")
+            df_summary.to_csv(summary_csv_filename)
+
+
+def get_AR1_parameter_estimate(ys):
+    """
+    Fit an AR(1) model to the time series data and return
+    the associated parameter of the model.
+
+    Parameters
+    ----------
+    ys: array
+        Input time series data.
+
+    Returns
+    -------
+    float
+        The parameter value of the AR(1) model..
+    """
+
+    from statsmodels.tsa.ar_model import AutoReg
+    
+    # more sophisticated models to consider:
+    #from statsmodels.tsa.statespace.sarimax import SARIMAX
+    #from statsmodels.tsa.arima_model import ARMA
+
+    # create the AR(1) model
+    model = AutoReg(ys, lags=1)
+
+    # fit
+    model = model.fit()
+    
+    # get the single parameter value
+    parameter = model.params[1]
+
+    return parameter
+
+
+def get_kendell_tau(ys):
+    """
+    Kendall's tau gives information about the trend of the time series.
+    It is just a rank correlation test with one variable being time 
+    (or the vector 1 to the length of the time series), and the other 
+    variable being the data itself. A tau value of 1 means that the 
+    time series is always increasing, whereas -1 mean always decreasing,
+    and 0 signifies no overall trend.
+
+    Parameters
+    ----------
+    ys: array
+        Input time series data.
+
+    Returns
+    -------
+    float
+        The value of tau.
+    float
+        The p value of the rank correlation test.
+    """
+
+    from scipy.stats import kendalltau
+
+    # calculate Kendall tau
+    tau, p = kendalltau(range(len(ys)), ys)
+
+    return tau, p
