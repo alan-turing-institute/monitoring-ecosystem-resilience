@@ -285,7 +285,7 @@ def get_weather(output_dir, collection_dict, coords, date_range, region_size=0.1
     The weather measurements are returned as a dictionary with the summary value for that region and date.
     """
 
-    download_path = ee_download(output_dir,collection_dict, coords, date_range, region_size, scale)
+    download_path, _ = ee_download(output_dir,collection_dict, coords, date_range, region_size, scale)
 
     metrics_dict = {}
 
