@@ -375,7 +375,7 @@ def smooth_subimage(df, column='offset50', n=4, it=3):
     ys = df[column]
 
     #num_days_per_timepoint = (xs.iloc[1] - xs.iloc[0]).days
-    frac_data = n / len(ys)
+    frac_data = min(n / len(ys), 1.0)
 
     # perform smoothing
     smoothed_y = lowess(ys, xs, is_sorted=True, return_sorted=False, frac=frac_data, it=it)
@@ -816,6 +816,9 @@ def get_AR1_parameter_estimate(ys):
     float
         The parameter value of the AR(1) model..
     """
+    
+    if len(ys) < 5:
+        return np.NaN
 
     from statsmodels.tsa.ar_model import AutoReg
     
