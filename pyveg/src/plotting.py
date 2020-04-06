@@ -307,22 +307,30 @@ def plot_autocorrelation_function(dfs, output_dir):
             print(f'\nPlotting autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
 
-            """
+            
             # statsmodel version of the same thing
-            from statsmodels.graphics.tsaplots import plot_acf
-            plot_acf(df['offset50_mean'], lags=len(df['offset50_mean']), label='Unsmoothed')
-            plt.legend()
+            from statsmodels.graphics.tsaplots import plot_pacf
+            plot_pacf(df['offset50_mean'], label='Unsmoothed')
+            plt.xlabel('Lag')
+            plt.ylabel('Partial Autocorrelation')
+            plt.title('Partial Autocorrelation Unsmoothed')
+            plt.tight_layout()
+
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-autocorrelation-function-unsmoothed-statsmodel.png'
-            print(f'\nPlotting autocorrelation function "{os.path.abspath(output_filename)}"...')
+            output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-unsmoothed.png'
+            print(f'\nPlotting partial utocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
             
-            plot_acf(df['offset50_smooth_mean'], lags=len(df['offset50_smooth_mean']), label='Smoothed')
-            plt.legend()
+            plot_pacf(df['offset50_smooth_mean'], label='Smoothed')
+            plt.xlabel('Lag')
+            plt.ylabel('Partial Autocorrelation')
+            plt.title('Partial Autocorrelation Smoothed')
+            plt.tight_layout()
+
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-autocorrelation-function-smoothed-statsmodel.png'
-            print(f'\nPlotting autocorrelation function "{os.path.abspath(output_filename)}"...')
+            output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-smoothed.png'
+            print(f'\nPlottin partialgautocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
-            """
+            
 
 
