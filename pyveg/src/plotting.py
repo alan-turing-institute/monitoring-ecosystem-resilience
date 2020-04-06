@@ -375,6 +375,29 @@ def plot_feature_vectors(dfs, output_dir):
             plt.tight_layout()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-feature-vector.png'
+            output_filename = collection_name.replace('/', '-')+'-feature-vector-summary.png'
+            print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+
+
+            # plot also the feature vectors for different time points on the same plot
+            plt.figure(figsize=(6,5))
+
+            # loop through time points
+            for _, group in df.groupby('date'):
+                
+                # calculate feature vector
+                feature_vector = np.array(group.feature_vec.values.tolist()).mean(axis=0)
+                xs = np.linspace(0,100,len(feature_vector))
+
+                # add to plot
+                plt.scatter(xs, feature_vector, marker='o', color='black', alpha=0.2)
+
+            plt.xlabel('Pixel Rank (%)', fontsize=14)
+            plt.ylabel('$X(V-E)$', fontsize=14)
+            plt.tight_layout()
+
+            # save the plot
+            output_filename = collection_name.replace('/', '-')+'-feature-vector-all.png'
             print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
