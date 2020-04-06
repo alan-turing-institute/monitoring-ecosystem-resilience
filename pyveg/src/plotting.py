@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.cm as cm
 
-from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau
+from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json
 
 
 def plot_time_series(dfs, output_dir):
@@ -261,6 +261,13 @@ def plot_smoothed_time_series(dfs, output_dir):
             # add Kendall tau
             tau, p = get_kendell_tau(veg_means)
             tau_smooth, p_smooth = get_kendell_tau(veg_means_smooth)
+
+            # write out
+            kendall_tau_dict = {}
+            kendall_tau_dict['Kendall_tau'] = {'unsmoothed': {'tau': tau, 'p': p}, 'smoothed': {'tau': tau_smooth, 'p': p_smooth}}
+            write_to_json(os.path.join(output_dir, 'stats.json'), kendall_tau_dict)
+            
+            # add to plot
             textstr = f'$\\tau={tau_smooth:.2f}$ (${tau:.2f}$ unsmoothed)'
             ax2.text(0.62, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
@@ -318,7 +325,7 @@ def plot_autocorrelation_function(dfs, output_dir):
 
             # save the plot
             output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-unsmoothed.png'
-            print(f'\nPlotting partial utocorrelation function "{os.path.abspath(output_filename)}"...')
+            print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
             
             plot_pacf(df['offset50_smooth_mean'], label='Smoothed')
@@ -329,7 +336,7 @@ def plot_autocorrelation_function(dfs, output_dir):
 
             # save the plot
             output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-smoothed.png'
-            print(f'\nPlottin partialgautocorrelation function "{os.path.abspath(output_filename)}"...')
+            print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
             
 
