@@ -111,7 +111,11 @@ def main():
         dfs = drop_veg_outliers(dfs, sigmas=3) # not convinced this is really helping much
 
         # plot the feature vectors averaged over all time points and sub images
-        plot_feature_vectors(dfs, tsa_subdir)
+        try:
+            plot_feature_vectors(dfs, tsa_subdir)
+        except AttributeError:
+            print('Can not plot feature vectors...') 
+            
 
         # LOESS smoothing on sub-image time series
         smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=5)) # increase smoothing with n>5
