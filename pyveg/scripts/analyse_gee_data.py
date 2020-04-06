@@ -28,7 +28,8 @@ from pyveg.src.plotting import (
     plot_time_series, 
     plot_smoothed_time_series, 
     plot_autocorrelation_function,
-    plot_feature_vectors
+    plot_feature_vectors,
+    plot_cross_correlations
 )
 
 from pyveg.src.image_utils import (
@@ -125,6 +126,9 @@ def main():
 
         # make autocorrelation plots
         plot_autocorrelation_function(smoothed_time_series_dfs, tsa_subdir)
+
+        # make cross correlation scatterplot matrix plots
+        plot_cross_correlations(smoothed_time_series_dfs, tsa_subdir)
 
         # write csv for easy external analysis
         write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
