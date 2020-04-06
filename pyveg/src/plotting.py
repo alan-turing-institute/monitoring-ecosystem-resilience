@@ -227,7 +227,8 @@ def plot_smoothed_time_series(dfs, output_dir):
             ax.plot(veg_xs, veg_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
             
             # plot LOESS smoothed vegetation means and std
-            ax.plot(veg_xs, veg_means_smooth, label='Smoothed', linewidth=2, color='green')
+            ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=5, markeredgecolor='white', markeredgewidth=1.5, 
+                    label='Smoothed', linewidth=2, color='green')
             ax.fill_between(veg_xs, veg_means_smooth-veg_stds_smooth, veg_means_smooth+veg_stds_smooth, facecolor='green', alpha=0.1, label='Std Dev')
             
             # plot ci of the smoothed mean
@@ -472,4 +473,3 @@ def plot_cross_correlations(dfs, output_dir):
 
             correlations_dict = {'lagged_correlation': correlations}
             write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), correlations_dict)
-            
