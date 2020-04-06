@@ -816,6 +816,9 @@ def get_AR1_parameter_estimate(ys):
     float
         The parameter value of the AR(1) model..
     """
+    
+    if len(ys) < 5:
+        return np.NaN
 
     from statsmodels.tsa.ar_model import AutoReg
     
