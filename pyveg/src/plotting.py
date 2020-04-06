@@ -280,9 +280,6 @@ def plot_smoothed_time_series(dfs, output_dir):
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
 
 
-
-
-
 def plot_autocorrelation_function(dfs, output_dir):
     """
     Given a dict of DataFrames, of which each row corresponds to
