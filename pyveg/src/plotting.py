@@ -227,7 +227,7 @@ def plot_smoothed_time_series(dfs, output_dir):
             ax.plot(veg_xs, veg_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
             
             # plot LOESS smoothed vegetation means and std
-            ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=5, markeredgecolor='white', markeredgewidth=1.5, 
+            ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=7, markeredgecolor=(0.9172, 0.9627, 0.9172), markeredgewidth=2, 
                     label='Smoothed', linewidth=2, color='green')
             ax.fill_between(veg_xs, veg_means_smooth-veg_stds_smooth, veg_means_smooth+veg_stds_smooth, facecolor='green', alpha=0.1, label='Std Dev')
             
