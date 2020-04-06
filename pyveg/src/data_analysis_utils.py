@@ -1,17 +1,32 @@
+"""
+Data analysis code including functions to read the .json results file, 
+and functions analyse and plot the data.
+"""
+
+# system imports
 import json
-import pandas as pd
 import os
 from os.path import isfile, join
-import datetime
 import math
+import datetime
+
+# data
+import numpy as np
+import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
+
+# plotting
 import matplotlib
 matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import numpy as np
 import matplotlib.cm as cm
+
+# stats
+from scipy.fftpack import fft
+from scipy.stats import sem, t
+from statsmodels.nonparametric.smoothers_lowess import lowess
 
 
 def read_json_to_dataframe(filename):
@@ -238,15 +253,15 @@ def convert_to_geopandas(df):
 
 def make_time_series(dfs):
     """
-    Given a DataFrame which may contian many rows per time point (corresponding
+    Given a dictionary of DataFrames which may contian many rows per time point (corresponding
     to the network centrality values of different sub-locations), collapse this
     into a time series by calculating the mean and std of the different sub-
     locations at each date.
 
     Parameters
     ----------
-    df : DataFrame
-        Input DataFrame read by `read_json_to_dataframe`.
+    dfs : dict of DataFrame
+        Input DataFrame read by `variable_read_json_to_dataframe`.
 
     Returns
     ----------
@@ -258,7 +273,7 @@ def make_time_series(dfs):
     for col_name, df in dfs.items():
 
         # if vegetation data
-        if col_name == 'COPERNICUS/S2' or 'LANDSAT' in col_name:
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
 
             # group by date to collapse all network centrality measurements
             groups = df.groupby('date')
@@ -268,10 +283,10 @@ def make_time_series(dfs):
             stds = groups.std()
 
             # rename columns
-            stds = stds.rename(columns={'offset50': 'offset50_std'})
+            means = means.rename(columns={s: s+'_mean' for s in means.columns})
+            stds = stds.rename(columns={s: s+'_std' for s in stds.columns})
 
             # merge
-            stds = stds[['offset50_std']]
             df = pd.merge(means, stds, on='date', how='inner')
             dfs[col_name] = df
 
@@ -314,7 +329,6 @@ def get_weather_time_series(dfs):
         df = pd.merge(df_ERA5, df_NASA, on='date', how='inner')
         df['precipitation_mean'] = df[['ERA5_precipitation', 'NASA_precipitation']].mean(axis=1)
         df['precipitation_std'] = df[['ERA5_precipitation', 'NASA_precipitation']].std(axis=1)
-        print(df)
         return df.drop(columns=['ERA5_precipitation', 'NASA_precipitation'])
 
     # if we only have ERA5
@@ -326,163 +340,246 @@ def get_weather_time_series(dfs):
         return df_NASA
 
 
-def plot_time_series(dfs, output_dir):
-    #
+def smooth_subimage(df, column='offset50', n=4, it=3):
     """
-    Given a dict of DataFrames, of which each row corresponds to
-    a different time point (constructed with `make_time_series`),
-    plot the time series of each DataFrame on the same plot.
+    Perform LOWESS (Locally Weighted Scatterplot Smoothing) on the time
+    series of a single sub-image.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Input DataFrame containing the time series for a single
+        sub-image.
+    column : string, optional
+        Name of the column in df to smooth.
+    n : int, optional
+        Size of smoothing window.
+    it : int, optional
+        Number of iterations of LOESS smoothing to perform.
+    remove_outliers : bool, optional
+        Remove datapoints >3 standard deviations
+        from the mean before smoothing.
+
+    Returns
+    ----------
+    DataFrame
+        The time-series DataFrame with a new column containing the
+        smoothed results.
+    """
+    
+    # add a new column of datetime objects
+    df['datetime'] = pd.to_datetime(df['date'], format='%Y/%m/%d') 
+
+    # extract data
+    xs = df['datetime']
+    ys = df[column]
+
+    #num_days_per_timepoint = (xs.iloc[1] - xs.iloc[0]).days
+    frac_data = n / len(ys)
+
+    # perform smoothing
+    smoothed_y = lowess(ys, xs, is_sorted=True, return_sorted=False, frac=frac_data, it=it)
+
+    # add to df
+    df[column+'_smooth'] = smoothed_y
+    
+    return df
+
+
+def smooth_all_sub_images(df, column='offset50', n=4, it=3):
+    """
+    Perform LOWESS (Locally Weighted Scatterplot Smoothing) on the time
+    series of a set of sub-images.
+
+    Parameters
+    ----------
+    df : DataFrame
+        DataFrame containing time series results for all sub-images, 
+        with multiple rows per time point and (lat,long) point.
+    column : string, optional
+        Name of the column in df to smooth.
+    n : int, optional
+        Size of smoothing window.
+    it : int, optional
+        Number of iterations of LOESS smoothing to perform.
+    remove_outliers : bool, optional
+        Remove datapoints >3 standard deviations
+        from the mean before smoothing.
+
+    Returns
+    ----------
+    Dataframe
+        DataFrame of results with a new column containing a 
+        LOESS smoothed version of the column `column`.
+    """
+
+    # group by (lat, long)
+    d = {}
+    for name, group in df.groupby(['latitude', 'longitude']):
+        d[name] = group
+
+    # for each sub-image
+    for df in d.values():
+
+        # perform smoothing
+        df = smooth_subimage(df, column=column, n=n, it=it)
+
+    # reconstruct the DataFrame
+    df = list(d.values())[0]
+    for df_ in list(d.values())[1:]:
+        df = df.append(df_)
+        
+    return df
+
+def calculate_ci(data, ci_level=0.99):
+    """
+    Calculate the confidence interval on the mean for a set of data.
+
+    Parameters
+    ----------
+    data : Series
+        Series of data to calculate the confidence interval of the mean.
+    ci_level : float, optional
+        Size of the confidence interval to calculate
+
+    Returns
+    ----------
+    float
+        Confidence interval value where the CI is [mu - h, mu + h],
+        where mu is the mean.
+
+    """
+    
+    # remove NaNs
+    ys = data.dropna().values
+
+    # calculate CI
+    n = len(ys)
+    std_err = sem(ys)
+    h = std_err * t.ppf((1 + ci_level) / 2, n - 1)
+    
+    return h
+
+
+def get_confidence_intervals(df, column, ci_level=0.99):
+    """
+    Calculate the confidence interval at each time point of a 
+    DataFrame containing data for a large image.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Time series data for multiple sub-image locations.
+    column : str
+        Name of the column to calculate the CI of.
+    ci_level : float, optional
+        Size of the confidence interval to calculate
+
+    Returns
+    ----------
+    DataFrame
+        Time series data for multiple sub-image locations with
+        added column for the ci.
+    """
+    
+    # group all the data at each date
+    d = {}
+    for name, group in df.groupby(['date']):
+        d[name] = group
+    
+    # for each timepoint, calculate the CI
+    for df in d.values():
+        df['ci'] = calculate_ci(df[column], ci_level=ci_level)
+    
+    # merge results
+    df = list(d.values())[0]
+    for df_ in list(d.values())[1:]:
+        df = df.append(df_)
+
+    return df
+
+
+def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
+    """
+    Loop over vegetation DataFrames and drop points in the 
+    time series that a significantly far away from the mean
+    of the time series. Such points are assumed to be unphysical.
 
     Parameters
     ----------
     dfs : dict of DataFrame
-        The time-series results averaged over sub-locations.
+        Time series data for multiple sub-image locations.
+    column : str
+        Name of the column to drop outliers on.
+    sigmas : float
+        Number of standard deviations a data point has to be 
+        from the mean to be labelled as an outlier and dropped.
+
+    Returns
+    ----------
+    dict of DataFrame
+        Time series data for multiple sub-image locations with 
+        some values in `column` potentially set to NaN.
     """
 
-    # function to help plot many y axes
-    def make_patch_spines_invisible(ax):
-        ax.set_frame_on(True)
-        ax.patch.set_visible(False)
-        for sp in ax.spines.values():
-            sp.set_visible(False)
+    # set to None data points that are far from the mean, these are 
+    # assumed to be unphysical
+    
+    # loop over collections
+    for col_name, df in dfs.items():
 
-    # setup plot
-    fig, ax1 = plt.subplots(figsize=(13,5))
-    fig.subplots_adjust(right=0.9)
+        # if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
 
-    # set up x axis to handle dates
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
-    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
-    ax1.set_xlabel('Time')
+            # calcualte residuals to the mean
+            res = (df[column] - df[column].mean()).abs()
 
-    #print(get_weather_time_series(dfs))
-    #print(get_veg_time_series(dfs))
+            # determine which are outliers
+            outlier = res > df[column].std()*sigmas
+            #outlier = res > 300
 
+            # set to None
+            df.loc[outlier, column] = None
+
+    return dfs
+
+
+def smooth_veg_data(dfs, column='offset50', n=4):
     """
-    for collection_name, df in dfs.items():
+    Loop over vegetation DataFrames and perform LOESS smoothing
+    on the time series of each sub-image.
 
-        if 'offset50' in df.columns:
-            # prepare data
-            dates = df.index
-            xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
-            means = df['offset50']
-            stds = df['offset50_std']
-        else: # assume
-            # prepare data
-            dates = df.index
-            xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
-            print(df.values)
-            # if there are multiple data columns, use them all
-            ys_list = []
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    column : str
+        Name of the column to drop outliers and smooth.
 
-        # instantiate a new shared axis
-        ax2 = ax1.twinx()
+    Returns
+    ----------
+    dict of DataFrame
+        Time series data for multiple sub-image locations with 
+        new column for smoothed data and ci.
     """
 
-    s2 = 'COPERNICUS/S2'
-    l8 = 'LANDSAT/LC08/C01/T1_SR'
+    # loop over collections
+    for col_name, df in dfs.items():
 
-    # prepare data
-    cop_means = dfs[s2]['offset50']
-    cop_stds = dfs[s2]['offset50_std']
-    cop_dates = dfs[s2].index
-    cop_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in cop_dates]
+        # if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
 
-    #l8_means = dfs[l8]['offset50']
-    #l8_stds = dfs[l8]['offset50_std']
-    #l8_dates = dfs[l8].index
-    #l8_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in l8_dates]
+            # remove outliers and smooth
+            df = smooth_all_sub_images(df, column=column, n=n)
 
-    precip = dfs['ECMWF/ERA5/MONTHLY']['total_precipitation'] * 1000 # convert to mm
-    temp = dfs['ECMWF/ERA5/MONTHLY']['mean_2m_air_temperature'] - 273.15 # convert to Celcius
-    weather_dates = dfs['ECMWF/ERA5/MONTHLY'].index
-    w_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in weather_dates]
+            # calculate ci
+            df = get_confidence_intervals(df, column=column)
 
-    # add copernicus
-    color = 'tab:green'
-    ax1.set_ylabel('Copernicus Offset50', color=color)
-    ax1.plot(cop_xs, cop_means, color=color, linewidth=2)
-    ax1.tick_params(axis='y', labelcolor=color)
-    ax1.set_ylim([-900, -400])
-    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds,
-                     facecolor='green', alpha=0.1)
+            # replace DataFrame
+            dfs[col_name] = df
 
-    # add precip
-    ax2 = ax1.twinx()
-    color = 'tab:blue'
-    ax2.set_ylabel('Precipitation [mm]', color=color)  # we already handled the x-label with ax1
-    ax2.set_ylim([-10, 250])
-    ax2.plot(w_xs, precip, color=color, alpha=0.5, linewidth=2)
-    ax2.tick_params(axis='y', labelcolor=color)
+    return dfs
 
-    # add temp
-    ax3 = ax1.twinx()
-    ax3.spines["right"].set_position(("axes", 1.075))
-    make_patch_spines_invisible(ax3)
-    ax3.spines["right"].set_visible(True)
-    ax3.set_ylim([22, 36])
-    color = 'tab:red'
-    ax3.set_ylabel('Mean Temperature [$^\circ$C]', color=color)  # we already handled the x-label with ax1
-    ax3.plot(w_xs, temp, color=color, alpha=0.2, linewidth=2)
-    ax3.tick_params(axis='y', labelcolor=color)
-
-    fig.tight_layout()  # otherwise the right y-label is slightly clipped
-
-    # save the plot before adding Landsat
-    output_filename = 'time-series-S2.png'
-    plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
-
-    # add l8
-    #ax4 = ax1.twinx()
-    #ax4.spines["left"].set_position(("axes", -0.1))
-    #ax4.spines["left"].set_visible(True)
-    #make_patch_spines_invisible(ax4)
-    #color = 'tab:purple'
-    #ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
-    #ax4.plot(l8_xs, l8_means, color=color)
-    #ax4.tick_params(axis='y', labelcolor=color)
-    #ax4.yaxis.tick_left()
-    #plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds,
-    #                 facecolor='purple', alpha=0.05)
-
-    # save the plot
-    #output_filename = 'time-series-full.png'
-    #plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
-
-    """# ------------------------------------------------
-    # setup plot
-    fig, ax1 = plt.subplots(figsize=(13,5))
-    fig.subplots_adjust(right=0.9)
-
-    # set up x axis to handle dates
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
-    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
-    ax1.set_xlabel('Time')
-
-    # add copernicus
-    color = 'tab:green'
-    ax1.set_ylabel('Copernicus Offset50', color=color)
-    ax1.plot(cop_xs, cop_means, color=color)
-    ax1.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds,
-                     facecolor='green', alpha=0.2)
-
-    # add l8
-    ax4 = ax1.twinx()
-    color = 'tab:purple'
-    ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
-    #ax4.yaxis.tick_left()
-    ax4.plot(l8_xs, l8_means, color=color)
-    ax4.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds,
-                     facecolor='purple', alpha=0.2)
-
-    fig.tight_layout()  # otherwise the right y-label is slightly clipped
-
-    # save the plot
-    output_filename = 'time-series-offsets-only.png'
-    plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
-    """
 
 def create_lat_long_metric_figures(data_df, metric, output_dir):
 
@@ -631,3 +728,138 @@ def network_figure(data_df, date, metric, vmin, vmax, output_dir):
     fig.savefig(filepath, dpi=200)
 
     plt.close(fig)
+
+
+
+
+def resample_time_series(df, col_name="offset50"):
+    """
+    Resample and interpolate a time series dataframe so we have one row
+    per day (useful for FFT)
+
+    Parameters
+    ----------
+    df: DataFrame with date as index
+    col_name: string, identifying the column we will pull out
+
+    Returns
+    -------
+    new_series: pandas Series with datetime index, and one column, one row per day
+    """
+    series = df[col_name]
+    # just in case the index isn't already datetime type
+    series.index = pd.to_datetime(series.index)
+
+    # resample to get one row per day
+    rseries = series.resample("D")
+    new_series = rseries.interpolate()
+
+    return new_series
+
+
+
+def fft_series(time_series):
+    """
+    Perform Fast Fourier Transform on an input series (assume one row per day).
+
+    Parameters
+    ----------
+    time_series: a pandas Series with one row per day, and datetime index (which we'll ignore)
+
+    Returns
+    -------
+    xvals, yvals: np.arrays of frequencies (1/day) and strengths in frequency space.
+                  Ready to be plotted directly in a matplotlib plot.
+    """
+
+    ts = list(time_series)
+    # Number of points
+    N = len(ts)
+    # Sample spacing (days)
+    T = 1.0
+    fourier = fft(ts)
+    # x-axis values
+    xvals = np.linspace(0.,1.0/(20*T), N//20)
+    yvals = 2.0/N * np.abs(fourier[0:N//20])
+    return xvals, yvals
+
+
+def write_slimmed_csv(dfs, output_dir):
+
+    for collection_name, veg_df in dfs.items():
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+
+            df_summary = dfs['ECMWF/ERA5/MONTHLY']
+            df_summary.loc[veg_df.index, 'offset50_mean'] = veg_df['offset50_mean']
+            df_summary.loc[veg_df.index, 'offset50_std'] = veg_df['offset50_std']
+            df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
+            df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
+
+            summary_csv_filename = os.path.join(output_dir, collection_name.replace('/', '-')+'_time_series.csv')
+
+            print(f"\nWriting '{summary_csv_filename}'...")
+            df_summary.to_csv(summary_csv_filename)
+
+
+def get_AR1_parameter_estimate(ys):
+    """
+    Fit an AR(1) model to the time series data and return
+    the associated parameter of the model.
+
+    Parameters
+    ----------
+    ys: array
+        Input time series data.
+
+    Returns
+    -------
+    float
+        The parameter value of the AR(1) model..
+    """
+
+    from statsmodels.tsa.ar_model import AutoReg
+    
+    # more sophisticated models to consider:
+    #from statsmodels.tsa.statespace.sarimax import SARIMAX
+    #from statsmodels.tsa.arima_model import ARMA
+
+    # create the AR(1) model
+    model = AutoReg(ys, lags=1)
+
+    # fit
+    model = model.fit()
+    
+    # get the single parameter value
+    parameter = model.params[1]
+
+    return parameter
+
+
+def get_kendell_tau(ys):
+    """
+    Kendall's tau gives information about the trend of the time series.
+    It is just a rank correlation test with one variable being time 
+    (or the vector 1 to the length of the time series), and the other 
+    variable being the data itself. A tau value of 1 means that the 
+    time series is always increasing, whereas -1 mean always decreasing,
+    and 0 signifies no overall trend.
+
+    Parameters
+    ----------
+    ys: array
+        Input time series data.
+
+    Returns
+    -------
+    float
+        The value of tau.
+    float
+        The p value of the rank correlation test.
+    """
+
+    from scipy.stats import kendalltau
+
+    # calculate Kendall tau
+    tau, p = kendalltau(range(len(ys)), ys)
+
+    return tau, p

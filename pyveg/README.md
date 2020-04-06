@@ -64,7 +64,6 @@ the following:
 - *output_dir*: Define directory to save all outputs 
 - *coordinates*: long,lat coordinates (can be overwriten by the CLI option) 
 - *date_range*: start and end date for data selection.
-- *num_days_per_point*: how many days are included in an extrated image/data point.
 - *do_network_centrality*:  estimate network centrality to vegetation images
 - *collections_to_use*: Name of GEE image collections that are used in the data extraction steps,
 these are defined in an dictionary called *data_collections*.
@@ -80,7 +79,9 @@ Each type has its own config options, e.g:
         'RGB_bands': ('B4','B3','B2'),
         'NIR_band': 'B5',
         'cloudy_pix_flag': 'CLOUD_COVER',
-        'do_network_centrality': do_network_centrality
+        'do_network_centrality': do_network_centrality,
+        'num_days_per_point': 30
+
     
    **Weather**:
 
@@ -91,7 +92,15 @@ Each type has its own config options, e.g:
         'temperature_band': ['mean_2m_air_temperature']
         }  
 
+### Analyse the data downloaded from GEE
 
+Once you have downloaded the data from GEE, the script pyveg_gee_analysis can make some simple time series and network centrality plots.
+
+To run it:
+```
+pyveg_gee_analysis --input_dir path_to_GEE_downloaded_data
+```
+the outputs will be saved on an "analysis" subdirectory inside the path_to_GEE_downloaded_data path.
 
 ## Pattern simulation
 

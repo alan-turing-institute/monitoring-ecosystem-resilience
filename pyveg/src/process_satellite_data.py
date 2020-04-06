@@ -225,13 +225,14 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
         a dict. Other return values is `None`.
     """
     # download vegetation data for this time period
-    download_path = ee_download(output_dir, collection_dict, coords, date_range, region_size, scale)
+    download_path, log_msg = ee_download(output_dir, collection_dict, coords, date_range, region_size, scale)
 
     # save the rgb image
-    # ?should change this to remove the URI for the the filename (and put something in the foldername)?
     filenames = [filename for filename in os.listdir(download_path) if filename.endswith(".tif")]
 
     if len(filenames) == 0:
+        with open(os.path.join(output_dir, 'download.log'), 'a+') as file:
+            file.write(f'daterange={date_range} coords={coords} >>> {log_msg}\n')
         return 
 
     # extract this to feed into `convert_to_rgb()`
@@ -243,7 +244,16 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     # check image quality on the colour image
     if not check_image_ok(rgb_image):
         print('Detected a low quality image, skipping to next date.')
+        
+        with open(os.path.join(output_dir, 'download.log'), 'a+') as file:
+            frac = [s for s in log_msg.split(' ') if '/' in s][0]
+            file.write(f'daterange={date_range} coords={coords} >>> WARN >>> check_image_ok failed after finding {frac} valid images\n')
+
         return
+
+    # logging
+    with open(os.path.join(output_dir, 'download.log'), 'a+') as file:
+        file.write(f'daterange={date_range} coords={coords} >>> {log_msg}\n')
 
     # if the image looks good, we can save it
     rgb_filepath = construct_image_savepath(output_dir, collection_dict['collection_name'], coords, date_range, 'RGB')

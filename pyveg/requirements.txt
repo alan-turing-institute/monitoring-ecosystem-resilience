@@ -13,3 +13,4 @@ geetools
 pillow
 imageio
 opencv-python
+statsmodels

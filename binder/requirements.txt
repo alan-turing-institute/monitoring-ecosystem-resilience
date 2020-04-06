@@ -1,0 +1,15 @@
+argparse
+datetime
+numpy
+scipy
+matplotlib
+pytest
+requests
+dateparser
+python-igraph
+geopandas
+earthengine-api==0.1.210
+geetools
+pillow
+imageio
+opencv-python
