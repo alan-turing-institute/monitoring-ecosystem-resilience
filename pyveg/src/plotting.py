@@ -5,7 +5,7 @@ Plotting code.
 import os
 import datetime
 
-import numpy as numpy
+import numpy as np
 import pandas as pd 
 
 import matplotlib.pyplot as plt
@@ -273,9 +273,6 @@ def plot_smoothed_time_series(dfs, output_dir):
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
 
 
-
-
-
 def plot_autocorrelation_function(dfs, output_dir):
     """
     Given a dict of DataFrames, of which each row corresponds to
@@ -326,3 +323,43 @@ def plot_autocorrelation_function(dfs, output_dir):
             """
 
 
+def plot_feature_vectors(dfs, output_dir):
+    """
+    Plot the feature vectors from the network centrality
+    output of any vegetation DataFrames in `dfs`.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        The time-series results.
+
+    output_dir : str
+        Directory to save the plot in.
+    """
+
+    for collection_name, veg_df in dfs.items():
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+
+            # compute feature vector averaged over all sub-images
+            feature_vector = np.array(veg_df.feature_vec.values.tolist()).mean(axis=0)
+
+            # get the errors
+            feature_vector_std = np.array(veg_df.feature_vec.values.tolist()).std(axis=0)
+
+            # generate x-values
+            xs = np.linspace(0,100,len(feature_vector))
+            
+            # make the plot
+            plt.figure(figsize=(6,5))
+
+            plt.errorbar(xs, feature_vector, marker='o', markersize=5, linestyle='', 
+                         yerr=feature_vector_std, color='black', capsize=2, elinewidth=1)
+
+            plt.xlabel('Pixel Rank (%)', fontsize=14)
+            plt.ylabel('$X(V-E)$', fontsize=14)
+            plt.tight_layout()
+
+            # save the plot
+            output_filename = collection_name.replace('/', '-')+'-feature-vector.png'
+            print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=150)

@@ -24,7 +24,12 @@ from pyveg.src.data_analysis_utils import (
     get_AR1_parameter_estimate
 )
 
-from pyveg.src.plotting import plot_time_series, plot_smoothed_time_series, plot_autocorrelation_function
+from pyveg.src.plotting import (
+    plot_time_series, 
+    plot_smoothed_time_series, 
+    plot_autocorrelation_function,
+    plot_feature_vectors
+)
 
 from pyveg.src.image_utils import (
     create_gif_from_images
@@ -102,9 +107,13 @@ def main():
         #print('\nPlotting time series...')
         #plot_time_series(time_series_dfs, tsa_subdir)
 
+        # remove outliers from the time series
         dfs = drop_veg_outliers(dfs, sigmas=3) # not convinced this is really helping much
 
-        # drop outliers and smooth results
+        # plot the feature vectors averaged over all time points and sub images
+        plot_feature_vectors(dfs, tsa_subdir)
+
+        # LOESS smoothing on sub-image time series
         smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=5)) # increase smoothing with n>5
 
         # make a smoothed time series plot
