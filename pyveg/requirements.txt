@@ -3,6 +3,7 @@ datetime
 numpy
 scipy
 matplotlib
+seaborn
 pytest
 requests
 dateparser
