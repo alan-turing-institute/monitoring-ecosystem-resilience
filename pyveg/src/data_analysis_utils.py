@@ -868,3 +868,45 @@ def get_kendell_tau(ys):
     tau, p = kendalltau(range(len(ys)), ys)
 
     return tau, p
+
+
+def write_to_json(filename, out_dict):
+    """
+    Create or append the contents of `out_dict` 
+    to json file `filename`.
+
+    Parameters
+    ----------
+    filename: array
+        Output json filename.
+    out_dict: dict
+        Information to save.
+    """
+    
+    # if file doesn't exist
+    if not os.path.exists(filename):
+        # make enclosing dir if needed
+        output_dir = os.path.dirname(filename)
+
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
+
+        # write new json file
+        with open(filename, 'w') as json_file:
+            json.dump(out_dict, json_file, indent=2)
+
+    # file exists
+    else:
+        # json read
+        data = None
+        with open(filename, 'r') as json_file:
+            data = json.load(json_file)
+
+        # update dict   
+        for k, v in out_dict.items():
+            data[k] = v
+        
+        # json write
+        with open(filename, 'w') as json_file:
+            json.dump(data, json_file, indent=2)
+
