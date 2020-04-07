@@ -1,5 +1,5 @@
 """
-Data analysis code including functions to read the .json results file, 
+Data analysis code including functions to read the .json results file,
 and functions analyse and plot the data.
 """
 
@@ -73,9 +73,11 @@ def read_json_to_dataframe(filename):
             # check we have data for this time point
             if time_point is None:
                 continue
-
+            # backwards compatibility, accept either list or dict
+            if isinstance(time_point, dict):
+                time_point = time_point.values()
             # for each space point
-            for space_point in time_point.values():
+            for space_point in time_point:
 
                 # get coordinates
                 date = space_point['date']
@@ -366,9 +368,9 @@ def smooth_subimage(df, column='offset50', n=4, it=3):
         The time-series DataFrame with a new column containing the
         smoothed results.
     """
-    
+
     # add a new column of datetime objects
-    df['datetime'] = pd.to_datetime(df['date'], format='%Y/%m/%d') 
+    df['datetime'] = pd.to_datetime(df['date'], format='%Y/%m/%d')
 
     # extract data
     xs = df['datetime']
@@ -382,7 +384,7 @@ def smooth_subimage(df, column='offset50', n=4, it=3):
 
     # add to df
     df[column+'_smooth'] = smoothed_y
-    
+
     return df
 
 
@@ -394,7 +396,7 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3):
     Parameters
     ----------
     df : DataFrame
-        DataFrame containing time series results for all sub-images, 
+        DataFrame containing time series results for all sub-images,
         with multiple rows per time point and (lat,long) point.
     column : string, optional
         Name of the column in df to smooth.
@@ -409,7 +411,7 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3):
     Returns
     ----------
     Dataframe
-        DataFrame of results with a new column containing a 
+        DataFrame of results with a new column containing a
         LOESS smoothed version of the column `column`.
     """
 
@@ -428,7 +430,7 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3):
     df = list(d.values())[0]
     for df_ in list(d.values())[1:]:
         df = df.append(df_)
-        
+
     return df
 
 def calculate_ci(data, ci_level=0.99):
@@ -449,7 +451,7 @@ def calculate_ci(data, ci_level=0.99):
         where mu is the mean.
 
     """
-    
+
     # remove NaNs
     ys = data.dropna().values
 
@@ -457,13 +459,13 @@ def calculate_ci(data, ci_level=0.99):
     n = len(ys)
     std_err = sem(ys)
     h = std_err * t.ppf((1 + ci_level) / 2, n - 1)
-    
+
     return h
 
 
 def get_confidence_intervals(df, column, ci_level=0.99):
     """
-    Calculate the confidence interval at each time point of a 
+    Calculate the confidence interval at each time point of a
     DataFrame containing data for a large image.
 
     Parameters
@@ -481,16 +483,16 @@ def get_confidence_intervals(df, column, ci_level=0.99):
         Time series data for multiple sub-image locations with
         added column for the ci.
     """
-    
+
     # group all the data at each date
     d = {}
     for name, group in df.groupby(['date']):
         d[name] = group
-    
+
     # for each timepoint, calculate the CI
     for df in d.values():
         df['ci'] = calculate_ci(df[column], ci_level=ci_level)
-    
+
     # merge results
     df = list(d.values())[0]
     for df_ in list(d.values())[1:]:
@@ -501,7 +503,7 @@ def get_confidence_intervals(df, column, ci_level=0.99):
 
 def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
     """
-    Loop over vegetation DataFrames and drop points in the 
+    Loop over vegetation DataFrames and drop points in the
     time series that a significantly far away from the mean
     of the time series. Such points are assumed to be unphysical.
 
@@ -512,19 +514,19 @@ def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
     column : str
         Name of the column to drop outliers on.
     sigmas : float
-        Number of standard deviations a data point has to be 
+        Number of standard deviations a data point has to be
         from the mean to be labelled as an outlier and dropped.
 
     Returns
     ----------
     dict of DataFrame
-        Time series data for multiple sub-image locations with 
+        Time series data for multiple sub-image locations with
         some values in `column` potentially set to NaN.
     """
 
-    # set to None data points that are far from the mean, these are 
+    # set to None data points that are far from the mean, these are
     # assumed to be unphysical
-    
+
     # loop over collections
     for col_name, df in dfs.items():
 
@@ -559,7 +561,7 @@ def smooth_veg_data(dfs, column='offset50', n=4):
     Returns
     ----------
     dict of DataFrame
-        Time series data for multiple sub-image locations with 
+        Time series data for multiple sub-image locations with
         new column for smoothed data and ci.
     """
 
@@ -816,12 +818,12 @@ def get_AR1_parameter_estimate(ys):
     float
         The parameter value of the AR(1) model..
     """
-    
+
     if len(ys) < 5:
         return np.NaN
 
     from statsmodels.tsa.ar_model import AutoReg
-    
+
     # more sophisticated models to consider:
     #from statsmodels.tsa.statespace.sarimax import SARIMAX
     #from statsmodels.tsa.arima_model import ARMA
@@ -831,7 +833,7 @@ def get_AR1_parameter_estimate(ys):
 
     # fit
     model = model.fit()
-    
+
     # get the single parameter value
     parameter = model.params[1]
 
@@ -841,9 +843,9 @@ def get_AR1_parameter_estimate(ys):
 def get_kendell_tau(ys):
     """
     Kendall's tau gives information about the trend of the time series.
-    It is just a rank correlation test with one variable being time 
-    (or the vector 1 to the length of the time series), and the other 
-    variable being the data itself. A tau value of 1 means that the 
+    It is just a rank correlation test with one variable being time
+    (or the vector 1 to the length of the time series), and the other
+    variable being the data itself. A tau value of 1 means that the
     time series is always increasing, whereas -1 mean always decreasing,
     and 0 signifies no overall trend.
 
@@ -907,3 +909,4 @@ def write_to_json(filename, out_dict):
         # json write
         with open(filename, 'w') as json_file:
             json.dump(data, json_file, indent=2)
+
