@@ -177,6 +177,7 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
         nc_result['latitude'] = round(sub_coords[0], 4)
         nc_result['longitude'] = round(sub_coords[1], 4)
         nc_result['date'] = date_range_midpoint
+        nc_result['feature_vec'] = list(feature_vec)
         
         # incrementally write json file so we don't have to wait
         # for the full image to be processed before getting results
@@ -284,7 +285,7 @@ def get_weather(output_dir, collection_dict, coords, date_range, region_size=0.1
     The weather measurements are returned as a dictionary with the summary value for that region and date.
     """
 
-    download_path = ee_download(output_dir,collection_dict, coords, date_range, region_size, scale)
+    download_path, _ = ee_download(output_dir,collection_dict, coords, date_range, region_size, scale)
 
     metrics_dict = {}
 
