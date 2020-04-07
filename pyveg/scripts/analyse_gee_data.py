@@ -28,7 +28,8 @@ from pyveg.src.plotting import (
     plot_time_series, 
     plot_smoothed_time_series, 
     plot_autocorrelation_function,
-    plot_feature_vectors
+    plot_feature_vectors,
+    plot_cross_correlations
 )
 
 from pyveg.src.image_utils import (
@@ -111,7 +112,11 @@ def main():
         dfs = drop_veg_outliers(dfs, sigmas=3) # not convinced this is really helping much
 
         # plot the feature vectors averaged over all time points and sub images
-        plot_feature_vectors(dfs, tsa_subdir)
+        try:
+            plot_feature_vectors(dfs, tsa_subdir)
+        except AttributeError:
+            print('Can not plot feature vectors...') 
+            
 
         # LOESS smoothing on sub-image time series
         smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=5)) # increase smoothing with n>5
@@ -121,6 +126,9 @@ def main():
 
         # make autocorrelation plots
         plot_autocorrelation_function(smoothed_time_series_dfs, tsa_subdir)
+
+        # make cross correlation scatterplot matrix plots
+        plot_cross_correlations(smoothed_time_series_dfs, tsa_subdir)
 
         # write csv for easy external analysis
         write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)

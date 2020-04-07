@@ -12,7 +12,9 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.cm as cm
 
-from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau
+import seaborn as sns
+
+from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json
 
 
 def plot_time_series(dfs, output_dir):
@@ -225,7 +227,8 @@ def plot_smoothed_time_series(dfs, output_dir):
             ax.plot(veg_xs, veg_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
             
             # plot LOESS smoothed vegetation means and std
-            ax.plot(veg_xs, veg_means_smooth, label='Smoothed', linewidth=2, color='green')
+            ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=7, markeredgecolor=(0.9172, 0.9627, 0.9172), markeredgewidth=2, 
+                    label='Smoothed', linewidth=2, color='green')
             ax.fill_between(veg_xs, veg_means_smooth-veg_stds_smooth, veg_means_smooth+veg_stds_smooth, facecolor='green', alpha=0.1, label='Std Dev')
             
             # plot ci of the smoothed mean
@@ -261,6 +264,13 @@ def plot_smoothed_time_series(dfs, output_dir):
             # add Kendall tau
             tau, p = get_kendell_tau(veg_means)
             tau_smooth, p_smooth = get_kendell_tau(veg_means_smooth)
+
+            # write out
+            kendall_tau_dict = {}
+            kendall_tau_dict['Kendall_tau'] = {'unsmoothed': {'tau': tau, 'p': p}, 'smoothed': {'tau': tau_smooth, 'p': p_smooth}}
+            write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), kendall_tau_dict)
+            
+            # add to plot
             textstr = f'$\\tau={tau_smooth:.2f}$ (${tau:.2f}$ unsmoothed)'
             ax2.text(0.62, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
@@ -304,23 +314,31 @@ def plot_autocorrelation_function(dfs, output_dir):
             print(f'\nPlotting autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
 
-            """
+            
             # statsmodel version of the same thing
-            from statsmodels.graphics.tsaplots import plot_acf
-            plot_acf(df['offset50_mean'], lags=len(df['offset50_mean']), label='Unsmoothed')
-            plt.legend()
+            from statsmodels.graphics.tsaplots import plot_pacf
+            plot_pacf(df['offset50_mean'], label='Unsmoothed')
+            plt.xlabel('Lag')
+            plt.ylabel('Partial Autocorrelation')
+            plt.title('Partial Autocorrelation Unsmoothed')
+            plt.tight_layout()
+
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-autocorrelation-function-unsmoothed-statsmodel.png'
-            print(f'\nPlotting autocorrelation function "{os.path.abspath(output_filename)}"...')
+            output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-unsmoothed.png'
+            print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
             
-            plot_acf(df['offset50_smooth_mean'], lags=len(df['offset50_smooth_mean']), label='Smoothed')
-            plt.legend()
+            plot_pacf(df['offset50_smooth_mean'], label='Smoothed')
+            plt.xlabel('Lag')
+            plt.ylabel('Partial Autocorrelation')
+            plt.title('Partial Autocorrelation Smoothed')
+            plt.tight_layout()
+
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-autocorrelation-function-smoothed-statsmodel.png'
-            print(f'\nPlotting autocorrelation function "{os.path.abspath(output_filename)}"...')
+            output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-smoothed.png'
+            print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
-            """
+            
 
 
 def plot_feature_vectors(dfs, output_dir):
@@ -360,6 +378,98 @@ def plot_feature_vectors(dfs, output_dir):
             plt.tight_layout()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-feature-vector.png'
+            output_filename = collection_name.replace('/', '-')+'-feature-vector-summary.png'
             print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+
+
+            # plot also the feature vectors for different time points on the same plot
+            plt.figure(figsize=(6,5))
+
+            # loop through time points
+            for _, group in df.groupby('date'):
+                
+                # calculate feature vector
+                feature_vector = np.array(group.feature_vec.values.tolist()).mean(axis=0)
+                xs = np.linspace(0,100,len(feature_vector))
+
+                # add to plot
+                plt.scatter(xs, feature_vector, marker='o', color='black', alpha=0.2)
+
+            plt.xlabel('Pixel Rank (%)', fontsize=14)
+            plt.ylabel('$X(V-E)$', fontsize=14)
+            plt.tight_layout()
+
+            # save the plot
+            output_filename = collection_name.replace('/', '-')+'-feature-vector-all.png'
+            print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+
+
+def plot_cross_correlations(dfs, output_dir):
+    """
+    Create or append the contents of `out_dict` 
+    to json file `filename`.
+
+    Parameters
+    ----------
+    filename: array
+        Output json filename.
+    out_dict: dict
+        Information to save.
+    """
+
+    for collection_name, df in dfs.items():
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+            
+            # set up
+            lags = 9
+            veg_col = 'offset50_mean'            
+            precip_data = dfs['ECMWF/ERA5/MONTHLY']['total_precipitation']
+            correlations = []
+
+            # make a new df to ensure NaN veg values are explicit
+            df_ = pd.DataFrame()
+            df_['precip'] = precip_data
+            df_['offset50'] = df[veg_col]
+            
+            # create fig
+            fig, axs = plt.subplots(3, 3, sharex='col', sharey='row', 
+                                    figsize=(8, 8))
+
+            #plt.suptitle('Precipitation vs Offset50 Lagged Scatterplot Matrix', fontsize=15, y=1.02)
+
+            # loop through offsets
+            for lag in range(0, lags):
+
+                # select the relevant Axis object
+                ax = axs.flat[lag]
+
+                # format this subplot
+                ax.set_title(f'$t-{lag}$')
+                ax.grid(False)
+
+                # plot data
+                lagged_data = df_['offset50'].shift(-lag)
+                
+                corr = precip_data.corr(lagged_data)
+                correlations.append(round(corr,4))
+                sns.regplot(precip_data, lagged_data, label=f'$r={corr:.2f}$', ax=ax)
+                
+                # format axis label
+                if lag < 6:
+                    ax.set_xlabel('')
+                if lag % 3 != 0:
+                    ax.set_ylabel('')
+                    
+                ax.legend()
+
+            plt.tight_layout()
+
+            # save the plot
+            output_filename = collection_name.replace('/', '-')+'-scatterplot-matrix.png'
+            print(f'\nPlotting scatterplot matrix "{os.path.abspath(output_filename)}"...')
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+
+            correlations_dict = {'lagged_correlation': correlations}
+            write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), correlations_dict)
