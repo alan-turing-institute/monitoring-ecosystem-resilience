@@ -817,6 +817,8 @@ def get_AR1_parameter_estimate(ys):
     -------
     float
         The parameter value of the AR(1) model..
+    float
+        The parameter standard error
     """
 
     if len(ys) < 5:
@@ -836,8 +838,9 @@ def get_AR1_parameter_estimate(ys):
 
     # get the single parameter value
     parameter = model.params[1]
+    se = model.bse[1]
 
-    return parameter
+    return parameter, se
 
 
 def get_kendell_tau(ys):

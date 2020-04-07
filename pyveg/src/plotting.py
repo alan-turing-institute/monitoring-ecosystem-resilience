@@ -256,9 +256,9 @@ def plot_smoothed_time_series(dfs, output_dir):
             ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
             # add autoregression info
-            unsmoothed_ar1 = get_AR1_parameter_estimate(veg_means)
-            smoothed_ar1 = get_AR1_parameter_estimate(veg_means_smooth)
-            textstr = f'AR$(1)={smoothed_ar1:.2f}$ (${unsmoothed_ar1:.2f}$ unsmoothed)'
+            unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means)
+            smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth)
+            textstr = f'AR$(1)={smoothed_ar1:.2f}$ +/- ${smoothed_ar1_se:.2f}$ (${unsmoothed_ar1:.2f}$ +/- ${unsmoothed_ar1_se:.2f}$ unsmoothed)'
             ax2.text(0.35, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
             # add Kendall tau
@@ -271,8 +271,8 @@ def plot_smoothed_time_series(dfs, output_dir):
             write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), kendall_tau_dict)
             
             # add to plot
-            textstr = f'$\\tau={tau_smooth:.2f}$ (${tau:.2f}$ unsmoothed)'
-            ax2.text(0.62, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+            textstr = f'$\\tau,pvalue={tau_smooth:.2f}$, ${p:.2f}$ (${tau:.2f}$, ${p_smooth:.2f}$ unsmoothed)'
+            ax2.text(0.13, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
             # layout
             fig.tight_layout()
