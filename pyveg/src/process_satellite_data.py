@@ -259,18 +259,6 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     # save the rgb image
     rgb_image = convert_to_rgb(tif_filebase, collection_dict['RGB_bands'])
 
-    """
-    # check image quality on the colour image
-    if not check_image_ok(rgb_image):
-        print('Detected a low quality image, skipping to next date.')
-        
-        with open(os.path.join(output_dir, 'download.log'), 'a+') as file:
-            frac = [s for s in log_msg.split(' ') if '/' in s][0]
-            file.write(f'daterange={date_range} coords={coords} >>> WARN >>> check_image_ok failed after finding {frac} valid images\n')
-
-        return
-    """
-    
     # logging
     with open(os.path.join(output_dir, 'download.log'), 'a+') as file:
         file.write(f'daterange={date_range} coords={coords} >>> {log_msg}\n')
