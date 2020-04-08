@@ -107,7 +107,7 @@ def construct_image_savepath(output_dir, collection_name, coords, date_range, im
     return full_path
 
 
-def run_network_centrality(output_dir, image, coords, date_range, region_size, sub_image_size=[50,50], n_sub_images=-1):
+def run_network_centrality(output_dir, img_thresh, img_rgb, coords, date_range, region_size, sub_image_size=[50,50], n_sub_images=-1):
     """
     !! SVS: Suggest that this function should be moved to the subgraph_centrality.py module
 
@@ -116,10 +116,12 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
 
     Parameters
     ----------
-    image : Pillow.Image
-        Full size binary thresholded input image.
     output_dir : str
         Path to save results to.
+    img_thresh : Pillow.Image
+        Full size binary thresholded input NDVI image.
+    img_rgb : Pillow.Image
+        Full size RGB image.
     coords : str
         Coordinates of the `image` argument. Used to calcualte
         coordinates of sub-images which are used to ID them.
@@ -146,11 +148,17 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
     output_subdir = os.path.join(output_dir, date_range_midpoint)
 
     # start by dividing the image into smaller sub-images
-    sub_images = crop_image_npix(image,
+    sub_images = crop_image_npix(img_thresh,
                                  sub_image_size[0],
                                  sub_image_size[1],
                                  region_size,
                                  coords)
+
+    sub_images_rgb = crop_image_npix(img_rgb,
+                                     sub_image_size[0],
+                                     sub_image_size[1],
+                                     region_size,
+                                     coords)
 
     # store results
     nc_results = {}
@@ -163,10 +171,19 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
         if i >= n_sub_images and n_sub_images != -1:
             return nc_results
 
-        # save sub image
+        # construct sub-image filename
         output_filename = f'sub{i}_'
         output_filename += "{0:.3f}-{1:.3f}".format(sub_coords[0], sub_coords[1])
         output_filename += '.png'
+        
+        # check this sub-image passess quality control
+        colour_subimage, _ = sub_images_rgb[i]
+        if not check_image_ok(colour_subimage):
+            print('Sub-image rejected!')
+            save_image(colour_subimage, os.path.join(output_subdir, 'rejected'), output_filename)
+            continue
+        
+        # save accepted sub-image
         save_image(sub_image, output_subdir, output_filename)
 
         # run network centrality
@@ -242,6 +259,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     # save the rgb image
     rgb_image = convert_to_rgb(tif_filebase, collection_dict['RGB_bands'])
 
+    """
     # check image quality on the colour image
     if not check_image_ok(rgb_image):
         print('Detected a low quality image, skipping to next date.')
@@ -251,7 +269,8 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
             file.write(f'daterange={date_range} coords={coords} >>> WARN >>> check_image_ok failed after finding {frac} valid images\n')
 
         return
-
+    """
+    
     # logging
     with open(os.path.join(output_dir, 'download.log'), 'a+') as file:
         file.write(f'daterange={date_range} coords={coords} >>> {log_msg}\n')
@@ -274,7 +293,8 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     if collection_dict['do_network_centrality']:
         #n_sub_images = 20 # do this for speedup while testing
         nc_output_dir = os.path.join(output_dir, 'network_centrality')
-        nc_results = run_network_centrality(nc_output_dir, processed_ndvi, coords, date_range, region_size, n_sub_images=n_sub_images)
+        nc_results = run_network_centrality(nc_output_dir, processed_ndvi, rgb_image, coords, 
+                                            date_range, region_size, n_sub_images=n_sub_images)
 
         return nc_results
 
