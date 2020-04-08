@@ -252,6 +252,45 @@ def convert_to_geopandas(df):
 
     return df
 
+def remove_seasonality(dfs,lag, period = 'M'):
+
+    """
+    Loop over time series DataFrames and remove
+    time series seasonality.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    lag : float
+        Periodicity to remove
+
+    Returns
+    ----------
+    dict of DataFrame
+        Time series data for multiple sub-image with
+        seasonality removed
+    """
+
+    # set to None data points that are far from the mean, these are
+    # assumed to be unphysical
+
+    # loop over collections
+
+    uns_dfs = dfs.copy()
+    for col_name, df in uns_dfs.items():
+
+        for col in df.columns:
+
+            df[col] = resample_time_series(df,col,period)
+
+            df[col] = df[col].diff(lag)
+
+        uns_dfs[col_name] = df
+
+    return uns_dfs
+
+
 
 def make_time_series(dfs):
     """
@@ -734,7 +773,7 @@ def network_figure(data_df, date, metric, vmin, vmax, output_dir):
 
 
 
-def resample_time_series(df, col_name="offset50"):
+def resample_time_series(df, col_name="offset50", period = "D"):
     """
     Resample and interpolate a time series dataframe so we have one row
     per day (useful for FFT)
@@ -753,7 +792,7 @@ def resample_time_series(df, col_name="offset50"):
     series.index = pd.to_datetime(series.index)
 
     # resample to get one row per day
-    rseries = series.resample("D")
+    rseries = series.resample(period).mean()
     new_series = rseries.interpolate()
 
     return new_series
