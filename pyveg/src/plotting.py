@@ -179,7 +179,7 @@ def plot_time_series(dfs, output_dir):
     """
 
 
-def plot_smoothed_time_series(dfs, output_dir):
+def plot_smoothed_time_series(dfs, output_dir, filename_sufix =''):
     """
     Given a dict of DataFrames, of which each row corresponds to
     a different time point (constructed with `make_time_series`),
@@ -278,12 +278,12 @@ def plot_smoothed_time_series(dfs, output_dir):
             fig.tight_layout()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-time-series-smoothed.png'
+            output_filename = collection_name.replace('/', '-')+'-time-series-smoothed'+filename_sufix+'.png'
             print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
 
 
-def plot_autocorrelation_function(dfs, output_dir):
+def plot_autocorrelation_function(dfs, output_dir, filename_sufix = ''):
     """
     Given a dict of DataFrames, of which each row corresponds to
     a different time point (constructed with `make_time_series`),
@@ -335,7 +335,7 @@ def plot_autocorrelation_function(dfs, output_dir):
             plt.tight_layout()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-smoothed.png'
+            output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-smoothed'+filename_sufix+'.png'
             print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
             
