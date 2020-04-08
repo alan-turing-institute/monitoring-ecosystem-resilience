@@ -108,7 +108,7 @@ def construct_image_savepath(output_dir, collection_name, coords, date_range, im
     return full_path
 
 
-def process_sub_image(i, sub, output_subdir, date):
+def process_sub_image(i, sub, sub_rgb, output_subdir, date):
     """
     function to be used by multiprocessing Pool, called for every sub-image.
 
@@ -118,6 +118,8 @@ def process_sub_image(i, sub, output_subdir, date):
        index of the sub-image
     sub: (Pillow.Image, (float,float))
        tuple containing the sub-image, and a tuple of long,lat coords.
+    sub_rgb: (Pillow.Image, (float,float))
+       tuple containing the rgb sub-image, and a tuple of long,lat coords.
     output_subdir: str
        subdirectory into which sub-image png files will be saved.
 
@@ -130,10 +132,19 @@ def process_sub_image(i, sub, output_subdir, date):
     # sub will be a tuple (image, coords) - unpack it here
     sub_image, sub_coords = sub
 
-    # save sub image
+    # construct sub-image filename
     output_filename = f'sub{i}_'
     output_filename += "{0:.3f}-{1:.3f}".format(sub_coords[0], sub_coords[1])
     output_filename += '.png'
+
+    # check this sub-image passess quality control
+    colour_subimage, _ = sub_rgb
+    if not check_image_ok(colour_subimage):
+        #print('Sub-image rejected!')
+        save_image(colour_subimage, os.path.join(output_subdir, 'rejected'), output_filename)
+        return
+    
+    # save accepted sub-image
     save_image(sub_image, output_subdir, output_filename)
 
     # run network centrality
@@ -151,6 +162,9 @@ def process_sub_image(i, sub, output_subdir, date):
 
     save_json(nc_result, os.path.join(output_subdir,"tmp_json"), f"network_centrality_sub{i}.json")
 
+    n_processed = len(os.listdir(os.path.join(output_subdir,"tmp_json")))
+    print(f'Processed {n_processed} sub-images...', end='\r') 
+
 
 def consolidate_subimage_json(output_subdir):
     """
@@ -165,7 +179,7 @@ def consolidate_subimage_json(output_subdir):
     return nc_results
 
 
-def run_network_centrality(output_dir, image, coords, date_range, region_size, sub_image_size=[50,50], n_sub_images=-1, n_threads=4):
+def run_network_centrality(output_dir, img_thresh, img_rgb, coords, date_range, region_size, sub_image_size=[50,50], n_sub_images=-1, n_threads=4):
     """
     !! SVS: Suggest that this function should be moved to the subgraph_centrality.py module
 
@@ -174,10 +188,12 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
 
     Parameters
     ----------
-    image : Pillow.Image
-        Full size binary thresholded input image.
     output_dir : str
         Path to save results to.
+    img_thresh : Pillow.Image
+        Full size binary thresholded input NDVI image.
+    img_rgb : Pillow.Image
+        Full size RGB image.
     coords : str
         Coordinates of the `image` argument. Used to calcualte
         coordinates of sub-images which are used to ID them.
@@ -207,11 +223,17 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
     output_subdir = os.path.join(output_dir, date_range_midpoint)
 
     # start by dividing the image into smaller sub-images
-    sub_images = crop_image_npix(image,
+    sub_images = crop_image_npix(img_thresh,
                                  sub_image_size[0],
                                  sub_image_size[1],
                                  region_size,
                                  coords)
+
+    sub_images_rgb = crop_image_npix(img_rgb,
+                                     sub_image_size[0],
+                                     sub_image_size[1],
+                                     region_size,
+                                     coords)
 
     # if requested to only look at a subset of sub-images, truncate the list here
     if n_sub_images != -1:
@@ -219,11 +241,12 @@ def run_network_centrality(output_dir, image, coords, date_range, region_size, s
     # create a multiprocessing pool to handle each sub-image in parallel
     with Pool(processes=n_threads) as pool:
         # prepare the arguments for the process_sub_image function
-        arguments=[(i, sub, output_subdir, date_range_midpoint) \
+        arguments=[(i, sub, sub_images_rgb[i], output_subdir, date_range_midpoint) \
                    for i,sub in enumerate(sub_images)]
         pool.starmap(process_sub_image, arguments)
     # re-combine the results from all sub-images
     nc_results = consolidate_subimage_json(output_subdir)
+
     return nc_results
 
 
@@ -276,16 +299,6 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     # save the rgb image
     rgb_image = convert_to_rgb(tif_filebase, collection_dict['RGB_bands'])
 
-    # check image quality on the colour image
-    if not check_image_ok(rgb_image):
-        print('Detected a low quality image, skipping to next date.')
-
-        with open(os.path.join(output_dir, 'download.log'), 'a+') as file:
-            frac = [s for s in log_msg.split(' ') if '/' in s][0]
-            file.write(f'daterange={date_range} coords={coords} >>> WARN >>> check_image_ok failed after finding {frac} valid images\n')
-
-        return
-
     # logging
     with open(os.path.join(output_dir, 'download.log'), 'a+') as file:
         file.write(f'daterange={date_range} coords={coords} >>> {log_msg}\n')
@@ -306,9 +319,11 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
 
     # run network centrality on the sub-images
     if collection_dict['do_network_centrality']:
+        print('Running network centrality...')
         #n_sub_images = 20 # do this for speedup while testing
         nc_output_dir = os.path.join(output_dir, 'network_centrality')
-        nc_results = run_network_centrality(nc_output_dir, processed_ndvi, coords, date_range, region_size, n_sub_images=n_sub_images)
+        nc_results = run_network_centrality(nc_output_dir, processed_ndvi, rgb_image, coords, 
+                                            date_range, region_size, n_sub_images=n_sub_images)
 
         return nc_results
 
