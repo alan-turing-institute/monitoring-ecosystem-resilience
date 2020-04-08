@@ -278,15 +278,18 @@ def remove_seasonality(dfs,lag, period = 'M'):
     # loop over collections
 
     uns_dfs = dfs.copy()
+    df_resampled = pd.DataFrame()
     for col_name, df in uns_dfs.items():
 
         for col in df.columns:
 
-            df[col] = resample_time_series(df,col,period)
+            series_resampled = resample_time_series(df,col,period)
 
-            df[col] = df[col].diff(lag)
+            df_resampled[col] = series_resampled.diff(lag)
 
-        uns_dfs[col_name] = df
+        df_resampled.dropna(inplace=True)
+
+        uns_dfs[col_name] = df_resampled
 
     return uns_dfs
 
