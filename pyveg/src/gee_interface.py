@@ -70,7 +70,7 @@ def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
         return image_coll
 
     # images with more than this percent of cloud pixels are removed
-    cloud_pix_frac = 100
+    cloud_pix_frac = 50
 
     # remove images that have more than `cloud_pix_frac`% cloudy pixels
     if cloudy_pix_flag != 'None':
