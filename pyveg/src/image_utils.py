@@ -179,7 +179,7 @@ def scale_tif(input_filebase, band):
     # create a new image where we will fill RGB pixel values from 0 to 255
     def get_pix_val(ix, iy): return \
         max(0, int((pix[ix, iy]-min_val) * 255 /
-                   (max_val - min_val))
+                   max((max_val - min_val),1))
             )
     new_img = Image.new("RGB", im.size)
     for ix in range(im.size[0]):
@@ -473,7 +473,7 @@ def pillow_to_numpy(pil_image):
     # check that 3rd index is equal
     r, g, b = numpy_image[:, :, 0], numpy_image[:, :, 1], numpy_image[:, :, 2]
 
-    if (b == g).all() and (b == r).all():
+    if (b == g).all() and (b == r).all() and not (b == 0).all():
         return numpy_image[:, :, 0] # return with 3rd index removed
     else:
         return numpy_image # return colour image
