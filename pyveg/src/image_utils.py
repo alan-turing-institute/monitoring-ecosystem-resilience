@@ -34,7 +34,7 @@ def save_json(out_dict, output_dir, output_filename):
     with open(output_path, 'w') as fp:
         json.dump(out_dict, fp, indent=2)
 
-    print("Saved json file '{}'".format(output_path))
+    #print("Saved json file '{}'".format(output_path))
 
 
 def save_image(image, output_dir, output_filename):
@@ -48,7 +48,7 @@ def save_image(image, output_dir, output_filename):
         os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, output_filename)
     image.save(output_path)
-    print("Saved image '{}'".format(output_path))
+    #print("Saved image '{}'".format(output_path))
 
 
 def image_from_array(input_array, output_size=None, sel_val=200):
