@@ -21,7 +21,8 @@ from pyveg.src.data_analysis_utils import (
     convert_to_geopandas,
     coarse_dataframe,
     write_slimmed_csv,
-    get_AR1_parameter_estimate
+    get_AR1_parameter_estimate,
+    remove_seasonality
 )
 
 from pyveg.src.plotting import (
@@ -133,6 +134,16 @@ def main():
         # write csv for easy external analysis
         write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
     # ------------------------------------------------
+
+    #   remove seasonality in a time series
+
+        uns_time_series_dfs = remove_seasonality(smoothed_time_series_dfs, 12, "M")
+
+        # make a smoothed time series plot
+        plot_smoothed_time_series(uns_time_series_dfs, tsa_subdir, '-no-seasonality')
+
+        # make autocorrelation plots
+        plot_autocorrelation_function(uns_time_series_dfs, tsa_subdir,'-no-seasonality')
 
     print('\nDone!\n')
 
