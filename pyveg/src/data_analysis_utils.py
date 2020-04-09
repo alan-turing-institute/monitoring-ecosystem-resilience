@@ -421,10 +421,10 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3):
         d[name] = group
 
     # for each sub-image
-    for df in d.values():
+    for key, df_ in d.items():
 
         # perform smoothing
-        df = smooth_subimage(df, column=column, n=n, it=it)
+        d[key] = smooth_subimage(df_, column=column, n=n, it=it)
 
     # reconstruct the DataFrame
     df = list(d.values())[0]
@@ -432,6 +432,7 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3):
         df = df.append(df_)
 
     return df
+
 
 def calculate_ci(data, ci_level=0.99):
     """
@@ -732,8 +733,6 @@ def network_figure(data_df, date, metric, vmin, vmax, output_dir):
     plt.close(fig)
 
 
-
-
 def resample_time_series(df, col_name="offset50"):
     """
     Resample and interpolate a time series dataframe so we have one row
@@ -757,7 +756,6 @@ def resample_time_series(df, col_name="offset50"):
     new_series = rseries.interpolate()
 
     return new_series
-
 
 
 def fft_series(time_series):
