@@ -857,7 +857,7 @@ def fft_series(time_series):
     return xvals, yvals
 
 
-def write_slimmed_csv(dfs, output_dir):
+def write_slimmed_csv(dfs, output_dir, filename_suffix = ''):
 
     for collection_name, veg_df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
@@ -868,7 +868,7 @@ def write_slimmed_csv(dfs, output_dir):
             df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
             df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
 
-            summary_csv_filename = os.path.join(output_dir, collection_name.replace('/', '-')+'_time_series.csv')
+            summary_csv_filename = os.path.join(output_dir, collection_name.replace('/', '-')+'_time_series'+filename_suffix+'.csv')
 
             print(f"\nWriting '{summary_csv_filename}'...")
             df_summary.to_csv(summary_csv_filename)
@@ -1016,7 +1016,6 @@ def remove_seasonality_all_sub_images(dfs, lag, period):
             d = {}
             for name, group in df.groupby(['latitude', 'longitude']):
                 d[name] = group
-                print (name)
                 # for each sub-image
             for key, df_ in d.items():
 
@@ -1035,13 +1034,14 @@ def remove_seasonality_all_sub_images(dfs, lag, period):
 
         else:
 
-            print ('im here now')
-
+            # remove seasonality for weather data, this is a simpler time series
             df = dfs[col_name]
+            df_new = df.set_index('date')
+            uns_df = remove_seasonality(df_new, lag, period)
 
-            uns_df = remove_seasonality(df, lag, period)
-
+            uns_df['date'] = uns_df.index
             dfs[col_name] = uns_df
+
 
 
     return dfs
