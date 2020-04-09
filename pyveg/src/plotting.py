@@ -179,7 +179,7 @@ def plot_time_series(dfs, output_dir):
     """
 
 
-def plot_smoothed_time_series(dfs, output_dir, filename_sufix =''):
+def plot_smoothed_time_series(dfs, output_dir, filename_suffix =''):
     """
     Given a dict of DataFrames, of which each row corresponds to
     a different time point (constructed with `make_time_series`),
@@ -244,7 +244,10 @@ def plot_smoothed_time_series(dfs, output_dir, filename_sufix =''):
             # plot ci of the smoothed mean
             #ax.plot(veg_xs, veg_means_smooth+veg_ci, label='99% CI', linewidth=1, color='green', linestyle='dashed')
             #ax.plot(veg_xs, veg_means_smooth-veg_ci, linewidth=1, color='green', linestyle='dashed')
-            ax.set_ylim([2*min(veg_means), 2*max(veg_means)])
+
+
+            ax.set_ylim([min(veg_means)-3*np.array(veg_stds_smooth).mean(), max(veg_means)+3*np.array(veg_stds_smooth).mean()])
+
 
             # plot legend
             plt.legend(loc='upper left')
@@ -269,7 +272,9 @@ def plot_smoothed_time_series(dfs, output_dir, filename_sufix =''):
             unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means)
             smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth)
             textstr = f'AR$(1)={smoothed_ar1:.2f}$ +/- ${smoothed_ar1_se:.2f}$ (${unsmoothed_ar1:.2f}$ +/- ${unsmoothed_ar1_se:.2f}$ unsmoothed)'
-            ax2.text(0.35, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+            ax2.text(0.45, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+
+            ax2.set_ylim([min(precip)-3*np.array(precip).std(), max(precip)+3*np.array(precip).std()])
 
             # add Kendall tau
             tau, p = get_kendell_tau(veg_means)
@@ -288,12 +293,12 @@ def plot_smoothed_time_series(dfs, output_dir, filename_sufix =''):
             fig.tight_layout()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-time-series-smoothed'+filename_sufix+'.png'
+            output_filename = collection_name.replace('/', '-') +'-time-series-smoothed' + filename_suffix + '.png'
             print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
 
 
-def plot_autocorrelation_function(dfs, output_dir, filename_sufix = ''):
+def plot_autocorrelation_function(dfs, output_dir, filename_suffix =''):
     """
     Given a dict of DataFrames, of which each row corresponds to
     a different time point (constructed with `make_time_series`),
@@ -320,7 +325,7 @@ def plot_autocorrelation_function(dfs, output_dir, filename_sufix = ''):
             plt.legend()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-autocorrelation-function'+filename_sufix+'.png'
+            output_filename = collection_name.replace('/', '-') +'-autocorrelation-function' + filename_suffix + '.png'
             print(f'\nPlotting autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
 
@@ -334,7 +339,7 @@ def plot_autocorrelation_function(dfs, output_dir, filename_sufix = ''):
             plt.tight_layout()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-unsmoothed'+filename_sufix+'.png'
+            output_filename = collection_name.replace('/', '-') +'-partial-autocorrelation-function-unsmoothed' + filename_suffix + '.png'
             print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
             
@@ -345,7 +350,7 @@ def plot_autocorrelation_function(dfs, output_dir, filename_sufix = ''):
             plt.tight_layout()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-smoothed'+filename_sufix+'.png'
+            output_filename = collection_name.replace('/', '-') +'-partial-autocorrelation-function-smoothed' + filename_suffix + '.png'
             print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
             
