@@ -529,20 +529,38 @@ def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
     # assumed to be unphysical
 
     # loop over collections
-    for col_name, df in dfs.items():
+    for col_name, veg_df in dfs.items():
 
         # if vegetation data
         if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
 
-            # calcualte residuals to the mean
-            res = (df[column] - df[column].mean()).abs()
+            # group by (lat, long)
+            d = {}
+            for name, group in veg_df.groupby(['latitude', 'longitude']):
+                d[name] = group
 
-            # determine which are outliers
-            outlier = res > df[column].std()*sigmas
-            #outlier = res > 300
+            # for each sub-image
+            for key, df_ in d.items():
 
-            # set to None
-            df.loc[outlier, column] = None
+                # calcualte residuals to the mean
+                res = (df_[column] - df_[column].mean()).abs()
+
+                # determine which are outliers
+                outlier = res > df_[column].std()*sigmas
+
+                # set to None
+                df_.loc[outlier, column] = None
+
+                # replace the df
+                d[key] = df_
+
+            # reconstruct the DataFrame
+            df = list(d.values())[0]
+            for df_ in list(d.values())[1:]:
+                df = df.append(df_)
+        
+            # replace value in dfs
+            dfs[col_name] = df   
 
     return dfs
 
