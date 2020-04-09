@@ -149,6 +149,9 @@ def main():
         # make autocorrelation plots
         plot_autocorrelation_function(smoothed_time_series_uns_dfs, tsa_subdir,'-no-seasonality')
 
+        # write csv for easy external analysis
+        write_slimmed_csv(smoothed_time_series_uns_dfs, tsa_subdir,'-no-seasonality')
+
     print('\nDone!\n')
 
 
