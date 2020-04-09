@@ -22,7 +22,7 @@ from pyveg.src.data_analysis_utils import (
     coarse_dataframe,
     write_slimmed_csv,
     get_AR1_parameter_estimate,
-    remove_seasonality
+    remove_seasonality_all_sub_images
 )
 
 from pyveg.src.plotting import (
@@ -137,13 +137,17 @@ def main():
 
     #   remove seasonality in a time series
 
-        uns_time_series_dfs = remove_seasonality(smoothed_time_series_dfs, 12, "M")
+        time_series_uns_dfs = remove_seasonality_all_sub_images(smooth_veg_data(dfs.copy(), n=5), 12, "M")
+
+
+        smoothed_time_series_uns_dfs = make_time_series(time_series_uns_dfs.copy()) # increase smoothing with n>5
+
 
         # make a smoothed time series plot
-        plot_smoothed_time_series(uns_time_series_dfs, tsa_subdir, '-no-seasonality')
+        plot_smoothed_time_series(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
 
         # make autocorrelation plots
-        plot_autocorrelation_function(uns_time_series_dfs, tsa_subdir,'-no-seasonality')
+        plot_autocorrelation_function(smoothed_time_series_uns_dfs, tsa_subdir,'-no-seasonality')
 
     print('\nDone!\n')
 

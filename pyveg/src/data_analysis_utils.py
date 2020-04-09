@@ -252,7 +252,7 @@ def convert_to_geopandas(df):
 
     return df
 
-def remove_seasonality(dfs,lag, period = 'M'):
+def remove_seasonality(df,lag, period = 'M'):
 
     """
     Loop over time series DataFrames and remove
@@ -264,6 +264,9 @@ def remove_seasonality(dfs,lag, period = 'M'):
         Time series data for multiple sub-image locations.
     lag : float
         Periodicity to remove
+
+    period: string
+        Type of periodicitty (day, month, year)
 
     Returns
     ----------
@@ -277,21 +280,29 @@ def remove_seasonality(dfs,lag, period = 'M'):
 
     # loop over collections
 
-    uns_dfs = dfs.copy()
     df_resampled = pd.DataFrame()
-    for col_name, df in uns_dfs.items():
 
-        for col in df.columns:
+    for col in df.columns:
 
-            series_resampled = resample_time_series(df,col,period)
+        if col=='latitude' or col=='longitude':
+            df_resampled[col] = df[col].iloc[0]
+            continue
 
-            df_resampled[col] = series_resampled.diff(lag)
+        if col=='date' or col=='datetime':
+            df_resampled[col] = df_resampled.index
+            continue
 
-        df_resampled.dropna(inplace=True)
+        series_resampled = resample_time_series(df,col,period)
 
-        uns_dfs[col_name] = df_resampled
+        df_resampled[col] = series_resampled.diff(lag)
 
-    return uns_dfs
+
+
+
+    df_resampled.dropna(inplace=True)
+
+
+    return df_resampled
 
 
 
@@ -955,3 +966,64 @@ def write_to_json(filename, out_dict):
         with open(filename, 'w') as json_file:
             json.dump(data, json_file, indent=2)
 
+
+def remove_seasonality_all_sub_images(dfs, lag, period):
+    """
+    Loop over each sub image time series DataFrames and remove
+    time series seasonality.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    lag : float
+        Periodicity to remove
+
+    period: string
+        Type of periodicitty (day, month, year)
+
+    Returns
+    ----------
+    dict of DataFrame
+        Time series data for multiple sub-image with
+        seasonality removed
+
+    """
+    for col_name, df in dfs.items():
+
+        # if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+
+            # group by (lat, long)
+            d = {}
+            for name, group in df.groupby(['latitude', 'longitude']):
+                d[name] = group
+                print (name)
+                # for each sub-image
+            for key, df_ in d.items():
+
+                df_new = df_.set_index('date')
+
+                uns_df = remove_seasonality(df_new.copy(), lag, period)
+
+                d[key] = uns_df
+
+            # reconstruct the DataFrame
+            df = list(d.values())[0]
+            for df_ in list(d.values())[1:]:
+                df = df.append(df_)
+
+            dfs[col_name] = df
+
+        else:
+
+            print ('im here now')
+
+            df = dfs[col_name]
+
+            uns_df = remove_seasonality(df, lag, period)
+
+            dfs[col_name] = uns_df
+
+
+    return dfs
