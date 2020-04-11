@@ -32,9 +32,9 @@ LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     """
     Different input_collections need different steps to be taken to handle
-    cloudy image. The first step is to reject images that more than X% 
-    cloudy pixels (here X=5). The next step is to mask cloudy pixels. This 
-    will hopefully mean that when we take the median of the ImageCollection, 
+    cloudy image. The first step is to reject images that more than X%
+    cloudy pixels (here X=5). The next step is to mask cloudy pixels. This
+    will hopefully mean that when we take the median of the ImageCollection,
     we ignore cloudy pixels.
 
     Parameters
@@ -42,16 +42,16 @@ def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     image_coll : ee.ImageCollection
         The ImageCollection of images from which we want to remove cloud.
     collection_name : str
-        Name of the collection so that we can apply collection specific 
+        Name of the collection so that we can apply collection specific
         masking.
     cloud_pix_flag : str
-        Name of the flag which details the fraction of cloudy pixels in each 
+        Name of the flag which details the fraction of cloudy pixels in each
         image.
 
     Returns
     ----------
     image_coll
-        Image collection with very cloudy images removed, and masked images 
+        Image collection with very cloudy images removed, and masked images
         containing a tolerable amount of cloud.
     """
 
@@ -63,7 +63,7 @@ def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     elif ( collection_name == 'LANDSAT/LE07/C01/T1_SR' or
            collection_name == 'LANDSAT/LT05/C01/T1_SR' or
            collection_name == 'LANDSAT/LT04/C01/T1_SR' ):
-        mask_func = cloud_mask.landsat457SRPixelQA() 
+        mask_func = cloud_mask.landsat457SRPixelQA()
     else:
         print("No cloud mask logic defined for input collection {}"\
               .format(collection_name))
@@ -124,13 +124,13 @@ def download_and_unzip(url, output_tmpdir):
                  if filename.endswith(".tif")]
     if len(tif_files) == 0:
         raise RuntimeError("No files extracted")
-    
+
     # get the filename before the "Bx" band identifier
     tif_filebases = [tif_file.split(".")[0] for tif_file in tif_files]
-    
+
     # get the unique list
     tif_filebases = set(tif_filebases)
-    
+
     # prepend the directory name to each of the filebases
     return [os.path.join(output_tmpdir, tif_filebase) \
             for tif_filebase in tif_filebases]
@@ -148,15 +148,15 @@ def ee_prep_data(collection_dict,
     Parameters
     ----------
     collection_dict : dict
-        Dictionary containing information about the collection (name, 
+        Dictionary containing information about the collection (name,
         type, bands, etc). Follows structure in the config file.
     coords : tuple of float
         (Latitude, longitude) coordinates.
     region : str
-         String representation of 4 sets of [long,lat] forming rectangle 
+         String representation of 4 sets of [long,lat] forming rectangle
          around the point specified in coords.
     date_range : tuple of str
-        (Start date, end data) for data filtering. Date strings 
+        (Start date, end data) for data filtering. Date strings
         must be formatted as 'YYYY-MM-DD'.
     region_size : float, optional
         Size of the output image (default is 0.1, or 1km).
@@ -169,7 +169,7 @@ def ee_prep_data(collection_dict,
     ----------
     list
         URLs from which we can download the data. For vegetation
-        we should only get a single URL in the list, but for 
+        we should only get a single URL in the list, but for
         precipitation it is possible to get separate URLs for e.g.
         precipitation and weather data.
     """
@@ -237,7 +237,7 @@ def ee_prep_data(collection_dict,
             image_list.append(image_weather)
 
         if 'temperature_band' in collection_dict.keys():
-            # average the temperature across all dates, may want to include 
+            # average the temperature across all dates, may want to include
             # temperature range, min and max, in future
             image_temp = dataset.select(list(collection_dict['temperature_band'])).mean()
             image_list.append(image_temp)
@@ -289,15 +289,15 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
     Parameters
     ----------
     output_dir : str
-        Path to the directory where ee files will be downloaded 
+        Path to the directory where ee files will be downloaded
         and extracted to.
     collection_dict : dict
-        Dictionary containing information about the collection (name, 
+        Dictionary containing information about the collection (name,
         type, bands, etc). Follows structure in the config file.
     coords : tuple of float
         (Latitude, longitude) coordinates.
     date_range : tuple of str
-        (Start date, end data) for data filtering. Date strings 
+        (Start date, end data) for data filtering. Date strings
         must be formatted as 'YYYY-MM-DD'.
     region_size : float, optional
         Size of the output image (default is 0.1, or 1km).
@@ -331,4 +331,3 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
 
     # return the path so downloaded files can be handled by caller
     return download_dir, log_msg
-
