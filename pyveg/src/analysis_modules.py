@@ -8,6 +8,12 @@ import re
 
 from image_utils import *
 from file_utils import *
+
+from .subgraph_centrality import (
+    subgraph_centrality,
+    feature_vector_metrics,
+)
+
 from pyveg_sequence import BaseModule
 
 
@@ -169,4 +175,38 @@ class NetworkCentralityCalculator(AnalysisModule):
 
     def __init__(self, name):
         super().__init__(name)
+        self.params += [
+            ("input_dir", str),
+            ("output_dir", str),
+            ("n_threads", int)
+                        ]
         self.set_default_parameters()
+
+
+    def set_default_parameters(self):
+        if not "n_threads" in vars(self):
+            self.n_threads = 4
+        pass
+
+
+    def process_sub_image(self, input_filename):
+        """
+        Read file and run network centrality
+        """
+        img = Image.open(input_filename)
+        image_array = pillow_to_numpy(sub_image)
+        feature_vec, _ = subgraph_centrality(image_array)
+        nc_result = feature_vector_metrics(feature_vec)
+        return feature_vec, nc_result
+
+
+    def process_single_date(self, date_string):
+        input_path = os.path.join(self.input_dir, date_string, "SPLIT")
+        input_files = [filename for filename in os.listdir(input_path) \
+                       if "BWNDVI" in filename]
+
+
+    def run(self):
+        date_strings = os.listdir(self.input_path)
+        for date_string in date_strings:
+            self.process_single_date(date_string)
