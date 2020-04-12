@@ -143,7 +143,7 @@ def process_sub_image(i, sub, sub_rgb, output_subdir, date):
         #print('Sub-image rejected!')
         save_image(colour_subimage, os.path.join(output_subdir, 'rejected'), output_filename)
         return
-    
+
     # save accepted sub-image
     save_image(sub_image, output_subdir, output_filename)
 
@@ -163,7 +163,7 @@ def process_sub_image(i, sub, sub_rgb, output_subdir, date):
     save_json(nc_result, os.path.join(output_subdir,"tmp_json"), f"network_centrality_sub{i}.json")
 
     n_processed = len(os.listdir(os.path.join(output_subdir,"tmp_json")))
-    print(f'Processed {n_processed} sub-images...', end='\r') 
+    print(f'Processed {n_processed} sub-images...', end='\r')
 
 
 def consolidate_subimage_json(output_subdir):
@@ -299,6 +299,8 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     # save the rgb image
     rgb_image = convert_to_rgb(tif_filebase, collection_dict['RGB_bands'])
 
+    if not check_image_ok(rgb_image):
+        return None
     # logging
     with open(os.path.join(output_dir, 'download.log'), 'a+') as file:
         file.write(f'daterange={date_range} coords={coords} >>> {log_msg}\n')
@@ -322,7 +324,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
         print('Running network centrality...')
         #n_sub_images = 20 # do this for speedup while testing
         nc_output_dir = os.path.join(output_dir, 'network_centrality')
-        nc_results = run_network_centrality(nc_output_dir, processed_ndvi, rgb_image, coords, 
+        nc_results = run_network_centrality(nc_output_dir, processed_ndvi, rgb_image, coords,
                                             date_range, region_size, n_sub_images=n_sub_images)
 
         return nc_results
