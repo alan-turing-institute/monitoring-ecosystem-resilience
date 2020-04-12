@@ -593,6 +593,8 @@ def check_image_ok(rgb_image):
 
     img_array = pillow_to_numpy(rgb_image)
 
+    if len(img_array.shape) < 3:
+        return False
     black = [0,0,0]
     black_pix_threshold = 0.05
     n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
