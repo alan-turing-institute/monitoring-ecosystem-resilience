@@ -41,7 +41,7 @@ class BaseDownloader(BaseModule):
                          ("type", str),
                          ("region_size", float),
                          ("scale", int),
-                         ("output_dir", str)]
+                         ("output_basedir", str)]
         return
 
     def set_default_parameters(self):
@@ -52,9 +52,10 @@ class BaseDownloader(BaseModule):
             self.region_size = 0.1
         if not "scale" in vars(self):
             self.scale = 10
-        if not "output_dir" in vars(self):
-            self.output_dir = "."
+        if not "output_basedir" in vars(self):
+            self.output_basedir = "."
         return
+
 
     def get_region_string(self):
         """
@@ -116,17 +117,20 @@ class BaseDownloader(BaseModule):
         if dataset_size == 0:
             print('No images found in this date rage, skipping.')
             log_msg = 'WARN >>> No data found.'
-            return [], log_msg
+            return []
         # concrete class will do more filtering, and prepare Images for download
         image_list = self.ee_prep_images(dataset)
         url_list =[]
         for image in image_list:
             # get a URL from which we can download the resulting data
-            url = image.getDownloadURL(
-                {'region': region,
-                 'scale': self.scale}
-            )
-            url_list.append(url)
+            try:
+                url = image.getDownloadURL(
+                    {'region': region,
+                     'scale': self.scale}
+                )
+                url_list.append(url)
+            except Exception as e:
+                print("Unable to get URL: {}".format(e))
 
             logging.info(f'OK   >>> Found {dataset.size().getInfo()}/{dataset_size} valid images after cloud filtering.')
         return url_list
@@ -147,10 +151,9 @@ class BaseDownloader(BaseModule):
             return None, "{}: No URLs found for {} {}".format(self.name,
                                                               self.coords,
                                                               date_range)
-        sub_dir = f'gee_{self.coords[0]}_{self.coords[1]}'\
-            +"_"+self.collection_name.replace('/', '-')
+
         mid_date = self.find_mid_period(date_range[0], date_range[1])
-        download_dir = os.path.join(self.output_dir, sub_dir, mid_date, "RAW")
+        download_dir = os.path.join(self.output_dir, mid_date, "RAW")
 
         # download files and unzip to temporary directory
         for download_url in download_urls:
@@ -249,23 +252,42 @@ class BaseDownloader(BaseModule):
         return output_list
 
 
+    def set_output_dir(self, output_dir=None):
+        """
+        If provided an output directory name, set it here,
+        otherwise, construct one from coords and collection name.
+        """
+        if output_dir:
+            self.output_dir = output_dir
+        else:
+            sub_dir = f'gee_{self.coords[0]}_{self.coords[1]}'\
+                +"_"+self.collection_name.replace('/', '-')
+            self.output_dir = os.path.join(self.output_basedir, sub_dir)
+
+
     def run(self):
         self.check_config()
+        # construct name of output directory from coords if not set
+        if not "output_dir" in vars(self):
+            self.set_output_dir()
+
         num_slices = self.get_num_n_day_slices()
         date_ranges = self.slice_time_period(num_slices)
         download_dirs = []
         for date_range in date_ranges:
             urls = self.ee_prep_data(date_range)
-            print("{}: got URL {} for date range {}".format(self.name, urls, date_range))
+            print("{}: got URL {} for date range {}".format(self.name,
+                                                            urls,
+                                                            date_range))
             download_dir = self.ee_download(urls, date_range)
             download_dirs.append(download_dir)
         return download_dirs
 
 
-###################################################################################
+##############################################################################
 # Below here are specializations of the BaseDownloader class.
 # e.g. for downloading vegetation imagery, or weather data.
-###################################################################################
+##############################################################################
 
 
 class VegetationDownloader(BaseDownloader):
