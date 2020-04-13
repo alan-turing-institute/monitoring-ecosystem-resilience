@@ -234,7 +234,7 @@ def plot_smoothed_time_series(dfs, output_dir):
             # plot ci of the smoothed mean
             #ax.plot(veg_xs, veg_means_smooth+veg_ci, label='99% CI', linewidth=1, color='green', linestyle='dashed')
             #ax.plot(veg_xs, veg_means_smooth-veg_ci, linewidth=1, color='green', linestyle='dashed')
-            ax.set_ylim([-800, -400])
+            ax.set_ylim([-1000, -400])
 
             # plot legend
             plt.legend(loc='upper left')
@@ -387,7 +387,7 @@ def plot_feature_vectors(dfs, output_dir):
             plt.figure(figsize=(6,5))
 
             # loop through time points
-            for _, group in df.groupby('date'):
+            for _, group in veg_df.groupby('date'):
                 
                 # calculate feature vector
                 feature_vector = np.array(group.feature_vec.values.tolist()).mean(axis=0)
