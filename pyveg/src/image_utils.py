@@ -22,21 +22,6 @@ matplotlib.use('PS')
 import matplotlib.pyplot as plt
 
 
-def save_json(out_dict, output_dir, output_filename):
-    """
-    Given a dictionary, save
-    to requested filename -
-    """
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, output_filename)
-
-    with open(output_path, 'w') as fp:
-        json.dump(out_dict, fp, indent=2)
-
-    print("Saved json file '{}'".format(output_path))
-
-
 def save_image(image, output_dir, output_filename):
     """
     Given a PIL.Image (list of pixel values), save
