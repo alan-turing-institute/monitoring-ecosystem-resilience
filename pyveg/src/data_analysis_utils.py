@@ -211,8 +211,8 @@ def variable_read_json_to_dataframe(filename):
                 continue
 
             # if we are looking at veg data, loop over space points
-            if isinstance(list(time_point.values())[0], dict):
-                for space_point in time_point.values():
+            if isinstance(list(time_point)[0], dict):
+                for space_point in time_point:
                     rows_list.append(space_point)
 
             # otherwise, just add the row
