@@ -152,8 +152,8 @@ def process_sub_image(i, sub, sub_rgb, output_subdir, date):
     feature_vec, _ = subgraph_centrality(image_array)
     nc_result = feature_vector_metrics(feature_vec)
 
-    nc_result['latitude'] = round(sub_coords[0], 4)
-    nc_result['longitude'] = round(sub_coords[1], 4)
+    nc_result['longitude'] = round(sub_coords[0], 4)
+    nc_result['latitude'] = round(sub_coords[1], 4)
     nc_result['date'] = date
     nc_result['feature_vec'] = list(feature_vec)
 
@@ -263,7 +263,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
         Dictionary containing information about the collection (name,
         type, bands, etc). Follows structure in the config file.
     coords : tuple of float
-        (Latitude, longitude) coordinates.
+        (Longitude, latitude) coordinates.
     date_range : tuple of str
         (Start date, end data) for data filtering. Date strings
         must be formatted as 'YYYY-MM-DD'.
