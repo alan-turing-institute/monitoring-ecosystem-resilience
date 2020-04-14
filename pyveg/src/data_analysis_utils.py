@@ -1045,3 +1045,55 @@ def remove_seasonality_all_sub_images(dfs, lag, period):
 
 
     return dfs
+
+
+def remove_seasonality_combined(dfs, lag, period='M'):
+
+    """
+    Loop over time series DataFrames and remove
+    time series seasonality.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    lag : float
+        Periodicity to remove
+
+    period: string
+        Type of periodicitty (day, month, year)
+
+    Returns
+    ----------
+    dict of DataFrame
+        Time series data with
+        seasonality removed
+    """
+
+    # loop over collections
+
+    for collection_name, df in dfs.items():
+
+
+        df_resampled = pd.DataFrame()
+
+        for col in df.columns:
+
+            if col=='latitude' or col=='longitude':
+                df_resampled[col] = df[col].iloc[0]
+                continue
+
+            if col=='date' or col=='datetime':
+                df_resampled[col] = df_resampled.index
+                continue
+
+            series_resampled = resample_time_series(df,col,period)
+
+            df_resampled[col] = series_resampled.diff(lag)
+
+
+        df_resampled.dropna(inplace=True)
+
+        dfs[collection_name] = df_resampled
+
+    return dfs
