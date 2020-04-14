@@ -156,10 +156,10 @@ def main():
 
         #   remove seasonality in the summary time series
 
-        time_series_uns_dfs = remove_seasonality_combined(smoothed_time_series_dfs, 12, "M")
+        time_series_uns_summary_dfs = remove_seasonality_combined(smoothed_time_series_dfs.copy(), 12, "M")
 
         # make a smoothed time series plot
-        plot_smoothed_time_series(time_series_uns_dfs, tsa_subdir, '-no-seasonality-summary-ts')
+        plot_smoothed_time_series(time_series_uns_summary_dfs, tsa_subdir, '-no-seasonality-summary-ts',plot_std = False)
 
 
     print('\nDone!\n')

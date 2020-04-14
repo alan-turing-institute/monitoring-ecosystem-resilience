@@ -179,7 +179,7 @@ def plot_time_series(dfs, output_dir):
     """
 
 
-def plot_smoothed_time_series(dfs, output_dir, filename_suffix =''):
+def plot_smoothed_time_series(dfs, output_dir, filename_suffix ='',plot_std=True):
     """
     Given a dict of DataFrames, of which each row corresponds to
     a different time point (constructed with `make_time_series`),
@@ -209,6 +209,7 @@ def plot_smoothed_time_series(dfs, output_dir, filename_suffix =''):
 
             # extract raw means
             veg_means = df['offset50_mean']
+            veg_std = df['offset50_std']
 
             # extract smoothed mean, std, and ci
             veg_means_smooth = df['offset50_smooth_mean']
@@ -235,17 +236,19 @@ def plot_smoothed_time_series(dfs, output_dir, filename_suffix =''):
 
             # plot unsmoothed vegetation means
             ax.plot(veg_xs, veg_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
-            
             # plot LOESS smoothed vegetation means and std
-            ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=7, markeredgecolor=(0.9172, 0.9627, 0.9172), markeredgewidth=2, 
+            ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=7, markeredgecolor=(0.9172, 0.9627, 0.9172),
+                    markeredgewidth=2,
                     label='Smoothed', linewidth=2, color='green')
-            ax.fill_between(veg_xs, veg_means_smooth-veg_stds_smooth, veg_means_smooth+veg_stds_smooth, facecolor='green', alpha=0.1, label='Std Dev')
+            if plot_std:
+                # plot LOESS smoothed vegetation means and std
+                ax.fill_between(veg_xs, veg_means_smooth-veg_stds_smooth, veg_means_smooth+veg_stds_smooth, facecolor='green', alpha=0.1, label='Std Dev')
             
             # plot ci of the smoothed mean
             #ax.plot(veg_xs, veg_means_smooth+veg_ci, label='99% CI', linewidth=1, color='green', linestyle='dashed')
             #ax.plot(veg_xs, veg_means_smooth-veg_ci, linewidth=1, color='green', linestyle='dashed')
 
-            ax.set_ylim([min(veg_means)-3*np.array(veg_stds_smooth).mean(), max(veg_means)+3*np.array(veg_stds_smooth).mean()])
+            ax.set_ylim([min(veg_means)-4*max(veg_std), max(veg_means)+4*max(veg_std)])
 
             # plot legend
             plt.legend(loc='upper left')

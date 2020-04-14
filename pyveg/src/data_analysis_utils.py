@@ -292,6 +292,9 @@ def remove_seasonality(df,lag, period = 'M'):
             df_resampled[col] = df_resampled.index
             continue
 
+        if col=='feature_vec':
+            continue
+
         series_resampled = resample_time_series(df,col,period)
 
         df_resampled[col] = series_resampled.diff(lag)
@@ -1061,7 +1064,7 @@ def remove_seasonality_combined(dfs, lag, period='M'):
         Periodicity to remove
 
     period: string
-        Type of periodicitty (day, month, year)
+        Type of periodicity (day, month, year)
 
     Returns
     ----------
@@ -1085,6 +1088,8 @@ def remove_seasonality_combined(dfs, lag, period='M'):
 
             if col=='date' or col=='datetime':
                 df_resampled[col] = df_resampled.index
+                continue
+            if col=='feature_vec':
                 continue
 
             series_resampled = resample_time_series(df,col,period)
