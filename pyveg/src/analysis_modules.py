@@ -85,7 +85,7 @@ class VegetationImageProcessor(AnalysisModule):
         rgb_image = convert_to_rgb(tif_filebase, self.RGB_bands)
 
         # check image quality on the colour image
-        if not check_image_ok(rgb_image):
+        if not check_image_ok(rgb_image, 1.0):
             print('Detected a low quality image, skipping to next date.')
             return False
         rgb_filepath = self.construct_image_savepath(date_string,
@@ -236,9 +236,8 @@ class WeatherImageToJSON(AnalysisModule):
             if date_string == "RESULTS":
                 continue
             time_series_data[date_string] = self.process_one_date(date_string)
-        output_dict = {"type": "weather",
-                       "time-series-data": time_series_data}
-        save_json(output_dict, os.path.join(self.input_dir, "RESULTS"),
+
+        save_json(time_series_data, os.path.join(self.input_dir, "RESULTS"),
                   "weather_data.json")
 
 
@@ -320,6 +319,10 @@ class NetworkCentralityCalculator(AnalysisModule):
         """
 
         input_path = os.path.join(self.input_dir, date_string, "SPLIT")
+        if not os.path.exists(input_path):
+            print("{}: No sub-images for date {}".format(self.name,
+                                                         date_string))
+            return
         input_files = [filename for filename in os.listdir(input_path) \
                        if "BWNDVI" in filename]
         tmp_json_dir = os.path.join(self.input_dir, date_string,"tmp_json")
@@ -336,6 +339,9 @@ class NetworkCentralityCalculator(AnalysisModule):
 
 
     def run(self):
-        date_strings = os.listdir(self.input_dir)
+        if "list_of_dates" in vars(self):
+            date_strings = self.list_of_dates
+        else:
+            date_strings = os.listdir(self.input_dir)
         for date_string in date_strings:
             self.process_single_date(date_string)
