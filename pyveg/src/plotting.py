@@ -15,7 +15,7 @@ import matplotlib.cm as cm
 import seaborn as sns
 from pandas.plotting import register_matplotlib_converters
 
-from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json
+from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json,stl_decomposition
 
 
 def plot_time_series(dfs, output_dir):
@@ -495,15 +495,68 @@ def plot_cross_correlations(dfs, output_dir):
             correlations_dict = {'lagged_correlation': correlations}
             write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), correlations_dict)
 
-def stl_decomposition_plotting(ts_df,res):
+def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
+
+    """
+    Plot each output from the STL decomposition
+
+     Parameters
+     ----------
+     ts_df : DataFrame
+         The input time-series.
+     res : object
+        The STL fit object
+     output_dir : str
+         Directory to save the plot in.
+
+    output_filename : str
+         Name of the file to save the plot in.
+     """
+
 
     register_matplotlib_converters()
     sns.set_style('darkgrid')
-    plt.rc('figure', figsize=(18, 12))
-    plt.rc('font', size=13)
+    plt.rc('figure', figsize=(20, 8))
+    plt.rc('font', size=10)
 
     fig = res.plot()
     ax_list = fig.axes
 
-    for ax in ax_list:
-        ax.set_xticklabels(ts_df.index, rotation=45, va="center", position=(0, -0.28))
+    for ax in ax_list[:-1]:
+        ax.tick_params(labelbottom=False)
+
+    ax_list[-1].set_xticklabels(ts_df.index, rotation=45, va="center")
+    plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
+
+
+def do_stl_decomposition(dfs, period, output_dir):
+    """
+     Run the STL decomposition and plot the results network centrality and
+     precipitation DataFrames in `dfs`.
+
+     Parameters
+     ----------
+     dfs : dict of DataFrame
+         The time-series results.
+     peropd : float
+        Periodicity to model
+
+     output_dir : str
+         Directory to save the plot in.
+     """
+
+    for collection_name, df in dfs.items():
+
+        if 'COPERNICUS/S2' in collection_name or 'LANDSAT' in collection_name:
+            offsets = df['offset50_mean']
+
+            res = stl_decomposition(offsets, period)
+
+
+            stl_decomposition_plotting(offsets,res,output_dir,collection_name.replace('/', '-')+'_STL_decomposion_'+'_offset50mean')
+        elif 'ERA' in collection_name:
+
+            precip = dfs[collection_name]['total_precipitation']   # convert to mm
+            res = stl_decomposition(precip, period)
+
+            stl_decomposition_plotting(precip,res,output_dir,collection_name.replace('/', '-')+'_STL_decomposion_'+'_precipitation')

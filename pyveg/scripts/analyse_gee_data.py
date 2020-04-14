@@ -22,11 +22,11 @@ from pyveg.src.data_analysis_utils import (
     coarse_dataframe,
     write_slimmed_csv,
     remove_seasonality_combined,
-    remove_seasonality_all_sub_images
+    remove_seasonality_all_sub_images,
 )
 
 from pyveg.src.plotting import (
-    plot_time_series, 
+    do_stl_decomposition,
     plot_smoothed_time_series, 
     plot_autocorrelation_function,
     plot_feature_vectors,
@@ -136,7 +136,7 @@ def main():
     # ------------------------------------------------
 
 
-        #do_stl_decomposition(time_series_dfs)
+        do_stl_decomposition(time_series_dfs,12,tsa_subdir)
 
     # --------------------------------------------------
 

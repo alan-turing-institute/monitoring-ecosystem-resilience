@@ -29,7 +29,6 @@ from scipy.stats import sem, t
 from statsmodels.nonparametric.smoothers_lowess import lowess
 from statsmodels.tsa.seasonal import STL
 
-
 def read_json_to_dataframe(filename):
     """
     Read a json file and convert the result to a Geopandas DataFrame.
@@ -1107,16 +1106,12 @@ def remove_seasonality_combined(dfs, lag, period='M'):
 
 def stl_decomposition(ts_df, period=12):
 
-
     stl = STL(ts_df, period, robust=True)
 
     res = stl.fit()
+
     return  res
 
-def do_stl_decomposition(dfs,period):
 
-    #for collection_name, df in dfs.items():
-
-    return 0
 
 
