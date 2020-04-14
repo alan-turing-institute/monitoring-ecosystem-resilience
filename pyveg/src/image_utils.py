@@ -573,10 +573,10 @@ def process_and_threshold(img, r=3):
 # ---------------------------------------------------------------------
 
 
-def check_image_ok(rgb_image):
+def check_image_ok(rgb_image, black_pix_threshold=0.05):
     """
     Check the quality of an RGB image. Currently checking if we have
-    > 5% pixels being masked. This indicates problems with cloud masking
+    > X% pixels being masked. This indicates problems with cloud masking
     in previous steps.
 
     Parameters
@@ -596,10 +596,9 @@ def check_image_ok(rgb_image):
     if len(img_array.shape) < 3:
         return False
     black = [0,0,0]
-    black_pix_threshold = 0.05
     n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
 
-    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) > black_pix_threshold:
+    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) >= black_pix_threshold:
         return False
     else:
         return True

@@ -299,8 +299,10 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     # save the rgb image
     rgb_image = convert_to_rgb(tif_filebase, collection_dict['RGB_bands'])
 
-    if not check_image_ok(rgb_image):
+    # check that RGB image isn't entirely black
+    if not check_image_ok(rgb_image, 1.0):
         return None
+
     # logging
     with open(os.path.join(output_dir, 'download.log'), 'a+') as file:
         file.write(f'daterange={date_range} coords={coords} >>> {log_msg}\n')
