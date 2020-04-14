@@ -211,8 +211,8 @@ def variable_read_json_to_dataframe(filename):
                 continue
 
             # if we are looking at veg data, loop over space points
-            if isinstance(list(time_point.values())[0], dict):
-                for space_point in time_point.values():
+            if isinstance(list(time_point)[0], dict):
+                for space_point in time_point:
                     rows_list.append(space_point)
 
             # otherwise, just add the row
@@ -251,6 +251,59 @@ def convert_to_geopandas(df):
 
 
     return df
+
+def remove_seasonality(df,lag, period = 'M'):
+
+    """
+    Loop over time series DataFrames and remove
+    time series seasonality.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    lag : float
+        Periodicity to remove
+
+    period: string
+        Type of periodicitty (day, month, year)
+
+    Returns
+    ----------
+    dict of DataFrame
+        Time series data for multiple sub-image with
+        seasonality removed
+    """
+
+    # set to None data points that are far from the mean, these are
+    # assumed to be unphysical
+
+    # loop over collections
+
+    df_resampled = pd.DataFrame()
+
+    for col in df.columns:
+
+        if col=='latitude' or col=='longitude':
+            df_resampled[col] = df[col].iloc[0]
+            continue
+
+        if col=='date' or col=='datetime':
+            df_resampled[col] = df_resampled.index
+            continue
+
+        series_resampled = resample_time_series(df,col,period)
+
+        df_resampled[col] = series_resampled.diff(lag)
+
+
+
+
+    df_resampled.dropna(inplace=True)
+
+
+    return df_resampled
+
 
 
 def make_time_series(dfs):
@@ -558,9 +611,9 @@ def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
             df = list(d.values())[0]
             for df_ in list(d.values())[1:]:
                 df = df.append(df_)
-        
+
             # replace value in dfs
-            dfs[col_name] = df   
+            dfs[col_name] = df
 
     return dfs
 
@@ -751,7 +804,9 @@ def network_figure(data_df, date, metric, vmin, vmax, output_dir):
     plt.close(fig)
 
 
-def resample_time_series(df, col_name="offset50"):
+
+
+def resample_time_series(df, col_name="offset50", period = "D"):
     """
     Resample and interpolate a time series dataframe so we have one row
     per day (useful for FFT)
@@ -770,7 +825,7 @@ def resample_time_series(df, col_name="offset50"):
     series.index = pd.to_datetime(series.index)
 
     # resample to get one row per day
-    rseries = series.resample("D")
+    rseries = series.resample(period).mean()
     new_series = rseries.interpolate()
 
     return new_series
@@ -802,7 +857,7 @@ def fft_series(time_series):
     return xvals, yvals
 
 
-def write_slimmed_csv(dfs, output_dir):
+def write_slimmed_csv(dfs, output_dir, filename_suffix = ''):
 
     for collection_name, veg_df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
@@ -813,7 +868,7 @@ def write_slimmed_csv(dfs, output_dir):
             df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
             df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
 
-            summary_csv_filename = os.path.join(output_dir, collection_name.replace('/', '-')+'_time_series.csv')
+            summary_csv_filename = os.path.join(output_dir, collection_name.replace('/', '-')+'_time_series'+filename_suffix+'.csv')
 
             print(f"\nWriting '{summary_csv_filename}'...")
             df_summary.to_csv(summary_csv_filename)
@@ -929,3 +984,116 @@ def write_to_json(filename, out_dict):
         with open(filename, 'w') as json_file:
             json.dump(data, json_file, indent=2)
 
+
+def remove_seasonality_all_sub_images(dfs, lag, period):
+    """
+    Loop over each sub image time series DataFrames and remove
+    time series seasonality.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    lag : float
+        Periodicity to remove
+
+    period: string
+        Type of periodicitty (day, month, year)
+
+    Returns
+    ----------
+    dict of DataFrame
+        Time series data for multiple sub-image with
+        seasonality removed
+
+    """
+    for col_name, df in dfs.items():
+
+        # if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+
+            # group by (lat, long)
+            d = {}
+            for name, group in df.groupby(['latitude', 'longitude']):
+                d[name] = group
+                # for each sub-image
+            for key, df_ in d.items():
+
+                df_new = df_.set_index('date')
+
+                uns_df = remove_seasonality(df_new.copy(), lag, period)
+
+                d[key] = uns_df
+
+            # reconstruct the DataFrame
+            df = list(d.values())[0]
+            for df_ in list(d.values())[1:]:
+                df = df.append(df_)
+
+            dfs[col_name] = df
+
+        else:
+
+            # remove seasonality for weather data, this is a simpler time series
+            df = dfs[col_name]
+            df_new = df.set_index('date')
+            uns_df = remove_seasonality(df_new, lag, period)
+
+            uns_df['date'] = uns_df.index
+            dfs[col_name] = uns_df
+
+
+
+    return dfs
+
+
+def remove_seasonality_combined(dfs, lag, period='M'):
+
+    """
+    Loop over time series DataFrames and remove
+    time series seasonality.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    lag : float
+        Periodicity to remove
+
+    period: string
+        Type of periodicitty (day, month, year)
+
+    Returns
+    ----------
+    dict of DataFrame
+        Time series data with
+        seasonality removed
+    """
+
+    # loop over collections
+
+    for collection_name, df in dfs.items():
+
+
+        df_resampled = pd.DataFrame()
+
+        for col in df.columns:
+
+            if col=='latitude' or col=='longitude':
+                df_resampled[col] = df[col].iloc[0]
+                continue
+
+            if col=='date' or col=='datetime':
+                df_resampled[col] = df_resampled.index
+                continue
+
+            series_resampled = resample_time_series(df,col,period)
+
+            df_resampled[col] = series_resampled.diff(lag)
+
+
+        df_resampled.dropna(inplace=True)
+
+        dfs[collection_name] = df_resampled
+
+    return dfs
