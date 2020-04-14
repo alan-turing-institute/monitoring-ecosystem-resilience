@@ -27,6 +27,7 @@ import matplotlib.cm as cm
 from scipy.fftpack import fft
 from scipy.stats import sem, t
 from statsmodels.nonparametric.smoothers_lowess import lowess
+from statsmodels.tsa.seasonal import STL
 
 
 def read_json_to_dataframe(filename):
@@ -1102,3 +1103,20 @@ def remove_seasonality_combined(dfs, lag, period='M'):
         dfs[collection_name] = df_resampled
 
     return dfs
+
+
+def stl_decomposition(ts_df, period=12):
+
+
+    stl = STL(ts_df, period, robust=True)
+
+    res = stl.fit()
+    return  res
+
+def do_stl_decomposition(dfs,period):
+
+    #for collection_name, df in dfs.items():
+
+    return 0
+
+
