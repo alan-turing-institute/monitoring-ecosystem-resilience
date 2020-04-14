@@ -13,6 +13,7 @@ import matplotlib.dates as mdates
 import matplotlib.cm as cm
 
 import seaborn as sns
+from pandas.plotting import register_matplotlib_converters
 
 from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json
 
@@ -493,3 +494,16 @@ def plot_cross_correlations(dfs, output_dir):
 
             correlations_dict = {'lagged_correlation': correlations}
             write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), correlations_dict)
+
+def stl_decomposition_plotting(ts_df,res):
+
+    register_matplotlib_converters()
+    sns.set_style('darkgrid')
+    plt.rc('figure', figsize=(18, 12))
+    plt.rc('font', size=13)
+
+    fig = res.plot()
+    ax_list = fig.axes
+
+    for ax in ax_list:
+        ax.set_xticklabels(ts_df.index, rotation=45, va="center", position=(0, -0.28))

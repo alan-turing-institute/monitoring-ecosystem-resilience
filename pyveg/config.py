@@ -1,19 +1,14 @@
 #!/usr/bin/env python
+import os
 
 #Define directory to save all outputs
-output_dir = 'X'
+output_dir_ = '/Users/crangelsmith/PycharmProjects/GEE_DATA/'
+name = "Gaps_Sudan"
 
-#coordinates = (23.54,11.34) # beautiful rivers
-#coordinates = (27.99,11.29) # dense spots with river
-#coordinates = (28.37,11.12) # labyrinths
-# coordinates = (28.198,10.96) # gaps
-coordinates = (27.94,11.58) # spots
+coordinates = (28.198,10.96)
 
 # date range for Copernicus
-date_range = ('2015-01-01', '2020-01-01')
-
-#date range for landsat 5
-#date_range = ('1988-01-01', '2003-01-01')
+date_range = ('2017-03-21', '2027-04-20')
 
 
 # collections for Copernicus
@@ -21,6 +16,10 @@ collections_to_use = ['Sentinel2', 'ERA5']
 
 # collections to use for old Landsat
 #collections_to_use = ['Landsat4','Landsat5']
+
+output_dir_name = name+"_"+str(coordinates[0])+"_"+str(coordinates[1])+"_"+str(date_range[0])+"_"+str(date_range[1])
+
+output_dir = os.path.join(output_dir_,output_dir_name)
 
 
 do_network_centrality = True

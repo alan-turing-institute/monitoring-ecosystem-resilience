@@ -135,6 +135,11 @@ def main():
         write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
     # ------------------------------------------------
 
+
+        #do_stl_decomposition(time_series_dfs)
+
+    # --------------------------------------------------
+
     #   remove seasonality in a time series
 
         time_series_uns_dfs = remove_seasonality_all_sub_images(smooth_veg_data(dfs.copy(), n=5), 12, "M")
