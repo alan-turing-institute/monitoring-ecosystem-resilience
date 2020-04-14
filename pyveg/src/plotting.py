@@ -199,6 +199,8 @@ def plot_smoothed_time_series(dfs, output_dir, filename_suffix =''):
     for collection_name, df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
 
+            df.sort_index(inplace=True)
+
             # extract x values and convert to datetime objects
             try:
                 veg_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in df.index]
@@ -214,6 +216,8 @@ def plot_smoothed_time_series(dfs, output_dir, filename_suffix =''):
             veg_means_smooth = df['offset50_smooth_mean']
             veg_stds_smooth = df['offset50_smooth_std']
             veg_ci = df['ci_mean']
+
+            dfs['ECMWF/ERA5/MONTHLY'].sort_index(inplace=True)
 
             # extract rainfall data
             try:
