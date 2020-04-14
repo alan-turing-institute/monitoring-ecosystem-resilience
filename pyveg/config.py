@@ -1,29 +1,3 @@
-Skip to content
- 
-Search or jump to…
-
-Pull requests
-Issues
-Marketplace
-Explore
- 
-@crangelsmith 
-alan-turing-institute
-/
-monitoring-ecosystem-resilience
-3
-3
-0
- Code  Issues 30  Pull requests 1  Actions  Projects 7  Wiki  Security  Insights  Settings
-monitoring-ecosystem-resilience/pyveg/config.py  /
-@samvanstroud samvanstroud change default name
-d2d4c42 18 days ago
-@samvanstroud @crangelsmith @nbarlowATI
-77 lines (65 sloc)  2.21 KB
-    
-Code navigation is available!
-Navigate your code with ease. Click on function and method calls to jump to their definitions or references in the same repository. Learn more
-
 #!/usr/bin/env python
 
 #Define directory to save all outputs
@@ -98,18 +72,3 @@ data_collections = {
 }
 
 data_collections = {key : value for key,value in data_collections.items() if key in collections_to_use}
-
-# not currently used
-# cloudy_pixel_percent = 10 
-© 2020 GitHub, Inc.
-Terms
-Privacy
-Security
-Status
-Help
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
