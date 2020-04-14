@@ -317,7 +317,7 @@ class VegetationDownloader(BaseDownloader):
         super().set_default_parameters()
         if not "data_type" in vars(self):
             self.type = "vegetation"
-        if self.name == "Sentinel2":
+        if "Sentinel2" in self.name:
             self.collection_name = "COPERNICUS/S2"
             self.RGB_bands = ["B4","B3","B2"]
             self.NIR_band = "B8"
@@ -433,7 +433,7 @@ class WeatherDownloader(BaseDownloader):
         super().set_default_parameters()
         if not "data_type" in vars(self):
             self.type = "weather"
-        if self.name == "ERA5":
+        if "ERA5" in self.name:
             self.collection_name = "ECMWF/ERA5/MONTHLY"
             self.temperature_band = ['mean_2m_air_temperature']
             self.precipitation_band = ['total_precipitation']
