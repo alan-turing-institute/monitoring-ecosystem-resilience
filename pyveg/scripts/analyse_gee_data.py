@@ -119,7 +119,7 @@ def main():
             
 
         # LOESS smoothing on sub-image time series
-        smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=5)) # increase smoothing with n>5
+        smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=4)) # increase smoothing with n>5
 
         # make a smoothed time series plot
         plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
