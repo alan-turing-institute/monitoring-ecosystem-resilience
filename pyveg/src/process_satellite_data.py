@@ -324,7 +324,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
         nc_output_dir = os.path.join(output_dir, 'network_centrality')
         nc_results = run_network_centrality(nc_output_dir, processed_ndvi, rgb_image, coords, 
                                             date_range, region_size, n_sub_images=n_sub_images)
-
+        print('\nDone.')
         return nc_results
 
 
