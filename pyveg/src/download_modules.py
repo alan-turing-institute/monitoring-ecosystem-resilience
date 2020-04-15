@@ -56,6 +56,11 @@ class BaseDownloader(BaseModule):
             self.output_basedir = "."
         return
 
+    def configure(self, config_dict=None):
+        super().configure(config_dict)
+        # construct name of output directory from coords if not set
+        if not "output_dir" in vars(self):
+            self.set_output_dir()
 
     def get_region_string(self):
         """
@@ -266,10 +271,6 @@ class BaseDownloader(BaseModule):
 
 
     def run(self):
-        self.check_config()
-        # construct name of output directory from coords if not set
-        if not "output_dir" in vars(self):
-            self.set_output_dir()
 
         num_slices = self.get_num_n_day_slices()
         date_ranges = self.slice_time_period(num_slices)
@@ -306,7 +307,6 @@ class VegetationDownloader(BaseDownloader):
                         ("NIR_band", str),
                         ("num_days_per_point", int)
         ]
-        self.set_default_parameters()
 
 
     def set_default_parameters(self):
@@ -422,7 +422,6 @@ class WeatherDownloader(BaseDownloader):
                         ("precipitation_band", list),
                         ("num_days_per_point", int)
         ]
-        self.set_default_parameters()
 
 
     def set_default_parameters(self):

@@ -37,7 +37,6 @@ class VegetationImageProcessor(AnalysisModule):
                         ("NDVI_band", str),
                         ("split_RGB_images", bool)
         ]
-        self.set_default_parameters()
 
 
     def set_default_parameters(self):
@@ -172,7 +171,6 @@ class VegetationImageProcessor(AnalysisModule):
 
 
     def run(self):
-        self.check_config()
         date_subdirs = os.listdir(self.input_dir)
         for date_subdir in date_subdirs:
             date_path = os.path.join(self.input_dir, date_subdir, "RAW")
@@ -190,14 +188,8 @@ class WeatherImageToJSON(AnalysisModule):
     def __init__(self, name):
         super().__init__(name)
         self.params += [("input_dir", str),
-                        ("output_dir", str),
-                        ("precipitation_band", str),
-                        ("temperature", str)
+                        ("output_dir", str)
         ]
-        self.set_default_parameters()
-
-    def set_default_parameters(self):
-        pass
 
 
     def process_one_date(self, date_string):
@@ -232,7 +224,9 @@ class WeatherImageToJSON(AnalysisModule):
 
         # sub-directories of our input directory should be dates.
         time_series_data = {}
-        for date_string in os.listdir(self.input_dir):
+        date_strings = os.listdir(self.input_dir)
+        date_strings.sort()
+        for date_string in date_strings:
             if date_string == "RESULTS":
                 continue
             time_series_data[date_string] = self.process_one_date(date_string)
@@ -290,8 +284,6 @@ class NetworkCentralityCalculator(AnalysisModule):
             ("output_dir", str),
             ("n_threads", int)
                         ]
-        self.set_default_parameters()
-
 
     def set_default_parameters(self):
         if not "n_threads" in vars(self):
@@ -312,6 +304,17 @@ class NetworkCentralityCalculator(AnalysisModule):
         return nc_results
 
 
+    def check_sub_image(self, ndvi_filename, input_path):
+        """
+        Check the RGB sub-image corresponding to this NDVI image
+        looks OK.
+        """
+        rgb_filename = re.sub("BWNDVI","RGB",ndvi_filename)
+        rgb_img = Image.open(os.path.join(input_path, rgb_filename))
+        img_ok = check_image_ok(rgb_img, 0.05)
+        return img_ok
+
+
     def process_single_date(self, date_string):
         """
         Each date will have a subdirectory called 'SPLIT' with ~500
@@ -323,8 +326,11 @@ class NetworkCentralityCalculator(AnalysisModule):
             print("{}: No sub-images for date {}".format(self.name,
                                                          date_string))
             return
+        # list all the "BWNDVI" sub-images where corresponding
+        # RGB image passes quality check
         input_files = [filename for filename in os.listdir(input_path) \
-                       if "BWNDVI" in filename]
+                       if "BWNDVI" in filename and \
+                       self.check_sub_image(filename,input_path)]
         tmp_json_dir = os.path.join(self.input_dir, date_string,"tmp_json")
         # create a multiprocessing pool to handle each sub-image in parallel
         with Pool(processes=self.n_threads) as pool:

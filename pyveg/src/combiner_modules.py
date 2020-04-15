@@ -35,6 +35,7 @@ class VegAndWeatherJsonCombiner(BaseModule):
 
     def get_veg_time_series(self):
         date_strings = os.listdir(self.input_veg_dir)
+        date_strings.sort()
         veg_time_series = {}
         for date_string in date_strings:
             veg_json = os.path.join(self.input_veg_dir, date_string, "network_centralities.json")
