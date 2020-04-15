@@ -894,9 +894,11 @@ def get_AR1_parameter_estimate(ys):
     float
         The parameter standard error
     """
+    
+    ys = ys.dropna()
 
     if len(ys) < 5:
-        return np.NaN
+        return np.NaN, np.NaN
 
     from statsmodels.tsa.ar_model import AutoReg
 
