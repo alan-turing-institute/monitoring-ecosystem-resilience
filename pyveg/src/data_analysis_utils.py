@@ -685,8 +685,12 @@ def create_lat_long_metric_figures(data_df, metric, output_dir):
             if (data_df[data_df['date'] == date][metric].isnull().values.any()):
                 print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') + ' nan entries found.')
                 continue
-
-            network_figure(data_df,date,metric,vmin,vmax,output_dir)
+            elif (data_df[data_df['date'] == date].shape[0]!=22*22):
+                missing_entries = 22*22 - data_df[data_df['date'] == date].shape[0]
+                print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') +' '+ str(missing_entries)+ ' missing entries found.')
+                continue
+            else:
+                network_figure(data_df,date,metric,vmin,vmax,output_dir)
 
     else:
         raise RuntimeError("Expected variables not present in input dataframe")
@@ -777,7 +781,8 @@ def network_figure(data_df, date, metric, vmin, vmax, output_dir):
 
     fig, ax = plt.subplots(1, figsize=(6, 6))
 
-    cmap = cm.coolwarm
+    cmap = matplotlib.cm.get_cmap('coolwarm')
+
     data_df[data_df['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column=metric, \
                                           figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
 
