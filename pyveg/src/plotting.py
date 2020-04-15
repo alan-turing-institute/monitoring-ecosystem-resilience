@@ -16,7 +16,8 @@ import seaborn as sns
 from pandas.plotting import register_matplotlib_converters
 
 from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json,stl_decomposition
-
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
 
 def plot_time_series(dfs, output_dir):
     """
@@ -302,7 +303,7 @@ def plot_smoothed_time_series(dfs, output_dir, filename_suffix ='',plot_std=True
             output_filename = collection_name.replace('/', '-') +'-time-series-smoothed' + filename_suffix + '.png'
             print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
-
+            plt.show()
 
 def plot_autocorrelation_function(dfs, output_dir, filename_suffix =''):
     """
@@ -359,7 +360,7 @@ def plot_autocorrelation_function(dfs, output_dir, filename_suffix =''):
             output_filename = collection_name.replace('/', '-') +'-partial-autocorrelation-function-smoothed' + filename_suffix + '.png'
             print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
-            
+            plt.show()
 
 
 def plot_feature_vectors(dfs, output_dir):
@@ -425,7 +426,7 @@ def plot_feature_vectors(dfs, output_dir):
             output_filename = collection_name.replace('/', '-')+'-feature-vector-all.png'
             print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
-
+            plt.show()
 
 def plot_cross_correlations(dfs, output_dir):
     """
@@ -494,6 +495,7 @@ def plot_cross_correlations(dfs, output_dir):
 
             correlations_dict = {'lagged_correlation': correlations}
             write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), correlations_dict)
+            plt.show()
 
 def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
 
@@ -527,7 +529,7 @@ def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
 
     ax_list[-1].set_xticklabels(ts_df.index, rotation=45, va="center")
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
-
+    plt.show()
 
 def do_stl_decomposition(dfs, period, output_dir):
     """
