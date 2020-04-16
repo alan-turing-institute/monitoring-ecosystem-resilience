@@ -41,7 +41,7 @@ def test_create_lat_long_metric_figures():
     list_png_files = [f for f in os.listdir(dir_path) if (isfile(join(dir_path, f)) and f.endswith(".png"))]
     len_dates = len(np.unique(data_df['date']))
 
-    assert (len(list_png_files)==len_dates)
+    assert (len(list_png_files)==0)
 
 
 
