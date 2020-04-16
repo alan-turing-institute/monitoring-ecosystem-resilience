@@ -13,7 +13,6 @@ import matplotlib.dates as mdates
 import matplotlib.cm as cm
 
 import seaborn as sns
-from pandas.plotting import register_matplotlib_converters
 
 from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json,stl_decomposition
 from pandas.plotting import register_matplotlib_converters
