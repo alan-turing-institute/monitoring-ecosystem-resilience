@@ -528,7 +528,6 @@ def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
 
     ax_list[-1].set_xticklabels(ts_df.index, rotation=45, va="center")
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
-    #plt.show()
 
 def do_stl_decomposition(dfs, period, output_dir):
     """
