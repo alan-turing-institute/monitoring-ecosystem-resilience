@@ -87,7 +87,7 @@ def main():
         for collection_name, df in dfs.items():
             if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
                 data_df_geo = convert_to_geopandas(df.copy())
-                data_df_geo_coarse = coarse_dataframe(data_df_geo, 2)
+                data_df_geo_coarse = coarse_dataframe(data_df_geo, 4)
                 create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)
     # ------------------------------------------------
 

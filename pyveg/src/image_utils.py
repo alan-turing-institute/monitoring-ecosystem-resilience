@@ -376,9 +376,11 @@ def create_gif_from_images(directory_path, output_name, string_in_filename=""):
 
         image_dates_df.sort_values(by=['date'], inplace=True, ascending=True)
         imageio.mimsave(os.path.join(directory_path, output_name +
-                                     '.gif'), image_dates_df['images'], duration=1)
+                                     '.gif'), image_dates_df['images'], duration=0.5)
 
     print("Saved gif file containing '{}' images in directory '{}'".format(image_dates_df.shape[0],directory_path))
+
+    return os.path.join(directory_path, output_name +'.gif')
 
 
 
