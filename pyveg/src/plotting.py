@@ -197,7 +197,7 @@ def plot_smoothed_time_series(dfs, output_dir, filename_suffix ='',plot_std=True
     output_dir : str
         Directory to save the plot in.
     """
-
+    sns.set_style("white")
     for collection_name, df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
 
