@@ -13,7 +13,6 @@ import matplotlib.dates as mdates
 import matplotlib.cm as cm
 
 import seaborn as sns
-from pandas.plotting import register_matplotlib_converters
 
 from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json,stl_decomposition
 from pandas.plotting import register_matplotlib_converters
@@ -197,7 +196,7 @@ def plot_smoothed_time_series(dfs, output_dir, filename_suffix ='',plot_std=True
     output_dir : str
         Directory to save the plot in.
     """
-
+    sns.set_style("white")
     for collection_name, df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
 
