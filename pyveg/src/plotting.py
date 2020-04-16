@@ -302,7 +302,7 @@ def plot_smoothed_time_series(dfs, output_dir, filename_suffix ='',plot_std=True
             output_filename = collection_name.replace('/', '-') +'-time-series-smoothed' + filename_suffix + '.png'
             print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
-            plt.show()
+            #plt.show()
 
 def plot_autocorrelation_function(dfs, output_dir, filename_suffix =''):
     """
