@@ -21,11 +21,12 @@ from pyveg.src.data_analysis_utils import (
     convert_to_geopandas,
     coarse_dataframe,
     write_slimmed_csv,
-    get_AR1_parameter_estimate
+    remove_seasonality_combined,
+    remove_seasonality_all_sub_images,
 )
 
 from pyveg.src.plotting import (
-    plot_time_series, 
+    do_stl_decomposition,
     plot_smoothed_time_series, 
     plot_autocorrelation_function,
     plot_feature_vectors,
@@ -85,9 +86,8 @@ def main():
 
         for collection_name, df in dfs.items():
             if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-                data_df_geo = convert_to_geopandas(df)
-                data_df_geo_coarse = coarse_dataframe(data_df_geo, 2)
-                create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)
+                data_df_geo = convert_to_geopandas(df.copy())
+                create_lat_long_metric_figures(data_df_geo, 'offset50', spatial_subdir)
     # ------------------------------------------------
 
     # time series analysis and plotting 
@@ -119,7 +119,7 @@ def main():
             
 
         # LOESS smoothing on sub-image time series
-        smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=5)) # increase smoothing with n>5
+        smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=4)) # increase smoothing with n>5
 
         # make a smoothed time series plot
         plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
@@ -133,6 +133,38 @@ def main():
         # write csv for easy external analysis
         write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
     # ------------------------------------------------
+
+
+        do_stl_decomposition(time_series_dfs,12,tsa_subdir)
+
+    # --------------------------------------------------
+
+    #   remove seasonality in a time series
+
+        time_series_uns_dfs = remove_seasonality_all_sub_images(smooth_veg_data(dfs.copy(), n=5), 12, "M")
+
+
+        smoothed_time_series_uns_dfs = make_time_series(time_series_uns_dfs.copy()) # increase smoothing with n>5
+
+
+        # make a smoothed time series plot
+        plot_smoothed_time_series(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
+
+        # make autocorrelation plots
+        plot_autocorrelation_function(smoothed_time_series_uns_dfs, tsa_subdir,'-no-seasonality')
+
+        # write csv for easy external analysis
+        write_slimmed_csv(smoothed_time_series_uns_dfs, tsa_subdir,'-no-seasonality')
+
+     # ------------------------------------------------
+
+        #   remove seasonality in the summary time series
+
+        time_series_uns_summary_dfs = remove_seasonality_combined(smoothed_time_series_dfs.copy(), 12, "M")
+
+        # make a smoothed time series plot
+        plot_smoothed_time_series(time_series_uns_summary_dfs, tsa_subdir, '-no-seasonality-summary-ts',plot_std = False)
+
 
     print('\nDone!\n')
 

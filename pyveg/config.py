@@ -72,6 +72,3 @@ data_collections = {
 }
 
 data_collections = {key : value for key,value in data_collections.items() if key in collections_to_use}
-
-# not currently used
-# cloudy_pixel_percent = 10 

@@ -14,8 +14,9 @@ import matplotlib.cm as cm
 
 import seaborn as sns
 
-from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json
-
+from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json,stl_decomposition
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
 
 def plot_time_series(dfs, output_dir):
     """
@@ -179,7 +180,7 @@ def plot_time_series(dfs, output_dir):
     """
 
 
-def plot_smoothed_time_series(dfs, output_dir):
+def plot_smoothed_time_series(dfs, output_dir, filename_suffix ='',plot_std=True):
     """
     Given a dict of DataFrames, of which each row corresponds to
     a different time point (constructed with `make_time_series`),
@@ -195,23 +196,38 @@ def plot_smoothed_time_series(dfs, output_dir):
     output_dir : str
         Directory to save the plot in.
     """
-
+    sns.set_style("white")
     for collection_name, df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
 
+            df.sort_index(inplace=True)
+
             # extract x values and convert to datetime objects
-            veg_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in df.index]
+            try:
+                veg_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in df.index]
+            except:
+                # if the time series has been resampled the index is a TimeStamp object
+                veg_xs = [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in df.index]
+
 
             # extract raw means
             veg_means = df['offset50_mean']
+            veg_std = df['offset50_std']
 
             # extract smoothed mean, std, and ci
             veg_means_smooth = df['offset50_smooth_mean']
             veg_stds_smooth = df['offset50_smooth_std']
             veg_ci = df['ci_mean']
 
+            dfs['ECMWF/ERA5/MONTHLY'].sort_index(inplace=True)
+
             # extract rainfall data
-            precip_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dfs['ECMWF/ERA5/MONTHLY'].index]
+            try:
+                precip_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dfs['ECMWF/ERA5/MONTHLY'].index]
+            except:
+                # if the time series has been resampled the index is a TimeStamp object
+                precip_xs =  [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in dfs['ECMWF/ERA5/MONTHLY'].index]
+
             precip = dfs['ECMWF/ERA5/MONTHLY']['total_precipitation']
 
             # create a figure
@@ -225,16 +241,19 @@ def plot_smoothed_time_series(dfs, output_dir):
 
             # plot unsmoothed vegetation means
             ax.plot(veg_xs, veg_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
-            
             # plot LOESS smoothed vegetation means and std
-            ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=7, markeredgecolor=(0.9172, 0.9627, 0.9172), markeredgewidth=2, 
+            ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=7, markeredgecolor=(0.9172, 0.9627, 0.9172),
+                    markeredgewidth=2,
                     label='Smoothed', linewidth=2, color='green')
-            ax.fill_between(veg_xs, veg_means_smooth-veg_stds_smooth, veg_means_smooth+veg_stds_smooth, facecolor='green', alpha=0.1, label='Std Dev')
+            if plot_std:
+                # plot LOESS smoothed vegetation means and std
+                ax.fill_between(veg_xs, veg_means_smooth-veg_stds_smooth, veg_means_smooth+veg_stds_smooth, facecolor='green', alpha=0.1, label='Std Dev')
             
             # plot ci of the smoothed mean
             #ax.plot(veg_xs, veg_means_smooth+veg_ci, label='99% CI', linewidth=1, color='green', linestyle='dashed')
             #ax.plot(veg_xs, veg_means_smooth-veg_ci, linewidth=1, color='green', linestyle='dashed')
-            ax.set_ylim([-800, -400])
+
+            ax.set_ylim([min(veg_means)-4*max(veg_std), max(veg_means)+4*max(veg_std)])
 
             # plot legend
             plt.legend(loc='upper left')
@@ -256,10 +275,12 @@ def plot_smoothed_time_series(dfs, output_dir):
             ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
             # add autoregression info
-            unsmoothed_ar1 = get_AR1_parameter_estimate(veg_means)
-            smoothed_ar1 = get_AR1_parameter_estimate(veg_means_smooth)
-            textstr = f'AR$(1)={smoothed_ar1:.2f}$ (${unsmoothed_ar1:.2f}$ unsmoothed)'
-            ax2.text(0.35, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+            unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means)
+            smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth)
+            textstr = f'AR$(1)={smoothed_ar1:.2f}$ +/- ${smoothed_ar1_se:.2f}$ (${unsmoothed_ar1:.2f}$ +/- ${unsmoothed_ar1_se:.2f}$ unsmoothed)'
+            ax2.text(0.45, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+
+            ax2.set_ylim([min(precip)-3*np.array(precip).std(), max(precip)+3*np.array(precip).std()])
 
             # add Kendall tau
             tau, p = get_kendell_tau(veg_means)
@@ -271,19 +292,19 @@ def plot_smoothed_time_series(dfs, output_dir):
             write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), kendall_tau_dict)
             
             # add to plot
-            textstr = f'$\\tau={tau_smooth:.2f}$ (${tau:.2f}$ unsmoothed)'
-            ax2.text(0.62, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+            textstr = f'$\\tau,pvalue={tau_smooth:.2f}$, ${p:.2f}$ (${tau:.2f}$, ${p_smooth:.2f}$ unsmoothed)'
+            ax2.text(0.13, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
             # layout
             fig.tight_layout()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-time-series-smoothed.png'
+            output_filename = collection_name.replace('/', '-') +'-time-series-smoothed' + filename_suffix + '.png'
             print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+            #plt.show()
 
-
-def plot_autocorrelation_function(dfs, output_dir):
+def plot_autocorrelation_function(dfs, output_dir, filename_suffix =''):
     """
     Given a dict of DataFrames, of which each row corresponds to
     a different time point (constructed with `make_time_series`),
@@ -310,7 +331,7 @@ def plot_autocorrelation_function(dfs, output_dir):
             plt.legend()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-autocorrelation-function.png'
+            output_filename = collection_name.replace('/', '-') +'-autocorrelation-function' + filename_suffix + '.png'
             print(f'\nPlotting autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
 
@@ -324,7 +345,7 @@ def plot_autocorrelation_function(dfs, output_dir):
             plt.tight_layout()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-unsmoothed.png'
+            output_filename = collection_name.replace('/', '-') +'-partial-autocorrelation-function-unsmoothed' + filename_suffix + '.png'
             print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
             
@@ -335,10 +356,10 @@ def plot_autocorrelation_function(dfs, output_dir):
             plt.tight_layout()
 
             # save the plot
-            output_filename = collection_name.replace('/', '-')+'-partial-autocorrelation-function-smoothed.png'
+            output_filename = collection_name.replace('/', '-') +'-partial-autocorrelation-function-smoothed' + filename_suffix + '.png'
             print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
-            
+            #plt.show()
 
 
 def plot_feature_vectors(dfs, output_dir):
@@ -387,7 +408,7 @@ def plot_feature_vectors(dfs, output_dir):
             plt.figure(figsize=(6,5))
 
             # loop through time points
-            for _, group in df.groupby('date'):
+            for _, group in veg_df.groupby('date'):
                 
                 # calculate feature vector
                 feature_vector = np.array(group.feature_vec.values.tolist()).mean(axis=0)
@@ -404,7 +425,7 @@ def plot_feature_vectors(dfs, output_dir):
             output_filename = collection_name.replace('/', '-')+'-feature-vector-all.png'
             print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
-
+            #plt.show()
 
 def plot_cross_correlations(dfs, output_dir):
     """
@@ -473,3 +494,69 @@ def plot_cross_correlations(dfs, output_dir):
 
             correlations_dict = {'lagged_correlation': correlations}
             write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), correlations_dict)
+            #plt.show()
+
+def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
+
+    """
+    Plot each output from the STL decomposition
+
+     Parameters
+     ----------
+     ts_df : DataFrame
+         The input time-series.
+     res : object
+        The STL fit object
+     output_dir : str
+         Directory to save the plot in.
+
+    output_filename : str
+         Name of the file to save the plot in.
+     """
+
+
+    register_matplotlib_converters()
+    sns.set_style('darkgrid')
+    plt.rc('figure', figsize=(20, 8))
+    plt.rc('font', size=10)
+
+    fig = res.plot()
+    ax_list = fig.axes
+
+    for ax in ax_list[:-1]:
+        ax.tick_params(labelbottom=False)
+
+    ax_list[-1].set_xticklabels(ts_df.index, rotation=45, va="center")
+    plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
+
+def do_stl_decomposition(dfs, period, output_dir):
+    """
+     Run the STL decomposition and plot the results network centrality and
+     precipitation DataFrames in `dfs`.
+
+     Parameters
+     ----------
+     dfs : dict of DataFrame
+         The time-series results.
+     peropd : float
+        Periodicity to model
+
+     output_dir : str
+         Directory to save the plot in.
+     """
+
+    for collection_name, df in dfs.items():
+
+        if 'COPERNICUS/S2' in collection_name or 'LANDSAT' in collection_name:
+            offsets = df['offset50_mean']
+
+            res = stl_decomposition(offsets, period)
+
+
+            stl_decomposition_plotting(offsets,res,output_dir,collection_name.replace('/', '-')+'_STL_decomposion_'+'_offset50mean')
+        elif 'ERA' in collection_name:
+
+            precip = dfs[collection_name]['total_precipitation']   # convert to mm
+            res = stl_decomposition(precip, period)
+
+            stl_decomposition_plotting(precip,res,output_dir,collection_name.replace('/', '-')+'_STL_decomposion_'+'_precipitation')
