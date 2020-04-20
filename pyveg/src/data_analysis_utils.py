@@ -685,11 +685,12 @@ def create_lat_long_metric_figures(data_df, metric, output_dir):
             if (data_df[data_df['date'] == date][metric].isnull().values.any()):
                 print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') + ' nan entries found.')
                 continue
-            elif (data_df[data_df['date'] == date].shape[0]!=22*22):
+            elif (data_df[data_df['date'] == date].shape[0]<100):
                 missing_entries = 22*22 - data_df[data_df['date'] == date].shape[0]
                 print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') +' '+ str(missing_entries)+ ' missing entries found.')
                 continue
             else:
+                print('Saving network figure for date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d'))
                 network_figure(data_df,date,metric,vmin,vmax,output_dir)
 
     else:

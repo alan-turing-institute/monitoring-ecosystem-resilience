@@ -87,7 +87,8 @@ def main():
         for collection_name, df in dfs.items():
             if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
                 data_df_geo = convert_to_geopandas(df.copy())
-                create_lat_long_metric_figures(data_df_geo, 'offset50', spatial_subdir)
+                data_df_geo_coarse = coarse_dataframe(data_df_geo,2)
+                create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)
     # ------------------------------------------------
 
     # time series analysis and plotting 
@@ -141,11 +142,9 @@ def main():
 
     #   remove seasonality in a time series
 
-        time_series_uns_dfs = remove_seasonality_all_sub_images(smooth_veg_data(dfs.copy(), n=5), 12, "M")
-
+        time_series_uns_dfs = remove_seasonality_all_sub_images(smooth_veg_data(dfs.copy(), n=4), 12, "M")
 
         smoothed_time_series_uns_dfs = make_time_series(time_series_uns_dfs.copy()) # increase smoothing with n>5
-
 
         # make a smoothed time series plot
         plot_smoothed_time_series(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
