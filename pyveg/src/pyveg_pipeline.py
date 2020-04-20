@@ -14,12 +14,48 @@ the results of the different SEQUENCES into one output file.
 """
 
 
+class Pipeline(object):
+
+    def __init__(self, name):
+        self.name = name
+        self.sequences = []
+        self.coords = None
+        self.date_range = None
+
+
+    def __iadd__(self, sequence):
+        sequence.parent = self
+        self.sequences.append(sequence)
+
+
+    def configure(self):
+        if not self.coords:
+            raise RuntimeError("{}: need to set coordinates before calling configure()"\
+                               .format(self.name))
+        if not self.date_range:
+            raise RuntimeError("{}: need to set date range before calling configure()"\
+                               .format(self.name))
+        for sequence in self.sequences:
+            sequence.configure()
+
+    def run(self):
+        for sequence in self.sequences:
+            sequence.run()
+
+
+
 class Sequence(object):
 
     def __init__(self, name):
         self.name = name
         self.modules = []
-        pass
+        self.depends_on = []
+
+
+    def __iadd__(self, module):
+        module.parent = self
+        self.modules.append(module)
+
 
     def configure(self):
         for module in self.modules:
