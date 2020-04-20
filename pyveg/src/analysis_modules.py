@@ -10,15 +10,15 @@ import cv2 as cv
 
 from multiprocessing import Pool
 
-from image_utils import *
-from file_utils import *
+from pyveg.src.image_utils import *
+from pyveg.src.file_utils import *
 
 from pyveg.src.subgraph_centrality import (
     subgraph_centrality,
     feature_vector_metrics,
 )
 
-from pyveg_sequence import BaseModule
+from pyveg.src.pyveg_pipeline import BaseModule
 
 
 class AnalysisModule(BaseModule):
@@ -29,7 +29,7 @@ class AnalysisModule(BaseModule):
 
 class VegetationImageProcessor(AnalysisModule):
 
-    def __init__(self, name):
+    def __init__(self, name=None):
         super().__init__(name)
         self.params += [("input_dir", str),
                         ("output_dir", str),
@@ -185,7 +185,7 @@ class WeatherImageToJSON(AnalysisModule):
     write the temp and precipitation values out as a JSON file.
     """
 
-    def __init__(self, name):
+    def __init__(self, name=None):
         super().__init__(name)
         self.params += [("input_dir", str),
                         ("output_dir", str)
@@ -277,7 +277,7 @@ class NetworkCentralityCalculator(AnalysisModule):
     the subdirectories for the date sub-ranges.
     """
 
-    def __init__(self, name):
+    def __init__(self, name=None):
         super().__init__(name)
         self.params += [
             ("input_dir", str),

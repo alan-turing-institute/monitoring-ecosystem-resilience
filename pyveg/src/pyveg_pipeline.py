@@ -21,20 +21,20 @@ class Pipeline(object):
         self.sequences = []
         self.coords = None
         self.date_range = None
-
+        self.output_basedir = None
 
     def __iadd__(self, sequence):
         sequence.parent = self
         self.sequences.append(sequence)
+        return self
 
 
     def configure(self):
-        if not self.coords:
-            raise RuntimeError("{}: need to set coordinates before calling configure()"\
-                               .format(self.name))
-        if not self.date_range:
-            raise RuntimeError("{}: need to set date range before calling configure()"\
-                               .format(self.name))
+        for var in ["coords", "date_range", "output_dir"]:
+            if not var in vars(self):
+                raise RuntimeError("{}: need to set {} before calling configure()"\
+                                   .format(self.name, var))
+
         for sequence in self.sequences:
             sequence.configure()
 
@@ -50,14 +50,20 @@ class Sequence(object):
         self.name = name
         self.modules = []
         self.depends_on = []
+        self.parent = None
+        self.output_dir = None
 
 
     def __iadd__(self, module):
         module.parent = self
         self.modules.append(module)
+        return self
 
 
     def configure(self):
+        if self.parent and not self.output_dir:
+            self.output_dir = os.path.join(self.parent.output_dir,
+                                           self.name)
         for module in self.modules:
             module.configure()
 
@@ -72,6 +78,7 @@ class BaseModule(object):
     def __init__(self, name):
         self.name = name
         self.params = []
+        self.parent = None
 
 
     def configure(self, config_dict=None):
@@ -80,6 +87,8 @@ class BaseModule(object):
             for k, v in config_dict.items():
                 print("{}: setting {} to {}".format(self.name,k,v))
                 self.__setattr(k, v)
+        if self.parent and not self.output_dir:
+            self.output_dir = self.parent.output_dir
         self.check_config()
 
 

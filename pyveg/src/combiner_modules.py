@@ -5,9 +5,9 @@ and produce combined output file (typically JSON).
 import os
 import json
 
-from file_utils import save_json
+from pyveg.src.file_utils import save_json
 
-from pyveg_sequence import BaseModule
+from pyveg.src.pyveg_pipeline import BaseModule
 
 class VegAndWeatherJsonCombiner(BaseModule):
     """
@@ -16,7 +16,7 @@ class VegAndWeatherJsonCombiner(BaseModule):
     <something>/<input_weather_dir>/RESULTS/weather_data.json
     """
 
-    def __init__(self, name):
+    def __init__(self, name=None):
         super().__init__(name)
         self.params += [
             ("output_dir", str),

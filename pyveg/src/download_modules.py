@@ -26,7 +26,7 @@ LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 import logging
 logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
 
-from pyveg_sequence import BaseModule
+from pyveg.src.pyveg_pipeline import BaseModule
 
 
 
@@ -53,6 +53,8 @@ class BaseDownloader(BaseModule):
         if not "scale" in vars(self):
             self.scale = 10
         if not "output_basedir" in vars(self):
+            if self.parent:
+                self.output_basedir = self.parent.output_dir
             self.output_basedir = "."
         return
 
@@ -80,6 +82,7 @@ class BaseDownloader(BaseModule):
         bottom = self.coords[1] - self.region_size/2
         coords =  str([[left,top],[right,top],[right,bottom],[left,bottom]])
         return coords
+
 
     def find_mid_period(self, start_time, end_time):
         """
@@ -298,7 +301,7 @@ class VegetationDownloader(BaseDownloader):
     get NDVI band from combining red and near-infra-red.
     """
 
-    def __init__(self, name):
+    def __init__(self, name=None):
         super().__init__(name)
         self.params += [("mask_cloud", bool),
                         ("cloudy_pix_flag", str),
@@ -416,7 +419,7 @@ class WeatherDownloader(BaseDownloader):
     Download precipitation and temperature data.
     """
 
-    def __init__(self,name):
+    def __init__(self,name=None):
         super().__init__(name)
         self.params += [("temperature_band", list),
                         ("precipitation_band", list),
