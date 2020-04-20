@@ -2,20 +2,18 @@
 Plotting code.
 """
 
-import os
 import datetime
+import os
 
-import numpy as np
-import pandas as pd 
-
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import matplotlib.cm as cm
-
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
-
-from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json,stl_decomposition
 from pandas.plotting import register_matplotlib_converters
+
+from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json, stl_decomposition
+
 register_matplotlib_converters()
 
 def plot_time_series(dfs, output_dir):

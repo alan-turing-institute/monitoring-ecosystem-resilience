@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 class PatternGenerator(object):
     """
-    Class that can generate simulated vegetation patterns, optionally
+    Class that can generate simulated veget  ation patterns, optionally
     from a loaded starting pattern, and propagate through time according
     to various amounts of rainfall and/or surface and soil water density.
     """
