@@ -5,22 +5,19 @@ and functions analyse and plot the data.
 
 # system imports
 import json
-import os
-from os.path import isfile, join
 import math
-import datetime
+import os
 
+import geopandas as gpd
+#  plotting
+import matplotlib
 # data
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 from shapely.geometry import Point
 
-# plotting
-import matplotlib
 matplotlib.use('PS')
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import matplotlib.cm as cm
 
 # stats
@@ -28,6 +25,7 @@ from scipy.fftpack import fft
 from scipy.stats import sem, t
 from statsmodels.nonparametric.smoothers_lowess import lowess
 from statsmodels.tsa.seasonal import STL
+
 
 def read_json_to_dataframe(filename):
     """
@@ -70,7 +68,7 @@ def read_json_to_dataframe(filename):
         # loop over time series
         for time_point in coll_results['time-series-data'].values():
 
-            # check we have data for this time point
+            #  check we have data for this time point
             if time_point is None:
                 continue
             # backwards compatibility, accept either list or dict
@@ -127,7 +125,7 @@ def read_json_to_dataframe(filename):
         # loop over time series
         for date, values in coll_results['time-series-data'].items():
 
-            # check we have data
+            #  check we have data
             if values is None:
                 continue
 
@@ -152,7 +150,6 @@ def read_json_to_dataframe(filename):
 
                 # loop over weather data and add to the same date
                 for metric, value in values.items():
-
                     # add information in a new column
                     weather_df.loc[index, metric] = value
 
@@ -204,25 +201,25 @@ def variable_read_json_to_dataframe(filename):
         rows_list = []
 
         # loop over time series
-        for date, time_point in coll_results['time-series-data'].items():\
+        for date, time_point in coll_results['time-series-data'].items(): \
+ \
+                #  check we have data for this time point
+                if time_point is None or time_point == {}:
+                    continue
 
-            # check we have data for this time point
-            if time_point is None  or time_point == {}:
-                continue
+                # if we are looking at veg data, loop over space points
+                if isinstance(list(time_point)[0], dict):
+                    for space_point in time_point:
+                        rows_list.append(space_point)
 
-            # if we are looking at veg data, loop over space points
-            if isinstance(list(time_point)[0], dict):
-                for space_point in time_point:
-                    rows_list.append(space_point)
+                # otherwise, just add the row
+                else:
+                    # the key of each object in the time series is the date, and data
+                    # for this date should be the values. Here we just add the date
+                    # as a value to enable us to add the whole row in one go later.
+                    time_point['date'] = date
 
-            # otherwise, just add the row
-            else:
-                # the key of each object in the time series is the date, and data
-                # for this date should be the values. Here we just add the date
-                # as a value to enable us to add the whole row in one go later.
-                time_point['date'] = date
-
-                rows_list.append(time_point)
+                    rows_list.append(time_point)
 
         # make a DataFrame and add it to the dict of DataFrames
         df = pd.DataFrame(rows_list)
@@ -249,11 +246,10 @@ def convert_to_geopandas(df):
     crs = {'init': 'epsg:4326'}
     df = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
 
-
     return df
 
-def remove_seasonality(df,lag, period = 'M'):
 
+def remove_seasonality(df, lag, period='M'):
     """
     Loop over time series DataFrames and remove
     time series seasonality.
@@ -284,29 +280,24 @@ def remove_seasonality(df,lag, period = 'M'):
 
     for col in df.columns:
 
-        if col=='latitude' or col=='longitude':
+        if col == 'latitude' or col == 'longitude':
             df_resampled[col] = df[col].iloc[0]
             continue
 
-        if col=='date' or col=='datetime':
+        if col == 'date' or col == 'datetime':
             df_resampled[col] = df_resampled.index
             continue
 
-        if col=='feature_vec':
+        if col == 'feature_vec':
             continue
 
-        series_resampled = resample_time_series(df,col,period)
+        series_resampled = resample_time_series(df, col, period)
 
         df_resampled[col] = series_resampled.diff(lag)
 
-
-
-
     df_resampled.dropna(inplace=True)
 
-
     return df_resampled
-
 
 
 def make_time_series(dfs):
@@ -330,7 +321,7 @@ def make_time_series(dfs):
     # loop over collections
     for col_name, df in dfs.items():
 
-        # if vegetation data
+        #  if vegetation data
         if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
 
             # group by date to collapse all network centrality measurements
@@ -341,14 +332,14 @@ def make_time_series(dfs):
             stds = groups.std()
 
             # rename columns
-            means = means.rename(columns={s: s+'_mean' for s in means.columns})
-            stds = stds.rename(columns={s: s+'_std' for s in stds.columns})
+            means = means.rename(columns={s: s + '_mean' for s in means.columns})
+            stds = stds.rename(columns={s: s + '_std' for s in stds.columns})
 
             # merge
             df = pd.merge(means, stds, on='date', how='inner')
             dfs[col_name] = df
 
-        else: # assume weather data
+        else:  # assume weather data
             df = df.set_index('date')
             dfs[col_name] = df
 
@@ -365,17 +356,16 @@ def get_veg_time_series(dfs):
 
 
 def get_weather_time_series(dfs):
-
     df_ERA5 = None
     df_NASA = None
 
     for collection_name, df in dfs.items():
         if collection_name == 'ECMWF/ERA5/MONTHLY':
             df_ERA5 = df
-            df_ERA5['total_precipitation'] *= 1e3 # convert to mm
-            df_ERA5['mean_2m_air_temperature'] -= 273.15 # convert to Celcius
+            df_ERA5['total_precipitation'] *= 1e3  # convert to mm
+            df_ERA5['mean_2m_air_temperature'] -= 273.15  # convert to Celcius
             df_ERA5 = df_ERA5.rename(columns={'total_precipitation': 'ERA5_precipitation',
-                                    'mean_2m_air_temperature': 'ERA5_temperature'})
+                                              'mean_2m_air_temperature': 'ERA5_temperature'})
 
         elif collection_name == 'NASA/GPM_L3/IMERG_V06':
             df_NASA = df
@@ -432,14 +422,14 @@ def smooth_subimage(df, column='offset50', n=4, it=3):
     xs = df['datetime']
     ys = df[column]
 
-    #num_days_per_timepoint = (xs.iloc[1] - xs.iloc[0]).days
+    # num_days_per_timepoint = (xs.iloc[1] - xs.iloc[0]).days
     frac_data = min(n / len(ys), 1.0)
 
     # perform smoothing
     smoothed_y = lowess(ys, xs, is_sorted=True, return_sorted=False, frac=frac_data, it=it)
 
     # add to df
-    df[column+'_smooth'] = smoothed_y
+    df[column + '_smooth'] = smoothed_y
 
     return df
 
@@ -478,7 +468,6 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3):
 
     # for each sub-image
     for key, df_ in d.items():
-
         # perform smoothing
         d[key] = smooth_subimage(df_, column=column, n=n, it=it)
 
@@ -587,7 +576,7 @@ def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
     # loop over collections
     for col_name, veg_df in dfs.items():
 
-        # if vegetation data
+        #  if vegetation data
         if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
 
             # group by (lat, long)
@@ -597,12 +586,11 @@ def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
 
             # for each sub-image
             for key, df_ in d.items():
-
                 # calcualte residuals to the mean
                 res = (df_[column] - df_[column].mean()).abs()
 
                 # determine which are outliers
-                outlier = res > df_[column].std()*sigmas
+                outlier = res > df_[column].std() * sigmas
 
                 # set to None
                 df_.loc[outlier, column] = None
@@ -643,9 +631,8 @@ def smooth_veg_data(dfs, column='offset50', n=4):
     # loop over collections
     for col_name, df in dfs.items():
 
-        # if vegetation data
+        #  if vegetation data
         if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
-
             # remove outliers and smooth
             df = smooth_all_sub_images(df, column=column, n=n)
 
@@ -659,7 +646,6 @@ def smooth_veg_data(dfs, column='offset50', n=4):
 
 
 def create_lat_long_metric_figures(data_df, metric, output_dir):
-
     """
     From input data-frame with processed network metrics create 2D gird figure for each date available using Geopandas.
 
@@ -670,7 +656,7 @@ def create_lat_long_metric_figures(data_df, metric, output_dir):
     :return:
     """
 
-    if set(['date',metric]).issubset(data_df.columns):
+    if set(['date', metric]).issubset(data_df.columns):
 
         # get min and max values observed in the data to create a range
 
@@ -685,13 +671,14 @@ def create_lat_long_metric_figures(data_df, metric, output_dir):
             if (data_df[data_df['date'] == date][metric].isnull().values.any()):
                 print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') + ' nan entries found.')
                 continue
-            elif (data_df[data_df['date'] == date].shape[0]<100):
-                missing_entries = 22*22 - data_df[data_df['date'] == date].shape[0]
-                print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') +' '+ str(missing_entries)+ ' missing entries found.')
+            elif (data_df[data_df['date'] == date].shape[0] < 100):
+                missing_entries = 22 * 22 - data_df[data_df['date'] == date].shape[0]
+                print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') + ' ' + str(
+                    missing_entries) + ' missing entries found.')
                 continue
             else:
                 print('Saving network figure for date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d'))
-                network_figure(data_df,date,metric,vmin,vmax,output_dir)
+                network_figure(data_df, date, metric, vmin, vmax, output_dir)
 
     else:
         raise RuntimeError("Expected variables not present in input dataframe")
@@ -711,33 +698,32 @@ def coarse_dataframe(data_df_all, side_square):
     data_df_all['category'] = -1
 
     # do calculations on the first date, then extrapolate to the rest
-    data_df = data_df_all[data_df_all['date']==np.unique(data_df_all['date'])[0]]
+    data_df = data_df_all[data_df_all['date'] == np.unique(data_df_all['date'])[0]]
 
-    data_df = data_df.sort_values(by=['latitude', 'longitude'])
+    data_df = data_df.sort_values(by=['longitude', 'latitude'])
 
     n_grids = int(math.sqrt(data_df.shape[0]))
-
 
     category = 0
 
     for n in range(data_df.shape[0]):
 
         # only process lat,long point that do not have a category
-        if data_df.loc[n,'category'] == -1:
+        if data_df['category'].iloc[n] == -1:
 
             # get the side_square^2 nearest indexes to the point.
             indexes = []
             for i in range(side_square):
                 for j in range(side_square):
 
-                    if n + n_grids*i + j < n_grids*n_grids and data_df['category'].iloc[n + n_grids*i + j]==-1:
-                            indexes.append(n + n_grids*i + j)
+                    if n + n_grids * i + j < n_grids * n_grids and data_df['category'].iloc[n + n_grids * i + j] == -1:
+                        indexes.append(n + n_grids * i + j)
 
             # assing them all to the same categorty
-            data_df.loc[indexes,'category'] = str(category)
+            data_df['category'].iloc[indexes] = str(category)
 
             # get the geometry points of that catery
-            cat_geometry = data_df[data_df['category']==str(category)]['geometry']
+            cat_geometry = data_df[data_df['category'] == str(category)]['geometry']
 
             # get indexes of each point belonging to the category
             indexes_all = []
@@ -746,21 +732,22 @@ def coarse_dataframe(data_df_all, side_square):
 
             indexes_all_flat = [item for sublist in indexes_all for item in sublist]
 
-            data_df_all.loc[indexes_all_flat,'category'] = str(category)
+            data_df_all['category'].iloc[indexes_all_flat] = str(category)
 
             category = category + 1
 
+    data_df_all['category'] = (data_df_all['category'].astype(str)).str.cat(data_df_all['date'], sep="_")
 
+    print (data_df_all.shape)
+    data_df_all = data_df_all.dissolve(by=['category', 'date'], aggfunc='mean')
 
-    data_df_all['category'] =  (data_df_all['category'].astype(str)).str.cat(data_df_all['date'],sep="_")
-
-    data_df_all = data_df_all.dissolve(by=['category','date'], aggfunc='mean')
+    print (data_df_all.shape)
 
     # re-assing the date because we are losing it
-    data_df_all['date']= [i[1] for i in data_df_all.index]
+    data_df_all['date'] = [i[1] for i in data_df_all.index]
 
-    data_df_all['category'] =  [i[0] for i in data_df_all.index]
-
+    data_df_all['category'] = [i[0] for i in data_df_all.index]
+    print (data_df_all.shape)
 
     return data_df_all
 
@@ -778,7 +765,6 @@ def network_figure(data_df, date, metric, vmin, vmax, output_dir):
     :param output_dir: dir where to save the plots
     :return:
     '''
-
 
     fig, ax = plt.subplots(1, figsize=(6, 6))
 
@@ -813,9 +799,7 @@ def network_figure(data_df, date, metric, vmin, vmax, output_dir):
     plt.close(fig)
 
 
-
-
-def resample_time_series(df, col_name="offset50", period = "D"):
+def resample_time_series(df, col_name="offset50", period="D"):
     """
     Resample and interpolate a time series dataframe so we have one row
     per day (useful for FFT)
@@ -861,23 +845,22 @@ def fft_series(time_series):
     T = 1.0
     fourier = fft(ts)
     # x-axis values
-    xvals = np.linspace(0.,1.0/(20*T), N//20)
-    yvals = 2.0/N * np.abs(fourier[0:N//20])
+    xvals = np.linspace(0., 1.0 / (20 * T), N // 20)
+    yvals = 2.0 / N * np.abs(fourier[0:N // 20])
     return xvals, yvals
 
 
-def write_slimmed_csv(dfs, output_dir, filename_suffix = ''):
-
+def write_slimmed_csv(dfs, output_dir, filename_suffix=''):
     for collection_name, veg_df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-
             df_summary = dfs['ECMWF/ERA5/MONTHLY']
             df_summary.loc[veg_df.index, 'offset50_mean'] = veg_df['offset50_mean']
             df_summary.loc[veg_df.index, 'offset50_std'] = veg_df['offset50_std']
             df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
             df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
 
-            summary_csv_filename = os.path.join(output_dir, collection_name.replace('/', '-')+'_time_series'+filename_suffix+'.csv')
+            summary_csv_filename = os.path.join(output_dir, collection_name.replace('/',
+                                                                                    '-') + '_time_series' + filename_suffix + '.csv')
 
             print(f"\nWriting '{summary_csv_filename}'...")
             df_summary.to_csv(summary_csv_filename)
@@ -900,7 +883,7 @@ def get_AR1_parameter_estimate(ys):
     float
         The parameter standard error
     """
-    
+
     ys = ys.dropna()
 
     if len(ys) < 5:
@@ -909,8 +892,8 @@ def get_AR1_parameter_estimate(ys):
     from statsmodels.tsa.ar_model import AutoReg
 
     # more sophisticated models to consider:
-    #from statsmodels.tsa.statespace.sarimax import SARIMAX
-    #from statsmodels.tsa.arima_model import ARMA
+    # from statsmodels.tsa.statespace.sarimax import SARIMAX
+    # from statsmodels.tsa.arima_model import ARMA
 
     # create the AR(1) model
     model = AutoReg(ys, lags=1)
@@ -967,7 +950,7 @@ def write_to_json(filename, out_dict):
     out_dict: dict
         Information to save.
     """
-    
+
     # if file doesn't exist
     if not os.path.exists(filename):
         # make enclosing dir if needed
@@ -976,7 +959,7 @@ def write_to_json(filename, out_dict):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
 
-        # write new json file
+        #  write new json file
         with open(filename, 'w') as json_file:
             json.dump(out_dict, json_file, indent=2)
 
@@ -990,7 +973,7 @@ def write_to_json(filename, out_dict):
         # update dict   
         for k, v in out_dict.items():
             data[k] = v
-        
+
         # json write
         with open(filename, 'w') as json_file:
             json.dump(data, json_file, indent=2)
@@ -1020,7 +1003,7 @@ def remove_seasonality_all_sub_images(dfs, lag, period):
     """
     for col_name, df in dfs.items():
 
-        # if vegetation data
+        #  if vegetation data
         if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
 
             # group by (lat, long)
@@ -1029,7 +1012,6 @@ def remove_seasonality_all_sub_images(dfs, lag, period):
                 d[name] = group
                 # for each sub-image
             for key, df_ in d.items():
-
                 df_new = df_.set_index('date')
 
                 uns_df = remove_seasonality(df_new.copy(), lag, period)
@@ -1053,13 +1035,10 @@ def remove_seasonality_all_sub_images(dfs, lag, period):
             uns_df['date'] = uns_df.index
             dfs[col_name] = uns_df
 
-
-
     return dfs
 
 
 def remove_seasonality_combined(dfs, lag, period='M'):
-
     """
     Loop over time series DataFrames and remove
     time series seasonality.
@@ -1085,25 +1064,23 @@ def remove_seasonality_combined(dfs, lag, period='M'):
 
     for collection_name, df in dfs.items():
 
-
         df_resampled = pd.DataFrame()
 
         for col in df.columns:
 
-            if col=='latitude' or col=='longitude':
+            if col == 'latitude' or col == 'longitude':
                 df_resampled[col] = df[col].iloc[0]
                 continue
 
-            if col=='date' or col=='datetime':
+            if col == 'date' or col == 'datetime':
                 df_resampled[col] = df_resampled.index
                 continue
-            if col=='feature_vec':
+            if col == 'feature_vec':
                 continue
 
-            series_resampled = resample_time_series(df,col,period)
+            series_resampled = resample_time_series(df, col, period)
 
             df_resampled[col] = series_resampled.diff(lag)
-
 
         df_resampled.dropna(inplace=True)
 
@@ -1113,13 +1090,8 @@ def remove_seasonality_combined(dfs, lag, period='M'):
 
 
 def stl_decomposition(ts_df, period=12):
-
     stl = STL(ts_df, period, robust=True)
 
     res = stl.fit()
 
-    return  res
-
-
-
-
+    return res
