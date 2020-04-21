@@ -197,29 +197,27 @@ def variable_read_json_to_dataframe(filename):
     # loop over collections and make a DataFrame from the results of each
     for collection_name, coll_results in data.items():
 
-        df = pd.DataFrame()
         rows_list = []
 
         # loop over time series
         for date, time_point in coll_results['time-series-data'].items(): \
- \
                 #  check we have data for this time point
-                if time_point is None or time_point == {}:
-                    continue
+            if time_point is None or time_point == {}:
+                continue
 
-                # if we are looking at veg data, loop over space points
-                if isinstance(list(time_point)[0], dict):
-                    for space_point in time_point:
-                        rows_list.append(space_point)
+            # if we are looking at veg data, loop over space points
+            if isinstance(list(time_point)[0], dict):
+                for space_point in time_point:
+                    rows_list.append(space_point)
 
-                # otherwise, just add the row
-                else:
-                    # the key of each object in the time series is the date, and data
-                    # for this date should be the values. Here we just add the date
-                    # as a value to enable us to add the whole row in one go later.
-                    time_point['date'] = date
+            # otherwise, just add the row
+            else:
+                # the key of each object in the time series is the date, and data
+                # for this date should be the values. Here we just add the date
+                # as a value to enable us to add the whole row in one go later.
+                time_point['date'] = date
 
-                    rows_list.append(time_point)
+                rows_list.append(time_point)
 
         # make a DataFrame and add it to the dict of DataFrames
         df = pd.DataFrame(rows_list)
@@ -256,7 +254,7 @@ def remove_seasonality(df, lag, period='M'):
 
     Parameters
     ----------
-    dfs : dict of DataFrame
+    df : DataFrame
         Time series data for multiple sub-image locations.
     lag : float
         Periodicity to remove
@@ -404,9 +402,6 @@ def smooth_subimage(df, column='offset50', n=4, it=3):
         Size of smoothing window.
     it : int, optional
         Number of iterations of LOESS smoothing to perform.
-    remove_outliers : bool, optional
-        Remove datapoints >3 standard deviations
-        from the mean before smoothing.
 
     Returns
     ----------
@@ -450,9 +445,6 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3):
         Size of smoothing window.
     it : int, optional
         Number of iterations of LOESS smoothing to perform.
-    remove_outliers : bool, optional
-        Remove datapoints >3 standard deviations
-        from the mean before smoothing.
 
     Returns
     ----------
@@ -603,7 +595,7 @@ def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
             for df_ in list(d.values())[1:]:
                 df = df.append(df_)
 
-            # replace value in dfs
+            # replace value in df
             dfs[col_name] = df
 
     return dfs
@@ -620,7 +612,8 @@ def smooth_veg_data(dfs, column='offset50', n=4):
         Time series data for multiple sub-image locations.
     column : str
         Name of the column to drop outliers and smooth.
-
+    n : int
+        Number of neighbouring point to use in smoothing
     Returns
     ----------
     dict of DataFrame
@@ -649,14 +642,21 @@ def create_lat_long_metric_figures(data_df, metric, output_dir):
     """
     From input data-frame with processed network metrics create 2D gird figure for each date available using Geopandas.
 
-    :param data_df -- input dataframe
-    :param metric -- variable to plot
-    :param output_dir -- directory to save the figures
+    Parameters
+    ----------
+    data_df:  Dataframe
+        Input dataframe
+    metric: string
+        Variable to plot
+    output_dir: string
+        Directory to save the figures
 
-    :return:
+     Returns
+    ----------
+
     """
 
-    if set(['date', metric]).issubset(data_df.columns):
+    if {'date', metric}.issubset(data_df.columns):
 
         # get min and max values observed in the data to create a range
 
@@ -668,13 +668,8 @@ def create_lat_long_metric_figures(data_df, metric, output_dir):
 
         for date in list_of_dates:
 
-            if (data_df[data_df['date'] == date][metric].isnull().values.any()):
+            if data_df[data_df['date'] == date][metric].isnull().values.any():
                 print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') + ' nan entries found.')
-                continue
-            elif (data_df[data_df['date'] == date].shape[0] < 100):
-                missing_entries = 22 * 22 - data_df[data_df['date'] == date].shape[0]
-                print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') + ' ' + str(
-                    missing_entries) + ' missing entries found.')
                 continue
             else:
                 print('Saving network figure for date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d'))
@@ -686,11 +681,22 @@ def create_lat_long_metric_figures(data_df, metric, output_dir):
 
 def coarse_dataframe(data_df_all, side_square):
     """
+    Coarse the granularity of a dataframe by grouping lat,long points
+    that are close to each other in a square of L = size_square
 
-    Coarse the granularity of a dataframe by grouping lat,long points that are close to each other in a square of L = size_square
-    :param data_df:  Input dataframe
-    :param side_square: Side of the square
-    :return: a coarser dataframe
+    Parameters
+    ----------
+    data_df_all:  Dataframe
+        Input dataframe
+    side_square: integer
+        Side of the square
+
+
+    Returns
+    ----------
+     A  dataframe
+        A coarser dataframe
+
     """
 
     # initialise the categories
@@ -738,39 +744,45 @@ def coarse_dataframe(data_df_all, side_square):
 
     data_df_all['category'] = (data_df_all['category'].astype(str)).str.cat(data_df_all['date'], sep="_")
 
-    print (data_df_all.shape)
     data_df_all = data_df_all.dissolve(by=['category', 'date'], aggfunc='mean')
-
-    print (data_df_all.shape)
 
     # re-assing the date because we are losing it
     data_df_all['date'] = [i[1] for i in data_df_all.index]
 
     data_df_all['category'] = [i[0] for i in data_df_all.index]
-    print (data_df_all.shape)
 
     return data_df_all
 
 
 def network_figure(data_df, date, metric, vmin, vmax, output_dir):
-    '''
+    """
 
     Make 2D heatmap plot with network centrality measures
 
-    :param data_df: input dataframe
-    :param date: date to be plot
-    :param metric: which metric is going to be plot
-    :param vmin: colorbar minimum values
-    :param vmax: colorbar max values
-    :param output_dir: dir where to save the plots
-    :return:
-    '''
+    Parameters
+    ----------
+    data_df:  Dataframe
+        Input dataframe
+    date: String
+        Date to be plot
+    metric: string
+        Which metric is going to be plot
+    vmin: int
+        Colorbar minimum values
+    vmax: int
+        Colorbar max values
+    output_dir: string
+        Directory where to save the plots
+
+    Returns
+    ----------
+    """
 
     fig, ax = plt.subplots(1, figsize=(6, 6))
 
     cmap = matplotlib.cm.get_cmap('coolwarm')
 
-    data_df[data_df['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column=metric, \
+    data_df[data_df['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column=metric,
                                           figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
 
     # from datetime type to a string
@@ -806,9 +818,12 @@ def resample_time_series(df, col_name="offset50", period="D"):
 
     Parameters
     ----------
-    df: DataFrame with date as index
-    col_name: string, identifying the column we will pull out
-
+    df: DataFrame
+        Dataframe with date as index
+    col_name: string,
+        Identifying the column we will pull out
+    period: string
+        Period for resampling
     Returns
     -------
     new_series: pandas Series with datetime index, and one column, one row per day

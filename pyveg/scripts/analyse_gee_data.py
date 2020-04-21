@@ -85,9 +85,11 @@ def main():
                 data_df_geo = convert_to_geopandas(df.copy())
                 data_df_geo_coarse = coarse_dataframe(data_df_geo.copy(), 2)
                 create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)
+
+
     # ------------------------------------------------
 
-    # time series analysis and plotting 
+    # time series analysis and plotting
     # ------------------------------------------------
     if args.time_series_plot:
 
