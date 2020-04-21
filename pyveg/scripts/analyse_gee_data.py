@@ -24,17 +24,12 @@ from pyveg.src.data_analysis_utils import (
     remove_seasonality_combined,
     remove_seasonality_all_sub_images,
 )
-
 from pyveg.src.plotting import (
     do_stl_decomposition,
-    plot_smoothed_time_series, 
+    plot_smoothed_time_series,
     plot_autocorrelation_function,
     plot_feature_vectors,
     plot_cross_correlations
-)
-
-from pyveg.src.image_utils import (
-    create_gif_from_images
 )
 
 
@@ -42,14 +37,16 @@ def main():
     """
     CLI interface for gee data analysis.
     """
-    parser = argparse.ArgumentParser(description="process json files with network centrality measures from from GEE images")
-    parser.add_argument("--input_dir",help="results directory from `download_gee_data` script, containing `results_summary.json`")
+    parser = argparse.ArgumentParser(
+        description="process json files with network centrality measures from from GEE images")
+    parser.add_argument("--input_dir",
+                        help="results directory from `download_gee_data` script, containing `results_summary.json`")
     parser.add_argument('--spatial_plot', action='store_true')
     parser.add_argument('--time_series_plot', action='store_true', default=True)
-    
-    print('-'*35)
+
+    print('-' * 35)
     print('Running analyse_gee_data.py')
-    print('-'*35)
+    print('-' * 35)
 
     # parse args
     args = parser.parse_args()
@@ -71,8 +68,7 @@ def main():
     print(f"Reading results from '{os.path.abspath(json_summary_path)}'...")
     dfs = variable_read_json_to_dataframe(json_summary_path)
 
-
-    # spatial analysis and plotting 
+    # spatial analysis and plotting
     # ------------------------------------------------
     if args.spatial_plot:
 
@@ -87,15 +83,18 @@ def main():
         for collection_name, df in dfs.items():
             if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
                 data_df_geo = convert_to_geopandas(df.copy())
-                create_lat_long_metric_figures(data_df_geo, 'offset50', spatial_subdir)
+                data_df_geo_coarse = coarse_dataframe(data_df_geo.copy(), 2)
+                create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)
+
+
     # ------------------------------------------------
 
-    # time series analysis and plotting 
+    # time series analysis and plotting
     # ------------------------------------------------
     if args.time_series_plot:
 
         # create new subdir for time series analysis
-        #tsa_subdir = os.path.join(output_dir, 'time-series') # if we start to have more and more results
+        # tsa_subdir = os.path.join(output_dir, 'time-series') # if we start to have more and more results
         tsa_subdir = output_dir
 
         if not os.path.exists(tsa_subdir):
@@ -105,21 +104,20 @@ def main():
         time_series_dfs = make_time_series(dfs.copy())
 
         # make the old time series plot
-        #print('\nPlotting time series...')
-        #plot_time_series(time_series_dfs, tsa_subdir)
+        # print('\nPlotting time series...')
+        # plot_time_series(time_series_dfs, tsa_subdir)
 
         # remove outliers from the time series
-        dfs = drop_veg_outliers(dfs, sigmas=3) # not convinced this is really helping much
+        dfs = drop_veg_outliers(dfs, sigmas=3)  # not convinced this is really helping much
 
         # plot the feature vectors averaged over all time points and sub images
         try:
             plot_feature_vectors(dfs, tsa_subdir)
         except AttributeError:
-            print('Can not plot feature vectors...') 
-            
+            print('Can not plot feature vectors...')
 
-        # LOESS smoothing on sub-image time series
-        smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=4)) # increase smoothing with n>5
+            # LOESS smoothing on sub-image time series
+        smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=4))  # increase smoothing with n>5
 
         # make a smoothed time series plot
         plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
@@ -132,42 +130,36 @@ def main():
 
         # write csv for easy external analysis
         write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
-    # ------------------------------------------------
+        # ------------------------------------------------
 
+        do_stl_decomposition(time_series_dfs, 12, tsa_subdir)
 
-        do_stl_decomposition(time_series_dfs,12,tsa_subdir)
+        # --------------------------------------------------
 
-    # --------------------------------------------------
+        #   remove seasonality in a time series
+        time_series_uns_dfs = remove_seasonality_all_sub_images(smooth_veg_data(dfs.copy(), n=4), 12, "M")
 
-    #   remove seasonality in a time series
-
-        time_series_uns_dfs = remove_seasonality_all_sub_images(smooth_veg_data(dfs.copy(), n=5), 12, "M")
-
-
-        smoothed_time_series_uns_dfs = make_time_series(time_series_uns_dfs.copy()) # increase smoothing with n>5
-
+        smoothed_time_series_uns_dfs = make_time_series(time_series_uns_dfs.copy())  # increase smoothing with n>5
 
         # make a smoothed time series plot
         plot_smoothed_time_series(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
 
         # make autocorrelation plots
-        plot_autocorrelation_function(smoothed_time_series_uns_dfs, tsa_subdir,'-no-seasonality')
+        plot_autocorrelation_function(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
 
         # write csv for easy external analysis
-        write_slimmed_csv(smoothed_time_series_uns_dfs, tsa_subdir,'-no-seasonality')
+        write_slimmed_csv(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
 
-     # ------------------------------------------------
+        # ------------------------------------------------
 
         #   remove seasonality in the summary time series
 
         time_series_uns_summary_dfs = remove_seasonality_combined(smoothed_time_series_dfs.copy(), 12, "M")
 
         # make a smoothed time series plot
-        plot_smoothed_time_series(time_series_uns_summary_dfs, tsa_subdir, '-no-seasonality-summary-ts',plot_std = False)
-
+        plot_smoothed_time_series(time_series_uns_summary_dfs, tsa_subdir, '-no-seasonality-summary-ts', plot_std=False)
 
     print('\nDone!\n')
-
 
 
 if __name__ == "__main__":

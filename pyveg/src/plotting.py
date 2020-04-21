@@ -2,20 +2,18 @@
 Plotting code.
 """
 
-import os
 import datetime
+import os
 
-import numpy as np
-import pandas as pd 
-
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import matplotlib.cm as cm
-
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
-
-from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json,stl_decomposition
 from pandas.plotting import register_matplotlib_converters
+
+from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json, stl_decomposition
+
 register_matplotlib_converters()
 
 def plot_time_series(dfs, output_dir):
@@ -49,11 +47,11 @@ def plot_time_series(dfs, output_dir):
     plt.gca().xaxis.set_major_locator(mdates.DayLocator())
     ax1.set_xlabel('Time')
 
-    #print(get_weather_time_series(dfs))
-    #print(get_veg_time_series(dfs))
+    #print(get_weather_time_series(df))
+    #print(get_veg_time_series(df))
 
     """
-    for collection_name, df in dfs.items():
+    for collection_name, df in df.items():
 
         if 'offset50' in df.columns:
             # prepare data
@@ -82,9 +80,9 @@ def plot_time_series(dfs, output_dir):
     cop_dates = dfs[s2].index
     cop_xs = [datetime.datetime.strptime(str(d),'%Y-%m-%d').date() for d in cop_dates]
 
-    #l8_means = dfs[l8]['offset50']
-    #l8_stds = dfs[l8]['offset50_std']
-    #l8_dates = dfs[l8].index
+    #l8_means = df[l8]['offset50']
+    #l8_stds = df[l8]['offset50_std']
+    #l8_dates = df[l8].index
     #l8_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in l8_dates]
 
     precip = dfs['ECMWF/ERA5/MONTHLY']['total_precipitation'] * 1000 # convert to mm
@@ -365,7 +363,7 @@ def plot_autocorrelation_function(dfs, output_dir, filename_suffix =''):
 def plot_feature_vectors(dfs, output_dir):
     """
     Plot the feature vectors from the network centrality
-    output of any vegetation DataFrames in `dfs`.
+    output of any vegetation DataFrames in `df`.
 
     Parameters
     ----------
@@ -532,7 +530,7 @@ def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
 def do_stl_decomposition(dfs, period, output_dir):
     """
      Run the STL decomposition and plot the results network centrality and
-     precipitation DataFrames in `dfs`.
+     precipitation DataFrames in `df`.
 
      Parameters
      ----------
