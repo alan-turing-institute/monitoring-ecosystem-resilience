@@ -638,13 +638,13 @@ def smooth_veg_data(dfs, column='offset50', n=4):
     return dfs
 
 
-def create_lat_long_metric_figures(data_df, metric, output_dir):
+def create_lat_long_metric_figures(geodf, metric, output_dir):
     """
     From input data-frame with processed network metrics create 2D gird figure for each date available using Geopandas.
 
     Parameters
     ----------
-    data_df:  Dataframe
+    geodf:  GeoDataframe
         Input dataframe
     metric: string
         Variable to plot
@@ -656,37 +656,37 @@ def create_lat_long_metric_figures(data_df, metric, output_dir):
 
     """
 
-    if {'date', metric}.issubset(data_df.columns):
+    if {'date', metric}.issubset(geodf.columns):
 
         # get min and max values observed in the data to create a range
 
-        vmin = min(data_df[metric])
-        vmax = max(data_df[metric])
+        vmin = min(geodf[metric])
+        vmax = max(geodf[metric])
 
         # get all dates available
-        list_of_dates = np.unique(data_df['date'])
+        list_of_dates = np.unique(geodf['date'])
 
         for date in list_of_dates:
 
-            if data_df[data_df['date'] == date][metric].isnull().values.any():
+            if geodf[geodf['date'] == date][metric].isnull().values.any():
                 print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') + ' nan entries found.')
                 continue
             else:
                 print('Saving network figure for date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d'))
-                network_figure(data_df, date, metric, vmin, vmax, output_dir)
+                network_figure(geodf, date, metric, vmin, vmax, output_dir)
 
     else:
         raise RuntimeError("Expected variables not present in input dataframe")
 
 
-def coarse_dataframe(data_df_all, side_square):
+def coarse_dataframe(geodf, side_square):
     """
     Coarse the granularity of a dataframe by grouping lat,long points
     that are close to each other in a square of L = size_square
 
     Parameters
     ----------
-    data_df_all:  Dataframe
+    geodf:  Dataframe
         Input dataframe
     side_square: integer
         Side of the square
@@ -701,10 +701,10 @@ def coarse_dataframe(data_df_all, side_square):
 
     # initialise the categories
 
-    data_df_all['category'] = -1
+    geodf['category'] = -1
 
     # do calculations on the first date, then extrapolate to the rest
-    data_df = data_df_all[data_df_all['date'] == np.unique(data_df_all['date'])[0]]
+    data_df = geodf[geodf['date'] == np.unique(geodf['date'])[0]]
 
     data_df = data_df.sort_values(by=['longitude', 'latitude'])
 
@@ -734,34 +734,34 @@ def coarse_dataframe(data_df_all, side_square):
             # get indexes of each point belonging to the category
             indexes_all = []
             for point in cat_geometry:
-                indexes_all.append(data_df_all[data_df_all['geometry'] == point].index.tolist())
+                indexes_all.append(geodf[geodf['geometry'] == point].index.tolist())
 
             indexes_all_flat = [item for sublist in indexes_all for item in sublist]
 
-            data_df_all['category'].iloc[indexes_all_flat] = str(category)
+            geodf['category'].iloc[indexes_all_flat] = str(category)
 
             category = category + 1
 
-    data_df_all['category'] = (data_df_all['category'].astype(str)).str.cat(data_df_all['date'], sep="_")
+    geodf['category'] = (geodf['category'].astype(str)).str.cat(geodf['date'], sep="_")
 
-    data_df_all = data_df_all.dissolve(by=['category', 'date'], aggfunc='mean')
+    geodf = geodf.dissolve(by=['category', 'date'], aggfunc='mean')
 
     # re-assing the date because we are losing it
-    data_df_all['date'] = [i[1] for i in data_df_all.index]
+    geodf['date'] = [i[1] for i in geodf.index]
 
-    data_df_all['category'] = [i[0] for i in data_df_all.index]
+    geodf['category'] = [i[0] for i in geodf.index]
 
-    return data_df_all
+    return geodf
 
 
-def network_figure(data_df, date, metric, vmin, vmax, output_dir):
+def network_figure(df, date, metric, vmin, vmax, output_dir):
     """
 
     Make 2D heatmap plot with network centrality measures
 
     Parameters
     ----------
-    data_df:  Dataframe
+    df:  Dataframe
         Input dataframe
     date: String
         Date to be plot
@@ -782,8 +782,8 @@ def network_figure(data_df, date, metric, vmin, vmax, output_dir):
 
     cmap = matplotlib.cm.get_cmap('coolwarm')
 
-    data_df[data_df['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column=metric,
-                                          figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
+    df[df['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column=metric,
+                                figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
 
     # from datetime type to a string
     date_str = pd.to_datetime(str(date)).strftime('%Y-%m-%d')
