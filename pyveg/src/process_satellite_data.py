@@ -18,11 +18,13 @@ from .image_utils import (
     save_image,
     convert_to_rgb,
     scale_tif,
-    save_json,
+#    save_json,
     pillow_to_numpy,
     process_and_threshold,
     check_image_ok
 )
+
+from .file_utils import save_json
 
 from .subgraph_centrality import (
     subgraph_centrality,
