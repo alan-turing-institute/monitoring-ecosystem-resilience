@@ -14,9 +14,7 @@ Don't let trying to be perfect get in the way of being good - exciting ideas are
 - [Where to start: issues](#where-to-start-issues)
 - [Making a change with a pull request](#making-a-change-with-a-pull-request)
   - [1. Comment on an existing issue or open a new issue referencing your addition](#1-comment-on-an-existing-issue-or-open-a-new-issue-referencing-your-addition)
-  - [2 a). If you do have *write* access to the repository: Create a new branch](#2a-create a new branch)
-  - [2 b). If you don't currently have *write* access to the repository: Fork the repository to your profile](#2b-fork-the-repository-to-your-profile)
-
+  - [2. Create a new branch (if you have *write* access to the repository) or fork the repository to your profile (if you don't currently have _write_ access)](#2-create-a-new-branch-or-fork-the-repository-to-your-profile)
   - [3. Make the changes you've discussed](#3-make-the-changes-youve-discussed)
   - [4. Submit a pull request](#4-submit-a-pull-request)
 - [Style guide](#style-guide)
@@ -68,8 +66,9 @@ This allows other members of the team to confirm that you aren't overlapping wit
 
 [This blog](https://www.igvita.com/2011/12/19/dont-push-your-pull-requests/) is a nice explanation of why putting this work in up front is so useful to everyone involved.
 
-### 2a. Create a new [branch][github-branches]
+### 2. Create a new [branch][github-branches] or [Fork][github-fork] the [monitoring-ecosystem-resilience repository][monitoring-ecosystem-resilience-repo] to your profile
 
+#### 2a) Create a branch
 If you are a collaborator on the repository with write access, then you can make a new branch.  We recommend that you start from the latest version of the `develop` branch, and create a new one from there.   The name of your new branch should ideally be in the format: `<feature|bugfix>/<issue-number>-<short-description>`. For example, if you were addressing Issue number 111 which was about incorrect JSON filenames, it could be something like:
 ```
 git checkout develop
@@ -79,7 +78,7 @@ git checkout -b bugfix/111-fix-json-filenames
 Now you can go to step #3, where you actually fix the problem! :)
 
 
-### 2b. [Fork][github-fork] the [monitoring-ecosystem-resilience repository][monitoring-ecosystem-resilience-repo] to your profile
+#### 2b. Fork the repository
 
 If you don't have write access to the repository, you can fork it to your own profile.
 This is now your own unique copy of the repo.
