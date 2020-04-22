@@ -34,8 +34,10 @@ import argparse
 import warnings
 import time
 from shutil import copyfile
+
 from pyveg.src.process_satellite_data import process_all_collections
 from pyveg import config
+from pyveg.coordinates import coordinate_store
 
 
 def main():
@@ -88,6 +90,25 @@ def main():
     print('-'*35)
     print('Running download_gee_data.py')
     print('-'*35)
+
+    # print job configuration to the user
+    print('Job Configuration:')
+
+    # search coordinate store to see if we have an entry for these coordinates
+    long, lat = config.coordinates
+    entry = coordinate_store[(coordinate_store['longitude'] == long) & (coordinate_store['latitude'] == lat)]
+
+    if entry.empty:
+        print(f'* Warning: running with unknown coordinates: {config.coordinates}.')
+    elif len(entry) == 1:
+        print(f'* Running with location id {entry.index[0]}:')
+        print(entry.to_string(index=False))
+    else:
+        raise RuntimeError('Coordinate store error.')
+    
+    print(f'* date range:\t {config.date_range}')
+    collection_names = [c['collection_name'] for c in config.data_collections.values()]
+    print(f'* collections:\t {collection_names}\n')
 
     # run!
     process_all_collections(config.output_dir,

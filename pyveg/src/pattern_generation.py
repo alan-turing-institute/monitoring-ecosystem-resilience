@@ -5,12 +5,13 @@ import os
 import random
 import json
 import numpy as np
-import matplotlib.pyplot as plt
-
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib import pyplot as plt
 
 class PatternGenerator(object):
     """
-    Class that can generate simulated vegetation patterns, optionally
+    Class that can generate simulated veget  ation patterns, optionally
     from a loaded starting pattern, and propagate through time according
     to various amounts of rainfall and/or surface and soil water density.
     """
