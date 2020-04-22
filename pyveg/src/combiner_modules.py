@@ -25,13 +25,25 @@ class VegAndWeatherJsonCombiner(BaseModule):
             ("weather_collection", str),
             ("veg_collection", str)
             ]
-        self.set_default_parameters()
+
 
     def set_default_parameters(self):
-        if not "weather_collection" in vars(self):
+        # see if we can set our input directories from the output directories
+        # of previous series in the pipeline.
+        # The pipeline (if there is one) will be a grandparent, i.e. self.parent.parent
+        if self.parent and self.parent.parent and self.parent.depends_on:
+            for sequence_name in self.parent.depends_on:
+                sequence = self.parent.parent.get(sequence_name)
+                if sequence.data_type == "vegetation":
+                    self.input_veg_dir = sequence.output_dir
+                    self.veg_collection = sequence.collection_name
+                elif sequence.data_type == "weather":
+                    self.input_weather_dir = sequence.output_dir
+                    self.weather_collection = sequence.collection_name
+        else:
             self.weather_collection = "ECMWF/ERA5/MONTHLY"
-        if not "veg_collection" in vars(self):
             self.veg_collection = "COPERNICUS/S2"
+
 
     def get_veg_time_series(self):
         date_strings = os.listdir(self.input_veg_dir)

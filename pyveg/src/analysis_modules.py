@@ -33,8 +33,8 @@ class VegetationImageProcessor(AnalysisModule):
         super().__init__(name)
         self.params += [("input_dir", str),
                         ("output_dir", str),
+                        ("region_size", float),
                         ("RGB_bands", list),
-                        ("NDVI_band", str),
                         ("split_RGB_images", bool)
         ]
 
@@ -44,9 +44,15 @@ class VegetationImageProcessor(AnalysisModule):
         Set some basic defaults
         """
         if not "region_size" in vars(self):
-            self.region_size = 0.1
-        if not "output_dir" in vars(self):
-            self.output_dir = "."
+            if self.parent and "region_size" in vars(self.parent):
+                self.region_size = self.parent.region_size
+            else:
+                self.region_size = 0.1
+        if not "RGB_bands" in vars(self):
+            if self.parent and "RGB_bands" in vars(self.parent):
+                self.RGB_bands = self.parent.RGB_bands
+            else:
+                self.RGB_bands = ["B4","B3","B2"]
         if not "split_RGB_images" in vars(self):
             self.split_RGB_images = True
         return

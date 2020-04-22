@@ -38,31 +38,33 @@ class BaseDownloader(BaseModule):
         self.params +=  [("collection_name",str),
                          ("coords", list),
                          ("date_range", list),
-                         ("type", str),
                          ("region_size", float),
                          ("scale", int),
-                         ("output_basedir", str)]
+                         ("output_dir", str)]
         return
+
 
     def set_default_parameters(self):
         """
         Set some basic defaults that should be common to all downloaders
         """
+
         if not "region_size" in vars(self):
             self.region_size = 0.1
         if not "scale" in vars(self):
             self.scale = 10
-        if not "output_basedir" in vars(self):
+        if not "output_dir" in vars(self):
             if self.parent:
-                self.output_basedir = self.parent.output_dir
-            self.output_basedir = "."
+                self.output_dir = self.parent.output_dir
+            else:
+                self.set_output_dir()
         return
 
     def configure(self, config_dict=None):
         super().configure(config_dict)
-        # construct name of output directory from coords if not set
-        if not "output_dir" in vars(self):
-            self.set_output_dir()
+
+
+
 
     def get_region_string(self):
         """
@@ -268,9 +270,8 @@ class BaseDownloader(BaseModule):
         if output_dir:
             self.output_dir = output_dir
         else:
-            sub_dir = f'gee_{self.coords[0]}_{self.coords[1]}'\
+            self.output_dir = f'gee_{self.coords[0]}_{self.coords[1]}'\
                 +"_"+self.collection_name.replace('/', '-')
-            self.output_dir = os.path.join(self.output_basedir, sub_dir)
 
 
     def run(self):
@@ -318,8 +319,6 @@ class VegetationDownloader(BaseDownloader):
         """
         # set basic things like region_size and scale in the base class
         super().set_default_parameters()
-        if not "data_type" in vars(self):
-            self.type = "vegetation"
         if "Sentinel2" in self.name:
             self.collection_name = "COPERNICUS/S2"
             self.RGB_bands = ["B4","B3","B2"]
@@ -433,8 +432,6 @@ class WeatherDownloader(BaseDownloader):
         """
         # set basic things like region_size and scale in the base class
         super().set_default_parameters()
-        if not "data_type" in vars(self):
-            self.type = "weather"
         if "ERA5" in self.name:
             self.collection_name = "ECMWF/ERA5/MONTHLY"
             self.temperature_band = ['mean_2m_air_temperature']
