@@ -182,7 +182,6 @@ def main():
     # parse args
     args = parser.parse_args()
     input_dir = args.input_dir
-
     analyse_gee_data(input_dir, args.spatial_plot, args.time_series_plot)
 
 
