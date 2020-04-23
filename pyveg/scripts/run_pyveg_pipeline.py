@@ -9,7 +9,7 @@ import importlib.util
 
 from pyveg.src.pyveg_pipeline import Pipeline, Sequence
 from pyveg.src.download_modules import *
-from pyveg.src.analysis_modules import *
+from pyveg.src.processor_modules import *
 from pyveg.src.combiner_modules import *
 
 
@@ -47,26 +47,31 @@ def build_pipeline(config_file, name):
     # parallelize further)
     s.depends_on = config.collections_to_use
     cm = VegAndWeatherJsonCombiner()
- #   for sequence in p.sequences:
- #       if "data_type" in vars(sequence):
- #           if sequence.data_type == "vegetation":
- #               print("SETTING VEG STUFF FOR COMBINER {} {}".format(sequence.output_dir,
- #                                                                   sequence.collection_name))
- #               cm.input_veg_dir = sequence.output_dir
- #               cm.veg_collection = sequence.collection_name
- #           elif sequence.data_type == "weather":
- #               cm.input_weather_dir = sequence.output_dir
- #               cm.weather_collection = sequence.collection_name
+
     # add this combiner module to the combiner sequence
     s += cm
     # and add this combiner sequence to the pipeline.
     p += s
     return p
 
-if __name__ == "__main__":
+
+def configure_and_run_pipeline(pipeline):
+    """
+    Call configure() run() on all sequences in the pipeline.
+    """
+    pipeline.configure()
+    pipeline.run()
+
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", help="Path to config file", required=True)
     parser.add_argument("--name", help="(optional) identifying name", default="mypyveg")
 
     args = parser.parse_args()
     pipeline = build_pipeline(args.config_file, args.name)
+    configure_and_run_pipeline(pipeline)
+
+
+if __name__ == "__main__":
+    main()
