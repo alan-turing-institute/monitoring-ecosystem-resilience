@@ -25,9 +25,9 @@ from pyveg.src.data_analysis_utils import (
 )
 from pyveg.src.plotting import (
     do_stl_decomposition,
-    plot_smoothed_time_series,
-    plot_autocorrelation_function,
     plot_feature_vector,
+    plot_time_series,
+    plot_autocorrelation_function,
     plot_cross_correlations
 )
 
@@ -53,6 +53,8 @@ def analyse_gee_data(input_dir, spatial):
 
     # put output plots in the results dir
     output_dir = os.path.join(input_dir, 'analysis')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
 
     # spatial analysis and plotting
     # ------------------------------------------------
@@ -76,23 +78,16 @@ def analyse_gee_data(input_dir, spatial):
     # ------------------------------------------------
     # main analysis and plotting sequence
     # ------------------------------------------------
-    # create new subdir for time series analysis
-    # tsa_subdir = os.path.join(output_dir, 'time-series') # if we start to have more and more results
-    tsa_subdir = output_dir
-
-    if not os.path.exists(tsa_subdir):
-        os.makedirs(tsa_subdir, exist_ok=True)
 
     # feature vectors
     # ------------------------------------------------
     # plot the feature vectors
-    plot_feature_vector(dfs, tsa_subdir) # TODO: read vector vectors from csv, and plot extreme feature vectors (issue #186)
+    plot_feature_vector(dfs, output_dir) # TODO: read vector vectors from csv, and plot extreme feature vectors (issue #186)
 
     # auto- and cross-correlations
     # --------------------------------------------------
     # create new subdir for correlation plots
     corr_subdir = os.path.join(output_dir, 'correlations') # if we start to have more and more results
-
     if not os.path.exists(corr_subdir):
         os.makedirs(corr_subdir, exist_ok=True)
 
@@ -105,13 +100,17 @@ def analyse_gee_data(input_dir, spatial):
 
     # time series
     # ------------------------------------------------
+    # create new subdir for time series analysis
+    tsa_subdir = os.path.join(output_dir, 'time-series')
+    if not os.path.exists(tsa_subdir):
+        os.makedirs(tsa_subdir, exist_ok=True)
+
     # make a smoothed time series plot
-    plot_smoothed_time_series(ts_df, tsa_subdir)
+    plot_time_series(ts_df, tsa_subdir) # TODO: add max cross correlation in plot legend (issue #170)
 
 
-
-
-    """do_stl_decomposition(time_series_dfs, 12, tsa_subdir)
+    """
+    do_stl_decomposition(time_series_dfs, 12, tsa_subdir)
 
     # --------------------------------------------------
     #   remove seasonality in a time series
