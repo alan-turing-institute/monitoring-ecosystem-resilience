@@ -159,9 +159,7 @@ def process_sub_image(i, sub, sub_rgb, output_subdir, date):
 
     # write json file for just this sub-image to a temporary location
     # (to be thread safe, only combine when all parallel jobs are done)
-
     save_json(nc_result, os.path.join(output_subdir,"tmp_json"), f"network_centrality_sub{i}.json")
-
     n_processed = len(os.listdir(os.path.join(output_subdir,"tmp_json")))
     print(f'Processed {n_processed} sub-images...', end='\r')
 
@@ -170,12 +168,26 @@ def consolidate_subimage_json(output_subdir):
     """
     Load all the json files from individual sub-images, and return
     a list of dictionaries, to be written out into one json file.
+
+    Parameters
+    ----------
+    output_subdir : str
+        Directory where temporary json files for each sub-image are
+        stored.
     """
     nc_results = []
     tmp_json_dir = os.path.join(output_subdir,"tmp_json")
+
+    # if no sub-images were processed, return
+    if not os.path.exists(tmp_json_dir):
+        print('No sub-images processed!')
+        return
+
+    # otherwise collate all sub-image outputs
     for filename in os.listdir(tmp_json_dir):
         nc_results.append(json.load(open(os.path.join(tmp_json_dir,filename))))
     save_json(nc_results, output_subdir, "network_centralities.json")
+
     return nc_results
 
 
