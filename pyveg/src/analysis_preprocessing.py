@@ -451,7 +451,7 @@ def store_feature_vectors(dfs, output_dir):
             df.insert(1, 'latitude', veg_df['latitude'])
             df.insert(2, 'longitude', veg_df['longitude'])
 
-            # save 
+            # save csv
             if col_name == 'COPERNICUS/S2':
                 s = 'S2'
             elif col_name in 'LANDSAT8':

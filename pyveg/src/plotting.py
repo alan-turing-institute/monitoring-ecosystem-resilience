@@ -16,6 +16,9 @@ from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendel
 
 register_matplotlib_converters()
 
+# globally set image quality
+plot_dpi = 150
+
 def plot_time_series(dfs, output_dir):
     """
     Given a dict of DataFrames, of which each row corresponds to
@@ -123,7 +126,7 @@ def plot_time_series(dfs, output_dir):
     # save the plot before adding Landsat
     output_filename = 'time-series.png'
     print(f'\nPlotting time series "{os.path.abspath(output_filename)}"...')
-    plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+    plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
 
     # add l8
     #ax4 = ax1.twinx()
@@ -299,68 +302,54 @@ def plot_smoothed_time_series(dfs, output_dir, filename_suffix ='',plot_std=True
             # save the plot
             output_filename = collection_name.replace('/', '-') +'-time-series-smoothed' + filename_suffix + '.png'
             print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
-            plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
             #plt.show()
 
-def plot_autocorrelation_function(dfs, output_dir, filename_suffix =''):
+def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
     """
-    Given a dict of DataFrames, of which each row corresponds to
-    a different time point (constructed with `make_time_series`),
-    plot the autocorrelation function of each DataFrame, for the 
-    smoothed and unsmoothed values of offset50.
+    Given a time series DataFrames (constructed with `make_time_series`),
+    plot the autocorrelation function relevant columns.
 
     Parameters
     ----------
-    dfs : dict of DataFrame
-        The time-series results averaged over sub-locations.
+    df : DataFrame
+        Time series DataFrame.
 
     output_dir : str
-        Directory to save the plot in.
+        Directory to save the plots in.
     """
 
-    for collection_name, df in dfs.items():
-        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-            
-            plt.figure(figsize=(8,5))
+    def make_plots(series, output_dir, filename_suffix=''):
 
-            # make the plots
-            pd.plotting.autocorrelation_plot(df['offset50_mean'], label='Unsmoothed')
-            pd.plotting.autocorrelation_plot(df['offset50_smooth_mean'], label='Smoothed')
-            plt.legend()
+        # make the full autocorrelation function plot
+        plt.figure(figsize=(8,5))
+        pd.plotting.autocorrelation_plot(series.dropna(), label=series.name)
+        plt.legend()
 
-            # save the plot
-            output_filename = collection_name.replace('/', '-') +'-autocorrelation-function' + filename_suffix + '.png'
-            print(f'\nPlotting autocorrelation function "{os.path.abspath(output_filename)}"...')
-            plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+        # save the plot
+        output_filename = series.name + '-autocorrelation-function' + filename_suffix + '.png'
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
 
-            
-            # statsmodel version of the same thing
-            from statsmodels.graphics.tsaplots import plot_pacf
-            plot_pacf(df['offset50_mean'], label='Unsmoothed')
-            plt.xlabel('Lag')
-            plt.ylabel('Partial Autocorrelation')
-            plt.title('Partial Autocorrelation Unsmoothed')
-            plt.tight_layout()
+        # use statsmodels for partial autocorrelation
+        from statsmodels.graphics.tsaplots import plot_pacf
+        _, ax = plt.subplots(figsize=(8,5))
+        plot_pacf(series.dropna(), label=series.name, ax=ax, zero=False)
+        plt.ylim([-1.0, 1.0])
+        plt.xlabel('Lag')
+        plt.ylabel('Partial Autocorrelation')
 
-            # save the plot
-            output_filename = collection_name.replace('/', '-') +'-partial-autocorrelation-function-unsmoothed' + filename_suffix + '.png'
-            print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
-            plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
-            
-            plot_pacf(df['offset50_smooth_mean'], label='Smoothed')
-            plt.xlabel('Lag')
-            plt.ylabel('Partial Autocorrelation')
-            plt.title('Partial Autocorrelation Smoothed')
-            plt.tight_layout()
-
-            # save the plot
-            output_filename = collection_name.replace('/', '-') +'-partial-autocorrelation-function-smoothed' + filename_suffix + '.png'
-            print(f'\nPlotting partial autocorrelation function "{os.path.abspath(output_filename)}"...')
-            plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
-            #plt.show()
+        # save the plot
+        output_filename = series.name + '-partial-autocorrelation-function' + filename_suffix + '.png'
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
+        
+    # make plots for selected columns
+    for column in df.columns:
+        if 'offset50' in column and 'mean' in column or 'total_precipitation' in column:
+            print(f'\nPlotting autocorrelation functions for "{column}"...')
+            make_plots(df[column], output_dir)
 
 
-def plot_feature_vectors(dfs, output_dir):
+def plot_feature_vector(dfs, output_dir):
     """
     Plot the feature vectors from the network centrality
     output of any vegetation DataFrames in `df`.
@@ -399,7 +388,7 @@ def plot_feature_vectors(dfs, output_dir):
             # save the plot
             output_filename = collection_name.replace('/', '-')+'-feature-vector-summary.png'
             print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
-            plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
 
 
             # plot also the feature vectors for different time points on the same plot
@@ -422,7 +411,7 @@ def plot_feature_vectors(dfs, output_dir):
             # save the plot
             output_filename = collection_name.replace('/', '-')+'-feature-vector-all.png'
             print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
-            plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
             #plt.show()
 
 def plot_cross_correlations(dfs, output_dir):
@@ -488,7 +477,7 @@ def plot_cross_correlations(dfs, output_dir):
             # save the plot
             output_filename = collection_name.replace('/', '-')+'-scatterplot-matrix.png'
             print(f'\nPlotting scatterplot matrix "{os.path.abspath(output_filename)}"...')
-            plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
 
             correlations_dict = {'lagged_correlation': correlations}
             write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), correlations_dict)

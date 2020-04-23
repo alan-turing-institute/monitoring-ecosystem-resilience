@@ -90,11 +90,17 @@ def analyse_gee_data(input_dir, spatial):
 
     # auto- and cross-correlations
     # --------------------------------------------------
+    # create new subdir for correlation plots
+    corr_subdir = os.path.join(output_dir, 'correlations') # if we start to have more and more results
+
+    if not os.path.exists(corr_subdir):
+        os.makedirs(corr_subdir, exist_ok=True)
+
     # make autocorrelation plots
-    plot_autocorrelation_function(ts_df, tsa_subdir)
+    plot_autocorrelation_function(ts_df, corr_subdir)
 
     # make cross correlation scatterplot matrix plots
-    plot_cross_correlations(ts_df, tsa_subdir)
+    plot_cross_correlations(ts_df, corr_subdir)
     # --------------------------------------------------
 
     # time series
