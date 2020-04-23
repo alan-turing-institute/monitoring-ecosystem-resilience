@@ -42,24 +42,10 @@ class Pipeline(object):
         return self
 
 
-    def configure(self):
-        for var in ["coords", "date_range", "output_dir"]:
-            if not var in vars(self):
-                raise RuntimeError("{}: need to set {} before calling configure()"\
-                                   .format(self.name, var))
-
-        for sequence in self.sequences:
-            sequence.coords = self.coords
-            sequence.date_range = self.date_range
-            sequence.configure()
-        self.is_configured = True
-
-    def run(self):
-        for sequence in self.sequences:
-            sequence.run()
-
-
     def __repr__(self):
+        """
+        overload the builtin operator for printing the pipeline.
+        """
         output = "\n[Pipeline]: {} \n".format(self.name)
         output += "=======================\n"
         output += "coordinates: {}\n".format(self.coords)
@@ -71,6 +57,7 @@ class Pipeline(object):
         output += "=======================\n"
         return output
 
+
     def get(self, seq_name):
         """
         Return a sequence object when asked for by name.
@@ -78,6 +65,33 @@ class Pipeline(object):
         for sequence in self.sequences:
             if sequence.name == seq_name:
                 return sequence
+
+
+    def configure(self):
+        """
+        Configure all the sequences in this pipeline.
+        """
+        for var in ["coords", "date_range", "output_dir"]:
+            if (not var in vars(self)) or ( not self.__getattribute__(var)):
+                raise RuntimeError("{}: need to set {} before calling configure()"\
+                                   .format(self.name, var))
+
+        for sequence in self.sequences:
+            if not "coords" in vars(sequence):
+                sequence.coords = self.coords
+            if not "date_range" in vars(sequence):
+                sequence.date_range = self.date_range
+            sequence.configure()
+        self.is_configured = True
+
+
+    def run(self):
+        """
+        run all the sequences in this pipeline
+        """
+        for sequence in self.sequences:
+            sequence.run()
+
 
 
 class Sequence(object):
@@ -104,7 +118,13 @@ class Sequence(object):
         """
         module.parent = self
         self.modules.append(module)
-#        self.__setattr__(module.name, module)
+        # if the module doesn't already have a name, or only the default one,
+        # give it a name <sequence_name>_<class_name> here
+        if (not module.name) or (module.name == module.__class__.__name__):
+            module.name = "{}_{}".format(self.name, module.__class__.__name__)
+        # add module name as an attribute of the sequence
+        self.__setattr__(module.name, module)
+
         return self
 
 
@@ -126,6 +146,10 @@ class Sequence(object):
 
 
     def configure(self):
+
+        if (not self.coords) or (not self.date_range):
+            raise RuntimeError("{}: Need to set coords and date range before calling configure()"\
+                               .format(self.name))
         if not self.output_dir:
             self.set_output_dir()
 
@@ -181,19 +205,18 @@ class BaseModule(object):
     we call "output_dir" will be the base directory common to all modules, and will contain
     info about the image collection name, and the coordinates.
     """
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, name=None):
+        if name:
+            self.name = name
+        else:
+            self.name = self.__class__.__name__
         self.params = []
         self.parent = None
         self.is_configured = False
 
 
     def configure(self, config_dict=None):
-        if not self.name:
-            if self.parent:
-                self.name = "{}_{}".format(self.parent.name, self.__class__.__name__)
-            else:
-                self,name = self.__class__.__name__
+
         self.set_default_parameters()
         if config_dict:
             for k, v in config_dict.items():
