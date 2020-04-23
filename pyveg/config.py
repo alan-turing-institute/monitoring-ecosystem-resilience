@@ -34,7 +34,7 @@ collections_to_use = ['Sentinel2', 'ERA5']
 #collections_to_use = ['Landsat4','Landsat5']
 
 # turn off to quickly scout out new locations
-do_network_centrality = False
+do_network_centrality = True
 
 # parameter dictionary for different GEE collections
 data_collections = {
