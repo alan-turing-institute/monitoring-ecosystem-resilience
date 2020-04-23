@@ -357,7 +357,7 @@ def plot_feature_vector(dfs, output_dir):
     Parameters
     ----------
     dfs : dict of DataFrame
-        The time-series results.
+        Time-series data.
 
     output_dir : str
         Directory to save the plot in.
@@ -414,74 +414,80 @@ def plot_feature_vector(dfs, output_dir):
             plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
             #plt.show()
 
-def plot_cross_correlations(dfs, output_dir):
+def plot_cross_correlations(df, output_dir):
     """
-    Create or append the contents of `out_dict` 
-    to json file `filename`.
+    Plot a scatterplot matrix showing correlations between vegetation
+    and precipitation time series, with different lags. Additionally
+    write out the correlations as a function of the lag for later use.
 
     Parameters
     ----------
-    filename: array
-        Output json filename.
-    out_dict: dict
-        Information to save.
+    df: DataFrame
+        Time-series data.
+    output_dir : str
+        Directory to save the plot in.
     """
 
-    for collection_name, df in dfs.items():
-        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+    # check precipitation time series present
+    if 'total_precipitation' not in df.columns:
+        print('Missing precipitation time series, skipping cross correlation plots.')
+        return
+
+    def make_plots(veg_ys, precip_ys, output_dir):
+        # set up
+        lags = 9
+        correlations = []
+
+        # make a new df to ensure NaN veg values are explicit
+        df_ = pd.DataFrame()
+        df_['precip'] = precip_ys
+        df_['offset50'] = veg_ys
+
+        # create fig
+        _, axs = plt.subplots(3, 3, sharex='col', sharey='row', 
+                                figsize=(8, 8))
+
+        # loop through offsets
+        for lag in range(0, lags):
+
+            # select the relevant Axis object
+            ax = axs.flat[lag]
+
+            # format this subplot
+            ax.set_title(f'$t-{lag}$')
+            ax.grid(False)
+
+            # plot data
+            lagged_data = df_['offset50'].shift(-lag)
             
-            # set up
-            lags = 9
-            veg_col = 'offset50_mean'            
-            precip_data = dfs['ECMWF/ERA5/MONTHLY']['total_precipitation']
-            correlations = []
-
-            # make a new df to ensure NaN veg values are explicit
-            df_ = pd.DataFrame()
-            df_['precip'] = precip_data
-            df_['offset50'] = df[veg_col]
+            corr = precip_ys.corr(lagged_data)
+            correlations.append(round(corr,4))
+            sns.regplot(precip_ys, lagged_data, label=f'$r={corr:.2f}$', ax=ax)
             
-            # create fig
-            fig, axs = plt.subplots(3, 3, sharex='col', sharey='row', 
-                                    figsize=(8, 8))
-
-            #plt.suptitle('Precipitation vs Offset50 Lagged Scatterplot Matrix', fontsize=15, y=1.02)
-
-            # loop through offsets
-            for lag in range(0, lags):
-
-                # select the relevant Axis object
-                ax = axs.flat[lag]
-
-                # format this subplot
-                ax.set_title(f'$t-{lag}$')
-                ax.grid(False)
-
-                # plot data
-                lagged_data = df_['offset50'].shift(-lag)
+            # format axis label
+            if lag < 6:
+                ax.set_xlabel('')
+            if lag % 3 != 0:
+                ax.set_ylabel('')
                 
-                corr = precip_data.corr(lagged_data)
-                correlations.append(round(corr,4))
-                sns.regplot(precip_data, lagged_data, label=f'$r={corr:.2f}$', ax=ax)
-                
-                # format axis label
-                if lag < 6:
-                    ax.set_xlabel('')
-                if lag % 3 != 0:
-                    ax.set_ylabel('')
-                    
-                ax.legend()
+            ax.legend()
 
-            plt.tight_layout()
+        plt.tight_layout()
 
-            # save the plot
-            output_filename = collection_name.replace('/', '-')+'-scatterplot-matrix.png'
-            print(f'\nPlotting scatterplot matrix "{os.path.abspath(output_filename)}"...')
-            plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
+        # save the plot
+        output_filename = veg_ys.name + '-scatterplot-matrix.png'
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
 
-            correlations_dict = {'lagged_correlation': correlations}
-            write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), correlations_dict)
-            #plt.show()
+        # write out correlations as a function of lag
+        correlations_dict = {veg_ys.name + '_lagged_correlation': correlations}
+        write_to_json(os.path.join(output_dir, 'lagged_corr.json'), correlations_dict)
+    
+    # make plots for selected columns
+    for column in df.columns:
+        if 'offset50' in column and 'mean' in column:
+            print(f'\nPlotting autocorrelation functions for "{column}"...')
+            make_plots(df[column], df['total_precipitation'], output_dir)
+            
 
 def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
 
