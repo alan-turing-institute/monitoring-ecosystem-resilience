@@ -21,20 +21,7 @@ import matplotlib
 matplotlib.use('PS')
 import matplotlib.pyplot as plt
 
-
-
-def save_image(image, output_dir, output_filename):
-    """
-    Given a PIL.Image (list of pixel values), save
-    to requested filename - note that the file extension
-    will determine the output file type, can be .png, .tif,
-    probably others...
-    """
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, output_filename)
-    image.save(output_path)
-    #print("Saved image '{}'".format(output_path))
+from .coordinate_utils import get_sub_image_coords
 
 
 def image_from_array(input_array, output_size=None, sel_val=200):
@@ -226,18 +213,7 @@ def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
     y_parts = int(ysize // n_pix_y)
 
     # if we are given coords, calculate coords for all sub-regions
-    sub_image_coords = []
-    if coords and region_size:
-        left_start = coords[0] - region_size/2
-        top_start = coords[1] + region_size/2
-        sub_image_size_x = region_size / x_parts
-        sub_image_size_y = region_size / y_parts
-        for ix in range(x_parts):
-            for iy in range(y_parts):
-                sub_image_coords.append(
-                    (left_start + sub_image_size_x/2 + (ix*sub_image_size_x),
-                     top_start - sub_image_size_y/2 - (iy*sub_image_size_y))
-                )
+    sub_image_coords = get_sub_image_coords(coords, region_size, x_parts, y_parts)
 
     # now do the actual cropping
     sub_images = []
@@ -329,7 +305,8 @@ def create_gif_from_images(directory_path, output_name, string_in_filename=""):
 
     :param directory_path:  directory where all the files are.
     :param output_name: name to be given to the output gif
-    :param string_in_filename: select only files that containsa particular string, default is "" which implies all in directory files are selected
+    :param string_in_filename: select only files that containsa particular string,
+                  default is "" which implies all in directory files are selected
 
     :return:
     """
