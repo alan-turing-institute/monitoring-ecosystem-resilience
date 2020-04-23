@@ -838,6 +838,60 @@ def resample_time_series(df, col_name="offset50", period="D"):
 
     return new_series
 
+def variance_moving_average_time_series(df, col_name="offset50", lenght = 1):
+    """
+    Calculate a variance time series using a moving average
+
+    Parameters
+    ----------
+    df: DataFrame
+        Dataframe with date as index
+    col_name: string,
+        Identifying the column we will pull out
+    lenght: int
+        Lenght to be used in the moving average
+    Returns
+    -------
+    new_series: pandas Series with datetime index, and one column, one row per date
+    """
+    series = df[col_name]
+    # just in case the index isn't already datetime type
+    series.index = pd.to_datetime(series.index)
+
+    variance = series.rolling(lenght).var()
+
+    return variance
+
+def ar1_moving_average_time_series(df, col_name="offset50", lenght = 1):
+    """
+    Calculate a variance time series using a moving average
+
+    Parameters
+    ----------
+    df: DataFrame
+        Dataframe with date as index
+    col_name: string,
+        Identifying the column we will pull out
+    lenght: int
+        Lenght to be used in the moving average
+    Returns
+    -------
+    new_series: pandas Series with datetime index, and one column, one row per date
+    """
+    series = df[col_name]
+    # just in case the index isn't already datetime type
+    series.index = pd.to_datetime(series.index)
+
+    ar1 = []
+    for i in range(df.shape[1]-lenght):
+
+        df.rolling(lenght)
+
+    return 0
+
+
+    return variance
+
 
 def fft_series(time_series):
     """

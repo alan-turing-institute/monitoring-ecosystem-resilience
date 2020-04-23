@@ -23,6 +23,7 @@ from pyveg.src.data_analysis_utils import (
     write_slimmed_csv,
     remove_seasonality_combined,
     remove_seasonality_all_sub_images,
+    variance_moving_average_time_series,
 )
 from pyveg.src.plotting import (
     do_stl_decomposition,
@@ -127,6 +128,11 @@ def analyse_gee_data(input_dir, do_spatial_plot, do_time_series_plot):
 
         # write csv for easy external analysis
         write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
+
+        #---------------------------------------------------
+
+        new_series = variance_moving_average_time_series(dfs['COPERNICUS/S2'],'offset50',dfs['COPERNICUS/S2'].shape[0]/2)
+
         # ------------------------------------------------
 
         do_stl_decomposition(time_series_dfs, 12, tsa_subdir)
@@ -166,8 +172,8 @@ def main():
         description="process json files with network centrality measures from from GEE images")
     parser.add_argument("--input_dir",
                         help="results directory from `download_gee_data` script, containing `results_summary.json`")
-    parser.add_argument('--do_spatial_plot', action='store_true')
-    parser.add_argument('--do_time_series_plot', action='store_true', default=True)
+    parser.add_argument('--spatial_plot', action='store_true')
+    parser.add_argument('--time_series_plot', action='store_true', default=True)
 
     print('-' * 35)
     print('Running analyse_gee_data.py')
@@ -176,10 +182,8 @@ def main():
     # parse args
     args = parser.parse_args()
     input_dir = args.input_dir
-    do_spatial_plot = args.spatial_plot
-    do_time_series_plot = args.time_series_plot
 
-    analyse_gee_data(input_dir, do_spatial_plot, do_time_series_plot)
+    analyse_gee_data(input_dir, args.spatial_plot, args.time_series_plot)
 
 
 if __name__ == "__main__":
