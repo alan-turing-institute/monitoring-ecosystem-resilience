@@ -74,6 +74,7 @@ def read_json_to_dataframes(filename):
         # make a DataFrame and add it to the dict of DataFrames
         df = pd.DataFrame(rows_list)
         df = df.drop(columns=['slope', 'offset', 'mean', 'std'], errors='ignore')
+        assert( df.empty == False )
         dfs[collection_name] = df
 
     return dfs
@@ -136,7 +137,6 @@ def make_time_series(dfs):
     ts_df = ts_df.loc[:,~ts_df.columns.str.contains('latitude_std', case=False)]     
     ts_df = ts_df.loc[:,~ts_df.columns.str.contains('longitude_std', case=False)]
 
-    # return
     assert( ts_df.empty == False )
     return ts_df
 
@@ -407,6 +407,62 @@ def remove_seasonality(df, lag, period='M'):
     return df_resampled
 
 
+def store_feature_vectors(dfs, output_dir):
+    """
+    Write out all feature vector information to a csv file, to be read
+    later by the feature vector plotting script.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    output_dir : str
+        Path to directory to save the csv.
+    """
+
+    # loop over collections
+    for col_name, veg_df in dfs.items():
+
+        #  if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+
+            # check the feature vectors are availible
+            if 'feature_vec' not in veg_df.columns:
+                print('Could not find feature vectors.')
+                continue
+            
+            # sort by date
+            veg_df = veg_df.sort_values(by='date')
+
+            # create a df to store feature vectors
+            df = pd.DataFrame()
+
+            # add feature vectors to dataframe
+            df = pd.DataFrame(value for value in veg_df.feature_vec)
+
+            # rename percentile columns
+            df = df.rename(columns={n: f'{(n+1)*5}th_percentile' for n in df.columns})
+
+            # reindex
+            df.index = veg_df.index
+
+            # add information
+            df.insert(0, 'date', veg_df['date'])
+            df.insert(1, 'latitude', veg_df['latitude'])
+            df.insert(2, 'longitude', veg_df['longitude'])
+
+            # save 
+            if col_name == 'COPERNICUS/S2':
+                s = 'S2'
+            elif col_name in 'LANDSAT8':
+                s = 'L8'
+            else:
+                s = col_name
+            
+            filename = os.path.join(output_dir, s+'_feature_vectors.csv')
+            df.to_csv(filename, index=False)
+            
+
 def preprocess_data(input_dir, drop_outliers=True, fill_missing=True, resample=True, smoothing=True):
     """
     This function reads and process data downloaded by GEE. Processing
@@ -462,12 +518,18 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True, resample=T
         print('- Smoothing vegetation time series...')
         dfs = smooth_veg_data(dfs, n=4)
 
+    # store feature vectors
+    print('Saving feature vectors...')
+    store_feature_vectors(dfs, output_dir)
+    
     # average over sub-images
     ts_df = make_time_series(dfs)
 
     # save as csv
     ts_filename = os.path.join(output_dir, 'time_series.csv')
+    print(f'Saving time series to "{ts_filename}".')
     ts_df.to_csv(ts_filename, index=False)
-    print(f'Saved time series to "{ts_filename}".')
+    
     print('Data preprocessing complete.\n')
-    return ts_dfs
+    
+    return ts_filename, dfs # for now return `dfs` for compatibility 
