@@ -8,6 +8,8 @@ When dealing with date strings, ALWAYS use the ISO format YYYY-MM-DD
 
 import dateparser
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+import re
 
 
 def get_num_n_day_slices(start_date, end_date, days_per_chunk):
@@ -29,30 +31,7 @@ def get_num_n_day_slices(start_date, end_date, days_per_chunk):
     return  n
 
 
-def find_mid_period(start_time, end_time):
-    """
-    Given two strings in the format YYYY-MM-DD return a
-    string in the same format representing the middle (to
-    the nearest day)
-
-    Parameters
-    ==========
-    start_time: str, date in format YYYY-MM-DD
-    end_time: str, date in format YYYY-MM-DD
-
-    Returns
-    =======
-    mid_date: str, mid point of those dates, format YYYY-MM-DD
-    """
-    t0 = dateparser.parse(start_time)
-    t1 = dateparser.parse(end_time)
-    td = (t1 - t0).days
-    mid = (t0 + timedelta(days=(td//2))).isoformat()
-    mid_date = mid.split("T")[0]
-    return mid_date
-
-
-def slice_time_period(start_date, end_date, n):
+def slice_time_period_into_n(start_date, end_date, n):
     """
     Divide the full period between the start_date and end_date into n equal-length
     (to the nearest day) chunks.
@@ -78,3 +57,72 @@ def slice_time_period(start_date, end_date, n):
         output_list.append((chunk_start.isoformat().split("T")[0],
                            chunk_end.isoformat().split("T")[0]))
     return output_list
+
+
+def slice_time_period(start_date, end_date, period_length):
+    """
+    Slice a time period into chunks, whose length is determined by
+    the period_length, which will be e.g. '30d' for 30 days,
+    or '1m' for one month.
+
+    Parameters
+    ==========
+    start_date: str, format YYYY-MM-DD
+    end_date: str, format YYYY-MM-DD
+    period_length: str, format '<integer><d|w|m|y>', e.g. 30d
+
+    Returns
+    =======
+    periods: list of strings in format YYYY-MM-DD
+    """
+    periods = []
+    start_datetime = datetime.fromisoformat(start_date)
+    end_datetime = datetime.fromisoformat(end_date)
+    # parse the period_length
+    match = re.search("^([\d]+)([dwmy])", period_length)
+    if not match:
+        raise RuntimeError("Period length must be in format '<int><d|w|m|y>', e.g. 30d")
+    num, units = match.groups()
+    num = int(num)
+    previous_date = start_datetime
+    t = previous_date
+    while True:
+        if units == "d":
+            t = previous_date + relativedelta(days=+num)
+        elif units == "w":
+            t = previous_date + relativedelta(weeks=+num)
+        elif units == "m":
+            t = previous_date + relativedelta(months=+num)
+        else:
+            t = previous_date + relativedelta(years=+num)
+        # break out of the loop if we go after the end of our time period
+        if t > end_datetime:
+            break
+        # otherwise, add this sub-period to the list
+        periods.append([previous_date.isoformat().split("T")[0],
+                        t.isoformat().split("T")[0]])
+        previous_date = t
+    return periods
+
+
+def find_mid_period(start_time, end_time):
+    """
+    Given two strings in the format YYYY-MM-DD return a
+    string in the same format representing the middle (to
+    the nearest day)
+
+    Parameters
+    ==========
+    start_time: str, date in format YYYY-MM-DD
+    end_time: str, date in format YYYY-MM-DD
+
+    Returns
+    =======
+    mid_date: str, mid point of those dates, format YYYY-MM-DD
+    """
+    t0 = dateparser.parse(start_time)
+    t1 = dateparser.parse(end_time)
+    td = (t1 - t0).days
+    mid = (t0 + timedelta(days=(td//2))).isoformat()
+    mid_date = mid.split("T")[0]
+    return mid_date
