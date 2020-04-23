@@ -19,291 +19,153 @@ register_matplotlib_converters()
 # globally set image quality
 plot_dpi = 150
 
-def plot_time_series(dfs, output_dir):
+
+def plot_time_series(df, output_dir, filename_suffix =''):
     """
-    Given a dict of DataFrames, of which each row corresponds to
-    a different time point (constructed with `make_time_series`),
-    plot the time series of each DataFrame on the same plot.
+    Given a time series DataFrames (constructed with `make_time_series`),
+    plot the vegetitation and precipitation time series.
 
     Parameters
     ----------
-    dfs : dict of DataFrame
-        The time-series results averaged over sub-locations.
+    df : DataFrame
+        Time series DataFrame.
 
     output_dir : str
-        Directory to save the plot in.
+        Directory to save the plots in.
     """
 
-    # function to help plot many y axes
-    def make_patch_spines_invisible(ax):
-        ax.set_frame_on(True)
-        ax.patch.set_visible(False)
-        for sp in ax.spines.values():
-            sp.set_visible(False)
+    def make_plot(df, veg_prefix, output_dir, veg_prefix_b=None):
 
-    # setup plot
-    fig, ax1 = plt.subplots(figsize=(15,5))
-    fig.subplots_adjust(right=0.9)
+        # handle the case where vegetation and precipitation have mismatched NaNs
+        veg_df = df.dropna(subset=[veg_prefix+'_offset50_mean'])
 
-    # set up x axis to handle dates
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
-    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
-    ax1.set_xlabel('Time')
+        # get vegetation x values to datetime objects
+        try:
+            veg_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in veg_df.date]
+        except:
+            # if the time series has been resampled the index is a TimeStamp object
+            veg_xs = [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in veg_df.date]
 
-    #print(get_weather_time_series(df))
-    #print(get_veg_time_series(df))
+        # get vegetation y values
+        veg_means = veg_df[veg_prefix+'_offset50_mean']
+        veg_std = veg_df[veg_prefix+'_offset50_std']
 
-    """
-    for collection_name, df in df.items():
+        # create a figure
+        fig, ax = plt.subplots(figsize=(15, 4.5))
+        plt.xlabel('Time', fontsize=14)
 
-        if 'offset50' in df.columns:
-            # prepare data
-            dates = df.index
-            xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
-            means = df['offset50']
-            stds = df['offset50_std']
-        else: # assume
-            # prepare data
-            dates = df.index
-            xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dates]
-            print(df.values)
-            # if there are multiple data columns, use them all
-            ys_list = []
+        # set up veg y axis
+        color = 'tab:green'
+        ax.set_ylabel(f'{veg_prefix} Offset50', color=color, fontsize=14)
+        ax.tick_params(axis='y', labelcolor=color)
+        ax.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
 
-        # instantiate a new shared axis
-        ax2 = ax1.twinx()
-    """
+        # plot unsmoothed vegetation means
+        ax.plot(veg_xs, veg_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
 
-    s2 = 'COPERNICUS/S2'
-    l8 = 'LANDSAT/LC08/C01/T1_SR'
+        # add smoothed time series if availible
+        if any(['smooth' in c and veg_prefix in c for c in veg_df.columns]):
 
-    # prepare data
-    cop_means = dfs[s2]['offset50_mean']
-    cop_stds = dfs[s2]['offset50_std']
-    cop_dates = dfs[s2].index
-    cop_xs = [datetime.datetime.strptime(str(d),'%Y-%m-%d').date() for d in cop_dates]
+            # get smoothed mean, std
+            veg_means_smooth = veg_df[veg_prefix+'_offset50_smooth_mean']
+            veg_stds_smooth = veg_df[veg_prefix+'_offset50_smooth_std']
 
-    #l8_means = df[l8]['offset50']
-    #l8_stds = df[l8]['offset50_std']
-    #l8_dates = df[l8].index
-    #l8_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in l8_dates]
-
-    precip = dfs['ECMWF/ERA5/MONTHLY']['total_precipitation'] * 1000 # convert to mm
-    temp = dfs['ECMWF/ERA5/MONTHLY']['mean_2m_air_temperature'] - 273.15 # convert to Celcius
-    weather_dates = dfs['ECMWF/ERA5/MONTHLY'].index
-    w_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in weather_dates]
-
-    # add copernicus
-    color = 'tab:green'
-    ax1.set_ylabel('Copernicus Offset50', color=color)
-    ax1.plot(cop_xs, cop_means, color=color, linewidth=2)
-    ax1.tick_params(axis='y', labelcolor=color)
-    ax1.set_ylim([-900, -400])
-    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds,
-                     facecolor='green', alpha=0.1)
-
-    # add precip
-    ax2 = ax1.twinx()
-    color = 'tab:blue'
-    ax2.set_ylabel('Precipitation [mm]', color=color)  # we already handled the x-label with ax1
-    ax2.set_ylim([-10, 250])
-    ax2.plot(w_xs, precip, color=color, alpha=0.5, linewidth=2)
-    ax2.tick_params(axis='y', labelcolor=color)
-
-    # add temp
-    ax3 = ax1.twinx()
-    ax3.spines["right"].set_position(("axes", 1.075))
-    make_patch_spines_invisible(ax3)
-    ax3.spines["right"].set_visible(True)
-    ax3.set_ylim([22, 36])
-    color = 'tab:red'
-    ax3.set_ylabel('Mean Temperature [$^\circ$C]', color=color)  # we already handled the x-label with ax1
-    ax3.plot(w_xs, temp, color=color, alpha=0.2, linewidth=2)
-    ax3.tick_params(axis='y', labelcolor=color)
-
-    fig.tight_layout()  # otherwise the right y-label is slightly clipped
-
-    # save the plot before adding Landsat
-    output_filename = 'time-series.png'
-    print(f'\nPlotting time series "{os.path.abspath(output_filename)}"...')
-    plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
-
-    # add l8
-    #ax4 = ax1.twinx()
-    #ax4.spines["left"].set_position(("axes", -0.1))
-    #ax4.spines["left"].set_visible(True)
-    #make_patch_spines_invisible(ax4)
-    #color = 'tab:purple'
-    #ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
-    #ax4.plot(l8_xs, l8_means, color=color)
-    #ax4.tick_params(axis='y', labelcolor=color)
-    #ax4.yaxis.tick_left()
-    #plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds,
-    #                 facecolor='purple', alpha=0.05)
-
-    # save the plot
-    #output_filename = 'time-series-full.png'
-    #plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
-
-    """# ------------------------------------------------
-    # setup plot
-    fig, ax1 = plt.subplots(figsize=(13,5))
-    fig.subplots_adjust(right=0.9)
-
-    # set up x axis to handle dates
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
-    plt.gca().xaxis.set_major_locator(mdates.DayLocator())
-    ax1.set_xlabel('Time')
-
-    # add copernicus
-    color = 'tab:green'
-    ax1.set_ylabel('Copernicus Offset50', color=color)
-    ax1.plot(cop_xs, cop_means, color=color)
-    ax1.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(cop_xs, cop_means-cop_stds, cop_means+cop_stds,
-                     facecolor='green', alpha=0.2)
-
-    # add l8
-    ax4 = ax1.twinx()
-    color = 'tab:purple'
-    ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
-    #ax4.yaxis.tick_left()
-    ax4.plot(l8_xs, l8_means, color=color)
-    ax4.tick_params(axis='y', labelcolor=color)
-    plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds,
-                     facecolor='purple', alpha=0.2)
-
-    fig.tight_layout()  # otherwise the right y-label is slightly clipped
-
-    # save the plot
-    output_filename = 'time-series-offsets-only.png'
-    plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
-    """
-
-
-def plot_smoothed_time_series(dfs, output_dir, filename_suffix ='',plot_std=True):
-    """
-    Given a dict of DataFrames, of which each row corresponds to
-    a different time point (constructed with `make_time_series`),
-    plot the time series of each DataFrame on the same plot. The
-    data is assumed to have been previously smoothed, and so the 
-    smoothed and unsmoothed offset50 valeus are plotted.
-
-    Parameters
-    ----------
-    dfs : dict of DataFrame
-        The time-series results averaged over sub-locations.
-
-    output_dir : str
-        Directory to save the plot in.
-    """
-    sns.set_style("white")
-    for collection_name, df in dfs.items():
-        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-
-            df.sort_index(inplace=True)
-
-            # extract x values and convert to datetime objects
-            try:
-                veg_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in df.index]
-            except:
-                # if the time series has been resampled the index is a TimeStamp object
-                veg_xs = [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in df.index]
-
-
-            # extract raw means
-            veg_means = df['offset50_mean']
-            veg_std = df['offset50_std']
-
-            # extract smoothed mean, std, and ci
-            veg_means_smooth = df['offset50_smooth_mean']
-            veg_stds_smooth = df['offset50_smooth_std']
-            veg_ci = df['ci_mean']
-
-            dfs['ECMWF/ERA5/MONTHLY'].sort_index(inplace=True)
-
-            # extract rainfall data
-            try:
-                precip_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in dfs['ECMWF/ERA5/MONTHLY'].index]
-            except:
-                # if the time series has been resampled the index is a TimeStamp object
-                precip_xs =  [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in dfs['ECMWF/ERA5/MONTHLY'].index]
-
-            precip = dfs['ECMWF/ERA5/MONTHLY']['total_precipitation']
-
-            # create a figure
-            fig, ax = plt.subplots(figsize=(15,5))
-            plt.xlabel('Time', fontsize=12)
-
-            # set up veg y axis
-            color = 'tab:green'
-            ax.set_ylabel(f'{collection_name} Offset50', color=color, fontsize=12)
-            ax.tick_params(axis='y', labelcolor=color)
-
-            # plot unsmoothed vegetation means
-            ax.plot(veg_xs, veg_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
-            # plot LOESS smoothed vegetation means and std
+            # plot smoothed vegetation means and std
             ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=7, markeredgecolor=(0.9172, 0.9627, 0.9172),
                     markeredgewidth=2,
                     label='Smoothed', linewidth=2, color='green')
-            if plot_std:
-                # plot LOESS smoothed vegetation means and std
-                ax.fill_between(veg_xs, veg_means_smooth-veg_stds_smooth, veg_means_smooth+veg_stds_smooth, facecolor='green', alpha=0.1, label='Std Dev')
-            
-            # plot ci of the smoothed mean
-            #ax.plot(veg_xs, veg_means_smooth+veg_ci, label='99% CI', linewidth=1, color='green', linestyle='dashed')
-            #ax.plot(veg_xs, veg_means_smooth-veg_ci, linewidth=1, color='green', linestyle='dashed')
 
-            ax.set_ylim([min(veg_means)-4*max(veg_std), max(veg_means)+4*max(veg_std)])
+            ax.fill_between(veg_xs, veg_means_smooth - veg_stds_smooth, veg_means_smooth + veg_stds_smooth, 
+                            facecolor='green', alpha=0.1, label='Std Dev')
 
-            # plot legend
-            plt.legend(loc='upper left')
-            
-            # duplicate x-axis for preciptation
+        # plot vegetation legend
+        plt.legend(loc='upper left')
+
+        # plot precipitation if availible
+        if 'total_precipitation' in df.columns:
+            # handle the case where vegetation and precipitation have mismatched NaNs
+            precip_df = df.dropna(subset=['total_precipitation'])
+            precip_ys = precip_df.total_precipitation
+
+            # get precipitation x values to datetime objects
+            try:
+                precip_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in precip_df.date]
+            except:
+                # if the time series has been resampled the index is a TimeStamp object
+                precip_xs =  [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in precip_df.date]
+
+            # duplicate axis for preciptation
             ax2 = ax.twinx()
             color = 'tab:blue'
-            ax2.set_ylabel(f'Precipitation', color=color, fontsize=12)
+            ax2.set_ylabel(f'Precipitation', color=color, fontsize=14)
             ax2.tick_params(axis='y', labelcolor=color)
+            ax2.set_ylim([min(precip_ys)-1*np.array(precip_ys).std(), max(precip_ys)+2*np.array(precip_ys).std()])
 
             # plot precipitation
-            ax2.plot(precip_xs, precip, linewidth=2, color=color, alpha=0.75)
+            ax2.plot(precip_xs, precip_ys, linewidth=2, color=color, alpha=0.75)
 
             # add veg-precip correlation
-            raw_corr = veg_means.corr(precip)
-            smoothed_corr = veg_means_smooth.corr(precip)
-
+            raw_corr = veg_means.corr(precip_ys)
+            smoothed_corr = veg_means_smooth.corr(precip_ys)
             textstr = f'$r={smoothed_corr:.2f}$ (${raw_corr:.2f}$ unsmoothed)'
             ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
-            # add autoregression info
-            unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means)
-            smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth)
-            textstr = f'AR$(1)={smoothed_ar1:.2f}$ +/- ${smoothed_ar1_se:.2f}$ (${unsmoothed_ar1:.2f}$ +/- ${unsmoothed_ar1_se:.2f}$ unsmoothed)'
-            ax2.text(0.45, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+        # plot second vegetation time series if availible
+        if veg_prefix_b:
+            # function to help plot many y axes
+            def make_patch_spines_invisible(ax):
+                ax.set_frame_on(True)
+                ax.patch.set_visible(False)
+                for sp in ax.spines.values():
+                    sp.set_visible(False)
 
-            ax2.set_ylim([min(precip)-3*np.array(precip).std(), max(precip)+3*np.array(precip).std()])
+            # add l8
+            #ax4 = ax1.twinx()
+            #ax4.spines["left"].set_position(("axes", -0.1))
+            #ax4.spines["left"].set_visible(True)
+            #make_patch_spines_invisible(ax4)
+            #color = 'tab:purple'
+            #ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
+            #ax4.plot(l8_xs, l8_means, color=color)
+            #ax4.tick_params(axis='y', labelcolor=color)
+            #ax4.yaxis.tick_left()
+            #plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds,
+            #                 facecolor='purple', alpha=0.05)
 
-            # add Kendall tau
-            tau, p = get_kendell_tau(veg_means)
-            tau_smooth, p_smooth = get_kendell_tau(veg_means_smooth)
+        # add autoregression info
+        unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means)
+        smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth)
+        textstr = f'AR$(1)={smoothed_ar1:.2f} \pm {smoothed_ar1_se:.2f}$ (${unsmoothed_ar1:.2f} \pm {unsmoothed_ar1_se:.2f}$ unsmoothed)'
+        ax.text(0.45, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
 
-            # write out
-            kendall_tau_dict = {}
-            kendall_tau_dict['Kendall_tau'] = {'unsmoothed': {'tau': tau, 'p': p}, 'smoothed': {'tau': tau_smooth, 'p': p_smooth}}
-            write_to_json(os.path.join(output_dir, collection_name.replace('/', '-')+'stats.json'), kendall_tau_dict)
-            
-            # add to plot
-            textstr = f'$\\tau,pvalue={tau_smooth:.2f}$, ${p:.2f}$ (${tau:.2f}$, ${p_smooth:.2f}$ unsmoothed)'
-            ax2.text(0.13, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+        # add Kendall tau
+        tau, p = get_kendell_tau(veg_means)
+        tau_smooth, p_smooth = get_kendell_tau(veg_means_smooth)
+        kendall_tau_dict = {}
+        kendall_tau_dict['Kendall_tau'] = {'unsmoothed': {'tau': tau, 'p': p}, 'smoothed': {'tau': tau_smooth, 'p': p_smooth}}
+        write_to_json(os.path.join(output_dir, veg_prefix+'_kendall_tau.json'), kendall_tau_dict)
+        textstr = f'$\\tau,~p$-$\\mathrm{{value}}={tau_smooth:.2f}$, ${p:.2f}$ (${tau:.2f}$, ${p_smooth:.2f}$ unsmoothed)'
+        ax.text(0.13, 0.85, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
 
-            # layout
-            fig.tight_layout()
+        # layout
+        sns.set_style("white")
+        fig.tight_layout()
+        
+        # save the plot
+        output_filename = veg_prefix + '-time-series' + filename_suffix + '.png'
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
 
-            # save the plot
-            output_filename = collection_name.replace('/', '-') +'-time-series-smoothed' + filename_suffix + '.png'
-            print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
-            plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
-            #plt.show()
+
+    # make plots for selected columns
+    for column in df.columns:
+        if 'offset50_mean' in column:
+            veg_prefix = column.split('_')[0]
+            print(f'\nPlotting {veg_prefix} time series.')
+            make_plot(df, veg_prefix, output_dir)
+
+    #print(df.columns.str.contains('offset50_mean'))
+    #print(np.sum(df.columns.str.contains('offset50_mean')))
+
 
 def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
     """
@@ -323,7 +185,7 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
 
         # make the full autocorrelation function plot
         plt.figure(figsize=(8,5))
-        pd.plotting.autocorrelation_plot(series.dropna(), label=series.name)
+        pd.plotting.autocorrelation_plot(series, label=series.name)
         plt.legend()
 
         # save the plot
@@ -333,7 +195,7 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
         # use statsmodels for partial autocorrelation
         from statsmodels.graphics.tsaplots import plot_pacf
         _, ax = plt.subplots(figsize=(8,5))
-        plot_pacf(series.dropna(), label=series.name, ax=ax, zero=False)
+        plot_pacf(series, label=series.name, ax=ax, zero=False)
         plt.ylim([-1.0, 1.0])
         plt.xlabel('Lag')
         plt.ylabel('Partial Autocorrelation')
@@ -345,8 +207,84 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
     # make plots for selected columns
     for column in df.columns:
         if 'offset50' in column and 'mean' in column or 'total_precipitation' in column:
-            print(f'\nPlotting autocorrelation functions for "{column}"...')
-            make_plots(df[column], output_dir)
+            print(f'Plotting autocorrelation functions for "{column}"...')
+            make_plots(df[column].dropna(), output_dir, filename_suffix=filename_suffix)
+
+
+def plot_cross_correlations(df, output_dir):
+    """
+    Plot a scatterplot matrix showing correlations between vegetation
+    and precipitation time series, with different lags. Additionally
+    write out the correlations as a function of the lag for later use.
+
+    Parameters
+    ----------
+    df: DataFrame
+        Time-series data.
+    output_dir : str
+        Directory to save the plot in.
+    """
+
+    # check precipitation time series present
+    if 'total_precipitation' not in df.columns:
+        print('Missing precipitation time series, skipping cross correlation plots.')
+        return
+
+
+    def make_plot(veg_ys, precip_ys, output_dir):
+
+        # set up
+        lags = 9
+        correlations = []
+
+        # make a new df to ensure NaN veg values are explicit
+        df_ = pd.DataFrame()
+        df_['precip'] = precip_ys
+        df_['offset50'] = veg_ys
+
+        # create fig
+        _, axs = plt.subplots(3, 3, sharex='col', sharey='row', 
+                                figsize=(8, 8))
+
+        # loop through offsets
+        for lag in range(0, lags):
+
+            # select the relevant Axis object
+            ax = axs.flat[lag]
+
+            # format this subplot
+            ax.set_title(f'$t-{lag}$')
+            ax.grid(False)
+
+            # plot data
+            lagged_data = df_['offset50'].shift(-lag)
+            corr = precip_ys.corr(lagged_data)
+            correlations.append(round(corr,4))
+            sns.regplot(precip_ys, lagged_data, label=f'$r={corr:.2f}$', ax=ax)
+            
+            # format axis label
+            if lag < 6:
+                ax.set_xlabel('')
+            if lag % 3 != 0:
+                ax.set_ylabel('')
+                
+            ax.legend()
+
+        plt.tight_layout()
+
+        # save the plot
+        output_filename = veg_ys.name + '-scatterplot-matrix.png'
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
+
+        # write out correlations as a function of lag
+        correlations_dict = {veg_ys.name + '_lagged_correlation': correlations}
+        write_to_json(os.path.join(output_dir, 'lagged_correlations.json'), correlations_dict)
+    
+    # make plots for selected columns
+    for column in df.columns:
+        if 'offset50' in column and 'mean' in column:
+            print(f'Plotting cross correlation matrix for "{column}"...')
+            make_plot(df[column], df['total_precipitation'], output_dir)
 
 
 def plot_feature_vector(dfs, output_dir):
@@ -410,98 +348,23 @@ def plot_feature_vector(dfs, output_dir):
 
             # save the plot
             output_filename = collection_name.replace('/', '-')+'-feature-vector-all.png'
-            print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
+            print(f'Plotting feature vector "{os.path.abspath(output_filename)}"...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
             #plt.show()
-
-def plot_cross_correlations(df, output_dir):
-    """
-    Plot a scatterplot matrix showing correlations between vegetation
-    and precipitation time series, with different lags. Additionally
-    write out the correlations as a function of the lag for later use.
-
-    Parameters
-    ----------
-    df: DataFrame
-        Time-series data.
-    output_dir : str
-        Directory to save the plot in.
-    """
-
-    # check precipitation time series present
-    if 'total_precipitation' not in df.columns:
-        print('Missing precipitation time series, skipping cross correlation plots.')
-        return
-
-    def make_plots(veg_ys, precip_ys, output_dir):
-        # set up
-        lags = 9
-        correlations = []
-
-        # make a new df to ensure NaN veg values are explicit
-        df_ = pd.DataFrame()
-        df_['precip'] = precip_ys
-        df_['offset50'] = veg_ys
-
-        # create fig
-        _, axs = plt.subplots(3, 3, sharex='col', sharey='row', 
-                                figsize=(8, 8))
-
-        # loop through offsets
-        for lag in range(0, lags):
-
-            # select the relevant Axis object
-            ax = axs.flat[lag]
-
-            # format this subplot
-            ax.set_title(f'$t-{lag}$')
-            ax.grid(False)
-
-            # plot data
-            lagged_data = df_['offset50'].shift(-lag)
-            
-            corr = precip_ys.corr(lagged_data)
-            correlations.append(round(corr,4))
-            sns.regplot(precip_ys, lagged_data, label=f'$r={corr:.2f}$', ax=ax)
-            
-            # format axis label
-            if lag < 6:
-                ax.set_xlabel('')
-            if lag % 3 != 0:
-                ax.set_ylabel('')
-                
-            ax.legend()
-
-        plt.tight_layout()
-
-        # save the plot
-        output_filename = veg_ys.name + '-scatterplot-matrix.png'
-        plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
-
-        # write out correlations as a function of lag
-        correlations_dict = {veg_ys.name + '_lagged_correlation': correlations}
-        write_to_json(os.path.join(output_dir, 'lagged_corr.json'), correlations_dict)
-    
-    # make plots for selected columns
-    for column in df.columns:
-        if 'offset50' in column and 'mean' in column:
-            print(f'\nPlotting autocorrelation functions for "{column}"...')
-            make_plots(df[column], df['total_precipitation'], output_dir)
-            
+          
 
 def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
-
     """
     Plot each output from the STL decomposition
 
-     Parameters
-     ----------
-     ts_df : DataFrame
-         The input time-series.
-     res : object
-        The STL fit object
-     output_dir : str
-         Directory to save the plot in.
+    Parameters
+    ----------
+    ts_df : DataFrame
+        The input time-series.
+    res : object
+       The STL fit object
+    output_dir : str
+        Directory to save the plot in.
 
     output_filename : str
          Name of the file to save the plot in.
