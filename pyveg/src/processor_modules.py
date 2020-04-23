@@ -12,7 +12,7 @@ from multiprocessing import Pool
 
 from pyveg.src.image_utils import *
 from pyveg.src.file_utils import *
-
+from pyveg.src.coordinate_utils import *
 from pyveg.src.subgraph_centrality import (
     subgraph_centrality,
     feature_vector_metrics,
@@ -21,13 +21,13 @@ from pyveg.src.subgraph_centrality import (
 from pyveg.src.pyveg_pipeline import BaseModule
 
 
-class AnalysisModule(BaseModule):
+class ProcessorModule(BaseModule):
 
     def __init__(self, name):
         super().__init__(name)
 
 
-class VegetationImageProcessor(AnalysisModule):
+class VegetationImageProcessor(ProcessorModule):
 
     def __init__(self, name=None):
         super().__init__(name)
@@ -185,7 +185,7 @@ class VegetationImageProcessor(AnalysisModule):
                 continue
 
 
-class WeatherImageToJSON(AnalysisModule):
+class WeatherImageToJSON(ProcessorModule):
     """
     Read the weather-related tif files downloaded from GEE, and
     write the temp and precipitation values out as a JSON file.
@@ -275,7 +275,7 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
     return True
 
 
-class NetworkCentralityCalculator(AnalysisModule):
+class NetworkCentralityCalculator(ProcessorModule):
     """
     Class to run network centrality calculation on small black+white
     images, and return the results as json.
@@ -346,7 +346,6 @@ class NetworkCentralityCalculator(AnalysisModule):
 
         self.consolidate_subimage_json(os.path.join(self.input_dir,
                                                     date_string))
-
 
 
     def run(self):
