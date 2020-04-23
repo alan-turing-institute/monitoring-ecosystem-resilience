@@ -302,11 +302,10 @@ class NetworkCentralityCalculator(AnalysisModule):
         Load all the json files from individual sub-images, and return
         a list of dictionaries, to be written out into one json file.
         """
-        nc_results = []
+
         tmp_json_dir = os.path.join(output_subdir,"tmp_json")
-        for filename in os.listdir(tmp_json_dir):
-            nc_results.append(json.load(open(os.path.join(tmp_json_dir,filename))))
-        save_json(nc_results, output_subdir, "network_centralities.json")
+        nc_results = consolidate_json_to_list(tmp_json_dir, output_subdir,
+                                              "network_centralities.json")
         return nc_results
 
 
