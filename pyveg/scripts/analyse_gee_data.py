@@ -166,8 +166,8 @@ def main():
         description="process json files with network centrality measures from from GEE images")
     parser.add_argument("--input_dir",
                         help="results directory from `download_gee_data` script, containing `results_summary.json`")
-    parser.add_argument('--do_spatial_plot', action='store_true')
-    parser.add_argument('--do_time_series_plot', action='store_true', default=True)
+    parser.add_argument('--spatial_plot', action='store_true')
+    parser.add_argument('--time_series_plot', action='store_true', default=True)
 
     print('-' * 35)
     print('Running analyse_gee_data.py')
@@ -176,10 +176,7 @@ def main():
     # parse args
     args = parser.parse_args()
     input_dir = args.input_dir
-    do_spatial_plot = args.spatial_plot
-    do_time_series_plot = args.time_series_plot
-
-    analyse_gee_data(input_dir, do_spatial_plot, do_time_series_plot)
+    analyse_gee_data(input_dir, args.spatial_plot, args.time_series_plot)
 
 
 if __name__ == "__main__":
