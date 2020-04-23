@@ -49,16 +49,16 @@ def read_json_to_dataframes(filename):
         rows_list = []
 
         # loop over time series
-        for date, time_point in coll_results['time-series-data'].items(): \
-            
+        for date, time_point in coll_results['time-series-data'].items():
+
             # check we have data for this time point
             if time_point is None or time_point == {}:
                 
-                # add Null row if data is missing at this time point
-                time_point['date'] = pd.Series()
+                # add Null row if data is missing at this time point    
+                rows_list.append({'date': date})
 
             # if we are looking at veg data, loop over space points
-            if isinstance(list(time_point)[0], dict):
+            elif isinstance(list(time_point)[0], dict):
                 for space_point in time_point:
                     rows_list.append(space_point)
 
@@ -73,6 +73,7 @@ def read_json_to_dataframes(filename):
 
         # make a DataFrame and add it to the dict of DataFrames
         df = pd.DataFrame(rows_list)
+        df = df.drop(columns=['slope', 'offset', 'mean', 'std'], errors='ignore')
         dfs[collection_name] = df
 
     return dfs
@@ -97,7 +98,7 @@ def make_time_series(dfs):
     """
 
     # the time series dataframe
-    ts_df = pd.DataFrame()
+    ts_df = pd.DataFrame(columns=['date'])
 
     # loop over collections
     for col_name, df in dfs.items():
@@ -113,26 +114,31 @@ def make_time_series(dfs):
             stds = groups.std()
 
             # rename columns
-            means = means.rename(columns={s: s + '_mean' for s in means.columns})
-            stds = stds.rename(columns={s: s + '_std' for s in stds.columns})
+            if 'COPERNICUS/S2' in col_name:
+                s = 'S2_'
+            elif 'LANDSAT8' in col_name:
+                s = 'L8_'
+            else: 
+                s = col_name + '_'
+            means = means.rename(columns={c: s + c + '_mean' for c in means.columns})
+            stds = stds.rename(columns={c: s + c + '_std' for c in stds.columns})
 
             # merge
             df = pd.merge(means, stds, on='date', how='inner')
+            ts_df = pd.merge_ordered(ts_df, df, on='date', how='outer')
 
-            # add climate data if availible
-            if 'ECMWF/ERA5/MONTHLY' in dfs.keys():
-                climate_df = dfs['ECMWF/ERA5/MONTHLY']
-                climate_df = climate_df.set_index('date')
-
-
-            # replace entry in input dict
-            dfs[col_name] = df
-
-        else:  # assume weather data
+        # add climate data if availible
+        elif 'ECMWF/ERA5/MONTHLY' == col_name:
             df = df.set_index('date')
-            dfs[col_name] = df
+            ts_df = pd.merge_ordered(ts_df, df, on='date', how='outer')
 
-    return dfs
+    # remove unneeded columns
+    ts_df = ts_df.loc[:,~ts_df.columns.str.contains('latitude_std', case=False)]     
+    ts_df = ts_df.loc[:,~ts_df.columns.str.contains('longitude_std', case=False)]
+
+    # return
+    assert( ts_df.empty == False )
+    return ts_df
 
 
 def resample_time_series(df, col_name="offset50", period="D"):
@@ -246,7 +252,7 @@ def smooth_veg_data(dfs, column='offset50', n=4):
     """
 
     # create a new dataframe to avoid overwriting input
-    dfs = dfs.deepcopy()
+    dfs = dfs.copy()
 
     # loop over collections
     for col_name, df in dfs.items():
@@ -444,17 +450,24 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True, resample=T
     # read json file to dataframes
     dfs = read_json_to_dataframes(json_summary_path)
 
+    print('Preprocessing data...')
+
     # remove outliers from the time series
     if drop_outliers:
+        print('- Dropping vegetation outliers...')
         dfs = drop_veg_outliers(dfs, sigmas=3)
 
     # LOESS smoothing on sub-image time series
     if smoothing:
+        print('- Smoothing vegetation time series...')
         dfs = smooth_veg_data(dfs, n=4)
 
     # average over sub-images
-    ts_dfs = make_time_series(dfs)
-    print(ts_dfs)
-    #[df.to_csv() for df in ts_dfs]
+    ts_df = make_time_series(dfs)
 
-    return dfs
+    # save as csv
+    ts_filename = os.path.join(output_dir, 'time_series.csv')
+    ts_df.to_csv(ts_filename, index=False)
+    print(f'Saved time series to "{ts_filename}".')
+    print('Data preprocessing complete.\n')
+    return ts_dfs
