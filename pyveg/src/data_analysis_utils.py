@@ -14,8 +14,6 @@ import pandas as pd
 from shapely.geometry import Point
 import geopandas as gpd
 
-import matplotlib
-matplotlib.use('PS')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
