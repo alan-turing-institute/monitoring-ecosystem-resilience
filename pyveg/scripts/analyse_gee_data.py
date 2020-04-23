@@ -27,12 +27,12 @@ from pyveg.src.plotting import (
     do_stl_decomposition,
     plot_smoothed_time_series,
     plot_autocorrelation_function,
-    plot_feature_vectors,
+    plot_feature_vector,
     plot_cross_correlations
 )
 
 
-def analyse_gee_data(input_dir, spatial, time_series):
+def analyse_gee_data(input_dir, spatial):
 
     """
     Run analysis on dowloaded gee data
@@ -73,59 +73,61 @@ def analyse_gee_data(input_dir, spatial, time_series):
                 create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)
     # ------------------------------------------------
 
-    # time series analysis and plotting
     # ------------------------------------------------
-    if time_series:
+    # main analysis and plotting sequence
+    # ------------------------------------------------
+    # create new subdir for time series analysis
+    # tsa_subdir = os.path.join(output_dir, 'time-series') # if we start to have more and more results
+    tsa_subdir = output_dir
 
-        # create new subdir for time series analysis
-        # tsa_subdir = os.path.join(output_dir, 'time-series') # if we start to have more and more results
-        tsa_subdir = output_dir
+    if not os.path.exists(tsa_subdir):
+        os.makedirs(tsa_subdir, exist_ok=True)
 
-        if not os.path.exists(tsa_subdir):
-            os.makedirs(tsa_subdir, exist_ok=True)
+    # feature vectors
+    # ------------------------------------------------
+    # plot the feature vectors
+    plot_feature_vector(dfs, tsa_subdir) # TODO: read vector vectors from csv, and plot extreme feature vectors (issue #186)
 
-        # plot the feature vectors averaged over all time points and sub images
-        try:
-            plot_feature_vectors(dfs, tsa_subdir)
-        except AttributeError:
-            print('Can not plot feature vectors...')
+    # auto- and cross-correlations
+    # --------------------------------------------------
+    # make autocorrelation plots
+    plot_autocorrelation_function(ts_df, tsa_subdir)
 
-        # make a smoothed time series plot
-        plot_smoothed_time_series(ts_df, tsa_subdir)
+    # make cross correlation scatterplot matrix plots
+    plot_cross_correlations(ts_df, tsa_subdir)
+    # --------------------------------------------------
 
-        # make autocorrelation plots
-        plot_autocorrelation_function(ts_df, tsa_subdir)
+    # time series
+    # ------------------------------------------------
+    # make a smoothed time series plot
+    plot_smoothed_time_series(ts_df, tsa_subdir)
 
-        # make cross correlation scatterplot matrix plots
-        plot_cross_correlations(ts_df, tsa_subdir)
 
-        # write csv for easy external analysis
-        #write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
-        # ------------------------------------------------
 
-        """do_stl_decomposition(time_series_dfs, 12, tsa_subdir)
 
-        # --------------------------------------------------
-        #   remove seasonality in a time series
-        time_series_uns_dfs = remove_seasonality_all_sub_images(smooth_veg_data(dfs.copy(), n=4), 12, "M")
+    """do_stl_decomposition(time_series_dfs, 12, tsa_subdir)
 
-        smoothed_time_series_uns_dfs = make_time_series(time_series_uns_dfs.copy())  # increase smoothing with n>5
+    # --------------------------------------------------
+    #   remove seasonality in a time series
+    time_series_uns_dfs = remove_seasonality_all_sub_images(smooth_veg_data(dfs.copy(), n=4), 12, "M")
 
-        # make a smoothed time series plot
-        plot_smoothed_time_series(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
+    smoothed_time_series_uns_dfs = make_time_series(time_series_uns_dfs.copy())  # increase smoothing with n>5
 
-        # make autocorrelation plots
-        plot_autocorrelation_function(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
+    # make a smoothed time series plot
+    plot_smoothed_time_series(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
 
-        # write csv for easy external analysis
-        write_slimmed_csv(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
+    # make autocorrelation plots
+    plot_autocorrelation_function(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
 
-        # ------------------------------------------------
-        #   remove seasonality in the summary time series
-        time_series_uns_summary_dfs = remove_seasonality_combined(smoothed_time_series_dfs.copy(), 12, "M")
+    # write csv for easy external analysis
+    write_slimmed_csv(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
 
-        # make a smoothed time series plot
-        plot_smoothed_time_series(time_series_uns_summary_dfs, tsa_subdir, '-no-seasonality-summary-ts', plot_std=False)"""
+    # ------------------------------------------------
+    #   remove seasonality in the summary time series
+    time_series_uns_summary_dfs = remove_seasonality_combined(smoothed_time_series_dfs.copy(), 12, "M")
+
+    # make a smoothed time series plot
+    plot_smoothed_time_series(time_series_uns_summary_dfs, tsa_subdir, '-no-seasonality-summary-ts', plot_std=False)"""
 
     print('\nAnalysis complete.\n')
 
@@ -139,7 +141,6 @@ def main():
     parser.add_argument("--input_dir",
                         help="results directory from `download_gee_data` script, containing `results_summary.json`")
     parser.add_argument('--spatial', action='store_true', default=False) # off by deafult as this takes a non-negligable amount of time
-    parser.add_argument('--time_series', action='store_true', default=True)
 
     print('-' * 35)
     print('Running analyse_gee_data.py')
@@ -149,9 +150,8 @@ def main():
     args = parser.parse_args()
     input_dir = args.input_dir
     spatial = args.spatial
-    time_series = args.time_series
 
-    analyse_gee_data(input_dir, spatial, time_series)
+    analyse_gee_data(input_dir, spatial)
 
 
 if __name__ == "__main__":
