@@ -58,7 +58,15 @@ We appreciate all contributions to monitoring-ecosystem-resilience.
 
 All project management, conversations and questions related to the project happens here in the [monitoring-ecosystem-resilience repository][monitoring-ecosystem-resilience-repo].
 
-The following steps are a guide to help you contribute in a way that will be easy for everyone to review and accept with ease.
+In brief, the structure for making a contribution is as follows:
+1. Identify a specific change that needs to be made to the repository. Open a new issue (after checking one does not already exist!) and describe the change, include why you are making it.
+2. Create a new branch corresponding to this issue. The new branch will house all the changes that you make to the repository in an isolated location. As discussed in more detail below, new branches should be created using the latest version of the `develop` branch.
+3. Make commits to the new branch you have created.
+4. Submit a pull request to add the modifications in your new branch back into `develop`.
+
+When a significant milestone has been reached, and the `develop` branch is known to be in a stable configuration, the `master` branch will be updated via a pull request from `develop`. In general, commits should not be made to either the `master` or `develop` branches. Pull requests to `develop` are fine (and encoraged), while pull requests to `master` will happen in a coordinated way.
+
+The following steps are a more detailed guide to help you contribute in a way that will be easy for everyone to review and accept with ease.
 
 ### 1. Comment on an [existing issue](https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/issues) or open a new issue referencing your addition
 
@@ -69,13 +77,15 @@ This allows other members of the team to confirm that you aren't overlapping wit
 ### 2. Create a new [branch][github-branches] or [Fork][github-fork] the [monitoring-ecosystem-resilience repository][monitoring-ecosystem-resilience-repo] to your profile
 
 #### 2a) Create a branch
-If you are a collaborator on the repository with write access, then you can make a new branch.  We recommend that you start from the latest version of the `develop` branch, and create a new one from there.   The name of your new branch should ideally be in the format: `<feature|bugfix>/<issue-number>-<short-description>`. For example, if you were addressing Issue number 111 which was about incorrect JSON filenames, it could be something like:
+If you are a collaborator on the repository with write access, then you can make a [new branch][github-branches].  We recommend that you start from the latest version of the `develop` branch, and create a new one from there. This is the branch we use for active deleopment of the repository, while stable (but not cutting edge) versions are in the `master` branch. The name of your new branch should ideally be in the format: `<feature|bugfix>/<issue-number>-<short-description>`. For example, if you were addressing Issue number 111 which was about incorrect JSON filenames, it could be something like:
 ```
 git checkout develop
 git pull
 git checkout -b bugfix/111-fix-json-filenames
 ```
 Now you can go to step #3, where you actually fix the problem! :)
+
+In case you want to learn more about "branching out", [this blog](https://nvie.com/posts/a-successful-git-branching-model/) details the different Git branching models.
 
 
 #### 2b. Fork the repository
@@ -96,12 +106,12 @@ While making your changes, commit often and write good, detailed commit messages
 It is also perfectly fine to have a lot of commits - including ones that break code.
 A good rule of thumb is to push up to GitHub when you _do_ have passing tests then the continuous integration (CI) has a good chance of passing everything.
 
-If you feel tempted to "branch out" then please make a [new branch][github-branches] and a [new issue][monitoring-ecosystem-resilience-issues] to go with it. [This blog](https://nvie.com/posts/a-successful-git-branching-model/) details the different Git branching models.
-
 Please do not re-write history!
 That is, please do not use the [rebase](https://help.github.com/en/articles/about-git-rebase) command to edit previous commit messages, combine multiple commits into one, or delete or revert commits that are no longer necessary.
 
 ### 4. Submit a [pull request][github-pullrequest]
+
+A "pull request" is a request to "pull" the changes you have made in your branch back into another branch of the repository. The source branch will be the new branch you created in order to address the issue you created/choose. The destination branch should generally be `develop`, where all main code development takes place. Avoid making pull requests into the `master` branch (pull requests into master should happen in a coordinated way using a stable configuration of `develop` as the source branch).
 
 We encourage you to open a pull request as early in your contributing process as possible.
 This allows everyone to see what is currently being worked on.
