@@ -557,3 +557,47 @@ def stl_decomposition(ts_df, period=12):
     res = stl.fit()
 
     return res
+
+
+def get_max_lagged_cor(dirname, veg_prefix):
+    """
+    Convenience function which returns the maximum correlation as a 
+    function of lag (using a file saved earlier).
+
+    Parameters
+    ----------
+    dirname : str
+        Path to the `analysis/` directory of the current analysis job.
+
+    veg_prefix : str
+        Compact representation of the satellite collection name used to
+        obtain vegetation data.
+
+
+    Returns
+    ----------
+    tuple
+        Max correlation, and lag, for smoothed and unsmoothed vegetation time
+        series.
+    """
+    
+    # construct path to lagged correlations file
+    filename = os.path.join(dirname, 'correlations', 'lagged_correlations.json')
+    
+     # check file exists
+    if not os.path.exists(filename):
+        raise FileNotFoundError(f'Could not find file "{os.path.abspath(filename)}".')
+
+    # read file
+    json_file = open(filename)
+    lagged_cor = json.load(json_file)
+
+    # calculate max corr
+    lagged_cor = {k: np.array(v[:5]) for k, v in lagged_cor.items() if veg_prefix in k}
+    lagged_cor = {k: (np.max(v), np.argmax(v)) for k, v in lagged_cor.items()}
+
+    max_corr_unsmoothed = lagged_cor[veg_prefix + '_offset50_mean_lagged_correlation']
+    max_corr_smooth = lagged_cor[veg_prefix + '_offset50_smooth_mean_lagged_correlation']
+
+    return max_corr_smooth, max_corr_unsmoothed
+    
