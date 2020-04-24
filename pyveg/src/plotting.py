@@ -105,9 +105,14 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             ax2.plot(precip_xs, precip_ys, linewidth=2, color=color, alpha=0.75)
 
             # add veg-precip correlation
-            raw_corr = veg_means.corr(precip_ys)
-            smoothed_corr = veg_means_smooth.corr(precip_ys)
-            textstr = f'$r={smoothed_corr:.2f}$ (${raw_corr:.2f}$ unsmoothed)'
+            max_corr_smooth, max_corr = get_max_lagged_cor(os.path.dirname(output_dir), veg_prefix)
+            textstr = f'$r_{{t-{max_corr_smooth[1]}}}={max_corr_smooth[0]:.2f}$ '
+            textstr += f'($r_{{t-{max_corr[1]}}}={max_corr[0]:.2f}$ unsmoothed)'
+            
+            # old correlation just calculates the 0-lag correlation
+            #raw_corr = veg_means.corr(precip_ys)
+            #smoothed_corr = veg_means_smooth.corr(precip_ys)
+            #textstr = f'$r={smoothed_corr:.2f}$ (${raw_corr:.2f}$ unsmoothed)'
             ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
         # plot second vegetation time series if availible
