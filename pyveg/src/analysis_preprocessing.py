@@ -68,7 +68,6 @@ def read_json_to_dataframes(filename):
                 # for this date should be the values. Here we just add the date
                 # as a value to enable us to add the whole row in one go later.
                 time_point['date'] = date
-
                 rows_list.append(time_point)
 
         # make a DataFrame and add it to the dict of DataFrames
@@ -433,11 +432,11 @@ def store_feature_vectors(dfs, output_dir):
                 continue
             
             # sort by date
-            veg_df = veg_df.sort_values(by='date')
+            veg_df = veg_df.sort_values(by='date').dropna()
 
             # create a df to store feature vectors
             df = pd.DataFrame()
-
+            [print(value) for value in veg_df.feature_vec if not isinstance(value, list)]
             # add feature vectors to dataframe
             df = pd.DataFrame(value for value in veg_df.feature_vec)
 
@@ -464,11 +463,116 @@ def store_feature_vectors(dfs, output_dir):
             df.to_csv(filename, index=False)
             
 
-def preprocess_data(input_dir, drop_outliers=True, fill_missing=True, resample=True, smoothing=True):
+def fill_veg_gaps(dfs, missing):
+    """
+    Loop through sub-image time series and replace any gaps with mean 
+    value of the same month in other years.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+
+    missing : dict of array
+        Missing time points where no sub-images were analyse for
+        each veg dataframe in `dfs`.
+    """
+
+    # loop over collections
+    for col_name, veg_df in dfs.items():
+
+        #  if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+
+            # group by (lat, long)
+            d = {}
+            for name, group in veg_df.groupby(['latitude', 'longitude']):
+                d[name] = group
+
+            # for each sub-image
+            for key, df_ in d.items():
+
+                # construct missing rows
+                missing_rows = [pd.Series({'date': date}) for date in missing[col_name]]
+
+                # add back in missing values if necessary
+                df_ = df_.append(missing_rows, ignore_index=True).sort_values(by='date')
+
+                # make a new 'month' column
+                df_['month'] = df_.date.str.split('-').str[1]
+
+                # group by month and get monthly means
+                monthly_means = df_.groupby('month').mean().offset50
+
+                # loop through dataframe
+                for index, row in df_.iterrows():
+
+                    # fill missing months with mean value
+                    if pd.isnull(row.offset50):
+                        this_month = row.month
+                        df_.loc[index, 'offset50'] = monthly_means.loc[this_month]
+                        df_.loc[index, 'latitude'] = df_.latitude.mean()
+                        df_.loc[index, 'longitude'] = df_.longitude.mean()
+                        df_.loc[index, 'feature_vec'] = np.NaN
+
+                # drop month column and replace old df
+                df_ = df_.drop(columns='month')
+                d[key] = df_
+
+            # reconstruct the DataFrame
+            df = list(d.values())[0]
+            for df_ in list(d.values())[1:]:
+                df = df.append(df_)
+
+            dfs[col_name] = df
+
+    return dfs
+
+
+def get_missing_time_points(dfs):
+    """
+    Find missing time points for each vegetatuin dataframe in `dfs`,
+    and return a dict, with the same key as in `dfs`, but with values
+    corresponding to missing dates.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+
+    Returns
+    ----------
+    dict
+        Missing time points for each vegetation df. 
+    """
+
+    # determine missing vegetation time points
+    missing_points = {}
+    
+    # loop over collections
+    for col_name, veg_df in dfs.items():
+
+        #  if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+            
+            # get the start of the vegetation time series
+            veg_start_date = veg_df.dropna().index[0]
+
+            # remove leading NaNs
+            veg_df = veg_df.loc[veg_start_date:]
+
+            # store missing time points
+            missing_points[col_name] = veg_df.drop_duplicates(subset='date', keep=False).date.values
+
+    return missing_points
+
+
+def preprocess_data(input_dir, drop_outliers=True, fill_missing=True, 
+                    resample=True, smoothing=True):
     """
     This function reads and process data downloaded by GEE. Processing
-    can be configured by the function arguments. Processed data is written
-    to csv.
+    can be configured by the function arguments. Processed data is 
+    written to csv.
 
     Parameters
     ----------
@@ -507,12 +611,25 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True, resample=T
     # read json file to dataframes
     dfs = read_json_to_dataframes(json_summary_path)
 
+    # keep track of time points where data is missing (by default pandas
+    # groupby operations, which is used haveily in this module, drop NaNs)
+    missing = get_missing_time_points(dfs)
+
     print('Preprocessing data...')
 
     # remove outliers from the time series
     if drop_outliers:
         print('- Dropping vegetation outliers...')
         dfs = drop_veg_outliers(dfs, sigmas=3)
+
+    # use the same month in different years to fill gaps
+    if fill_missing:
+        print('- Fill gaps in sub-image time series...')
+        dfs = fill_veg_gaps(dfs, missing)
+
+    # linearly interpolate between time points
+    if resample:
+        print('- Resampling not yet supported!')
 
     # LOESS smoothing on sub-image time series
     if smoothing:
