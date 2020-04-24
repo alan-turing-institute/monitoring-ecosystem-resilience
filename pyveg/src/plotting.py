@@ -4,17 +4,24 @@ Plotting code.
 
 import datetime
 import os
+import json
 
-import matplotlib.dates as mdates
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import seaborn as sns
 from pandas.plotting import register_matplotlib_converters
-
-from pyveg.src.data_analysis_utils import get_AR1_parameter_estimate, get_kendell_tau, write_to_json, stl_decomposition
-
 register_matplotlib_converters()
+
+from pyveg.src.data_analysis_utils import (
+    get_AR1_parameter_estimate, 
+    get_kendell_tau, 
+    write_to_json, 
+    stl_decomposition,
+    get_max_lagged_cor
+)
 
 # globally set image quality
 plot_dpi = 150
@@ -134,7 +141,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             veg_means_smooth_b = veg_df[veg_prefix_b+'_offset50_smooth_mean']
             veg_stds_smooth_b = veg_df[veg_prefix_b+'_offset50_smooth_std']
 
-            # add l8
+            # plot secondary time series
             ax3 = ax.twinx()
             ax3.spines["left"].set_position(("axes", -0.08))
             ax3.spines["left"].set_visible(True)
@@ -187,6 +194,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         # save the plot
         output_filename = veg_prefix + '-time-series' + filename_suffix + '.png'
         plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
+        plt.close(fig)
 
 
     # make plots for selected columns
@@ -231,7 +239,7 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
 
         # use statsmodels for partial autocorrelation
         from statsmodels.graphics.tsaplots import plot_pacf
-        _, ax = plt.subplots(figsize=(8,5))
+        fig, ax = plt.subplots(figsize=(8,5))
         plot_pacf(series, label=series.name, ax=ax, zero=False)
         plt.ylim([-1.0, 1.0])
         plt.xlabel('Lag')
@@ -240,6 +248,7 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
         # save the plot
         output_filename = series.name + '-partial-autocorrelation-function' + filename_suffix + '.png'
         plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
+        plt.close(fig)
         
     # make plots for selected columns
     for column in df.columns:
@@ -280,7 +289,7 @@ def plot_cross_correlations(df, output_dir):
         df_['offset50'] = veg_ys
 
         # create fig
-        _, axs = plt.subplots(3, 3, sharex='col', sharey='row', 
+        fig, axs = plt.subplots(3, 3, sharex='col', sharey='row', 
                                 figsize=(8, 8))
 
         # loop through offsets
@@ -312,6 +321,7 @@ def plot_cross_correlations(df, output_dir):
         # save the plot
         output_filename = veg_ys.name + '-scatterplot-matrix.png'
         plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
+        plt.close(fig)
 
         # write out correlations as a function of lag
         correlations_dict = {veg_ys.name + '_lagged_correlation': correlations}
