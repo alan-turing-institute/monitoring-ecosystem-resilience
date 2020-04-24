@@ -82,7 +82,7 @@ def analyse_gee_data(input_dir, spatial):
     # feature vectors
     # ------------------------------------------------
     # plot the feature vectors
-    plot_feature_vector(dfs, output_dir) # TODO: read vector vectors from csv, and plot extreme feature vectors (issue #186)
+    plot_feature_vector(output_dir)
 
     # auto- and cross-correlations
     # --------------------------------------------------

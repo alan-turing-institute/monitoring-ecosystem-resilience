@@ -284,8 +284,6 @@ def network_figure(df, date, metric, vmin, vmax, output_dir):
     plt.close(fig)
 
 
-
-
 def fft_series(time_series):
     """
     Perform Fast Fourier Transform on an input series (assume one row per day).

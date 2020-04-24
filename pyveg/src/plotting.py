@@ -173,8 +173,8 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             veg_prefix = veg_prefix + '+' + veg_prefix_b
 
         # add autoregression info
-        unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means)
-        smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth)
+        unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means.reindex(veg_df.date))
+        smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth.reindex(veg_df.date))
         textstr = f'AR$(1)={smoothed_ar1:.2f} \pm {smoothed_ar1_se:.2f}$ (${unsmoothed_ar1:.2f} \pm {unsmoothed_ar1_se:.2f}$ unsmoothed)'
         ax.text(0.55, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
 
@@ -389,27 +389,50 @@ def plot_feature_vector(output_dir):
         plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
         plt.close(fig)
 
-        # plot also the feature vectors for different time points on the same plot
-        fig, _ = plt.subplots(figsize=(6,5))
+        feature_vecs = []
+        feature_vecs_stds = []
+        offset50s = []
+        dates = []
 
         # loop through time points
-        for _, group in df.groupby('date'):
+        for date, group in df.groupby('date'):
             
-            # calculate feature vector
-            feature_vector = group.mean()
-            xs = np.linspace(0,100,len(feature_vector))
+            # calculate feature vector and offset50
+            feature_vector = group.mean()[cols]
+            feature_vecs.append(feature_vector)
+            feature_vecs_stds.append(group.std()[cols])
+            offset50s.append((feature_vector[-1] - feature_vector[len(feature_vector)//2]))
+            dates.append(date)
 
-            # add to plot
-            plt.scatter(xs, feature_vector, marker='o', color='black', alpha=0.2)
+        # get max and min
+        imax = np.argmax(np.array(offset50s))
+        imin = np.argmin(np.array(offset50s))
+
+        max_fv = feature_vecs[imax]
+        max_fv_std = feature_vecs_stds[imax]
+        max_date = dates[imax]
+        min_fv = feature_vecs[imin]
+        min_fv_std = feature_vecs_stds[imin]
+        min_date = dates[imin]
+
+        # plot the min/max veg feature vectors
+        fig, _ = plt.subplots(figsize=(6,5))
+
+        # add to plot
+        plt.errorbar(xs, max_fv, marker='o', markersize=5, linestyle='', label=f'max veg: {max_date}',
+                        yerr=max_fv_std, color='tab:green', capsize=2, elinewidth=1)
+        plt.errorbar(xs, min_fv, marker='o', markersize=5, linestyle='', label=f'min veg: {min_date}',
+                        yerr=min_fv_std, color='tab:red', capsize=2, elinewidth=1)
 
         # format plot
         plt.xlabel('Pixel Rank (%)', fontsize=14)
         plt.ylabel('$X(V-E)$', fontsize=14)
+        plt.legend()
         plt.tight_layout()
 
         # save the plot
-        output_filename = fv_filename.split('_')[0] + '-feature-vector-all.png'
-        print(f'Plotting feature vector "{os.path.abspath(output_filename)}"...')
+        output_filename = fv_filename.split('_')[0] + '-feature-vector-minmax.png'
+        print(f'Plotting maxmin feature vector "{os.path.abspath(output_filename)}"...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
         plt.close(fig)
         

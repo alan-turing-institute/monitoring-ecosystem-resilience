@@ -273,6 +273,7 @@ def resample_data(dfs, period='M'):
 
     return dfs
 
+
 def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
     """
     Loop over vegetation DataFrames and drop points in the
