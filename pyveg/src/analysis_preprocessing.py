@@ -74,6 +74,7 @@ def read_json_to_dataframes(filename):
         # make a DataFrame and add it to the dict of DataFrames
         df = pd.DataFrame(rows_list)
         df = df.drop(columns=['slope', 'offset', 'mean', 'std'], errors='ignore')
+        df = df.sort_values(by='date')
         assert( df.empty == False )
         dfs[collection_name] = df
 
