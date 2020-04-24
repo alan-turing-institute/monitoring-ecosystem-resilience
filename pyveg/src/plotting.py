@@ -350,7 +350,10 @@ def plot_feature_vector(dfs, output_dir):
 
     for collection_name, veg_df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-
+            
+            # drop missing feature vector
+            veg_df = veg_df.dropna()
+            
             # compute feature vector averaged over all sub-images
             feature_vector = np.array(veg_df.feature_vec.values.tolist()).mean(axis=0)
 

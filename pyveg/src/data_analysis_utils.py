@@ -573,7 +573,6 @@ def get_max_lagged_cor(dirname, veg_prefix):
         Compact representation of the satellite collection name used to
         obtain vegetation data.
 
-
     Returns
     ----------
     tuple
@@ -600,4 +599,3 @@ def get_max_lagged_cor(dirname, veg_prefix):
     max_corr_smooth = lagged_cor[veg_prefix + '_offset50_smooth_mean_lagged_correlation']
 
     return max_corr_smooth, max_corr_unsmoothed
-    
