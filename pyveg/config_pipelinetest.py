@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 
+from pyveg.coordinates import coordinate_store
+
 #Define directory to save all outputs
 output_dir = '/tmp/newtestoutput'
 
-#coordinates = (23.54,11.34) # beautiful rivers
-#coordinates = (27.99,11.29) # dense spots with river
-#coordinates = (28.37,11.12) # labyrinths
-# coordinates = (28.198,10.96) # gaps
-coordinates = [27.94,11.58] # spots
+# modify this line to set coords based on entries in `coordinates.py`
+coordinate_id = '00'
+
+# parse selection. Note (long, lat) GEE convention.
+entry = coordinate_store.loc[coordinate_id]
+coordinates = (entry.longitude, entry.latitude)
+
 
 # date range for Copernicus
 #date_range = ['2015-01-01', '2020-01-01']
