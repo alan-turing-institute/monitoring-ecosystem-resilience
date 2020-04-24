@@ -334,74 +334,85 @@ def plot_cross_correlations(df, output_dir):
             make_plot(df[column], df['total_precipitation'], output_dir)
 
 
-def plot_feature_vector(dfs, output_dir):
+def plot_feature_vector(output_dir):
     """
-    Plot the feature vectors from the network centrality
-    output of any vegetation DataFrames in `df`.
+    Read feature vectors from csv (if they exist) and then
+    make feature vector plots.
 
     Parameters
     ----------
-    dfs : dict of DataFrame
-        Time-series data.
-
     output_dir : str
         Directory to save the plot in.
     """
 
-    for collection_name, veg_df in dfs.items():
-        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-            
-            # drop missing feature vector
-            veg_df = veg_df.dropna()
-            
-            # compute feature vector averaged over all sub-images
-            feature_vector = np.array(veg_df.feature_vec.values.tolist()).mean(axis=0)
+    # assume feature vectors have been saved in the above location
+    fv_dir = os.path.join(os.path.dirname(output_dir), 'processed_data')
+    if not os.path.exists(fv_dir):
+        print('No feature vectors found, skipping plot!')
+        return
 
-            # get the errors
-            feature_vector_std = np.array(veg_df.feature_vec.values.tolist()).std(axis=0)
+    # get feature vectors for different collections
+    fvs = [f for f in os.listdir(fv_dir) if '_feature_vectors.csv' in f]
+    if len(fvs) == 0:
+        print('No feature vectors found, skipping plot!')
+        return
 
-            # generate x-values
+    # for each collection
+    for fv_filename in fvs:
+
+        # read feature vectors
+        df = pd.read_csv(os.path.join(fv_dir, fv_filename)).dropna()
+
+        # percentile columns
+        cols = [c for c in df.columns if 'percentile' in c]
+        
+        # compute feature vector averaged over all sub-images
+        feature_vector = df[cols].mean()
+        feature_vector_std = df[cols].std()
+
+        # generate x-values
+        xs = np.linspace(0,100,len(feature_vector))
+        
+        # make the plot
+        fig, _ = plt.subplots(figsize=(6,5))
+
+        plt.errorbar(xs, feature_vector, marker='o', markersize=5, linestyle='', 
+                        yerr=feature_vector_std, color='black', capsize=2, elinewidth=1)
+
+        plt.xlabel('Pixel Rank (%)', fontsize=14)
+        plt.ylabel('$X(V-E)$', fontsize=14)
+        plt.tight_layout()
+
+        # save the plot
+        output_filename = fv_filename.split('_')[0] + '-feature-vector-summary.png'
+        print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
+        plt.close(fig)
+
+        # plot also the feature vectors for different time points on the same plot
+        fig, _ = plt.subplots(figsize=(6,5))
+
+        # loop through time points
+        for _, group in df.groupby('date'):
+            
+            # calculate feature vector
+            feature_vector = group.mean()
             xs = np.linspace(0,100,len(feature_vector))
-            
-            # make the plot
-            plt.figure(figsize=(6,5))
 
-            plt.errorbar(xs, feature_vector, marker='o', markersize=5, linestyle='', 
-                         yerr=feature_vector_std, color='black', capsize=2, elinewidth=1)
+            # add to plot
+            plt.scatter(xs, feature_vector, marker='o', color='black', alpha=0.2)
 
-            plt.xlabel('Pixel Rank (%)', fontsize=14)
-            plt.ylabel('$X(V-E)$', fontsize=14)
-            plt.tight_layout()
+        # format plot
+        plt.xlabel('Pixel Rank (%)', fontsize=14)
+        plt.ylabel('$X(V-E)$', fontsize=14)
+        plt.tight_layout()
 
-            # save the plot
-            output_filename = collection_name.replace('/', '-')+'-feature-vector-summary.png'
-            print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
-            plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
-
-
-            # plot also the feature vectors for different time points on the same plot
-            plt.figure(figsize=(6,5))
-
-            # loop through time points
-            for _, group in veg_df.groupby('date'):
-                
-                # calculate feature vector
-                feature_vector = np.array(group.feature_vec.values.tolist()).mean(axis=0)
-                xs = np.linspace(0,100,len(feature_vector))
-
-                # add to plot
-                plt.scatter(xs, feature_vector, marker='o', color='black', alpha=0.2)
-
-            plt.xlabel('Pixel Rank (%)', fontsize=14)
-            plt.ylabel('$X(V-E)$', fontsize=14)
-            plt.tight_layout()
-
-            # save the plot
-            output_filename = collection_name.replace('/', '-')+'-feature-vector-all.png'
-            print(f'Plotting feature vector "{os.path.abspath(output_filename)}"...')
-            plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
-            #plt.show()
-          
+        # save the plot
+        output_filename = fv_filename.split('_')[0] + '-feature-vector-all.png'
+        print(f'Plotting feature vector "{os.path.abspath(output_filename)}"...')
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
+        plt.close(fig)
+        
 
 def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
     """
@@ -434,6 +445,7 @@ def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
 
     ax_list[-1].set_xticklabels(ts_df.index, rotation=45, va="center")
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
+
 
 def do_stl_decomposition(dfs, period, output_dir):
     """
