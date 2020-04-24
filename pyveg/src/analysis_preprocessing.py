@@ -492,6 +492,14 @@ def fill_veg_gaps(dfs, missing):
             # for each sub-image
             for key, df_ in d.items():
 
+                # get lat, long of this sub-image
+                lats = df_.latitude.drop_duplicates().values
+                longs = df_.longitude.drop_duplicates().values
+                assert ( len(lats) == 1 )
+                assert ( len(longs) == 1 )
+                lat = lats[0]
+                long = longs[0]
+
                 # construct missing rows
                 missing_rows = [pd.Series({'date': date}) for date in missing[col_name]]
 
@@ -511,8 +519,8 @@ def fill_veg_gaps(dfs, missing):
                     if pd.isnull(row.offset50):
                         this_month = row.month
                         df_.loc[index, 'offset50'] = monthly_means.loc[this_month]
-                        df_.loc[index, 'latitude'] = df_.latitude.mean()
-                        df_.loc[index, 'longitude'] = df_.longitude.mean()
+                        df_.loc[index, 'latitude'] = lat
+                        df_.loc[index, 'longitude'] = long
                         df_.loc[index, 'feature_vec'] = np.NaN
 
                 # drop month column and replace old df
