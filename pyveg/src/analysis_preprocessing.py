@@ -141,10 +141,10 @@ def make_time_series(dfs):
     return ts_df
 
 
-def resample_time_series(df, col_name="offset50", period="D"):
+def resample_time_series(df, col_name="offset50", period="M"):
     """
     Resample and interpolate a time series dataframe so we have one row
-    per day (useful for FFT)
+    per time period (useful for FFT)
 
     Parameters
     ----------
@@ -154,11 +154,19 @@ def resample_time_series(df, col_name="offset50", period="D"):
         Identifying the column we will pull out
     period: string
         Period for resampling
+    
     Returns
     -------
-    new_series: pandas Series with datetime index, and one column, one row per day
+    Series: 
+        pandas Series with datetime index, and one column, one row per day
     """
+    
     series = df[col_name]
+
+    # give the series a date index if the DataFrame is not index by date already
+    if df.index.name != 'date':
+        series.index = df.date
+    
     # just in case the index isn't already datetime type
     series.index = pd.to_datetime(series.index)
 
@@ -168,6 +176,102 @@ def resample_time_series(df, col_name="offset50", period="D"):
 
     return new_series
 
+
+def resample_dataframe(df, columns, period='M'):
+    """
+    Resample and interpolate a time series dataframe so we have one row
+    per time period.
+
+    Parameters
+    ----------
+    df: DataFrame
+        Dataframe with date as index.
+    columns: list
+        List of column names to resample.
+    period: string
+        Period for resampling.
+    
+    Returns
+    -------
+    DataFrame: 
+        DataFrame with resample time series in `columns`.
+    """
+
+    # new out df to deal with length mismatches after resampling
+    df_out = pd.DataFrame()
+
+    # for each column to resample
+    for column in columns:
+
+        # resample the column, ignoring any changes to the index
+        df_out[column] = resample_time_series(df, column, period=period)
+
+    # generate a clean index
+    df_out = df_out.reset_index()
+
+    return df_out
+
+
+def resample_data(dfs, period='M'):
+    """
+    Resample vegetation and rainfall DataFrames. Vegetation
+    DataFrames are resampled at the sub-image level.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    period: string
+        Period for resampling.
+
+    Returns
+    ----------
+    dict of DataFrame
+        Resampled data.
+    """
+
+    # loop over collections
+    for col_name, df in dfs.items():
+
+        #  if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+            
+            # specify veg columns to resample
+            columns = [c for c in df.columns if 'offset50' in c]
+
+            # group by (lat, long)
+            d = {}
+            for name, group in df.groupby(['latitude', 'longitude']):
+                d[name] = group
+
+            # for each sub-image
+            for key, df_ in d.items():
+                
+                # resample
+                df_ = resample_dataframe(df_, columns, period=period)
+
+                # replace df
+                d[key] = df_
+
+            # reconstruct the DataFrame
+            df = list(d.values())[0]
+            for df_ in list(d.values())[1:]:
+                df = df.append(df_)
+
+            # replace collection
+            dfs[col_name] = df
+
+        else: 
+            # assume ERA5 data
+            columns = ['total_precipitation', 'mean_2m_air_temperature']
+
+            # resample
+            df_ = resample_dataframe(df_, columns, period=period)
+
+            # replace df
+            d[key] = df_
+
+    return dfs
 
 def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
     """
@@ -191,9 +295,6 @@ def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
         Time series data for multiple sub-image locations with
         some values in `column` potentially set to NaN.
     """
-
-    # set to None data points that are far from the mean, these are
-    # assumed to be unphysical
 
     # loop over collections
     for col_name, veg_df in dfs.items():
@@ -635,21 +736,25 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         print('- Fill gaps in sub-image time series...')
         dfs = fill_veg_gaps(dfs, missing)
 
-    # linearly interpolate between time points
-    if resample:
-        print('- Resampling not yet supported!')
-
     # LOESS smoothing on sub-image time series
     if smoothing:
         print('- Smoothing vegetation time series...')
         dfs = smooth_veg_data(dfs, n=4)
 
     # store feature vectors
-    print('Saving feature vectors...')
+    print('- Saving feature vectors...')
     store_feature_vectors(dfs, output_dir)
     
     # average over sub-images
     ts_df = make_time_series(dfs)
+
+    # resample using linear interpolation
+    resample=True
+    if resample:
+        print('- Resampling time series...')
+        columns = [c for c in ts_df.columns if any([s in c 
+                     for s in ['offset50', 'precipitation', 'temperature']])]
+        ts_df = resample_dataframe(ts_df, columns, period='M')
 
     # save as csv
     ts_filename = os.path.join(output_dir, 'time_series.csv')
