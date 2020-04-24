@@ -71,8 +71,8 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             veg_stds_smooth = veg_df[veg_prefix+'_offset50_smooth_std']
 
             # plot smoothed vegetation means and std
-            ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=7, markeredgecolor=(0.9172, 0.9627, 0.9172),
-                    markeredgewidth=2,
+            ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=7, 
+                    markeredgecolor=(0.9172, 0.9627, 0.9172), markeredgewidth=2,
                     label='Smoothed', linewidth=2, color='green')
 
             ax.fill_between(veg_xs, veg_means_smooth - veg_stds_smooth, veg_means_smooth + veg_stds_smooth, 
@@ -97,7 +97,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             # duplicate axis for preciptation
             ax2 = ax.twinx()
             color = 'tab:blue'
-            ax2.set_ylabel(f'Precipitation', color=color, fontsize=14)
+            ax2.set_ylabel(f'Precipitation [mm]', color=color, fontsize=14)
             ax2.tick_params(axis='y', labelcolor=color)
             ax2.set_ylim([min(precip_ys)-1*np.array(precip_ys).std(), max(precip_ys)+2*np.array(precip_ys).std()])
 
@@ -112,31 +112,59 @@ def plot_time_series(df, output_dir, filename_suffix =''):
 
         # plot second vegetation time series if availible
         if veg_prefix_b:
-            # function to help plot many y axes
-            def make_patch_spines_invisible(ax):
-                ax.set_frame_on(True)
-                ax.patch.set_visible(False)
-                for sp in ax.spines.values():
-                    sp.set_visible(False)
+
+            # handle the case where vegetation and precipitation have mismatched NaNs
+            veg_df_b = df.dropna(subset=[veg_prefix_b+'_offset50_mean'])
+
+            # get vegetation x values to datetime objects
+            try:
+                veg_xs_b = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in veg_df_b.date]
+            except:
+                # if the time series has been resampled the index is a TimeStamp object
+                veg_xs_b = [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in veg_df_b.date]
+
+            # get vegetation y values
+            veg_means_b = veg_df[veg_prefix_b+'_offset50_mean']
+            #veg_std_b = veg_df[veg_prefix_b+'_offset50_std']
+            veg_means_smooth_b = veg_df[veg_prefix_b+'_offset50_smooth_mean']
+            veg_stds_smooth_b = veg_df[veg_prefix_b+'_offset50_smooth_std']
 
             # add l8
-            #ax4 = ax1.twinx()
-            #ax4.spines["left"].set_position(("axes", -0.1))
-            #ax4.spines["left"].set_visible(True)
-            #make_patch_spines_invisible(ax4)
-            #color = 'tab:purple'
-            #ax4.set_ylabel('landsat', color=color)  # we already handled the x-label with ax1
-            #ax4.plot(l8_xs, l8_means, color=color)
-            #ax4.tick_params(axis='y', labelcolor=color)
-            #ax4.yaxis.tick_left()
-            #plt.fill_between(l8_xs, l8_means-l8_stds, l8_means+l8_stds,
-            #                 facecolor='purple', alpha=0.05)
+            ax3 = ax.twinx()
+            ax3.spines["left"].set_position(("axes", -0.08))
+            ax3.spines["left"].set_visible(True)
+            color = 'tab:purple'
+            ax3.set_ylabel(veg_prefix_b + ' Offset50', color=color, fontsize=14)
+            ax3.tick_params(axis='y', labelcolor=color)
+            ax3.yaxis.tick_left()
+            ax3.yaxis.set_label_position('left')
+            ax3.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
+
+            # plot unsmoothed vegetation means
+            ax.plot(veg_xs_b, veg_means_b, label='Unsmoothed', linewidth=1, color='indigo', linestyle='dashed', alpha=0.2)
+
+            # plot smoothed vegetation means and std
+            ax3.plot(veg_xs_b, veg_means_smooth_b, marker='o', markersize=7, 
+                    markeredgecolor=(0.8172, 0.7627, 0.9172), markeredgewidth=2, 
+                    label='Smoothed', linewidth=2, color=color)
+
+            ax3.fill_between(veg_xs_b, veg_means_smooth_b - veg_stds_smooth_b, veg_means_smooth_b + veg_stds_smooth_b, 
+                            facecolor='tab:purple', alpha=0.1, label='Std Dev')
+
+            # add veg-veg correlation
+            vegveg_corr = veg_means.corr(veg_means_b)
+            vegveg_corr_smooth = veg_means_smooth.corr(veg_means_smooth_b)
+            textstr = f'$r_{{vv}}={vegveg_corr_smooth:.2f}$ (${vegveg_corr:.2f}$ unsmoothed)'
+            ax2.text(0.55, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+
+            # update prefix for filename use
+            veg_prefix = veg_prefix + '+' + veg_prefix_b
 
         # add autoregression info
         unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means)
         smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth)
         textstr = f'AR$(1)={smoothed_ar1:.2f} \pm {smoothed_ar1_se:.2f}$ (${unsmoothed_ar1:.2f} \pm {unsmoothed_ar1_se:.2f}$ unsmoothed)'
-        ax.text(0.45, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        ax.text(0.55, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
 
         # add Kendall tau
         tau, p = get_kendell_tau(veg_means)
@@ -160,11 +188,15 @@ def plot_time_series(df, output_dir, filename_suffix =''):
     for column in df.columns:
         if 'offset50_mean' in column:
             veg_prefix = column.split('_')[0]
-            print(f'\nPlotting {veg_prefix} time series.')
+            print(f'Plotting {veg_prefix} time series.')
             make_plot(df, veg_prefix, output_dir)
 
-    #print(df.columns.str.contains('offset50_mean'))
-    #print(np.sum(df.columns.str.contains('offset50_mean')))
+    # if we have two vegetation time series availible, plot them both
+    if np.sum(df.columns.str.contains('offset50_mean')) == 2:
+        veg_columns = df.columns[np.where(df.columns.str.contains('offset50_mean'))].values
+        veg_prefixes = [c.split('_')[0] for c in veg_columns]
+        assert( len(veg_prefixes) == 2 )
+        make_plot(df, veg_prefixes[0], output_dir, veg_prefix_b=veg_prefixes[1])
 
 
 def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
