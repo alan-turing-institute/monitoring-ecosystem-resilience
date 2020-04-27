@@ -68,7 +68,8 @@ def download_and_unzip(url, output_tmpdir):
                for tif_filebase in tif_filebases]
     return tif_filenames
 
-def save_json(out_dict, output_dir, output_filename):
+
+def save_json(out_dict, output_dir, output_filename, verbose=True):
     """
     Given a dictionary, save
     to requested filename -
@@ -79,11 +80,11 @@ def save_json(out_dict, output_dir, output_filename):
 
     with open(output_path, 'w') as fp:
         json.dump(out_dict, fp, indent=2)
+    if verbose:
+        print("Saved json file '{}'".format(output_path))
 
-    print("Saved json file '{}'".format(output_path))
 
-
-def save_image(image, output_dir, output_filename, verbose=False):
+def save_image(image, output_dir, output_filename, verbose=True):
     """
     Given a PIL.Image (list of pixel values), save
     to requested filename - note that the file extension
