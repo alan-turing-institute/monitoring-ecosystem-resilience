@@ -489,6 +489,78 @@ def get_max_lagged_cor(dirname, veg_prefix):
     return max_corr_smooth, max_corr_unsmoothed
 
 
+def variance_moving_average_time_series(df, col_name="offset50", length =1):
+    """
+    Calculate a variance time series using a moving average
+    Parameters
+    ----------
+    df: DataFrame
+        Dataframe with date as index
+    col_name: string,
+        Identifying the column we will pull out
+    length : int
+        length  to be used in the moving average
+    Returns
+    -------
+    new_series: pandas Series with datetime index, and one column, one row per date
+    """
+    try:
+        series = df[col_name]
+    except:
+        ValueError('Error column name: '+col_name+' not found')
+
+    # just in case the index isn't already datetime type
+    series.index = pd.to_datetime(series.index)
+
+    variance = series.rolling(length ).var()
+
+    variance.name = col_name+"_var"
+
+    return variance
+
+
+def ar1_moving_average_time_series(df, col_name="offset50", length =1):
+    """
+    Calculate an AR1 time series using a moving average
+    Parameters
+    ----------
+    df: DataFrame
+        Dataframe with date as index
+    col_name: string,
+        Identifying the column we will pull out
+    length : int
+        length  to be used in the moving average
+    Returns
+    -------
+    new_series: pandas Series with datetime index, and one column, one row per date
+    """
+    try:
+        series = df[col_name]
+    except:
+        ValueError('Error column name: '+col_name+' not found')
+
+    # just in case the index isn't already datetime type
+    series.index = pd.to_datetime(series.index)
+
+    ar1 = []
+    ar1_se = []
+    index = []
+    for i in range(df.shape[0] - length ):
+        ar1.append(get_AR1_parameter_estimate(series[i:(length  + i)])[0])
+        ar1_se.append(get_AR1_parameter_estimate(series[i:(length  + i)])[1])
+        index.append(series.index[length  + i])
+
+    ar1_name = col_name+"_ar1"
+    ar1_se_name = col_name+"_ar1_se"
+
+    ar1_df = pd.DataFrame()
+    ar1_df[ar1_name] = pd.Series(ar1)
+    ar1_df[ar1_se_name] = pd.Series(ar1_se)
+    ar1_df.index = index
+
+    return ar1_df
+
+
 def calculate_ar1_variance_time_series(dfs, length_divisor=2, column_veg ='offset50_mean', column_prep = 'total_precipitation'):
     """
        Given a dictionary of time series DataFrames calculate AR1 and variance of a rolling average on a time series
@@ -526,7 +598,7 @@ def calculate_ar1_variance_time_series(dfs, length_divisor=2, column_veg ='offse
     return new_dfs
 
 
-def get_ar1_var_timeseries_df(df,col,length_divisor):
+def get_ar1_var_timeseries_df(df, col, length_divisor):
 
     """
        Given a time series DataFrame calculate AR1 and variance of a rolling average on a time series
