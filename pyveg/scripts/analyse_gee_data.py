@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
 """
-Scripts to process the output of the GEE images and json files with network centrality measures.
+This script analyses data previously download with `download_gee_data.py`.
+First, data is preprocessed using the `analysis_preprocessing.py` module.
+Plots are produced from the processed data.
 
-The json outputs are turned into a dataframe and the values of a particular metric a plotted
-as a function of time.
-
-Finally a GIF file is produced with all of the network metric images, as well as the original 10km x 10km dowloaded images.
 """
 
 import argparse
@@ -143,33 +141,6 @@ def analyse_gee_data(input_dir, spatial):
                 data_df_geo_coarse = coarse_dataframe(data_df_geo.copy(), 2)
                 create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)"""
     # ------------------------------------------------
-
-
-
-    """
-    plot_stl_decomposition(time_series_dfs, 12, tsa_subdir)
-
-    # --------------------------------------------------
-    #   remove seasonality in a time series
-    time_series_uns_dfs = remove_seasonality_all_sub_images(smooth_veg_data(dfs.copy(), n=4), 12, "M")
-
-    smoothed_time_series_uns_dfs = make_time_series(time_series_uns_dfs.copy())  # increase smoothing with n>5
-
-    # make a smoothed time series plot
-    plot_smoothed_time_series(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
-
-    # make autocorrelation plots
-    plot_autocorrelation_function(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
-
-    # write csv for easy external analysis
-    write_slimmed_csv(smoothed_time_series_uns_dfs, tsa_subdir, '-no-seasonality')
-
-    # ------------------------------------------------
-    #   remove seasonality in the summary time series
-    time_series_uns_summary_dfs = remove_seasonality_combined(smoothed_time_series_dfs.copy(), 12, "M")
-
-    # make a smoothed time series plot
-    plot_smoothed_time_series(time_series_uns_summary_dfs, tsa_subdir, '-no-seasonality-summary-ts', plot_std=False)"""
 
     print('\nAnalysis complete.\n')
 
