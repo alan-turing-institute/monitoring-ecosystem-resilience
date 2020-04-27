@@ -2,7 +2,7 @@ argparse
 datetime
 numpy
 scipy
-matplotlib
+matplotlib==3.0.3
 seaborn
 pytest
 requests

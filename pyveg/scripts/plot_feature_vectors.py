@@ -9,15 +9,14 @@ python -i plot_feature_vectors.py --rainfall_vals 1.1,1.2,1.3,1.4,1.5,1.55
 ```
 """
 
-import os
-import matplotlib.pyplot as plt
 import argparse
 
+import matplotlib.pyplot as plt
 from generate_patterns import generate_pattern
+
 from subgraph_centrality import (
     subgraph_centrality,
-    generate_sc_images,
-    image_from_array
+    generate_sc_images
 )
 
 LABELS=['bo','ro','go', 'b^', 'r^', 'g^']

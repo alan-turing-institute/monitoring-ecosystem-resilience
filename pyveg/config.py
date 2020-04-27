@@ -1,30 +1,42 @@
 #!/usr/bin/env python
 
-#Define directory to save all outputs
+"""
+Configuration file to set parameters for GEE download jobs. This file is 
+used to define job options when running the `pyveg_gee_download` command.
+
+"""
+
+from pyveg.coordinates import coordinate_store
+
+# user specified output dir
 output_dir = 'X'
 
-#coordinates = (23.54,11.34) # beautiful rivers
-#coordinates = (27.99,11.29) # dense spots with river
-#coordinates = (28.37,11.12) # labyrinths
-# coordinates = (28.198,10.96) # gaps
-coordinates = (27.94,11.58) # spots
+# modify this line to set coords based on entries in `coordinates.py`
+coordinate_id = '00'
+
+# parse selection. Note (long, lat) GEE convention.
+entry = coordinate_store.loc[coordinate_id]
+coordinates = (entry.longitude, entry.latitude)
+
+# if you want to test new coordinates without adding them to the store
+# you may overwrite the coordinates here. Note the (long, lat) GEE convention.
+#coordinates = (long, lat)
 
 # date range for Copernicus
-date_range = ('2015-01-01', '2020-01-01')
+date_range = ('2015-01-01', '2020-04-01')
 
-#date range for landsat 5
-#date_range = ('1988-01-01', '2003-01-01')
-
-
-# collections for Copernicus
+# collections for Sentinel2
 collections_to_use = ['Sentinel2', 'ERA5']
 
+# date range for landsat 4/5. In this range there is relatively good data
+#date_range = ('1988-01-01', '2003-01-01')
 # collections to use for old Landsat
 #collections_to_use = ['Landsat4','Landsat5']
 
+# turn off to quickly scout out new locations
+do_network_centrality = False
 
-do_network_centrality = True
-
+# parameter dictionary for different GEE collections
 data_collections = {
     'Sentinel2' : {
         'collection_name': 'COPERNICUS/S2',
@@ -71,7 +83,5 @@ data_collections = {
     }
 }
 
+# select only those collections we want to use in this job
 data_collections = {key : value for key,value in data_collections.items() if key in collections_to_use}
-
-# not currently used
-# cloudy_pixel_percent = 10 

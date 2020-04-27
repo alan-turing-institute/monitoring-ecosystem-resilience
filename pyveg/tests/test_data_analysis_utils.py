@@ -1,7 +1,7 @@
 """
 Test the functions in data_analysis_utils.py
 """
-
+import os
 from pyveg.src.data_analysis_utils import *
 
 
@@ -36,9 +36,13 @@ def test_create_lat_long_metric_figures():
 
     data_df = convert_to_geopandas(test_df['COPERNICUS/S2'])
 
+    for filename in os.listdir(dir_path):
+        if filename.endswith('.png'):
+            os.unlink(os.path.join(dir_path,filename))
+
     create_lat_long_metric_figures(data_df, 'offset50', dir_path)
 
-    list_png_files = [f for f in os.listdir(dir_path) if (isfile(join(dir_path, f)) and f.endswith(".png"))]
+    list_png_files = [f for f in os.listdir(dir_path) if (os.path.isfile(os.path.join(dir_path, f)) and f.endswith(".png"))]
     len_dates = len(np.unique(data_df['date']))
 
     assert (len(list_png_files)==len_dates)
