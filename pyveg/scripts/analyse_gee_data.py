@@ -23,13 +23,15 @@ from pyveg.src.data_analysis_utils import (
     write_slimmed_csv,
     remove_seasonality_combined,
     remove_seasonality_all_sub_images,
+    calculate_ar1_variance_time_series,
 )
 from pyveg.src.plotting import (
     do_stl_decomposition,
     plot_smoothed_time_series,
     plot_autocorrelation_function,
     plot_feature_vectors,
-    plot_cross_correlations
+    plot_cross_correlations,
+    plot_ar1_var_time_series
 )
 
 
@@ -116,6 +118,13 @@ def analyse_gee_data(input_dir, do_spatial_plot, do_time_series_plot):
             # LOESS smoothing on sub-image time series
         smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=4))  # increase smoothing with n>5
 
+        # ---------------------------------------------------
+
+        ar1_var_df = calculate_ar1_variance_time_series(smoothed_time_series_dfs, 2)
+
+        plot_ar1_var_time_series(ar1_var_df,tsa_subdir)
+        # ------------------------------------------------
+
         # make a smoothed time series plot
         plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
 
@@ -127,6 +136,7 @@ def analyse_gee_data(input_dir, do_spatial_plot, do_time_series_plot):
 
         # write csv for easy external analysis
         write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
+
         # ------------------------------------------------
 
         do_stl_decomposition(time_series_dfs, 12, tsa_subdir)
@@ -155,6 +165,13 @@ def analyse_gee_data(input_dir, do_spatial_plot, do_time_series_plot):
 
         # make a smoothed time series plot
         plot_smoothed_time_series(time_series_uns_summary_dfs, tsa_subdir, '-no-seasonality-summary-ts', plot_std=False)
+
+
+
+        ar1_var_df_uns = calculate_ar1_variance_time_series(time_series_uns_summary_dfs, 2)
+
+        plot_ar1_var_time_series(ar1_var_df_uns,tsa_subdir,'-no-seasonality')
+
 
     print('\nDone!\n')
 
