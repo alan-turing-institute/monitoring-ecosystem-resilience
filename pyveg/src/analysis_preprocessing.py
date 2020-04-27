@@ -826,7 +826,7 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
 
     # additionally save resampled & detrended time series
     if detrend:
-        print('- Detrending vegetation time series...')
+        print('- Detrending time series...')
         dfs_detrended = detrend_data(dfs, 12, "M")
         ts_df_detrended = make_time_series(dfs_detrended)
         ts_filename_detrended = os.path.join(output_dir, 'time_series_detrended.csv')
@@ -835,4 +835,4 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
     
     print('Data preprocessing complete.\n')
     
-    return ts_filename, dfs # for now return `dfs` for compatibility 
+    return output_dir#, dfs # for now return `dfs` for compatibility 

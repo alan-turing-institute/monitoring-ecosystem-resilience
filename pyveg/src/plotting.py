@@ -385,7 +385,7 @@ def plot_feature_vector(output_dir):
 
         # save the plot
         output_filename = fv_filename.split('_')[0] + '-feature-vector-summary.png'
-        print(f'\nPlotting feature vector "{os.path.abspath(output_filename)}"...')
+        print(f'Plotting feature vector "{os.path.abspath(output_filename)}"...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
         plt.close(fig)
 

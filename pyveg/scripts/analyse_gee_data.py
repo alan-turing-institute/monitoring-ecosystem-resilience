@@ -19,10 +19,9 @@ from pyveg.src.analysis_preprocessing import preprocess_data
 from pyveg.src.data_analysis_utils import (
     create_lat_long_metric_figures,
     convert_to_geopandas,
-    coarse_dataframe,
-    remove_seasonality_combined,
-    remove_seasonality_all_sub_images,
+    coarse_dataframe
 )
+
 from pyveg.src.plotting import (
     plot_stl_decomposition,
     plot_feature_vector,
@@ -32,62 +31,19 @@ from pyveg.src.plotting import (
 )
 
 
-def analyse_gee_data(input_dir, spatial):
-
-    """
-    Run analysis on dowloaded gee data
-
-    Parameters
-    ----------
-    input_dir : string
-        Path to directory with downloaded dada
-    do_spatial_plot: bool
-        Option to run spatial analysis and do plots
-    do_time_series_plot: bool
-        Option to run time-series analysis and do plots
-
-    """
-
-    ts_filename, dfs = preprocess_data(input_dir)
-    ts_df = pd.read_csv(ts_filename)
+def run_time_series_analysis(filename, output_dir):
+    
+    # read processed data
+    ts_df = pd.read_csv(filename)
 
     # put output plots in the results dir
-    output_dir = os.path.join(input_dir, 'analysis')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
-
-    # spatial analysis and plotting
-    # ------------------------------------------------
-    if spatial:
-
-        # from the dataframe, produce network metric figure for each avalaible date
-        print('\nCreating spatial plots...')
-
-        # create new subdir for time series analysis
-        spatial_subdir = os.path.join(output_dir, 'spatial')
-        if not os.path.exists(spatial_subdir):
-            os.makedirs(spatial_subdir, exist_ok=True)
-
-        for collection_name, df in dfs.items():
-            if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-                data_df_geo = convert_to_geopandas(df.copy())
-                data_df_geo_coarse = coarse_dataframe(data_df_geo.copy(), 2)
-                create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)
-    # ------------------------------------------------
-
-    # ------------------------------------------------
-    # main analysis and plotting sequence
-    # ------------------------------------------------
-
-    # feature vectors
-    # ------------------------------------------------
-    # plot the feature vectors
-    plot_feature_vector(output_dir)
 
     # auto- and cross-correlations
     # --------------------------------------------------
     # create new subdir for correlation plots
-    corr_subdir = os.path.join(output_dir, 'correlations') # if we start to have more and more results
+    corr_subdir = os.path.join(output_dir, 'correlations')
     if not os.path.exists(corr_subdir):
         os.makedirs(corr_subdir, exist_ok=True)
 
@@ -106,7 +62,77 @@ def analyse_gee_data(input_dir, spatial):
         os.makedirs(tsa_subdir, exist_ok=True)
 
     # make a smoothed time series plot
-    plot_time_series(ts_df, tsa_subdir) # TODO: add max cross correlation in plot legend (issue #170)
+    plot_time_series(ts_df, tsa_subdir)
+    # ------------------------------------------------
+
+
+def analyse_gee_data(input_dir, spatial):
+
+    """
+    Run analysis on dowloaded gee data
+
+    Parameters
+    ----------
+    input_dir : string
+        Path to directory with downloaded dada
+    do_spatial_plot: bool
+        Option to run spatial analysis and do plots
+    do_time_series_plot: bool
+        Option to run time-series analysis and do plots
+
+    """
+
+    # preprocess input data
+    ts_dirname = preprocess_data(input_dir)
+
+    # get filenames of preprocessed data time series
+    ts_filenames = [f for f in os.listdir(ts_dirname) if 'time_series' in f]
+    
+    # put all analysis results in this dir
+    output_dir = os.path.join(input_dir, 'analysis')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
+    print('Running Analysis...')
+    print('-'*len('Running Analysis...'))
+
+    # plot the feature vectors
+    plot_feature_vector(output_dir)
+
+    # for each time series
+    for filename in ts_filenames:
+        
+        print(f'\nAnalysing "{filename}"...')
+
+        # create a subdir for the detrended analysis
+        if 'detrended' in filename:
+            output_subdir = os.path.join(output_dir, 'detrended')
+        else: 
+            output_subdir = output_dir
+
+        # run the analysis
+        run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir)
+
+
+    # spatial analysis and plotting
+    # ------------------------------------------------
+    """if spatial:
+
+        # from the dataframe, produce network metric figure for each avalaible date
+        print('\nCreating spatial plots...')
+
+        # create new subdir for time series analysis
+        spatial_subdir = os.path.join(output_dir, 'spatial')
+        if not os.path.exists(spatial_subdir):
+            os.makedirs(spatial_subdir, exist_ok=True)
+
+        for collection_name, df in dfs.items():
+            if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+                data_df_geo = convert_to_geopandas(df.copy())
+                data_df_geo_coarse = coarse_dataframe(data_df_geo.copy(), 2)
+                create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)"""
+    # ------------------------------------------------
+
 
 
     """
