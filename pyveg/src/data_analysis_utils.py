@@ -590,8 +590,6 @@ def get_ar1_var_timeseries_df(series, window_size):
     DataFrame
         The AR1 and variance results in a time series dataframe.
     """
-    print('\nget_ar1_var_timeseries_df')
-    print('series', series)
 
     # calculate the length in number of time points of the moving window
     length = round(len(series) * window_size)
