@@ -196,6 +196,9 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
         plt.close(fig)
 
+    # make output dir if necessary
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
 
     # make plots for selected columns
     for column in df.columns:
@@ -432,72 +435,96 @@ def plot_feature_vector(output_dir):
 
         # save the plot
         output_filename = fv_filename.split('_')[0] + '-feature-vector-minmax.png'
-        print(f'Plotting maxmin feature vector "{os.path.abspath(output_filename)}"...')
+        print(f'Plotting minmax feature vector "{os.path.abspath(output_filename)}"...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=plot_dpi)
         plt.close(fig)
-        
-
-def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
-    """
-    Plot each output from the STL decomposition
-
-    Parameters
-    ----------
-    ts_df : DataFrame
-        The input time-series.
-    res : object
-       The STL fit object
-    output_dir : str
-        Directory to save the plot in.
-
-    output_filename : str
-         Name of the file to save the plot in.
-     """
 
 
-    register_matplotlib_converters()
-    sns.set_style('darkgrid')
-    plt.rc('figure', figsize=(20, 8))
-    plt.rc('font', size=10)
-
-    fig = res.plot()
-    ax_list = fig.axes
-
-    for ax in ax_list[:-1]:
-        ax.tick_params(labelbottom=False)
-
-    ax_list[-1].set_xticklabels(ts_df.index, rotation=45, va="center")
-    plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
-
-
-def plot_stl_decomposition(dfs, period, output_dir):
+def plot_stl_decomposition(df, period, output_dir):
     """
      Run the STL decomposition and plot the results network centrality and
      precipitation DataFrames in `df`.
 
      Parameters
      ----------
-     dfs : dict of DataFrame
+     df : DataFrame
          The time-series results.
      peropd : float
-        Periodicity to model
-
+        Periodicity to model.
      output_dir : str
          Directory to save the plot in.
      """
 
+    def make_plot(df, column, output_dir):
+        """
+        Plot STL decomposition results.
+
+        Parameters
+        ----------
+        df : DataFrame
+            The input time-series.
+        column : str
+            Column name to run STL on.
+        output_dir : str
+            Directory to save the plot in.
+        """
+
+        # run fit
+        res = stl_decomposition(df[column], period)
+
+        # concert x values to datetime objects
+        try:
+            xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in df.date]
+        except:
+            # if the time series has been resampled the index is a TimeStamp object
+            xs = [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in df.date]
+
+        # formatting
+        register_matplotlib_converters()
+        sns.set_style('darkgrid')
+        plt.rc('figure', figsize=(20, 8))
+        plt.rc('font', size=15)
+
+        fig = res.plot()
+        ax_list = fig.axes
+        for ax in ax_list[:-1]:
+            ax.tick_params(labelbottom=False)
+
+        # set xlabel with datetime object
+        ax_list[-1].set_xticklabels(xs, rotation=0, va="center")
+
+        # save plot
+        filename = os.path.join(output_dir, column+'_STL_decomposition.png')
+        plt.savefig(filename, dpi=plot_dpi)
+    
+    # make output dir if necessary
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
+    # make plots for selected columns
+    for column in df.columns:
+        if 'offset50' in column and 'mean' in column or 'total_precipitation' in column:
+            
+            print(f'Plotting STL decomposition for "{column}"...')
+            
+            # produce plot
+            make_plot(df.dropna(), column, output_dir)
+
+
+    """
     for collection_name, df in dfs.items():
 
         if 'COPERNICUS/S2' in collection_name or 'LANDSAT' in collection_name:
             offsets = df['offset50_mean']
 
-            res = stl_decomposition(offsets, period)
-
+            
 
             stl_decomposition_plotting(offsets,res,output_dir,collection_name.replace('/', '-')+'_STL_decomposion_'+'_offset50mean')
+
         elif 'ERA' in collection_name:
 
             precip = dfs[collection_name]['total_precipitation']   # convert to mm
             res = stl_decomposition(precip, period)
 
             stl_decomposition_plotting(precip,res,output_dir,collection_name.replace('/', '-')+'_STL_decomposion_'+'_precipitation')
+    """

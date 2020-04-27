@@ -253,7 +253,7 @@ def network_figure(df, date, metric, vmin, vmax, output_dir):
 
     fig, ax = plt.subplots(1, figsize=(6, 6))
 
-    cmap = matplotlib.cm.get_cmap('coolwarm')
+    cmap = plt.cm.get_cmap('coolwarm')
 
     df[df['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column=metric,
                                 figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)

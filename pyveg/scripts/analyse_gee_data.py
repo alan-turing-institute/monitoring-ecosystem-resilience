@@ -31,8 +31,19 @@ from pyveg.src.plotting import (
 )
 
 
-def run_time_series_analysis(filename, output_dir):
-    
+def run_time_series_analysis(filename, output_dir, detrended=False):
+    """
+    Make plots for the time series data. This function can
+    be called for the seasonal or detrended process data.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the time series csv to analyse.
+    output_dir : str
+        Path to the directory to save plots to.
+    """
+
     # read processed data
     ts_df = pd.read_csv(filename)
 
@@ -63,11 +74,14 @@ def run_time_series_analysis(filename, output_dir):
 
     # make a smoothed time series plot
     plot_time_series(ts_df, tsa_subdir)
+
+    # plot the result of running STL decomposition
+    if not detrended:
+        plot_stl_decomposition(ts_df, 12, os.path.join(output_dir, 'detrended'))
     # ------------------------------------------------
 
 
 def analyse_gee_data(input_dir, spatial):
-
     """
     Run analysis on dowloaded gee data
 
@@ -79,7 +93,6 @@ def analyse_gee_data(input_dir, spatial):
         Option to run spatial analysis and do plots
     do_time_series_plot: bool
         Option to run time-series analysis and do plots
-
     """
 
     # preprocess input data
@@ -104,15 +117,13 @@ def analyse_gee_data(input_dir, spatial):
         
         print(f'\nAnalysing "{filename}"...')
 
-        # create a subdir for the detrended analysis
+        # run the standard or detrended analysis
         if 'detrended' in filename:
             output_subdir = os.path.join(output_dir, 'detrended')
+            run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir, detrended=True)
         else: 
             output_subdir = output_dir
-
-        # run the analysis
-        run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir)
-
+            run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir)
 
     # spatial analysis and plotting
     # ------------------------------------------------
@@ -165,12 +176,10 @@ def analyse_gee_data(input_dir, spatial):
 
 def main():
     """
-        CLI interface for gee data analysis.
-        """
-    parser = argparse.ArgumentParser(
-        description="process json files with network centrality measures from from GEE images")
-    parser.add_argument("--input_dir",
-                        help="results directory from `download_gee_data` script, containing `results_summary.json`")
+    CLI interface for gee data analysis.
+    """
+    parser = argparse.ArgumentParser(description="process json files with network centrality measures from from GEE images")
+    parser.add_argument("--input_dir", help="results directory from `download_gee_data` script, containing `results_summary.json`")
     parser.add_argument('--spatial', action='store_true', default=False) # off by deafult as this takes a non-negligable amount of time
 
     print('-' * 35)
@@ -182,9 +191,9 @@ def main():
     input_dir = args.input_dir
     spatial = args.spatial
 
+    # run analysis code
     analyse_gee_data(input_dir, spatial)
 
 
 if __name__ == "__main__":
-
     main()
