@@ -487,3 +487,71 @@ def get_max_lagged_cor(dirname, veg_prefix):
     max_corr_smooth = lagged_cor[veg_prefix + '_offset50_smooth_mean_lagged_correlation']
 
     return max_corr_smooth, max_corr_unsmoothed
+
+
+def calculate_ar1_variance_time_series(dfs, length_divisor=2, column_veg ='offset50_mean', column_prep = 'total_precipitation'):
+    """
+       Given a dictionary of time series DataFrames calculate AR1 and variance of a rolling average on a time series
+
+       Parameters
+       ----------
+       dfs : dict of DataFrame
+           Input time series DataFrames.
+
+       length_divisor: integer
+           Denominator for which to divide the time series for the rolling average calculations
+
+       columns = list of strings
+            Name of the variables that are going to be used in the calculations. One variable per dictionary key (first
+             is vegetation, second precipitation variable)
+       Returns
+       ----------
+       dict of DataFrame
+           The AR1 and variance time-series results.
+       """
+
+    new_dfs = {}
+    for col_name, df in dfs.items():
+
+        #  if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+            col = column_veg
+        else:
+            col = column_prep
+
+        # get a dataframe with the ar1 and variance for the selected colum
+        ar1_var_df = get_ar1_var_timeseries_df(dfs[col_name], col, length_divisor)
+        new_dfs[col_name] = ar1_var_df
+
+    return new_dfs
+
+
+def get_ar1_var_timeseries_df(df,col,length_divisor):
+
+    """
+       Given a time series DataFrame calculate AR1 and variance of a rolling average on a time series
+
+       Parameters
+       ----------
+       df : DataFrame
+           Input time series DataFrame.
+
+       length_divisor: integer
+           Denominator for which to divide the time series for the rolling average calculations
+
+       Returns
+       ----------
+        DataFrame
+           The AR1 and variance results in a time series dataframe.
+       """
+
+    length = round(df.shape[0] / length_divisor)
+
+    # calculate the ar1 and variance
+
+    ar1_df = ar1_moving_average_time_series(df, col, length)
+    variance = variance_moving_average_time_series(df, col, length)
+
+    ar1_var_df = pd.merge(variance, ar1_df,left_index=True, right_index=True)
+
+    return ar1_var_df

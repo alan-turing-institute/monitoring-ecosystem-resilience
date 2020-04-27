@@ -48,14 +48,14 @@ def plot_time_series(df, output_dir, filename_suffix =''):
 
         # get vegetation x values to datetime objects
         try:
-            veg_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in veg_df.date]
+            veg_xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in veg_df.date]
         except:
             # if the time series has been resampled the index is a TimeStamp object
-            veg_xs = [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in veg_df.date]
+            veg_xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in veg_df.date]
 
         # get vegetation y values
-        veg_means = veg_df[veg_prefix+'_offset50_mean']
-        veg_std = veg_df[veg_prefix+'_offset50_std']
+        veg_means = veg_df[veg_prefix + '_offset50_mean']
+        veg_std = veg_df[veg_prefix + '_offset50_std']
 
         # create a figure
         fig, ax = plt.subplots(figsize=(15, 4.5))
@@ -96,10 +96,10 @@ def plot_time_series(df, output_dir, filename_suffix =''):
 
             # get precipitation x values to datetime objects
             try:
-                precip_xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in precip_df.date]
+                precip_xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in precip_df.date]
             except:
                 # if the time series has been resampled the index is a TimeStamp object
-                precip_xs =  [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in precip_df.date]
+                precip_xs =  [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in precip_df.date]
 
             # duplicate axis for preciptation
             ax2 = ax.twinx()
@@ -523,8 +523,133 @@ def plot_stl_decomposition(df, period, output_dir):
 
         elif 'ERA' in collection_name:
 
-            precip = dfs[collection_name]['total_precipitation']   # convert to mm
+            precip = dfs[collection_name]['total_precipitation']  # convert to mm
             res = stl_decomposition(precip, period)
 
             stl_decomposition_plotting(precip,res,output_dir,collection_name.replace('/', '-')+'_STL_decomposion_'+'_precipitation')
+    
+            stl_decomposition_plotting(precip, res, output_dir,
+                                       collection_name.replace('/', '-') + '_STL_decomposion_' + '_precipitation')
     """
+
+
+def plot_ar1_var_time_series(dfs ,output_dir, filename_suffix="",name_column_veg = "offset50_mean",name_column_prep = "total_precipitation"):
+    """
+    Given a dict of DataFrames, of which each row corresponds to
+    a different time point (constructed with `make_time_series`),
+    for each dataframe plot the time series of AR1 and Variance on the same plot. The
+    data is assumed AR1 values, so offset50 AR1 and precipitation AR1 are plotted.
+
+    Parameters
+    ----------
+    dfs : DataFrame
+        The time-series results for variance and AR1.
+
+    output_dir : str
+        Directory to save the plot in.
+
+    filename_suffix: str
+        Add suffix string to file name
+
+    """
+    sns.set_style("white")
+    for collection_name, df in dfs.items():
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+            name_column = name_column_veg
+        else:
+            name_column = name_column_prep
+
+        plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_suffix)
+
+
+def plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_suffix):
+    """
+       Given a dataFrames, of which each row corresponds to
+       a different time point (constructed with `make_time_series`),
+    plot the time series of AR1 and Variance on the same plot.
+
+       Parameters
+       ----------
+       df : DataFrame
+           The time-series results for variance and AR1.
+
+       collection_name: str
+            Collection name of the dataframe
+
+       name_column: str
+            Name of the original column for which the AR1 and variance was calculated, these should exist on the dataframe
+
+       output_dir : str
+           Directory to save the plot in.
+
+       filename_suffix: str
+           Add suffix string to file name
+
+       """
+
+
+    df.sort_index(inplace=True)
+
+    # extract x values and convert to datetime objects
+    try:
+        ar1_xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in df.index]
+    except:
+        # if the time series has been resampled the index is a TimeStamp object
+        ar1_xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in df.index]
+
+    # extract raw means
+    ar1_values = df[name_column + '_ar1']
+    ar1_se_values = df[name_column + '_ar1_se']
+    variance = df[name_column + '_var']
+
+    # create a figure
+    fig, ax = plt.subplots(figsize=(15, 5))
+    plt.xlabel('Time', fontsize=12)
+
+    # set up veg y axis
+    color = 'tab:blue'
+    ax.set_ylabel(f'{collection_name} {name_column} AR1', color=color, fontsize=12)
+    ax.tick_params(axis='y', labelcolor=color)
+
+    # plot unsmoothed vegetation means
+    ax.plot(ar1_xs, ar1_values, label=name_column + ' AR1', linewidth=1, color='dimgray', linestyle='dotted')
+    # plot LOESS smoothed vegetation means and std
+    ax.fill_between(ar1_xs, ar1_values - ar1_se_values, ar1_values + ar1_se_values,
+                    facecolor='blue', alpha=0.1, label=name_column+' AR1 standard error')
+    ax.set_ylim([-1, 1.5])
+    plt.legend(loc='upper left')
+
+    # plot legend
+
+    # duplicate x-axis for preciptation
+    ax2 = ax.twinx()
+    color = 'tab:red'
+    ax2.set_ylabel(f'{collection_name} {name_column} Variance', color=color, fontsize=12)
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    # plot precipitation
+    ax2.plot(ar1_xs, variance, linewidth=2, color=color, alpha=0.75, linestyle='dotted', label=name_column + ' Variance')
+
+    # add autoregression info
+    ax2.set_ylim([0, 1.5* max(variance)])
+
+    # add Kendall tau
+    tau, p = get_kendell_tau(ar1_values)
+    tau_var, p_var = get_kendell_tau(variance)
+
+    # add to plot
+    textstr = f'AR1 Kendall $\\tau,pvalue={tau:.2f}$, ${p:.2f}$'
+    ax2.text(0.63, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+
+    # add to plot
+    textstr = f'Variance Kendall $\\tau,pvalue ={tau_var:.2f}$, ${p_var:.2f}$'
+    ax2.text(0.63, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+
+    # layout
+    fig.tight_layout()
+
+    # save the plot
+    output_filename = collection_name.replace('/', '-') + '-time-series-AR1-var' + filename_suffix + '.png'
+    print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
+    plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+    # plt.show()
