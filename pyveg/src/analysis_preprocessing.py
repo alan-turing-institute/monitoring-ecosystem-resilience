@@ -141,7 +141,7 @@ def make_time_series(dfs):
     return ts_df
 
 
-def resample_time_series(df, col_name="offset50", period="M"):
+def resample_time_series(series, period='MS'):
     """
     Resample and interpolate a time series dataframe so we have one row
     per time period (useful for FFT)
@@ -160,24 +160,22 @@ def resample_time_series(df, col_name="offset50", period="M"):
     Series: 
         pandas Series with datetime index, and one column, one row per day
     """
-    
-    series = df[col_name]
 
     # give the series a date index if the DataFrame is not index by date already
-    if df.index.name != 'date':
-        series.index = df.date
+    #   if df.index.name != 'date':
+    #    series.index = df.date
     
     # just in case the index isn't already datetime type
     series.index = pd.to_datetime(series.index)
 
-    # resample to get one row per day
+    # resample to get one row per time period
     rseries = series.resample(period).mean()
     new_series = rseries.interpolate()
 
     return new_series
 
 
-def resample_dataframe(df, columns, period='M'):
+def resample_dataframe(df, columns, period='MS'):
     """
     Resample and interpolate a time series dataframe so we have one row
     per time period.
@@ -187,7 +185,7 @@ def resample_dataframe(df, columns, period='M'):
     df: DataFrame
         Dataframe with date as index.
     columns: list
-        List of column names to resample.
+        List of column names to resample. Should contain numeric data.
     period: string
         Period for resampling.
     
@@ -197,14 +195,16 @@ def resample_dataframe(df, columns, period='M'):
         DataFrame with resample time series in `columns`.
     """
 
-    # new out df to deal with length mismatches after resampling
+    # new empty df to deal with length mismatches after resampling
+    #df_out = df.copy()
     df_out = pd.DataFrame()
 
     # for each column to resample
     for column in columns:
 
-        # resample the column, ignoring any changes to the index
-        df_out[column] = resample_time_series(df, column, period=period)
+        # resample the column
+        series = df.set_index('date')[column]
+        df_out[column] = resample_time_series(series,  period=period)# index problems
 
     # generate a clean index
     df_out = df_out.reset_index()
@@ -212,7 +212,7 @@ def resample_dataframe(df, columns, period='M'):
     return df_out
 
 
-def resample_data(dfs, period='M'):
+def resample_data(dfs, period='MS'):
     """
     Resample vegetation and rainfall DataFrames. Vegetation
     DataFrames are resampled at the sub-image level.
@@ -458,55 +458,39 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3):
     return df
 
 
-def remove_seasonality(df, lag, period='M'):
+def detrend_df(df, lag):
     """
-    Loop over time series DataFrames and remove
-    time series seasonality.
+    Remove seasonality from a DataFrame containing the time series 
+    for a single sub-image.
 
     Parameters
     ----------
     df : DataFrame
-        Time series data for multiple sub-image locations.
-    lag : float
-        Periodicity to remove
-
-    period: string
-        Type of periodicitty (day, month, year)
+        Time series data for a single sub-image location.
+    lag : int
+        Length of season in number of observations.
 
     Returns
     ----------
-    dict of DataFrame
-        Time series data for multiple sub-image with
-        seasonality removed
+    DataFrame
+        Input with seasonality removed from time series columns.
     """
 
-    # set to None data points that are far from the mean, these are
-    # assumed to be unphysical
+    # copy a new dataframe to return
+    df_out = df.copy()
 
-    # loop over collections
+    # resample time series (in case not done already)
+    columns = [c for c in df_out.columns if any([s in c 
+                for s in ['offset50', 'precipitation', 'temperature']])]
 
-    df_resampled = pd.DataFrame()
+    df_out = resample_dataframe(df_out, columns, period='MS')
 
-    for col in df.columns:
+    # detrend veg and climate columns
+    for col in columns:
+    
+        df_out[col] = df[col].diff(lag)
 
-        if col == 'latitude' or col == 'longitude':
-            df_resampled[col] = df[col].iloc[0]
-            continue
-
-        if col == 'date' or col == 'datetime':
-            df_resampled[col] = df_resampled.index
-            continue
-
-        if col == 'feature_vec':
-            continue
-
-        series_resampled = resample_time_series(df, col, period)
-
-        df_resampled[col] = series_resampled.diff(lag)
-
-    df_resampled.dropna(inplace=True)
-
-    return df_resampled
+    return df_out
 
 
 def store_feature_vectors(dfs, output_dir):
@@ -677,7 +661,7 @@ def get_missing_time_points(dfs):
     return missing_points
 
 
-def detrend_data(dfs, lag, period):
+def detrend_data(dfs, lag):
     """
     Loop over each sub image time series DataFrames and remove
     time series seasonality by subtracting the previous year.
@@ -689,8 +673,6 @@ def detrend_data(dfs, lag, period):
         Time series data for multiple sub-image locations.
     lag : float
         Periodicity to remove
-    period: string
-        Type of periodicitty (day, month, year)
 
     Returns
     ----------
@@ -708,13 +690,10 @@ def detrend_data(dfs, lag, period):
             d = {}
             for name, group in df.groupby(['latitude', 'longitude']):
                 d[name] = group
-                # for each sub-image
+            
+            # for each sub-image
             for key, df_ in d.items():
-                df_new = df_.set_index('date')
-
-                uns_df = remove_seasonality(df_new.copy(), lag, period)
-
-                d[key] = uns_df
+                d[key] = detrend_df(df_, lag)
 
             # reconstruct the DataFrame
             df = list(d.values())[0]
@@ -725,15 +704,9 @@ def detrend_data(dfs, lag, period):
 
         else:
             # remove seasonality for weather data, this is a simpler time series
-            df = dfs[col_name]
-            df_new = df.set_index('date')
-            uns_df = remove_seasonality(df_new, lag, period)
-
-            uns_df['date'] = uns_df.index
-            dfs[col_name] = uns_df
+            dfs[col_name] = detrend_df(dfs[col_name], lag)
 
     return dfs
-
 
 
 def preprocess_data(input_dir, drop_outliers=True, fill_missing=True, 
@@ -812,12 +785,11 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
     ts_df = make_time_series(dfs)
 
     # resample the averaged time series using linear interpolation
-    resample=True
     if resample:
         print('- Resampling time series...')
         columns = [c for c in ts_df.columns if any([s in c 
                      for s in ['offset50', 'precipitation', 'temperature']])]
-        ts_df = resample_dataframe(ts_df, columns, period='M')
+        ts_df = resample_dataframe(ts_df, columns, period='MS')
 
     # save as csv
     ts_filename = os.path.join(output_dir, 'time_series.csv')
@@ -825,10 +797,16 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
     ts_df.to_csv(ts_filename, index=False)
 
     # additionally save resampled & detrended time series
-    if detrend:
+    if detrend: 
         print('- Detrending time series...')
-        dfs_detrended = detrend_data(dfs, 12, "M")
+
+        # remove seasonality from sub-image time series
+        dfs_detrended = detrend_data(dfs, lag=12)
+
+        # combine over sub-images
         ts_df_detrended = make_time_series(dfs_detrended)
+
+        # save output
         ts_filename_detrended = os.path.join(output_dir, 'time_series_detrended.csv')
         print(f'Saving detrended time series to "{ts_filename_detrended}".')
         ts_df_detrended.to_csv(ts_filename_detrended, index=False)
