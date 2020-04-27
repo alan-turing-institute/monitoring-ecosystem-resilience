@@ -174,13 +174,19 @@ def plot_time_series(df, output_dir, filename_suffix =''):
 
         # add autoregression info
         unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means.reindex(veg_df.date))
-        smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth.reindex(veg_df.date))
+        if any(['smooth' in c and veg_prefix in c for c in veg_df.columns]):
+            smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth.reindex(veg_df.date))
+        else:
+            smoothed_ar1, smoothed_ar1_se = np.NaN, np.NaN
         textstr = f'AR$(1)={smoothed_ar1:.2f} \pm {smoothed_ar1_se:.2f}$ (${unsmoothed_ar1:.2f} \pm {unsmoothed_ar1_se:.2f}$ unsmoothed)'
         ax.text(0.55, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
 
         # add Kendall tau
         tau, p = get_kendell_tau(veg_means)
-        tau_smooth, p_smooth = get_kendell_tau(veg_means_smooth)
+        if any(['smooth' in c and veg_prefix in c for c in veg_df.columns]):
+            tau_smooth, p_smooth = get_kendell_tau(veg_means_smooth)
+        else:
+            tau_smooth, p_smooth = np.NaN, np.NaN
         kendall_tau_dict = {}
         kendall_tau_dict['Kendall_tau'] = {'unsmoothed': {'tau': tau, 'p': p}, 'smoothed': {'tau': tau_smooth, 'p': p_smooth}}
         write_to_json(os.path.join(output_dir, veg_prefix+'_kendall_tau.json'), kendall_tau_dict)
