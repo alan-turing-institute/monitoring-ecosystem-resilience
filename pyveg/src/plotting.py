@@ -470,7 +470,7 @@ def stl_decomposition_plotting(ts_df,res,output_dir,output_filename):
     plt.savefig(os.path.join(output_dir, output_filename), dpi=100)
 
 
-def do_stl_decomposition(dfs, period, output_dir):
+def plot_stl_decomposition(dfs, period, output_dir):
     """
      Run the STL decomposition and plot the results network centrality and
      precipitation DataFrames in `df`.
