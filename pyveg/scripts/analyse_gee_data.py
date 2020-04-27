@@ -17,7 +17,8 @@ from pyveg.src.analysis_preprocessing import preprocess_data
 from pyveg.src.data_analysis_utils import (
     create_lat_long_metric_figures,
     convert_to_geopandas,
-    coarse_dataframe
+    coarse_dataframe,
+    moving_window_analysis
 )
 
 from pyveg.src.plotting import (
@@ -25,7 +26,8 @@ from pyveg.src.plotting import (
     plot_feature_vector,
     plot_time_series,
     plot_autocorrelation_function,
-    plot_cross_correlations
+    plot_cross_correlations,
+    plot_moving_window_analysis
 )
 
 
@@ -78,6 +80,23 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
         plot_stl_decomposition(ts_df, 12, os.path.join(output_dir, 'detrended'))
     # ------------------------------------------------
 
+    # moving window analysis
+    # ------------------------------------------------
+    # create new subdir for this sub-analysis
+    mwa_subdir = os.path.join(output_dir, 'moving-window')
+    if not os.path.exists(mwa_subdir):
+        os.makedirs(mwa_subdir, exist_ok=True)
+
+    # run 
+    mwa_df = moving_window_analysis(ts_df, mwa_subdir)
+    
+    # make plots
+    plot_moving_window_analysis(mwa_df, mwa_subdir)
+
+    # save to csv
+    mwa_df.to_csv(os.path.join(mwa_subdir, 'moving-window-analysis.csv'))
+    # ------------------------------------------------
+
 
 def analyse_gee_data(input_dir, spatial):
     """
@@ -94,7 +113,7 @@ def analyse_gee_data(input_dir, spatial):
     """
 
     # preprocess input data
-    ts_dirname = preprocess_data(input_dir)
+    ts_dirname = preprocess_data(input_dir, drop_outliers=False, fill_missing=False)
 
     # get filenames of preprocessed data time series
     ts_filenames = [f for f in os.listdir(ts_dirname) if 'time_series' in f]

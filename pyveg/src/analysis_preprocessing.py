@@ -748,7 +748,7 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         os.makedirs(output_dir, exist_ok=True)
 
     # read all json files in the directory and produce a dataframe
-    print(f"Reading results from '{os.path.abspath(json_summary_path)}'...")
+    print(f'Reading results from "{os.path.abspath(json_summary_path)}"...')
 
     # read json file to dataframes
     dfs = read_json_to_dataframes(json_summary_path)

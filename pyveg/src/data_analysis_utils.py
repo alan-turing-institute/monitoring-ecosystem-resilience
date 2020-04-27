@@ -355,11 +355,8 @@ def get_AR1_parameter_estimate(ys):
     # from statsmodels.tsa.statespace.sarimax import SARIMAX
     # from statsmodels.tsa.arima_model import ARMA
 
-    # create the AR(1) model
-    model = AutoReg(ys, lags=1)
-
-    # fit
-    model = model.fit()
+    # create and fit the AR(1) model
+    model = AutoReg(ys, lags=1, missing='drop').fit() # currently warning
 
     # get the single parameter value
     parameter = model.params[1]
@@ -492,13 +489,19 @@ def get_max_lagged_cor(dirname, veg_prefix):
     lagged_cor = {k: np.array(v[:5]) for k, v in lagged_cor.items() if veg_prefix in k}
     lagged_cor = {k: (np.max(v), np.argmax(v)) for k, v in lagged_cor.items()}
 
-    max_corr_unsmoothed = lagged_cor[veg_prefix + '_offset50_mean_lagged_correlation']
-    max_corr_smooth = lagged_cor[veg_prefix + '_offset50_smooth_mean_lagged_correlation']
+    if veg_prefix + '_offset50_mean_lagged_correlation' in lagged_cor.keys():
+        max_corr_unsmoothed = lagged_cor[veg_prefix + '_offset50_mean_lagged_correlation']
+    else:
+        max_corr_unsmoothed = (np.NaN, np.NaN)
+    if veg_prefix + '_offset50_smooth_mean_lagged_correlation' in lagged_cor.keys():
+        max_corr_smooth = lagged_cor[veg_prefix + '_offset50_smooth_mean_lagged_correlation']
+    else:
+        max_corr_smooth = (np.NaN, np.NaN)
 
     return max_corr_smooth, max_corr_unsmoothed
 
 
-def variance_moving_average_time_series(df, col_name="offset50", length =1):
+def variance_moving_average_time_series(series, length=1):
     """
     Calculate a variance time series using a moving average
 
@@ -516,22 +519,18 @@ def variance_moving_average_time_series(df, col_name="offset50", length =1):
     new_series: 
         pandas Series with datetime index, and one column, one row per date
     """
-    try:
-        series = df[col_name]
-    except:
-        ValueError('Error column name: '+col_name+' not found')
 
     # just in case the index isn't already datetime type
     series.index = pd.to_datetime(series.index)
 
     variance = series.rolling(length ).var()
 
-    variance.name = col_name+"_var"
+    variance.name = series.name+"_var"
 
     return variance
 
 
-def ar1_moving_average_time_series(df, col_name="offset50", length =1):
+def ar1_moving_average_time_series(series, length=1):
     """
     Calculate an AR1 time series using a moving average
     
@@ -549,10 +548,6 @@ def ar1_moving_average_time_series(df, col_name="offset50", length =1):
     new_series: 
         pandas Series with datetime index, and one column, one row per date
     """
-    try:
-        series = df[col_name]
-    except:
-        ValueError('Error column name: '+col_name+' not found')
 
     # just in case the index isn't already datetime type
     series.index = pd.to_datetime(series.index)
@@ -560,13 +555,16 @@ def ar1_moving_average_time_series(df, col_name="offset50", length =1):
     ar1 = []
     ar1_se = []
     index = []
-    for i in range(df.shape[0] - length ):
-        ar1.append(get_AR1_parameter_estimate(series[i:(length  + i)])[0])
-        ar1_se.append(get_AR1_parameter_estimate(series[i:(length  + i)])[1])
+
+    for i in range(len(series) - length ):
+        #print(series[i:(length  + i)])
+        param, se = get_AR1_parameter_estimate(series[i:(length  + i)])
+        ar1.append(param)
+        ar1_se.append(se)
         index.append(series.index[length  + i])
 
-    ar1_name = col_name+"_ar1"
-    ar1_se_name = col_name+"_ar1_se"
+    ar1_name = series.name+"_ar1"
+    ar1_se_name = series.name+"_ar1_se"
 
     ar1_df = pd.DataFrame()
     ar1_df[ar1_name] = pd.Series(ar1)
@@ -576,15 +574,14 @@ def ar1_moving_average_time_series(df, col_name="offset50", length =1):
     return ar1_df
 
 
-def get_ar1_var_timeseries_df(df, col, length_divisor):
+def get_ar1_var_timeseries_df(series, window_size):
     """
     Given a time series DataFrame calculate AR1 and variance of a rolling average on a time series
 
     Parameters
     ----------
     df : DataFrame
-        Input time series DataFrame.
-
+        Input time series DataFrame
     length_divisor: integer
         Denominator for which to divide the time series for the rolling average calculations
 
@@ -593,52 +590,69 @@ def get_ar1_var_timeseries_df(df, col, length_divisor):
     DataFrame
         The AR1 and variance results in a time series dataframe.
     """
+    print('\nget_ar1_var_timeseries_df')
+    print('series', series)
 
-    length = round(df.shape[0] / length_divisor)
+    # calculate the length in number of time points of the moving window
+    length = round(len(series) * window_size)
 
     # calculate the ar1 and variance
+    ar1_df = ar1_moving_average_time_series(series, length)
+    variance = variance_moving_average_time_series(series, length)
 
-    ar1_df = ar1_moving_average_time_series(df, col, length)
-    variance = variance_moving_average_time_series(df, col, length)
-
+    # merge results
     ar1_var_df = pd.merge(variance, ar1_df, left_index=True, right_index=True)
 
     return ar1_var_df
 
 
-def calculate_ar1_variance_time_series(dfs, length_divisor=2, column_veg='offset50_mean', column_prep='total_precipitation'):
+def moving_window_analysis(df, output_dir, window_size=0.5):
     """
-    Given a dictionary of time series DataFrames calculate AR1 and variance of a rolling average on a time series
+    Run moving window AR1 and variance calculations for a input
+    time series.
 
     Parameters
     ----------
-    dfs : dict of DataFrame
-        Input time series DataFrames.
+    df : DataFrame
+        Input time series DataFrame.
+    output_dir : str
+        Path output plotting directory.
+    window_size: float (optional)
+        Size of the moving window as a fraction of the time series length.
 
-    length_divisor: integer
-        Denominator for which to divide the time series for the rolling average calculations
-
-    columns = list of strings
-        Name of the variables that are going to be used in the calculations. One variable per dictionary key (first
-            is vegetation, second precipitation variable)
-    
     Returns
     ----------
-    dict of DataFrame
-        The AR1 and variance time-series results.
+    DataFrame
+        AR1 and variance time-series.
     """
 
-    new_dfs = {}
-    for col_name, df in dfs.items():
+    # new output dataframe
+    mwa_df = pd.DataFrame()
 
-        #  if vegetation data
-        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
-            col = column_veg
-        else:
-            col = column_prep
+    # loop through columns
+    for column in df.columns:
 
-        # get a dataframe with the ar1 and variance for the selected colum
-        ar1_var_df = get_ar1_var_timeseries_df(dfs[col_name], col, length_divisor)
-        new_dfs[col_name] = ar1_var_df
+        # run moving window analysis veg and precip columns
+        if ( 'offset50' in column and 'mean' in column or 
+             'total_precipitation' in column ):
+            
+            # reindex time series using data
+            time_series = df.set_index('date')[column]
 
-    return new_dfs
+            # compute AR1 and variance time series
+            mwa_df = mwa_df.join(get_ar1_var_timeseries_df(time_series, window_size), how='outer')
+
+    # use date as a column, and reset index
+    mwa_df.index.name = 'date'
+    mwa_df = mwa_df.reset_index()
+
+    return mwa_df
+
+
+def convert_to_datetime(series):    
+    # get vegetation x values to datetime objects
+    try:
+        veg_xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in series]
+    except:
+        # if the time series has been resampled the index is a TimeStamp object
+        veg_xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in series]

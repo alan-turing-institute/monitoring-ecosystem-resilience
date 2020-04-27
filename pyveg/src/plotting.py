@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
 from pandas.plotting import register_matplotlib_converters
-register_matplotlib_converters()
 
 from pyveg.src.data_analysis_utils import (
     get_AR1_parameter_estimate, 
@@ -173,9 +172,11 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             veg_prefix = veg_prefix + '+' + veg_prefix_b
 
         # add autoregression info
-        unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means.reindex(veg_df.date))
+        veg_means.index = veg_df.date
+        unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means)
         if any(['smooth' in c and veg_prefix in c for c in veg_df.columns]):
-            smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth.reindex(veg_df.date))
+            veg_means_smooth.index = veg_df.date
+            smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth)
         else:
             smoothed_ar1, smoothed_ar1_se = np.NaN, np.NaN
         textstr = f'AR$(1)={smoothed_ar1:.2f} \pm {smoothed_ar1_se:.2f}$ (${unsmoothed_ar1:.2f} \pm {unsmoothed_ar1_se:.2f}$ unsmoothed)'
@@ -490,7 +491,7 @@ def plot_stl_decomposition(df, period, output_dir):
         default_fontsize = plt.rcParams['font.size']
         plt.rc('figure', figsize=(20, 8))
         plt.rc('font', size=15)
-        
+
         fig = res.plot()
         ax_list = fig.axes
         for ax in ax_list[:-1]:
@@ -521,96 +522,7 @@ def plot_stl_decomposition(df, period, output_dir):
             make_plot(df.dropna(), column, output_dir)
 
 
-def plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_suffix):
-    """
-    Given a dataFrames, of which each row corresponds to
-    a different time point (constructed with `make_time_series`),
-    plot the time series of AR1 and Variance on the same plot.
-
-    Parameters
-    ----------
-    df : DataFrame
-        The time-series results for variance and AR1.
-    collection_name: str
-        Collection name of the dataframe
-    name_column: str
-        Name of the original column for which the AR1 and variance was calculated, these should exist on the dataframe
-    output_dir : str
-        Directory to save the plot in.
-    filename_suffix: str
-        Add suffix string to file name
-    """
-
-    df.sort_index(inplace=True)
-
-    # extract x values and convert to datetime objects
-    try:
-        ar1_xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in df.index]
-    except:
-        # if the time series has been resampled the index is a TimeStamp object
-        ar1_xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in df.index]
-
-    # extract raw means
-    ar1_values = df[name_column + '_ar1']
-    ar1_se_values = df[name_column + '_ar1_se']
-    variance = df[name_column + '_var']
-
-    # create a figure
-    fig, ax = plt.subplots(figsize=(15, 5))
-    plt.xlabel('Time', fontsize=12)
-
-    # set up veg y axis
-    color = 'tab:blue'
-    ax.set_ylabel(f'{collection_name} {name_column} AR1', color=color, fontsize=12)
-    ax.tick_params(axis='y', labelcolor=color)
-
-    # plot unsmoothed vegetation means
-    ax.plot(ar1_xs, ar1_values, label=name_column + ' AR1', linewidth=1, color='dimgray', linestyle='dotted')
-    # plot LOESS smoothed vegetation means and std
-    ax.fill_between(ar1_xs, ar1_values - ar1_se_values, ar1_values + ar1_se_values,
-                    facecolor='blue', alpha=0.1, label=name_column+' AR1 standard error')
-    ax.set_ylim([-1, 1.5])
-    plt.legend(loc='upper left')
-
-    # plot legend
-
-    # duplicate x-axis for preciptation
-    ax2 = ax.twinx()
-    color = 'tab:red'
-    ax2.set_ylabel(f'{collection_name} {name_column} Variance', color=color, fontsize=12)
-    ax2.tick_params(axis='y', labelcolor=color)
-
-    # plot precipitation
-    ax2.plot(ar1_xs, variance, linewidth=2, color=color, alpha=0.75, linestyle='dotted', label=name_column + ' Variance')
-
-    # add autoregression info
-    ax2.set_ylim([0, 1.5* max(variance)])
-
-    # add Kendall tau
-    tau, p = get_kendell_tau(ar1_values)
-    tau_var, p_var = get_kendell_tau(variance)
-
-    # add to plot
-    textstr = f'AR1 Kendall $\\tau,pvalue={tau:.2f}$, ${p:.2f}$'
-    ax2.text(0.63, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
-
-    # add to plot
-    textstr = f'Variance Kendall $\\tau,pvalue ={tau_var:.2f}$, ${p_var:.2f}$'
-    ax2.text(0.63, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
-
-    # layout
-    fig.tight_layout()
-
-    # save the plot
-    output_filename = collection_name.replace('/', '-') + '-time-series-AR1-var' + filename_suffix + '.png'
-    print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
-    plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
-    # plt.show()
-
-
-def plot_ar1_var_time_series(dfs ,output_dir, filename_suffix="", 
-                             name_column_veg="offset50_mean", 
-                             name_column_prep="total_precipitation"):
+def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
     """
     Given a dict of DataFrames, of which each row corresponds to
     a different time point (constructed with `make_time_series`),
@@ -626,12 +538,95 @@ def plot_ar1_var_time_series(dfs ,output_dir, filename_suffix="",
     filename_suffix: str
         Add suffix string to file name
     """
-    sns.set_style("white")
-    for collection_name, df in dfs.items():
-        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-            name_column = name_column_veg
-        else:
-            name_column = name_column_prep
 
-        plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_suffix)
-        
+    def make_plot(df, column, output_dir, filename_suffix):
+        """
+        Given a dataFrames, of which each row corresponds to
+        a different time point (constructed with `make_time_series`),
+        plot the time series of AR1 and Variance on the same plot.
+
+        Parameters
+        ----------
+        df : DataFrame
+            The time-series results for variance and AR1.
+        collection_name: str
+            Collection name of the dataframe
+        name_column: str
+            Name of the original column for which the AR1 and variance was calculated, these should exist on the dataframe
+        output_dir : str
+            Directory to save the plot in.
+        filename_suffix: str
+            Add suffix string to file name
+        """
+
+        #df.sort_index(inplace=True) should be done already higher up
+
+        # extract x values and convert to datetime objects
+        try:
+            ar1_xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in df.date]
+        except:
+            # if the time series has been resampled the index is a TimeStamp object
+            ar1_xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in df.date]
+
+        # extract individual time series
+        variance = df[column]
+        ar1_values = df[column.replace('var', 'ar1')]
+        ar1_se_values = df[column.replace('var', 'ar1_se')]
+        collection_name = column.split('_')[0]
+
+        # create a figure
+        fig, ax = plt.subplots(figsize=(15, 5))
+        plt.xlabel('Time', fontsize=12)
+
+        # set up veg y axis
+        color = 'tab:blue'
+        ax.set_ylabel(f'{collection_name} AR1', color=color, fontsize=12)
+        ax.tick_params(axis='y', labelcolor=color)
+
+        # plot unsmoothed vegetation means
+        ax.plot(ar1_xs, ar1_values, label='AR1', linewidth=2, color='tab:blue')
+
+        # plot LOESS smoothed vegetation means and std
+        ax.fill_between(ar1_xs, ar1_values - ar1_se_values, ar1_values + ar1_se_values,
+                        facecolor='blue', alpha=0.1, label='AR1 standard error')
+        ax.set_ylim([-1, 2])
+
+        # plot legend
+        plt.legend(loc='upper left')
+
+        # duplicate x-axis for preciptation
+        ax2 = ax.twinx()
+        color = 'tab:red'
+        ax2.set_ylabel(f'{collection_name} Variance', color=color, fontsize=12)
+        ax2.tick_params(axis='y', labelcolor=color)
+
+        # plot precipitation
+        ax2.plot(ar1_xs, variance, linewidth=2, color=color, alpha=0.75, label=column + 'Variance')
+
+        # add autoregression info
+        ax2.set_ylim([0, 2*max(variance)])
+
+        # add Kendall tau
+        tau, p = get_kendell_tau(ar1_values)
+        tau_var, p_var = get_kendell_tau(variance)
+
+        # add to plot
+        textstr = f'AR1 Kendall $\\tau,pvalue={tau:.2f}$, ${p:.2f}$'
+        ax2.text(0.63, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+
+        # add to plot
+        textstr = f'Variance Kendall $\\tau,pvalue ={tau_var:.2f}$, ${p_var:.2f}$'
+        ax2.text(0.63, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+
+        # layout
+        fig.tight_layout()
+
+        # save the plot
+        output_filename = collection_name + '-moving-window-AR1-var' + filename_suffix + '.png'
+        print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+
+
+    for column in df.columns:
+        if 'offset50_mean' in column and 'var' in column:
+            make_plot(df.dropna(), column, output_dir, filename_suffix)
