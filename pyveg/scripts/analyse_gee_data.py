@@ -166,11 +166,15 @@ def analyse_gee_data(input_dir, do_spatial_plot, do_time_series_plot):
         # make a smoothed time series plot
         plot_smoothed_time_series(time_series_uns_summary_dfs, tsa_subdir, '-no-seasonality-summary-ts', plot_std=False)
 
-
-
+        # calculate AR1 and plot results (in un-smoothed data)
         ar1_var_df_uns = calculate_ar1_variance_time_series(time_series_uns_summary_dfs, 2)
 
         plot_ar1_var_time_series(ar1_var_df_uns,tsa_subdir,'-no-seasonality')
+
+        # calculate AR1 and plot results (in smoothed data)
+        ar1_var_df_uns_smooth = calculate_ar1_variance_time_series(time_series_uns_summary_dfs, 2, "offset50_smooth_mean")
+
+        plot_ar1_var_time_series(ar1_var_df_uns_smooth,tsa_subdir,'-no-seasonality-smoothed', "offset50_smooth_mean")
 
 
     print('\nDone!\n')

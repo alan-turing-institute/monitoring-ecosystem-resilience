@@ -839,7 +839,7 @@ def resample_time_series(df, col_name="offset50", period="D"):
     return new_series
 
 
-def variance_moving_average_time_series(df, col_name="offset50", lenght=1):
+def variance_moving_average_time_series(df, col_name="offset50", length =1):
     """
     Calculate a variance time series using a moving average
 
@@ -849,8 +849,8 @@ def variance_moving_average_time_series(df, col_name="offset50", lenght=1):
         Dataframe with date as index
     col_name: string,
         Identifying the column we will pull out
-    lenght: int
-        Lenght to be used in the moving average
+    length : int
+        length  to be used in the moving average
     Returns
     -------
     new_series: pandas Series with datetime index, and one column, one row per date
@@ -863,14 +863,14 @@ def variance_moving_average_time_series(df, col_name="offset50", lenght=1):
     # just in case the index isn't already datetime type
     series.index = pd.to_datetime(series.index)
 
-    variance = series.rolling(lenght).var()
+    variance = series.rolling(length ).var()
 
     variance.name = col_name+"_var"
 
     return variance
 
 
-def ar1_moving_average_time_series(df, col_name="offset50", lenght=1):
+def ar1_moving_average_time_series(df, col_name="offset50", length =1):
     """
     Calculate an AR1 time series using a moving average
 
@@ -880,8 +880,8 @@ def ar1_moving_average_time_series(df, col_name="offset50", lenght=1):
         Dataframe with date as index
     col_name: string,
         Identifying the column we will pull out
-    lenght: int
-        Lenght to be used in the moving average
+    length : int
+        length  to be used in the moving average
     Returns
     -------
     new_series: pandas Series with datetime index, and one column, one row per date
@@ -897,10 +897,10 @@ def ar1_moving_average_time_series(df, col_name="offset50", lenght=1):
     ar1 = []
     ar1_se = []
     index = []
-    for i in range(df.shape[0] - lenght):
-        ar1.append(get_AR1_parameter_estimate(series[i:(lenght + i)])[0])
-        ar1_se.append(get_AR1_parameter_estimate(series[i:(lenght + i)])[1])
-        index.append(series.index[lenght + i])
+    for i in range(df.shape[0] - length ):
+        ar1.append(get_AR1_parameter_estimate(series[i:(length  + i)])[0])
+        ar1_se.append(get_AR1_parameter_estimate(series[i:(length  + i)])[1])
+        index.append(series.index[length  + i])
 
     ar1_name = col_name+"_ar1"
     ar1_se_name = col_name+"_ar1_se"
