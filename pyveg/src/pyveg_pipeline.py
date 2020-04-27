@@ -170,13 +170,13 @@ class Sequence(object):
 
     def __repr__(self):
         if not self.is_configured:
-            return "Sequence not configured"
+            return "Sequence not configured\n"
 
         output = "\n    [Sequence]: {} \n".format(self.name)
         output += "    =======================\n"
         for k, v in vars(self).items():
             # exclude the things we don't want to print
-            if k == "name" or k == "modules" or k == "parent":
+            if k == "name" or k == "modules" or k == "parent" or isinstance(v, BaseModule):
                 continue
             output += "    {}: {}\n".format(k,v)
         output += "\n    ------- Modules ----------\n\n"
@@ -216,12 +216,24 @@ class BaseModule(object):
 
 
     def configure(self, config_dict=None):
-
+        """
+        Order of preference for configuring:
+        1) configuration dictionary
+        2) values held by the parent Sequence
+        3) default values
+        So we set them in reverse order here, so higher priorities will override.
+        """
         self.set_default_parameters()
+
+        if self.parent:
+            for param, param_type in self.params:
+                if param in vars(self.parent):
+                    self.__setattr__(param, self.parent.__getattribute__(param))
         if config_dict:
             for k, v in config_dict.items():
                 print("{}: setting {} to {}".format(self.name,k,v))
-                self.__setattr(k, v)
+                self.__setattr__(k, v)
+
         self.check_config()
         self.is_configured = True
 
