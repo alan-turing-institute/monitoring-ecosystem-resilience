@@ -511,82 +511,25 @@ def plot_stl_decomposition(df, period, output_dir):
             make_plot(df.dropna(), column, output_dir)
 
 
+def plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_suffix):
     """
-    for collection_name, df in dfs.items():
-
-        if 'COPERNICUS/S2' in collection_name or 'LANDSAT' in collection_name:
-            offsets = df['offset50_mean']
-
-            
-
-            stl_decomposition_plotting(offsets,res,output_dir,collection_name.replace('/', '-')+'_STL_decomposion_'+'_offset50mean')
-
-        elif 'ERA' in collection_name:
-
-            precip = dfs[collection_name]['total_precipitation']  # convert to mm
-            res = stl_decomposition(precip, period)
-
-            stl_decomposition_plotting(precip,res,output_dir,collection_name.replace('/', '-')+'_STL_decomposion_'+'_precipitation')
-    
-            stl_decomposition_plotting(precip, res, output_dir,
-                                       collection_name.replace('/', '-') + '_STL_decomposion_' + '_precipitation')
-    """
-
-
-def plot_ar1_var_time_series(dfs ,output_dir, filename_suffix="",name_column_veg = "offset50_mean",name_column_prep = "total_precipitation"):
-    """
-    Given a dict of DataFrames, of which each row corresponds to
+    Given a dataFrames, of which each row corresponds to
     a different time point (constructed with `make_time_series`),
-    for each dataframe plot the time series of AR1 and Variance on the same plot. The
-    data is assumed AR1 values, so offset50 AR1 and precipitation AR1 are plotted.
+    plot the time series of AR1 and Variance on the same plot.
 
     Parameters
     ----------
-    dfs : DataFrame
+    df : DataFrame
         The time-series results for variance and AR1.
-
+    collection_name: str
+        Collection name of the dataframe
+    name_column: str
+        Name of the original column for which the AR1 and variance was calculated, these should exist on the dataframe
     output_dir : str
         Directory to save the plot in.
-
     filename_suffix: str
         Add suffix string to file name
-
     """
-    sns.set_style("white")
-    for collection_name, df in dfs.items():
-        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-            name_column = name_column_veg
-        else:
-            name_column = name_column_prep
-
-        plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_suffix)
-
-
-def plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_suffix):
-    """
-       Given a dataFrames, of which each row corresponds to
-       a different time point (constructed with `make_time_series`),
-    plot the time series of AR1 and Variance on the same plot.
-
-       Parameters
-       ----------
-       df : DataFrame
-           The time-series results for variance and AR1.
-
-       collection_name: str
-            Collection name of the dataframe
-
-       name_column: str
-            Name of the original column for which the AR1 and variance was calculated, these should exist on the dataframe
-
-       output_dir : str
-           Directory to save the plot in.
-
-       filename_suffix: str
-           Add suffix string to file name
-
-       """
-
 
     df.sort_index(inplace=True)
 
@@ -653,3 +596,32 @@ def plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_
     print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
     plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
     # plt.show()
+
+
+def plot_ar1_var_time_series(dfs ,output_dir, filename_suffix="", 
+                             name_column_veg="offset50_mean", 
+                             name_column_prep="total_precipitation"):
+    """
+    Given a dict of DataFrames, of which each row corresponds to
+    a different time point (constructed with `make_time_series`),
+    for each dataframe plot the time series of AR1 and Variance on the same plot. The
+    data is assumed AR1 values, so offset50 AR1 and precipitation AR1 are plotted.
+
+    Parameters
+    ----------
+    dfs : DataFrame
+        The time-series results for variance and AR1.
+    output_dir : str
+        Directory to save the plot in.
+    filename_suffix: str
+        Add suffix string to file name
+    """
+    sns.set_style("white")
+    for collection_name, df in dfs.items():
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+            name_column = name_column_veg
+        else:
+            name_column = name_column_prep
+
+        plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_suffix)
+        

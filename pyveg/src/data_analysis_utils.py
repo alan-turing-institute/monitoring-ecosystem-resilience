@@ -439,11 +439,20 @@ def write_to_json(filename, out_dict):
             json.dump(data, json_file, indent=2)
 
 
-def stl_decomposition(ts_df, period=12):
-    stl = STL(ts_df, period, robust=True)
+def stl_decomposition(series, period=12):
+    """
+    Run STL decomposition on a pandas Series object.
 
+    Parameters
+    ----------
+    series : Series object
+        The observations to be deseasonalised.
+    period : int (optional)
+        Length of the seasonal period in observations.
+    """
+
+    stl = STL(series, period, robust=True)
     res = stl.fit()
-
     return res
 
 
@@ -492,6 +501,7 @@ def get_max_lagged_cor(dirname, veg_prefix):
 def variance_moving_average_time_series(df, col_name="offset50", length =1):
     """
     Calculate a variance time series using a moving average
+
     Parameters
     ----------
     df: DataFrame
@@ -500,9 +510,11 @@ def variance_moving_average_time_series(df, col_name="offset50", length =1):
         Identifying the column we will pull out
     length : int
         length  to be used in the moving average
+
     Returns
     -------
-    new_series: pandas Series with datetime index, and one column, one row per date
+    new_series: 
+        pandas Series with datetime index, and one column, one row per date
     """
     try:
         series = df[col_name]
@@ -522,6 +534,7 @@ def variance_moving_average_time_series(df, col_name="offset50", length =1):
 def ar1_moving_average_time_series(df, col_name="offset50", length =1):
     """
     Calculate an AR1 time series using a moving average
+    
     Parameters
     ----------
     df: DataFrame
@@ -530,9 +543,11 @@ def ar1_moving_average_time_series(df, col_name="offset50", length =1):
         Identifying the column we will pull out
     length : int
         length  to be used in the moving average
+    
     Returns
     -------
-    new_series: pandas Series with datetime index, and one column, one row per date
+    new_series: 
+        pandas Series with datetime index, and one column, one row per date
     """
     try:
         series = df[col_name]
@@ -561,26 +576,57 @@ def ar1_moving_average_time_series(df, col_name="offset50", length =1):
     return ar1_df
 
 
-def calculate_ar1_variance_time_series(dfs, length_divisor=2, column_veg ='offset50_mean', column_prep = 'total_precipitation'):
+def get_ar1_var_timeseries_df(df, col, length_divisor):
     """
-       Given a dictionary of time series DataFrames calculate AR1 and variance of a rolling average on a time series
+    Given a time series DataFrame calculate AR1 and variance of a rolling average on a time series
 
-       Parameters
-       ----------
-       dfs : dict of DataFrame
-           Input time series DataFrames.
+    Parameters
+    ----------
+    df : DataFrame
+        Input time series DataFrame.
 
-       length_divisor: integer
-           Denominator for which to divide the time series for the rolling average calculations
+    length_divisor: integer
+        Denominator for which to divide the time series for the rolling average calculations
 
-       columns = list of strings
-            Name of the variables that are going to be used in the calculations. One variable per dictionary key (first
-             is vegetation, second precipitation variable)
-       Returns
-       ----------
-       dict of DataFrame
-           The AR1 and variance time-series results.
-       """
+    Returns
+    ----------
+    DataFrame
+        The AR1 and variance results in a time series dataframe.
+    """
+
+    length = round(df.shape[0] / length_divisor)
+
+    # calculate the ar1 and variance
+
+    ar1_df = ar1_moving_average_time_series(df, col, length)
+    variance = variance_moving_average_time_series(df, col, length)
+
+    ar1_var_df = pd.merge(variance, ar1_df, left_index=True, right_index=True)
+
+    return ar1_var_df
+
+
+def calculate_ar1_variance_time_series(dfs, length_divisor=2, column_veg='offset50_mean', column_prep='total_precipitation'):
+    """
+    Given a dictionary of time series DataFrames calculate AR1 and variance of a rolling average on a time series
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Input time series DataFrames.
+
+    length_divisor: integer
+        Denominator for which to divide the time series for the rolling average calculations
+
+    columns = list of strings
+        Name of the variables that are going to be used in the calculations. One variable per dictionary key (first
+            is vegetation, second precipitation variable)
+    
+    Returns
+    ----------
+    dict of DataFrame
+        The AR1 and variance time-series results.
+    """
 
     new_dfs = {}
     for col_name, df in dfs.items():
@@ -596,34 +642,3 @@ def calculate_ar1_variance_time_series(dfs, length_divisor=2, column_veg ='offse
         new_dfs[col_name] = ar1_var_df
 
     return new_dfs
-
-
-def get_ar1_var_timeseries_df(df, col, length_divisor):
-
-    """
-       Given a time series DataFrame calculate AR1 and variance of a rolling average on a time series
-
-       Parameters
-       ----------
-       df : DataFrame
-           Input time series DataFrame.
-
-       length_divisor: integer
-           Denominator for which to divide the time series for the rolling average calculations
-
-       Returns
-       ----------
-        DataFrame
-           The AR1 and variance results in a time series dataframe.
-       """
-
-    length = round(df.shape[0] / length_divisor)
-
-    # calculate the ar1 and variance
-
-    ar1_df = ar1_moving_average_time_series(df, col, length)
-    variance = variance_moving_average_time_series(df, col, length)
-
-    ar1_var_df = pd.merge(variance, ar1_df,left_index=True, right_index=True)
-
-    return ar1_var_df
