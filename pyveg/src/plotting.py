@@ -486,11 +486,11 @@ def plot_stl_decomposition(df, period, output_dir):
             xs = [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in df.date]
 
         # formatting
-        register_matplotlib_converters()
-        sns.set_style('darkgrid')
+        default_figsize = plt.rcParams['figure.figsize']
+        default_fontsize = plt.rcParams['font.size']
         plt.rc('figure', figsize=(20, 8))
         plt.rc('font', size=15)
-
+        
         fig = res.plot()
         ax_list = fig.axes
         for ax in ax_list[:-1]:
@@ -502,6 +502,10 @@ def plot_stl_decomposition(df, period, output_dir):
         # save plot
         filename = os.path.join(output_dir, column+'_STL_decomposition.png')
         plt.savefig(filename, dpi=DPI)
+
+        # undo rc changes
+        plt.rc('figure', figsize=default_figsize)
+        plt.rc('font', size=default_fontsize)
     
     # make output dir if necessary
     if not os.path.exists(output_dir):
