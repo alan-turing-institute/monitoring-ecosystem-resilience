@@ -647,12 +647,3 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
     mwa_df = mwa_df.reset_index()
 
     return mwa_df
-
-
-def convert_to_datetime(series):    
-    # get vegetation x values to datetime objects
-    try:
-        veg_xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in series]
-    except:
-        # if the time series has been resampled the index is a TimeStamp object
-        veg_xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in series]
