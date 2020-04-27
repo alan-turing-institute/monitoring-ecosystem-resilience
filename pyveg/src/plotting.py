@@ -179,6 +179,9 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth)
         else:
             smoothed_ar1, smoothed_ar1_se = np.NaN, np.NaN
+        ar1_dict = {}
+        ar1_dict['AR1'] = {'unsmoothed': {'param': unsmoothed_ar1, 'se': unsmoothed_ar1_se}, 'smoothed': {'param': smoothed_ar1, 'se': smoothed_ar1_se}}
+        write_to_json(os.path.join(output_dir, veg_prefix+'_stats.json'), ar1_dict)
         textstr = f'AR$(1)={smoothed_ar1:.2f} \pm {smoothed_ar1_se:.2f}$ (${unsmoothed_ar1:.2f} \pm {unsmoothed_ar1_se:.2f}$ unsmoothed)'
         ax.text(0.55, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
 
@@ -188,14 +191,15 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             tau_smooth, p_smooth = get_kendell_tau(veg_means_smooth)
         else:
             tau_smooth, p_smooth = np.NaN, np.NaN
+
         kendall_tau_dict = {}
         kendall_tau_dict['Kendall_tau'] = {'unsmoothed': {'tau': tau, 'p': p}, 'smoothed': {'tau': tau_smooth, 'p': p_smooth}}
-        write_to_json(os.path.join(output_dir, veg_prefix+'_kendall_tau.json'), kendall_tau_dict)
+        write_to_json(os.path.join(output_dir, veg_prefix+'_stats.json'), kendall_tau_dict)
         textstr = f'$\\tau,~p$-$\\mathrm{{value}}={tau_smooth:.2f}$, ${p:.2f}$ (${tau:.2f}$, ${p_smooth:.2f}$ unsmoothed)'
         ax.text(0.13, 0.85, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
 
         # layout
-        sns.set_style("white")
+        sns.set_style('white')
         fig.tight_layout()
         
         # save the plot
