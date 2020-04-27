@@ -55,3 +55,19 @@ def test_variable_read_json_to_dataframe():
 
     assert (test_df.shape == (120, 9))
     assert (dict_len == 2)
+
+def test_calculate_ar1_variance_time_series():
+
+    path_to_dict = os.path.join(os.path.dirname(__file__), "..", "testdata", "network_json_data/results_summary.json")
+
+    dfs = variable_read_json_to_dataframe(path_to_dict)
+
+    time_series_dfs = make_time_series(dfs.copy())
+
+    ar1_var_df = calculate_ar1_variance_time_series(time_series_dfs, 2)
+
+    keys_ar1 = list(ar1_var_df.keys())
+
+    assert (len(ar1_var_df.keys()) == 2)
+    assert (ar1_var_df[keys_ar1[0]].shape == (15, 3))
+    assert (ar1_var_df[keys_ar1[1]].shape == (27, 3))

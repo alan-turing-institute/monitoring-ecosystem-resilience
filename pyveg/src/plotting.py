@@ -564,7 +564,7 @@ def do_stl_decomposition(dfs, period, output_dir):
                                        collection_name.replace('/', '-') + '_STL_decomposion_' + '_precipitation')
 
 
-def plot_ar1_var_time_series(dfs, output_dir, filename_suffix=""):
+def plot_ar1_var_time_series(dfs ,output_dir, filename_suffix="",name_column_veg = "offset50_mean",name_column_prep = "total_precipitation"):
     """
     Given a dict of DataFrames, of which each row corresponds to
     a different time point (constructed with `make_time_series`),
@@ -586,9 +586,9 @@ def plot_ar1_var_time_series(dfs, output_dir, filename_suffix=""):
     sns.set_style("white")
     for collection_name, df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-            name_column = 'offset50_mean'
+            name_column = name_column_veg
         else:
-            name_column = 'total_precipitation'
+            name_column = name_column_prep
 
         plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_suffix)
 
@@ -638,7 +638,7 @@ def plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_
     plt.xlabel('Time', fontsize=12)
 
     # set up veg y axis
-    color = 'tab:green'
+    color = 'tab:blue'
     ax.set_ylabel(f'{collection_name} {name_column} AR1', color=color, fontsize=12)
     ax.tick_params(axis='y', labelcolor=color)
 
@@ -646,8 +646,8 @@ def plot_ar1_variance_ts(df, collection_name, name_column, output_dir, filename_
     ax.plot(ar1_xs, ar1_values, label=name_column + ' AR1', linewidth=1, color='dimgray', linestyle='dotted')
     # plot LOESS smoothed vegetation means and std
     ax.fill_between(ar1_xs, ar1_values - ar1_se_values, ar1_values + ar1_se_values,
-                    facecolor='green', alpha=0.1, label=name_column+' AR1 standard error')
-    ax.set_ylim([-1, 2.5])
+                    facecolor='blue', alpha=0.1, label=name_column+' AR1 standard error')
+    ax.set_ylim([-1, 1.5])
     plt.legend(loc='upper left')
 
     # plot legend
