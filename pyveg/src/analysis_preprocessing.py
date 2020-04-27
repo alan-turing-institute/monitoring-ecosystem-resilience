@@ -677,8 +677,67 @@ def get_missing_time_points(dfs):
     return missing_points
 
 
+def detrend_data(dfs, lag, period):
+    """
+    Loop over each sub image time series DataFrames and remove
+    time series seasonality by subtracting the previous year.
+    Remove seasonality from precipitation data in the same way.
+
+    Parameters
+    ----------
+    dfs : dict of DataFrame
+        Time series data for multiple sub-image locations.
+    lag : float
+        Periodicity to remove
+    period: string
+        Type of periodicitty (day, month, year)
+
+    Returns
+    ----------
+    dict of DataFrame
+        Time series data for multiple sub-image with
+        seasonality removed.
+
+    """
+    for col_name, df in dfs.items():
+
+        #  if vegetation data
+        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+
+            # group by (lat, long)
+            d = {}
+            for name, group in df.groupby(['latitude', 'longitude']):
+                d[name] = group
+                # for each sub-image
+            for key, df_ in d.items():
+                df_new = df_.set_index('date')
+
+                uns_df = remove_seasonality(df_new.copy(), lag, period)
+
+                d[key] = uns_df
+
+            # reconstruct the DataFrame
+            df = list(d.values())[0]
+            for df_ in list(d.values())[1:]:
+                df = df.append(df_)
+
+            dfs[col_name] = df
+
+        else:
+            # remove seasonality for weather data, this is a simpler time series
+            df = dfs[col_name]
+            df_new = df.set_index('date')
+            uns_df = remove_seasonality(df_new, lag, period)
+
+            uns_df['date'] = uns_df.index
+            dfs[col_name] = uns_df
+
+    return dfs
+
+
+
 def preprocess_data(input_dir, drop_outliers=True, fill_missing=True, 
-                    resample=True, smoothing=True):
+                    resample=True, smoothing=True, detrend=True):
     """
     This function reads and process data downloaded by GEE. Processing
     can be configured by the function arguments. Processed data is 
@@ -694,8 +753,10 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         Fill missing points in the time series.
     resample : bool, optional
         Resample the time series using linear interpolation.
-    smooth : bool, optional
+    smoothing : bool, optional
         Smooth the time series using LOESS smoothing.
+    detrend : bool, optional
+        Remove seasonal component by subtracting previous year.
 
     Returns
     ----------
@@ -725,7 +786,8 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
     # groupby operations, which is used haveily in this module, drop NaNs)
     missing = get_missing_time_points(dfs)
 
-    print('Preprocessing data...')
+    print('\nPreprocessing data...')
+    print('-'*21)
 
     # remove outliers from the time series
     if drop_outliers:
@@ -742,14 +804,14 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         print('- Smoothing vegetation time series...')
         dfs = smooth_veg_data(dfs, n=4)
 
-    # store feature vectors
+    # store feature vectors before averaging over sub-images
     print('- Saving feature vectors...')
     store_feature_vectors(dfs, output_dir)
     
     # average over sub-images
     ts_df = make_time_series(dfs)
 
-    # resample using linear interpolation
+    # resample the averaged time series using linear interpolation
     resample=True
     if resample:
         print('- Resampling time series...')
@@ -761,6 +823,15 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
     ts_filename = os.path.join(output_dir, 'time_series.csv')
     print(f'Saving time series to "{ts_filename}".')
     ts_df.to_csv(ts_filename, index=False)
+
+    # additionally save resampled & detrended time series
+    if detrend:
+        print('- Detrending vegetation time series...')
+        dfs_detrended = detrend_data(dfs, 12, "M")
+        ts_df_detrended = make_time_series(dfs_detrended)
+        ts_filename_detrended = os.path.join(output_dir, 'time_series_detrended.csv')
+        print(f'Saving detrended time series to "{ts_filename_detrended}".')
+        ts_df_detrended.to_csv(ts_filename_detrended, index=False)
     
     print('Data preprocessing complete.\n')
     

@@ -24,7 +24,7 @@ from pyveg.src.data_analysis_utils import (
     remove_seasonality_all_sub_images,
 )
 from pyveg.src.plotting import (
-    do_stl_decomposition,
+    plot_stl_decomposition,
     plot_feature_vector,
     plot_time_series,
     plot_autocorrelation_function,
@@ -110,7 +110,7 @@ def analyse_gee_data(input_dir, spatial):
 
 
     """
-    do_stl_decomposition(time_series_dfs, 12, tsa_subdir)
+    plot_stl_decomposition(time_series_dfs, 12, tsa_subdir)
 
     # --------------------------------------------------
     #   remove seasonality in a time series
