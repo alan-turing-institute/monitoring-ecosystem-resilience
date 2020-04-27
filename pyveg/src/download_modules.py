@@ -40,7 +40,7 @@ class BaseDownloader(BaseModule):
         super().__init__(name)
         # some parameters that are common to all Downloaders
         self.params +=  [("collection_name",str),
-                         ("coords", list),
+                         ("coords", tuple),
                          ("date_range", list),
                          ("region_size", float),
                          ("scale", int),
@@ -50,23 +50,28 @@ class BaseDownloader(BaseModule):
 
     def set_default_parameters(self):
         """
-        Set some basic defaults that should be common to all downloaders
+        Set some basic defaults that should be common to all downloaders.
+        Note that these can be overriden by either values held by a parent Sequence
+        or by calling configure() with a configuration dictionary.
         """
 
-        if not "region_size" in vars(self):
-            self.region_size = 0.1
-        if not "scale" in vars(self):
-            self.scale = 10
+        self.region_size = 0.1
+        self.scale = 10
         if not "output_dir" in vars(self):
-            if self.parent:
-                self.output_dir = self.parent.output_dir
-            else:
-                self.set_output_dir()
+            self.set_output_dir()
         return
 
 
-    def configure(self, config_dict=None):
-        super().configure(config_dict)
+    def set_output_dir(self, output_dir=None):
+        """
+        If provided an output directory name, set it here,
+        otherwise, construct one from coords and collection name.
+        """
+        if output_dir:
+            self.output_dir = output_dir
+        else:
+            self.output_dir = f'gee_{self.coords[0]}_{self.coords[1]}'\
+                +"_"+self.collection_name.replace('/', '-')
 
 
     def prep_data(self, date_range):
@@ -143,26 +148,11 @@ class BaseDownloader(BaseModule):
         return download_dir
 
 
-    def set_output_dir(self, output_dir=None):
-        """
-        If provided an output directory name, set it here,
-        otherwise, construct one from coords and collection name.
-        """
-        if output_dir:
-            self.output_dir = output_dir
-        else:
-            self.output_dir = f'gee_{self.coords[0]}_{self.coords[1]}'\
-                +"_"+self.collection_name.replace('/', '-')
-
-
     def run(self):
         start_date, end_date = self.date_range
-        num_slices = get_num_n_day_slices(start_date,
-                                          end_date,
-                                          self.num_days_per_point)
-        date_ranges = slice_time_period_into_n(start_date,
-                                               end_date,
-                                               num_slices)
+        date_ranges = slice_time_period(start_date,
+                                        end_date,
+                                        self.time_per_point)
         download_dirs = []
         for date_range in date_ranges:
             urls = self.prep_data(date_range)
@@ -194,24 +184,18 @@ class VegetationDownloader(BaseDownloader):
                         ("cloudy_pix_frac", int),
                         ("RGB_bands", list),
                         ("NIR_band", str),
-                        ("num_days_per_point", int)
+                        ("time_per_point", str)
         ]
 
 
     def set_default_parameters(self):
         """
-        Set some defaults for the chosen satellite
+        Set some defaults.  Note that these can be overriden, either
+        by parent Sequence, or by calling configure() with a dict.
         """
-        # set basic things like region_size and scale in the base class
         super().set_default_parameters()
-        if "Sentinel2" in self.name:
-            self.collection_name = "COPERNICUS/S2"
-            self.RGB_bands = ["B4","B3","B2"]
-            self.NIR_band = "B8"
-            self.mask_cloud = True
-            self.cloudy_pix_flag = "CLOUDY_PIXEL_PERCENTAGE"
-            self.cloudy_pix_frac = 50
-            self.num_days_per_point = 30
+        self.mask_cloud=True
+        self.cloudy_pix_frac = 50
 
 
     def prep_images(self, dataset):
@@ -252,21 +236,8 @@ class WeatherDownloader(BaseDownloader):
         super().__init__(name)
         self.params += [("temperature_band", list),
                         ("precipitation_band", list),
-                        ("num_days_per_point", int)
+                        ("time_per_point", str)
         ]
-
-
-    def set_default_parameters(self):
-        """
-        Set some defaults for the chosen satellite
-        """
-        # set basic things like region_size and scale in the base class
-        super().set_default_parameters()
-        if "ERA5" in self.name:
-            self.collection_name = "ECMWF/ERA5/MONTHLY"
-            self.temperature_band = ['mean_2m_air_temperature']
-            self.precipitation_band = ['total_precipitation']
-            self.num_days_per_point = 30
 
 
     def prep_images(self, dataset):

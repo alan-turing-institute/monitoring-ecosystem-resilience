@@ -28,7 +28,18 @@ class ProcessorModule(BaseModule):
 
 
 class VegetationImageProcessor(ProcessorModule):
+    """
+    Class to convert tif files downloaded from GEE into png files
+    that can be looked at or used as input to further analysis.
 
+    Current default is to output:
+    1) Full-size RGB image
+    2) Full-size NDVI image (greyscale)
+    3) Full-size black+white NDVI image (after processing, thresholding, ...)
+    4) Many 50x50 pixel sub-images of RGB image
+    5) Many 50x50 pixel sub-images of black+white NDVI image.
+
+    """
     def __init__(self, name=None):
         super().__init__(name)
         self.params += [("input_dir", str),
@@ -41,21 +52,13 @@ class VegetationImageProcessor(ProcessorModule):
 
     def set_default_parameters(self):
         """
-        Set some basic defaults
+        Set some basic defaults.  Note that these might get overriden
+        by a parent Sequence, or by calling configure() with a dict of values
         """
-        if not "region_size" in vars(self):
-            if self.parent and "region_size" in vars(self.parent):
-                self.region_size = self.parent.region_size
-            else:
-                self.region_size = 0.1
-        if not "RGB_bands" in vars(self):
-            if self.parent and "RGB_bands" in vars(self.parent):
-                self.RGB_bands = self.parent.RGB_bands
-            else:
-                self.RGB_bands = ["B4","B3","B2"]
-        if not "split_RGB_images" in vars(self):
-            self.split_RGB_images = True
-        return
+        super().set_default_parameters()
+        self.region_size = 0.1
+        self.RGB_bands = ["B4","B3","B2"]
+        self.split_RGB_images = True
 
 
     def construct_image_savepath(self, date_string, coords_string, image_type):
@@ -237,7 +240,8 @@ class WeatherImageToJSON(ProcessorModule):
                 continue
             time_series_data[date_string] = self.process_one_date(date_string)
 
-        save_json(time_series_data, os.path.join(self.input_dir, "RESULTS"),
+        save_json(time_series_data,
+                  os.path.join(self.input_dir, "RESULTS"),
                   "weather_data.json")
 
 
@@ -268,7 +272,7 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
 
     # save individual result for sub-image to tmp json, will combine later.
     save_json(nc_result, output_dir,
-              f"network_centrality_sub{i}.json")
+              f"network_centrality_sub{i}.json", verbose=False)
     # count and print how many sub-images we have done.
     n_processed = len(os.listdir(output_dir))
     print(f'Processed {n_processed} sub-images...', end='\r')
@@ -292,21 +296,12 @@ class NetworkCentralityCalculator(ProcessorModule):
                         ]
 
     def set_default_parameters(self):
-        if not "n_threads" in vars(self):
-            self.n_threads = 4
-        pass
-
-
-    def consolidate_subimage_json(self, output_subdir):
         """
-        Load all the json files from individual sub-images, and return
-        a list of dictionaries, to be written out into one json file.
+        Default values. Note that these can be overridden by parent Sequence
+        or by calling configure().
         """
-
-        tmp_json_dir = os.path.join(output_subdir,"tmp_json")
-        nc_results = consolidate_json_to_list(tmp_json_dir, output_subdir,
-                                              "network_centralities.json")
-        return nc_results
+        super().set_default_parameters()
+        self.n_threads = 4
 
 
     def check_sub_image(self, ndvi_filename, input_path):
@@ -343,9 +338,13 @@ class NetworkCentralityCalculator(ProcessorModule):
             arguments=[(i, filename, input_path, tmp_json_dir) \
                    for i, filename in enumerate(input_files)]
             pool.starmap(process_sub_image, arguments)
-
-        self.consolidate_subimage_json(os.path.join(self.input_dir,
-                                                    date_string))
+        # put all the output json files for subimages together into one for this date
+        consolidate_json_to_list(os.path.join(self.input_dir,
+                                              date_string,
+                                              "tmp_json"),
+                                 os.path.join(self.input_dir,
+                                              date_string),
+                                 "network_centralities.json")
 
 
     def run(self):

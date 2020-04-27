@@ -31,6 +31,7 @@ class VegAndWeatherJsonCombiner(BaseModule):
         # see if we can set our input directories from the output directories
         # of previous series in the pipeline.
         # The pipeline (if there is one) will be a grandparent, i.e. self.parent.parent
+        super().set_default_parameters()
         if self.parent and self.parent.parent and self.parent.depends_on:
             for sequence_name in self.parent.depends_on:
                 sequence = self.parent.parent.get(sequence_name)
