@@ -196,7 +196,6 @@ def resample_dataframe(df, columns, period='MS'):
     """
 
     # new empty df to deal with length mismatches after resampling
-    #df_out = df.copy()
     df_out = pd.DataFrame()
 
     # for each column to resample
@@ -204,7 +203,7 @@ def resample_dataframe(df, columns, period='MS'):
 
         # resample the column
         series = df.set_index('date')[column]
-        df_out[column] = resample_time_series(series,  period=period)# index problems
+        df_out[column] = resample_time_series(series,  period=period)
 
     # generate a clean index
     df_out = df_out.reset_index()
@@ -476,19 +475,18 @@ def detrend_df(df, lag):
         Input with seasonality removed from time series columns.
     """
 
-    # copy a new dataframe to return
-    df_out = df.copy()
+    # new empty df to deal with length mismatches after resampling
+    df_out = pd.DataFrame()
 
     # resample time series (in case not done already)
-    columns = [c for c in df_out.columns if any([s in c 
+    columns = [c for c in df.columns if any([s in c 
                 for s in ['offset50', 'precipitation', 'temperature']])]
 
-    df_out = resample_dataframe(df_out, columns, period='MS')
+    df_out = resample_dataframe(df, columns, period='MS')
 
     # detrend veg and climate columns
     for col in columns:
-    
-        df_out[col] = df[col].diff(lag)
+        df_out[col] = df_out[col].diff(lag)
 
     return df_out
 
