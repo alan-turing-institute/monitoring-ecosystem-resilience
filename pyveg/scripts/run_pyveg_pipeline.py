@@ -8,22 +8,30 @@ import argparse
 import importlib.util
 
 from pyveg.src.pyveg_pipeline import Pipeline, Sequence
-from pyveg.src.download_modules import *
-from pyveg.src.processor_modules import *
-from pyveg.src.combiner_modules import *
+from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
+from pyveg.src.processor_modules import (
+    VegetationImageProcessor,
+    NetworkCentralityCalculator,
+    WeatherImageToJSON
+)
+
+from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
 
 
-def build_pipeline(config_file, name):
+def build_pipeline(config_file, name="mypyveg"):
     """
     Load json config and instantiate modules
     """
     spec = importlib.util.spec_from_file_location("myconfig",config_file)
     config = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(config)
+    # instantiate and setup the pipeline
     p = Pipeline(name)
     p.output_dir = config.output_dir
     p.coords = config.coordinates
     p.date_range = config.date_range
+
+    # add sequences to the pipeline to deal with different data types
     for coll in config.collections_to_use:
         s = Sequence(coll)
         coll_dict = config.data_collections[coll]
