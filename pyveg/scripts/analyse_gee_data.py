@@ -113,7 +113,7 @@ def analyse_gee_data(input_dir, spatial):
     """
 
     # preprocess input data
-    ts_dirname = preprocess_data(input_dir)
+    ts_dirname, dfs = preprocess_data(input_dir)
 
     # get filenames of preprocessed data time series
     ts_filenames = [f for f in os.listdir(ts_dirname) if 'time_series' in f]
@@ -144,7 +144,7 @@ def analyse_gee_data(input_dir, spatial):
 
     # spatial analysis and plotting
     # ------------------------------------------------
-    """if spatial:
+    if spatial:
 
         # from the dataframe, produce network metric figure for each avalaible date
         print('\nCreating spatial plots...')
@@ -158,7 +158,7 @@ def analyse_gee_data(input_dir, spatial):
             if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
                 data_df_geo = convert_to_geopandas(df.copy())
                 data_df_geo_coarse = coarse_dataframe(data_df_geo.copy(), 2)
-                create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)"""
+                create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)
     # ------------------------------------------------
 
     print('\nAnalysis complete.\n')

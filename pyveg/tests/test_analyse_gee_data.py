@@ -20,7 +20,7 @@ def test_analyse_gee_data():
 
     # assert script produced output
     assert (os.path.exists(analysis_path) == True )
-    #assert (os.path.exists(os.path.join(analysis_path, 'spatial')) == True )
+    assert (os.path.exists(os.path.join(analysis_path, 'spatial')) == True )
 
     list_png_files = [f for f in os.listdir(os.path.join(input_dir, 'analysis')) if
                       (os.path.isfile(os.path.join(os.path.join(input_dir, 'analysis'), f)) and f.endswith(".png"))]

@@ -679,6 +679,10 @@ def detrend_data(dfs, lag):
         seasonality removed.
 
     """
+    
+    # don't overwrite input
+    dfs = dfs.copy()
+
     for col_name, df in dfs.items():
 
         #  if vegetation data
@@ -809,6 +813,4 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         print(f'Saving detrended time series to "{ts_filename_detrended}".')
         ts_df_detrended.to_csv(ts_filename_detrended, index=False)
     
-    print('Data preprocessing complete.\n')
-    
-    return output_dir#, dfs # for now return `dfs` for compatibility 
+    return output_dir, dfs # for now return `dfs` for spatial plot compatibility 
