@@ -47,11 +47,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         veg_df = df.dropna(subset=[veg_prefix+'_offset50_mean'])
 
         # get vegetation x values to datetime objects
-        try:
-            veg_xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in veg_df.date]
-        except:
-            # if the time series has been resampled the index is a TimeStamp object
-            veg_xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in veg_df.date]
+        veg_xs = get_datetime_xs(veg_df)
 
         # get vegetation y values
         veg_means = veg_df[veg_prefix + '_offset50_mean']
@@ -95,11 +91,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             precip_ys = precip_df.total_precipitation
 
             # get precipitation x values to datetime objects
-            try:
-                precip_xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in precip_df.date]
-            except:
-                # if the time series has been resampled the index is a TimeStamp object
-                precip_xs =  [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in precip_df.date]
+            precip_xs = get_datetime_xs(precip_df)
 
             # duplicate axis for preciptation
             ax2 = ax.twinx()
@@ -129,11 +121,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             veg_df_b = df.dropna(subset=[veg_prefix_b+'_offset50_mean'])
 
             # get vegetation x values to datetime objects
-            try:
-                veg_xs_b = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in veg_df_b.date]
-            except:
-                # if the time series has been resampled the index is a TimeStamp object
-                veg_xs_b = [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in veg_df_b.date]
+            veg_xs_b = get_datetime_xs(veg_df_b)
 
             # get vegetation y values
             veg_means_b = veg_df[veg_prefix_b+'_offset50_mean']
@@ -485,11 +473,7 @@ def plot_stl_decomposition(df, period, output_dir):
         res = stl_decomposition(df[column], period)
 
         # concert x values to datetime objects
-        try:
-            xs = [datetime.datetime.strptime(d,'%Y-%m-%d').date() for d in df.date]
-        except:
-            # if the time series has been resampled the index is a TimeStamp object
-            xs = [datetime.datetime.strptime(d._date_repr,'%Y-%m-%d').date() for d in df.date]
+        xs = get_datetime_xs(df)
 
         # formatting
         default_figsize = plt.rcParams['figure.figsize']

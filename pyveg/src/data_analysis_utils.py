@@ -7,6 +7,7 @@ and functions analyse and plot the data.
 import json
 import math
 import os
+import datetime
 
 import numpy as np
 import pandas as pd
@@ -650,3 +651,14 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
     mwa_df = mwa_df.reset_index()
 
     return mwa_df
+
+
+def get_datetime_xs(df):
+    
+    try:
+        xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in df.date]
+    except:
+        # if the time series has been resampled the index is a TimeStamp object
+        xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in df.date]
+
+    return xs
