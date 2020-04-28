@@ -61,6 +61,7 @@ class VegetationImageProcessor(ProcessorModule):
         self.split_RGB_images = True
 
 
+
     def construct_image_savepath(self, date_string, coords_string, image_type):
         """
         Function to abstract output image filename construction.
@@ -292,7 +293,8 @@ class NetworkCentralityCalculator(ProcessorModule):
         self.params += [
             ("input_dir", str),
             ("output_dir", str),
-            ("n_threads", int)
+            ("n_threads", int),
+            ("n_sub_images", int)
                         ]
 
     def set_default_parameters(self):
@@ -302,6 +304,7 @@ class NetworkCentralityCalculator(ProcessorModule):
         """
         super().set_default_parameters()
         self.n_threads = 4
+        self.n_sub_images = -1 # do all-sub-images
 
 
     def check_sub_image(self, ndvi_filename, input_path):
@@ -326,12 +329,17 @@ class NetworkCentralityCalculator(ProcessorModule):
             print("{}: No sub-images for date {}".format(self.name,
                                                          date_string))
             return
-        # list all the "BWNDVI" sub-images where corresponding
+        # list all the "BWNDVI" sub-images where
         # RGB image passes quality check
         input_files = [filename for filename in os.listdir(input_path) \
                        if "BWNDVI" in filename and \
                        self.check_sub_image(filename,input_path)]
         tmp_json_dir = os.path.join(self.input_dir, date_string,"tmp_json")
+
+        # if we only want a subset of sub-images, truncate the list here
+        if self.n_sub_images > 0:
+            input_files = input_files[:self.n_sub_images]
+
         # create a multiprocessing pool to handle each sub-image in parallel
         with Pool(processes=self.n_threads) as pool:
             # prepare the arguments for the process_sub_image function
