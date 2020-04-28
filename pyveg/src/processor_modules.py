@@ -117,6 +117,18 @@ class VegetationImageProcessor(ProcessorModule):
                                   npix=50):
         """
         Split the full-size image into lots of small sub-images
+
+        Parameters:
+        ===========
+        image: pillow Image
+        date_string: str, format YYYY-MM-DD
+        coords_string: str, format long_lat
+        image_type: str, typically 'RGB' or 'BWNDVI'
+        npix: dimension in pixels of side of sub-image.  Default is 50x50
+
+        Returns:
+        ========
+        True if all sub-images saved correctly.
         """
 
         coords = [float(coord) for coord in coords_string.split("_")]
@@ -135,18 +147,40 @@ class VegetationImageProcessor(ProcessorModule):
                                                            sub_coords[1])
             output_filename += "_{}".format(image_type)
             output_filename += '.png'
-            save_image(sub_image, output_dir, output_filename)
+            save_image(sub_image, output_dir, output_filename, verbose=False)
         return True
 
 
     def process_single_date(self, input_filepath):
+        """
+        For a single set of .tif files corresponding to a date range
+        (normally a sub-range of the full date range for the pipeline),
+        construct RGB, and NDVI greyscale images.
+        Then do processing and thresholding to make black+white NDVI images.
+        Split the RGB and black+white NDVI ones into small (50x50pix)
+        sub-images.
+
+        Parameters
+        ==========
+        input_filepath: str, full path to directory containing tif files
+                       downloaded from GEE.  This will normally be
+                       self.output_dir/<mid-point-date>/RAW
+
+        Returns
+        =======
+        True if everything was processed and saved OK, False otherwise.
+        """
         filenames = [filename for filename in os.listdir(input_filepath) \
                      if filename.endswith(".tif")]
 
         # extract this to feed into `convert_to_rgb()`
         tif_filebase = os.path.join(input_filepath,
                                     filenames[0].split('.')[0])
+        # normally the coordinates will be part of the file path
         coords_string = find_coords_string(input_filepath)
+        # if not though, we might have coords set explicitly
+        if (not coords_string) and "coords" in vars(self):
+            coords_string = "{}_{}".format(self.coords[0],self.coords[1])
         date_string = input_filepath.split("/")[-2]
 
         # save the rgb image
@@ -181,8 +215,17 @@ class VegetationImageProcessor(ProcessorModule):
 
 
     def run(self):
+        """"
+        Function to run the module.  Loop over all date-sub-ranges and
+        call process_single_date() on each of them.
+        """
+
         date_subdirs = os.listdir(self.input_dir)
         for date_subdir in date_subdirs:
+            if not re.search("^([\d]{4}-[\d]{2}-[\d]{2})", date_subdir):
+                print("{}: Directory name {} not in YYYY-MM-DD format"\
+                      .format(self.name, date_subdir))
+                continue
             date_path = os.path.join(self.input_dir, date_subdir, "RAW")
             processed_ok = self.process_single_date(date_path)
             if not processed_ok:

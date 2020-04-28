@@ -48,7 +48,7 @@ data_collections = {
         'type': 'weather',
         'precipitation_band': ['precipitationCal'],
     },
-    'unsupported' : {
+    'ERA5' : {
         'collection_name': "ECMWF/ERA5/DAILY",
         'type': 'weather',
         'precipitation_band': ['total_precipitation'],
@@ -71,18 +71,27 @@ def test_get_vegetation():
     s += NetworkCentralityCalculator()
     s.configure()
     s.run()
-    assert(os.path.exists(os.path.join(test_out_dir, "network_centralities.json")))
+    assert(os.path.exists(os.path.join(test_out_dir, "2016-01-16","network_centralities.json")))
+    shutil.rmtree(test_out_dir, ignore_errors=True)
 
 
-#    from pyveg.src.process_satellite_data import get_vegetation, get_weather
-#    print('Warning: this test is expected to take a while to run...')
-#    nc_results = get_vegetation(test_out_dir, data_collections['Copernicus'], coordinates, date_range, n_sub_images=1)
-#    assert( len(nc_results) != 0 )
-#    shutil.rmtree(test_out_dir, ignore_errors=True)
 
 
-#@unittest.skipIf(os.environ.get('TRAVIS') == 'true','Skipping this test on Travis CI.')
-#def test_get_rainfall():
+@unittest.skipIf(os.environ.get('TRAVIS') == 'true','Skipping this test on Travis CI.')
+def test_get_rainfall():
+    s = Sequence("weather")
+    s.set_config(data_collections["ERA5"])
+    s.output_dir = test_out_dir
+    s.coords = coordinates
+    s.date_range = date_range
+    s.time_per_point = time_per_point
+    s += WeatherDownloader()
+    s += WeatherImageToJSON()
+    s.configure()
+    s.run()
+    assert(os.path.exists(os.path.join(test_out_dir, "RESULTS", "weather_data.json")))
+    shutil.rmtree(test_out_dir, ignore_errors=True)
+
 #    from pyveg.src.process_satellite_data import get_vegetation, get_weather
 #    print('Warning: this test is expected to take a while to run...')
 #    result = get_weather(test_out_dir, data_collections['NOAA'], coordinates, date_range)
