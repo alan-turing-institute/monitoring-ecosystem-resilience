@@ -19,7 +19,8 @@ from pyveg.src.data_analysis_utils import (
     get_kendell_tau, 
     write_to_json, 
     stl_decomposition,
-    get_max_lagged_cor
+    get_max_lagged_cor,
+    get_datetime_xs
 )
 
 # globally set image quality
@@ -553,6 +554,8 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         ----------
         df : DataFrame
             The time-series results for variance and AR1.
+        column : str
+            Column name an offset50 variance column in df.
         collection_name: str
             Collection name of the dataframe
         name_column: str
@@ -563,74 +566,90 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
             Add suffix string to file name
         """
 
-        #df.sort_index(inplace=True) should be done already higher up
+        # get short string prefix on column name
+        collection_prefix = column.split('_')[0]
+        
+        # hand mismatched NaNs
+        ar1_df = df.dropna(subset=[column.replace('var', 'ar1')])
+        var_df = df.dropna(subset=[column])
 
         # extract x values and convert to datetime objects
-        try:
-            ar1_xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in df.date]
-        except:
-            # if the time series has been resampled the index is a TimeStamp object
-            ar1_xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in df.date]
+        ar1_xs = get_datetime_xs(ar1_df)
+        var_xs = get_datetime_xs(var_df)
 
         # extract individual time series
-        variance = df[column]
-        ar1_values = df[column.replace('var', 'ar1')]
-        ar1_se_values = df[column.replace('var', 'ar1_se')]
-        collection_name = column.split('_')[0]
+        variance = var_df[column]
+        ar1 = ar1_df[column.replace('var', 'ar1')]
+        ar1_se = ar1_df[column.replace('var', 'ar1_se')]
 
+        if any(['smooth' in c for c in df.columns]):
+            variance_smooth = var_df[column.replace('offset50_mean', 'offset50_smooth_mean')]
+            ar1_smooth = ar1_df[column.replace('var', 'ar1').replace('offset50_mean', 'offset50_smooth_mean')]
+            ar1_se_smooth = ar1_df[column.replace('var', 'ar1_se').replace('offset50_mean', 'offset50_smooth_mean')]
+        
         # create a figure
         fig, ax = plt.subplots(figsize=(15, 5))
         plt.xlabel('Time', fontsize=12)
 
         # set up veg y axis
         color = 'tab:blue'
-        ax.set_ylabel(f'{collection_name} AR1', color=color, fontsize=12)
+        ax.set_ylabel(f'{collection_prefix} AR1', color=color, fontsize=12)
         ax.tick_params(axis='y', labelcolor=color)
 
-        # plot unsmoothed vegetation means
-        ax.plot(ar1_xs, ar1_values, label='AR1', linewidth=2, color='tab:blue')
+        # plot unsmoothed vegetation ar1 and std
+        ax.plot(ar1_xs, ar1, label='AR1', linewidth=2, color='tab:blue')
+        ax.fill_between(ar1_xs, ar1 - ar1_se, ar1 + ar1_se,
+                        facecolor='blue', alpha=0.1, label='AR1 SE')
 
-        # plot LOESS smoothed vegetation means and std
-        ax.fill_between(ar1_xs, ar1_values - ar1_se_values, ar1_values + ar1_se_values,
-                        facecolor='blue', alpha=0.1, label='AR1 standard error')
+        if any(['smooth' in c for c in df.columns]):
+            # plot smoothed vegetation ar1 and std
+            ax.plot(ar1_xs, ar1_smooth, label='AR1 Smoothed', linewidth=2, color='tab:blue', linestyle='dotted')
+            ax.fill_between(ar1_xs, ar1_smooth - ar1_se_smooth, ar1_smooth + ar1_se_smooth,
+                            facecolor='none', alpha=0.25, label='AR1 SE Smoothed', hatch='X', edgecolor='tab:blue')
+
+        # set y lim
         ax.set_ylim([-1, 2])
 
         # plot legend
         plt.legend(loc='upper left')
 
-        # duplicate x-axis for preciptation
+        # duplicate x-axis for variance
         ax2 = ax.twinx()
         color = 'tab:red'
-        ax2.set_ylabel(f'{collection_name} Variance', color=color, fontsize=12)
+        ax2.set_ylabel(f'{collection_prefix} Variance', color=color, fontsize=12)
         ax2.tick_params(axis='y', labelcolor=color)
 
-        # plot precipitation
-        ax2.plot(ar1_xs, variance, linewidth=2, color=color, alpha=0.75, label=column + 'Variance')
+        # plot variance
+        ax2.plot(var_xs, variance, linewidth=2, color=color, alpha=0.75, label='Variance')
+        if any(['smooth' in c for c in df.columns]):
+            ax2.plot(var_xs, variance_smooth, linewidth=2, color=color, alpha=0.75, 
+                     linestyle='dotted', label='Variance Smoothed')
 
-        # add autoregression info
-        ax2.set_ylim([0, 2*max(variance.dropna())])
+        # set y lim
+        ax2.set_ylim([0, 2*max(variance)])
+
+        # add legend
+        plt.legend(loc='lower left')
 
         # add Kendall tau
-        tau, p = get_kendell_tau(ar1_values)
+        tau, p = get_kendell_tau(ar1)
         tau_var, p_var = get_kendell_tau(variance)
 
         # add to plot
-        textstr = f'AR1 Kendall $\\tau,pvalue={tau:.2f}$, ${p:.2f}$'
+        textstr = f'AR1 Kendall $\\tau,~p$-$\\mathrm{{value}}={tau:.2f}$, ${p:.2f}$'
         ax2.text(0.63, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
-
-        # add to plot
-        textstr = f'Variance Kendall $\\tau,pvalue ={tau_var:.2f}$, ${p_var:.2f}$'
+        textstr = f'Variance Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_var:.2f}$, ${p_var:.2f}$'
         ax2.text(0.63, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
         # layout
         fig.tight_layout()
 
         # save the plot
-        output_filename = collection_name + '-moving-window-AR1-var' + filename_suffix + '.png'
-        print(f'\nPlotting smoothed time series "{os.path.abspath(output_filename)}"...')
+        output_filename = collection_prefix + '-moving-window-AR1-var' + filename_suffix + '.png'
+        print(f'\nPlotting moving window time series "{os.path.abspath(output_filename)}"...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
 
 
     for column in df.columns:
         if 'offset50_mean' in column and 'var' in column:
-            make_plot(df, column, output_dir, filename_suffix) # not dropping na 
+            make_plot(df, column, output_dir, filename_suffix)
