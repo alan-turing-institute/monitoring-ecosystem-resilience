@@ -2,7 +2,6 @@ import os
 import sys
 import shutil
 
-
 import unittest
 
 coordinates = (27.99,11.29)
