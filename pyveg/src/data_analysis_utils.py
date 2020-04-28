@@ -511,17 +511,15 @@ def variance_moving_average_time_series(series, length=1):
 
     Parameters
     ----------
-    df: DataFrame
-        Dataframe with date as index
-    col_name: string,
-        Identifying the column we will pull out
+    series : pandas Series
+        Time series observations.
     length : int
-        length  to be used in the moving average
+        Length of the moving window in number of observations.
 
     Returns
     -------
-    new_series: 
-        pandas Series with datetime index, and one column, one row per date
+    pandas Series: 
+        pandas Series with datetime index, and one column, one row per date.
     """
     
     # just in case the index isn't already datetime type
@@ -540,16 +538,14 @@ def ar1_moving_average_time_series(series, length=1):
     
     Parameters
     ----------
-    df: DataFrame
-        Dataframe with date as index
-    col_name: string,
-        Identifying the column we will pull out
+    series : pandas Series
+        Time series observations.
     length : int
-        length  to be used in the moving average
+        Length of the moving window in number of observations.
     
     Returns
     -------
-    new_series: 
+    pandas Series: 
         pandas Series with datetime index, and one column, one row per date
     """
 
@@ -578,16 +574,18 @@ def ar1_moving_average_time_series(series, length=1):
     return ar1_df
 
 
-def get_ar1_var_timeseries_df(series, window_size):
+def get_ar1_var_timeseries_df(series, window_size=0.5):
     """
-    Given a time series DataFrame calculate AR1 and variance of a rolling average on a time series
+    Given a time series calculate AR1 and variance using
+    a moving window. Put the two resulting time series into
+    a new DataFrame and return the result.
 
     Parameters
     ----------
-    df : DataFrame
-        Input time series DataFrame
-    length_divisor: integer
-        Denominator for which to divide the time series for the rolling average calculations
+    series : pandas Series
+        Time series observations.
+    window_size: float (optional)
+        Size of the moving window as a fraction of the time series length.
 
     Returns
     ----------
@@ -613,13 +611,13 @@ def get_ar1_var_timeseries_df(series, window_size):
 
 def moving_window_analysis(df, output_dir, window_size=0.5):
     """
-    Run moving window AR1 and variance calculations for a input
-    time series.
+    Run moving window AR1 and variance calculations for several
+    input time series time series.
 
     Parameters
     ----------
     df : DataFrame
-        Input time series DataFrame.
+        Input time series DataFrame containing several time series.
     output_dir : str
         Path output plotting directory.
     window_size: float (optional)
@@ -628,7 +626,7 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
     Returns
     ----------
     DataFrame
-        AR1 and variance time-series.
+        AR1 and variance time-series for each of the input time series.
     """
 
     # new output dataframe

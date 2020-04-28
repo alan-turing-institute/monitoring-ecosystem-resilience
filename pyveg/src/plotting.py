@@ -449,7 +449,7 @@ def plot_stl_decomposition(df, period, output_dir):
      ----------
      df : DataFrame
          The time-series results.
-     peropd : float
+     period : float
         Periodicity to model.
      output_dir : str
          Directory to save the plot in.
@@ -513,14 +513,12 @@ def plot_stl_decomposition(df, period, output_dir):
 
 def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
     """
-    Given a dict of DataFrames, of which each row corresponds to
-    a different time point (constructed with `make_time_series`),
-    for each dataframe plot the time series of AR1 and Variance on the same plot. The
-    data is assumed AR1 values, so offset50 AR1 and precipitation AR1 are plotted.
+    Given a moving window time series DataFrame, plot the time series 
+    of AR1 and Variance.
 
     Parameters
     ----------
-    dfs : DataFrame
+    df : DataFrame
         The time-series results for variance and AR1.
     output_dir : str
         Directory to save the plot in.
@@ -530,20 +528,12 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
 
     def make_plot(df, column, output_dir, filename_suffix):
         """
-        Given a dataFrames, of which each row corresponds to
-        a different time point (constructed with `make_time_series`),
-        plot the time series of AR1 and Variance on the same plot.
-
         Parameters
         ----------
         df : DataFrame
             The time-series results for variance and AR1.
         column : str
             Column name an offset50 variance column in df.
-        collection_name: str
-            Collection name of the dataframe
-        name_column: str
-            Name of the original column for which the AR1 and variance was calculated, these should exist on the dataframe
         output_dir : str
             Directory to save the plot in.
         filename_suffix: str
@@ -551,7 +541,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         """
 
         # get short string prefix on column name
-        collection_prefix = column.split('_')[0]
+        collection_prefix = column.split('_')[0] if 'offset50' in column else 'precipitation'
         
         # hand mismatched NaNs
         ar1_df = df.dropna(subset=[column.replace('var', 'ar1')])
@@ -631,9 +621,10 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         # save the plot
         output_filename = collection_prefix + '-moving-window-AR1-var' + filename_suffix + '.png'
         print(f'Plotting {collection_prefix} moving window time series...')
-        plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
 
 
     for column in df.columns:
-        if 'offset50_mean' in column and 'var' in column:
+        if (('offset50_mean' in column or 'total_precipitation' in column) and 
+             'var' in column):
             make_plot(df, column, output_dir, filename_suffix)
