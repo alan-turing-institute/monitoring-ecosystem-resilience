@@ -23,34 +23,33 @@ from pyveg.src.data_analysis_utils import (
     write_slimmed_csv,
     remove_seasonality_combined,
     remove_seasonality_all_sub_images,
+    calculate_ar1_variance_time_series,
 )
 from pyveg.src.plotting import (
     do_stl_decomposition,
     plot_smoothed_time_series,
     plot_autocorrelation_function,
     plot_feature_vectors,
-    plot_cross_correlations
+    plot_cross_correlations,
+    plot_ar1_var_time_series
 )
 
 
-def main():
-    """
-    CLI interface for gee data analysis.
-    """
-    parser = argparse.ArgumentParser(
-        description="process json files with network centrality measures from from GEE images")
-    parser.add_argument("--input_dir",
-                        help="results directory from `download_gee_data` script, containing `results_summary.json`")
-    parser.add_argument('--spatial_plot', action='store_true')
-    parser.add_argument('--time_series_plot', action='store_true', default=True)
+def analyse_gee_data(input_dir, do_spatial_plot, do_time_series_plot):
 
-    print('-' * 35)
-    print('Running analyse_gee_data.py')
-    print('-' * 35)
+    """
+    Run analysis on dowloaded gee data
 
-    # parse args
-    args = parser.parse_args()
-    input_dir = args.input_dir
+    Parameterss
+    ----------
+    input_dir : string
+        Path to directory with downloaded dada
+    do_spatial_plot: bool
+        Option to run spatial analysis and do plots
+    do_time_series_plot: bool
+        Option to run time-series analysis and do plots
+
+    """
 
     # put output plots in the results dir
     output_dir = os.path.join(input_dir, 'analysis')
@@ -70,7 +69,7 @@ def main():
 
     # spatial analysis and plotting
     # ------------------------------------------------
-    if args.spatial_plot:
+    if do_spatial_plot:
 
         # from the dataframe, produce network metric figure for each avalaible date
         print('\nCreating spatial plots...')
@@ -91,7 +90,7 @@ def main():
 
     # time series analysis and plotting
     # ------------------------------------------------
-    if args.time_series_plot:
+    if do_time_series_plot:
 
         # create new subdir for time series analysis
         # tsa_subdir = os.path.join(output_dir, 'time-series') # if we start to have more and more results
@@ -119,6 +118,13 @@ def main():
             # LOESS smoothing on sub-image time series
         smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=4))  # increase smoothing with n>5
 
+        # ---------------------------------------------------
+
+        ar1_var_df = calculate_ar1_variance_time_series(smoothed_time_series_dfs, 2)
+
+        plot_ar1_var_time_series(ar1_var_df,tsa_subdir)
+        # ------------------------------------------------
+
         # make a smoothed time series plot
         plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
 
@@ -130,6 +136,7 @@ def main():
 
         # write csv for easy external analysis
         write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
+
         # ------------------------------------------------
 
         do_stl_decomposition(time_series_dfs, 12, tsa_subdir)
@@ -159,8 +166,40 @@ def main():
         # make a smoothed time series plot
         plot_smoothed_time_series(time_series_uns_summary_dfs, tsa_subdir, '-no-seasonality-summary-ts', plot_std=False)
 
+        # calculate AR1 and plot results (in un-smoothed data)
+        ar1_var_df_uns = calculate_ar1_variance_time_series(time_series_uns_summary_dfs, 2)
+
+        plot_ar1_var_time_series(ar1_var_df_uns,tsa_subdir,'-no-seasonality')
+
+        # calculate AR1 and plot results (in smoothed data)
+        ar1_var_df_uns_smooth = calculate_ar1_variance_time_series(time_series_uns_summary_dfs, 2, "offset50_smooth_mean")
+
+        plot_ar1_var_time_series(ar1_var_df_uns_smooth,tsa_subdir,'-no-seasonality-smoothed', "offset50_smooth_mean")
+
+
     print('\nDone!\n')
+
+def main():
+    """
+        CLI interface for gee data analysis.
+        """
+    parser = argparse.ArgumentParser(
+        description="process json files with network centrality measures from from GEE images")
+    parser.add_argument("--input_dir",
+                        help="results directory from `download_gee_data` script, containing `results_summary.json`")
+    parser.add_argument('--spatial_plot', action='store_true')
+    parser.add_argument('--time_series_plot', action='store_true', default=True)
+
+    print('-' * 35)
+    print('Running analyse_gee_data.py')
+    print('-' * 35)
+
+    # parse args
+    args = parser.parse_args()
+    input_dir = args.input_dir
+    analyse_gee_data(input_dir, args.spatial_plot, args.time_series_plot)
 
 
 if __name__ == "__main__":
+
     main()
