@@ -356,6 +356,9 @@ def get_AR1_parameter_estimate(ys):
     # from statsmodels.tsa.statespace.sarimax import SARIMAX
     # from statsmodels.tsa.arima_model import ARMA
 
+    # explicitly add frequency to index to prevent warnings
+    ys.index = pd.DatetimeIndex(ys.index, freq='MS')
+
     # create and fit the AR(1) model
     model = AutoReg(ys, lags=1, missing='drop').fit() # currently warning
 
