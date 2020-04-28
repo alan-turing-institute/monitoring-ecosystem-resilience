@@ -589,7 +589,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
             # plot smoothed vegetation ar1 and std
             ax.plot(ar1_xs, ar1_smooth, label='AR1 Smoothed', linewidth=2, color='tab:blue', linestyle='dotted')
             ax.fill_between(ar1_xs, ar1_smooth - ar1_se_smooth, ar1_smooth + ar1_se_smooth,
-                            facecolor='none', alpha=0.25, label='AR1 SE Smoothed', hatch='X', edgecolor='tab:blue')
+                            facecolor='none', alpha=0.15, label='AR1 SE Smoothed', hatch='X', edgecolor='tab:blue')
 
         # set y lim
         ax.set_ylim([-1, 2])
@@ -630,7 +630,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
 
         # save the plot
         output_filename = collection_prefix + '-moving-window-AR1-var' + filename_suffix + '.png'
-        print(f'\nPlotting moving window time series "{os.path.abspath(output_filename)}"...')
+        print(f'Plotting {collection_prefix} moving window time series...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=150)
 
 
