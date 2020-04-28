@@ -118,7 +118,7 @@ def construct_image_savepath(output_dir, collection_name, coords, date_range, im
     return full_path
 
 
-def consolidate_json_to_list(json_dir, output_dir, output_filename="network_centralities.json"):
+def consolidate_json_to_list(json_dir, output_dir, output_filename):
     """
     Load all the json files (e.g. from individual sub-images), and return
     a list of dictionaries, to be written out into one json file.
@@ -130,6 +130,11 @@ def consolidate_json_to_list(json_dir, output_dir, output_filename="network_cent
     output_filename: str, name of the output json file.
     """
     results = []
+
+    # if input dir doesn't exist, return
+    if not os.path.exists(json_dir):
+        print('No sub-images processed!')
+        return results
 
     for filename in os.listdir(json_dir):
         results.append(json.load(open(os.path.join(json_dir,filename))))
