@@ -608,7 +608,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         ax2.plot(ar1_xs, variance, linewidth=2, color=color, alpha=0.75, label=column + 'Variance')
 
         # add autoregression info
-        ax2.set_ylim([0, 2*max(variance)])
+        ax2.set_ylim([0, 2*max(variance.dropna())])
 
         # add Kendall tau
         tau, p = get_kendell_tau(ar1_values)
@@ -633,4 +633,4 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
 
     for column in df.columns:
         if 'offset50_mean' in column and 'var' in column:
-            make_plot(df.dropna(), column, output_dir, filename_suffix)
+            make_plot(df, column, output_dir, filename_suffix) # not dropping na 

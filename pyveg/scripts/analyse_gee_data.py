@@ -89,12 +89,12 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
 
     # run 
     mwa_df = moving_window_analysis(ts_df, mwa_subdir)
-    
+
     # make plots
     plot_moving_window_analysis(mwa_df, mwa_subdir)
 
     # save to csv
-    mwa_df.to_csv(os.path.join(mwa_subdir, 'moving-window-analysis.csv'))
+    mwa_df.to_csv(os.path.join(mwa_subdir, 'moving-window-analysis.csv'), index=False)
     # ------------------------------------------------
 
 

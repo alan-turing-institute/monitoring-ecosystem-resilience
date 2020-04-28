@@ -519,11 +519,11 @@ def variance_moving_average_time_series(series, length=1):
     new_series: 
         pandas Series with datetime index, and one column, one row per date
     """
-
+    
     # just in case the index isn't already datetime type
     series.index = pd.to_datetime(series.index)
 
-    variance = series.rolling(length ).var()
+    variance = series.rolling(length).var()
 
     variance.name = series.name+"_var"
 
@@ -591,6 +591,9 @@ def get_ar1_var_timeseries_df(series, window_size):
         The AR1 and variance results in a time series dataframe.
     """
 
+    # drop null values
+    series = series.dropna()
+
     # calculate the length in number of time points of the moving window
     length = round(len(series) * window_size)
 
@@ -638,7 +641,9 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
             time_series = df.set_index('date')[column]
 
             # compute AR1 and variance time series
-            mwa_df = mwa_df.join(get_ar1_var_timeseries_df(time_series, window_size), how='outer')
+            df_ = get_ar1_var_timeseries_df(time_series, window_size)
+            mwa_df = mwa_df.join(df_, how='outer')
+
 
     # use date as a column, and reset index
     mwa_df.index.name = 'date'
