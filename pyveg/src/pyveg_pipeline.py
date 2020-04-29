@@ -15,6 +15,7 @@ the results of the different SEQUENCES into one output file.
 
 import os
 
+
 class Pipeline(object):
     """
     A Pipeline contains all the Sequences we want to run on a particular
@@ -262,7 +263,8 @@ class BaseModule(object):
 
 
     def run(self):
-        raise RuntimeError("This method needs to be implemented in concrete class")
+        if not self.is_configured:
+            raise RuntimeError("Module {} needs to be configured before running".format(self.name))
 
 
 

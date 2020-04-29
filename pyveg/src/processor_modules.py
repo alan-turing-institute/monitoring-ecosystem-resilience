@@ -219,7 +219,7 @@ class VegetationImageProcessor(ProcessorModule):
         Function to run the module.  Loop over all date-sub-ranges and
         call process_single_date() on each of them.
         """
-
+        super().run()
         date_subdirs = os.listdir(self.input_dir)
         for date_subdir in date_subdirs:
             if not re.search("^([\d]{4}-[\d]{2}-[\d]{2})", date_subdir):
@@ -274,7 +274,7 @@ class WeatherImageToJSON(ProcessorModule):
 
 
     def run(self):
-
+        super().run()
         # sub-directories of our input directory should be dates.
         time_series_data = {}
         date_strings = os.listdir(self.input_dir)
@@ -399,6 +399,7 @@ class NetworkCentralityCalculator(ProcessorModule):
 
 
     def run(self):
+        super().run()
         if "list_of_dates" in vars(self):
             date_strings = self.list_of_dates
         else:

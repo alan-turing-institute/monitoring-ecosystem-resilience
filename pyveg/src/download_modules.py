@@ -69,9 +69,12 @@ class BaseDownloader(BaseModule):
         """
         if output_dir:
             self.output_dir = output_dir
-        else:
+        elif ("coords" in vars(self)) and ("collection_name" in vars(self)):
             self.output_dir = f'gee_{self.coords[0]}_{self.coords[1]}'\
                 +"_"+self.collection_name.replace('/', '-')
+        else:
+            raise RuntimeError("{}: need to set collection_name and coords before calling set_output_dir()"\
+                               .format(self.name))
 
 
     def prep_data(self, date_range):
@@ -149,6 +152,7 @@ class BaseDownloader(BaseModule):
 
 
     def run(self):
+        super().run()
         start_date, end_date = self.date_range
         date_ranges = slice_time_period(start_date,
                                         end_date,
