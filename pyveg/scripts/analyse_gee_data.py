@@ -136,7 +136,7 @@ def analyse_gee_data(input_dir, spatial):
 
         # run the standard or detrended analysis
         if 'detrended' in filename:
-            output_subdir = os.path.join(output_dir, 'detrended')
+            output_subdir = os.path.join(output_dir, os.path.splitext(filename)[0])
             run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir, detrended=True)
         else: 
             output_subdir = output_dir

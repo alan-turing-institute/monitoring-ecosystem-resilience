@@ -411,6 +411,7 @@ def smooth_subimage(df, column='offset50', n=4, it=3):
 
     # add to df
     df[column + '_smooth'] = smoothed_y
+    df[column + '_smooth_res'] = ys - smoothed_y
 
     return df
 
@@ -487,6 +488,13 @@ def detrend_df(df, lag):
     # detrend veg and climate columns
     for col in columns:
         df_out[col] = df_out[col].diff(lag)
+
+    # need to keep this info for smoothing later
+    try:
+        df_out['latitude'] = df['latitude']
+        df_out['longitude'] = df['longitude']
+    except:
+        pass
 
     return df_out
 
@@ -805,12 +813,24 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         # remove seasonality from sub-image time series
         dfs_detrended = detrend_data(dfs, lag=12)
 
+        print('- Smoothing vegetation time series after removing seasonlity...')
+        dfs_detrended_smooth = smooth_veg_data(dfs_detrended.copy(), n=4)
+
         # combine over sub-images
-        ts_df_detrended = make_time_series(dfs_detrended)
+        ts_df_smooth_detrended = make_time_series(dfs_detrended)
+
+        ts_df_detrended_smooth = make_time_series(dfs_detrended_smooth)
+
 
         # save output
         ts_filename_detrended = os.path.join(output_dir, 'time_series_detrended.csv')
         print(f'Saving detrended time series to "{ts_filename_detrended}".')
-        ts_df_detrended.to_csv(ts_filename_detrended, index=False)
-    
+        ts_df_smooth_detrended.to_csv(ts_filename_detrended, index=False)
+
+     # save output
+        ts_filename_detrended = os.path.join(output_dir, 'time_series_detrended_smooth.csv')
+        print(f'Saving detrended time series to "{ts_filename_detrended}".')
+        ts_df_detrended_smooth.to_csv(ts_filename_detrended, index=False)
+
+
     return output_dir, dfs # for now return `dfs` for spatial plot compatibility 
