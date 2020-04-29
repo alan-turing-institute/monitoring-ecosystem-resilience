@@ -6,7 +6,7 @@ import shutil
 import unittest
 
 from pyveg.src.pyveg_pipeline import Sequence
-from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
+
 from pyveg.src.processor_modules import (
     VegetationImageProcessor,
     NetworkCentralityCalculator,
@@ -57,8 +57,10 @@ data_collections = {
 }
 
 test_out_dir = 'test_out'
+
 @unittest.skipIf(os.environ.get('TRAVIS') == 'true','Skipping this test on Travis CI.')
 def test_get_vegetation():
+    from pyveg.src.download_modules import VegetationDownloader
     s = Sequence("vegetation")
     s.set_config(data_collections["Copernicus"])
     s.output_dir = test_out_dir
@@ -79,6 +81,7 @@ def test_get_vegetation():
 
 @unittest.skipIf(os.environ.get('TRAVIS') == 'true','Skipping this test on Travis CI.')
 def test_get_rainfall():
+    from pyveg.src.download_modules import WeatherDownloader
     s = Sequence("weather")
     s.set_config(data_collections["ERA5"])
     s.output_dir = test_out_dir
@@ -91,9 +94,3 @@ def test_get_rainfall():
     s.run()
     assert(os.path.exists(os.path.join(test_out_dir, "RESULTS", "weather_data.json")))
     shutil.rmtree(test_out_dir, ignore_errors=True)
-
-#    from pyveg.src.process_satellite_data import get_vegetation, get_weather
-#    print('Warning: this test is expected to take a while to run...')
-#    result = get_weather(test_out_dir, data_collections['NOAA'], coordinates, date_range)
-#    assert (len(result.items())!=0)
-#    shutil.rmtree(test_out_dir, ignore_errors=True)
