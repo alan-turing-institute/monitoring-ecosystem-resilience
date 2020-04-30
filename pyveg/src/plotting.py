@@ -487,11 +487,12 @@ def plot_stl_decomposition(df, period, output_dir):
             ax.tick_params(labelbottom=False)
 
         # set xlabel with datetime object
-        ax_list[-1].set_xticklabels(xs, rotation=0, va="center")
+        #ax_list[-1].set_xticklabels(xs, rotation=0, va="center")
 
         # save plot
         filename = os.path.join(output_dir, column+'_STL_decomposition.png')
         plt.savefig(filename, dpi=DPI)
+        plt.close(fig)
 
         # undo rc changes
         plt.rc('figure', figsize=default_figsize)
@@ -622,6 +623,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         output_filename = collection_prefix + '-moving-window-AR1-var' + filename_suffix + '.png'
         print(f'Plotting {collection_prefix} moving window time series...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+        plt.close(fig)
 
 
     for column in df.columns:
