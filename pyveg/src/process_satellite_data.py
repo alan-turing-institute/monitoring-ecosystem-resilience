@@ -18,13 +18,12 @@ from .image_utils import (
     save_image,
     convert_to_rgb,
     scale_tif,
-#    save_json,
     pillow_to_numpy,
     process_and_threshold,
     check_image_ok
 )
 
-from .file_utils import save_json
+from .file_utils import save_json, construct_image_savepath
 
 from .subgraph_centrality import (
     subgraph_centrality,
@@ -101,7 +100,15 @@ def process_sub_image(i, sub, sub_rgb, output_subdir, date):
 
 
 
-def run_network_centrality(output_dir, img_thresh, img_rgb, coords, date_range, region_size, sub_image_size=[50,50], n_sub_images=-1, n_threads=4):
+def run_network_centrality(output_dir,
+                           img_thresh,
+                           img_rgb,
+                           coords,
+                           date_range,
+                           region_size,
+                           sub_image_size=[50,50],
+                           n_sub_images=-1,
+                           n_threads=4):
     """
     !! SVS: Suggest that this function should be moved to the subgraph_centrality.py module
 
