@@ -583,7 +583,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
                             facecolor='none', alpha=0.15, label='AR1 SE Smoothed', hatch='X', edgecolor='tab:blue')
 
         # set y lim
-        ax.set_ylim([-1, 2])
+        ax.set_ylim([-0.2, 1.2])
 
         # plot legend
         plt.legend(loc='upper left')
@@ -601,7 +601,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
                      linestyle='dotted', label='Variance Smoothed')
 
         # set y lim
-        ax2.set_ylim([0, 2*max(variance)])
+        ax2.set_ylim([min(variance)-0.5*max(variance), 1.5*max(variance)])
 
         # add legend
         plt.legend(loc='lower left')
