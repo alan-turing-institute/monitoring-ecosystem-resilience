@@ -241,7 +241,7 @@ class BaseModule(object):
 
     def check_config(self):
         """
-        Loop through list of parameters, which will each be a tuple (name, type)
+        Loop through list of parameters, which will each be a tuple (name, [allowed_types])
         and check that the parameter exists, and is of the correct type.
         """
         for param in self.params:
@@ -249,8 +249,13 @@ class BaseModule(object):
                 raise RuntimeError("{}: {} needs to be set."\
                     .format(self.name, param[0]))
             val = self.__getattribute__(param[0])
-            if not isinstance(val, param[1]):
-                raise TypeError("{}: {} should be a {}, got {}:{}"\
+            type_ok = False
+            for param_type in param[1]:
+                if isinstance(val, param_type):
+                    type_ok = True
+                    break
+            if not type_ok:
+                raise TypeError("{}: {} should be {}, got {}:{}"\
                                    .format(self.name,param[0],
                                            param[1],
                                            val,

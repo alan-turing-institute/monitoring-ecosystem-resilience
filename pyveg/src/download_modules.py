@@ -39,12 +39,12 @@ class BaseDownloader(BaseModule):
     def __init__(self, name):
         super().__init__(name)
         # some parameters that are common to all Downloaders
-        self.params +=  [("collection_name",str),
-                         ("coords", tuple),
-                         ("date_range", list),
-                         ("region_size", float),
-                         ("scale", int),
-                         ("output_dir", str)]
+        self.params +=  [("collection_name", [str]),
+                         ("coords", [list, tuple]),
+                         ("date_range", [list, tuple]),
+                         ("region_size", [float]),
+                         ("scale", [int]),
+                         ("output_dir", [str])]
         return
 
 
@@ -183,12 +183,12 @@ class VegetationDownloader(BaseDownloader):
 
     def __init__(self, name=None):
         super().__init__(name)
-        self.params += [("mask_cloud", bool),
-                        ("cloudy_pix_flag", str),
-                        ("cloudy_pix_frac", int),
-                        ("RGB_bands", list),
-                        ("NIR_band", str),
-                        ("time_per_point", str)
+        self.params += [("mask_cloud", [bool]),
+                        ("cloudy_pix_flag", [str]),
+                        ("cloudy_pix_frac", [int]),
+                        ("RGB_bands", [list]),
+                        ("NIR_band", [str]),
+                        ("time_per_point", [str])
         ]
 
 
@@ -238,9 +238,9 @@ class WeatherDownloader(BaseDownloader):
 
     def __init__(self,name=None):
         super().__init__(name)
-        self.params += [("temperature_band", list),
-                        ("precipitation_band", list),
-                        ("time_per_point", str)
+        self.params += [("temperature_band", [list]),
+                        ("precipitation_band", [list]),
+                        ("time_per_point", [str])
         ]
 
 

@@ -19,11 +19,11 @@ class VegAndWeatherJsonCombiner(BaseModule):
     def __init__(self, name=None):
         super().__init__(name)
         self.params += [
-            ("output_dir", str),
-            ("input_veg_dir", str),
-            ("input_weather_dir", str),
-            ("weather_collection", str),
-            ("veg_collection", str)
+            ("output_dir", [str]),
+            ("input_veg_dir", [str]),
+            ("input_weather_dir", [str]),
+            ("weather_collection", [str]),
+            ("veg_collection", [str])
             ]
 
 

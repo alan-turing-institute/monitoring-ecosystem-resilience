@@ -42,11 +42,11 @@ class VegetationImageProcessor(ProcessorModule):
     """
     def __init__(self, name=None):
         super().__init__(name)
-        self.params += [("input_dir", str),
-                        ("output_dir", str),
-                        ("region_size", float),
-                        ("RGB_bands", list),
-                        ("split_RGB_images", bool)
+        self.params += [("input_dir", [str]),
+                        ("output_dir", [str]),
+                        ("region_size", [float]),
+                        ("RGB_bands", [list]),
+                        ("split_RGB_images", [bool])
         ]
 
 
@@ -240,8 +240,8 @@ class WeatherImageToJSON(ProcessorModule):
 
     def __init__(self, name=None):
         super().__init__(name)
-        self.params += [("input_dir", str),
-                        ("output_dir", str)
+        self.params += [("input_dir", [str]),
+                        ("output_dir", [str])
         ]
 
 
@@ -334,10 +334,10 @@ class NetworkCentralityCalculator(ProcessorModule):
     def __init__(self, name=None):
         super().__init__(name)
         self.params += [
-            ("input_dir", str),
-            ("output_dir", str),
-            ("n_threads", int),
-            ("n_sub_images", int)
+            ("input_dir", [str]),
+            ("output_dir", [str]),
+            ("n_threads", [int]),
+            ("n_sub_images", [int])
                         ]
 
     def set_default_parameters(self):
