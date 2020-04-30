@@ -124,10 +124,10 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             veg_xs_b = get_datetime_xs(veg_df_b)
 
             # get vegetation y values
-            veg_means_b = veg_df[veg_prefix_b+'_offset50_mean']
+            veg_means_b = veg_df_b[veg_prefix_b+'_offset50_mean']
             #veg_std_b = veg_df[veg_prefix_b+'_offset50_std']
-            veg_means_smooth_b = veg_df[veg_prefix_b+'_offset50_smooth_mean']
-            veg_stds_smooth_b = veg_df[veg_prefix_b+'_offset50_smooth_std']
+            veg_means_smooth_b = veg_df_b[veg_prefix_b+'_offset50_smooth_mean']
+            veg_stds_smooth_b = veg_df_b[veg_prefix_b+'_offset50_smooth_std']
 
             # plot secondary time series
             ax3 = ax.twinx()
