@@ -395,6 +395,7 @@ def smooth_subimage(df, column='offset50', n=4, it=3):
         The time-series DataFrame with a new column containing the
         smoothed results.
     """
+    df.dropna(inplace=True)
 
     # add a new column of datetime objects
     df['datetime'] = pd.to_datetime(df['date'], format='%Y/%m/%d')
@@ -814,7 +815,7 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         dfs_detrended = detrend_data(dfs, lag=12)
 
         print('- Smoothing vegetation time series after removing seasonlity...')
-        dfs_detrended_smooth = smooth_veg_data(dfs_detrended.copy(), n=4)
+        dfs_detrended_smooth = smooth_veg_data(dfs_detrended, n=4)
 
         # combine over sub-images
         ts_df_smooth_detrended = make_time_series(dfs_detrended)
