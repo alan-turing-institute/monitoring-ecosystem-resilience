@@ -88,7 +88,7 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
         os.makedirs(mwa_subdir, exist_ok=True)
 
     # run 
-    mwa_df = moving_window_analysis(ts_df, mwa_subdir)
+    mwa_df = moving_window_analysis(ts_df, mwa_subdir, window_size=0.5)
 
     # make plots
     plot_moving_window_analysis(mwa_df, mwa_subdir)
