@@ -113,7 +113,7 @@ def analyse_gee_data(input_dir, spatial):
     """
 
     # preprocess input data
-    ts_dirname, dfs = preprocess_data(input_dir)
+    ts_dirname, dfs = preprocess_data(input_dir, n_smooth=3)
 
     # get filenames of preprocessed data time series
     ts_filenames = [f for f in os.listdir(ts_dirname) if 'time_series' in f]
