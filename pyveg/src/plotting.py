@@ -41,7 +41,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         Directory to save the plots in.
     """
 
-    def make_plot(df, veg_prefix, output_dir, veg_prefix_b=None):
+    def make_plot(df, veg_prefix, output_dir, veg_prefix_b=None, smoothing_option ='smooth'):
 
         # handle the case where vegetation and precipitation have mismatched NaNs
         veg_df = df.dropna(subset=[veg_prefix+'_offset50_mean'])
@@ -67,11 +67,11 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         ax.plot(veg_xs, veg_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
 
         # add smoothed time series if availible
-        if any(['smooth' in c and veg_prefix in c for c in veg_df.columns]):
+        if any([smoothing_option in c and veg_prefix in c for c in veg_df.columns]):
 
             # get smoothed mean, std
-            veg_means_smooth = veg_df[veg_prefix+'_offset50_smooth_mean']
-            veg_stds_smooth = veg_df[veg_prefix+'_offset50_smooth_std']
+            veg_means_smooth = veg_df[veg_prefix+'_offset50_'+smoothing_option+'_mean']
+            veg_stds_smooth = veg_df[veg_prefix+'_offset50_'+smoothing_option+'_std']
 
             # plot smoothed vegetation means and std
             ax.plot(veg_xs, veg_means_smooth, marker='o', markersize=7, 
@@ -190,7 +190,8 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         # layout
         sns.set_style('white')
         fig.tight_layout()
-        
+
+        filename_suffix = smoothing_option
         # save the plot
         output_filename = veg_prefix + '-time-series' + filename_suffix + '.png'
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
@@ -206,6 +207,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             veg_prefix = column.split('_')[0]
             print(f'Plotting {veg_prefix} time series.')
             make_plot(df, veg_prefix, output_dir)
+            make_plot(df, veg_prefix, output_dir,smoothing_option='smooth_res')
 
     # if we have two vegetation time series availible, plot them both
     if np.sum(df.columns.str.contains('offset50_mean')) == 2:
@@ -213,6 +215,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         veg_prefixes = [c.split('_')[0] for c in veg_columns]
         assert( len(veg_prefixes) == 2 )
         make_plot(df, veg_prefixes[0], output_dir, veg_prefix_b=veg_prefixes[1])
+
 
 
 def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
@@ -601,20 +604,28 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
 
         # set y lim
         ax2.set_ylim([0, 2*max(variance)])
+        #ax2.set_ylim([0, 3500])
 
         # add legend
         plt.legend(loc='lower left')
 
         # add Kendall tau
+
         tau, p = get_kendell_tau(ar1)
         tau_var, p_var = get_kendell_tau(variance)
 
-        # add to plot
-        textstr = f'AR1 Kendall $\\tau,~p$-$\\mathrm{{value}}={tau:.2f}$, ${p:.2f}$'
-        ax2.text(0.63, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
-        textstr = f'Variance Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_var:.2f}$, ${p_var:.2f}$'
-        ax2.text(0.63, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+        tau_smooth, p_smooth = get_kendell_tau(ar1_smooth)
+        tau_var_smooth, p_var_smooth = get_kendell_tau(variance_smooth)
 
+        # add to plot
+        textstr = f'AR1 Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_smooth:.2f}$, ${p_smooth:.2f}$'
+        textstr += f' (${tau:.2f}$, ${p:.2f}$ unsmoothed)'
+
+        ax2.text(0.43, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+        textstr = f'Variance Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_var_smooth:.2f}$, ${p_var_smooth:.2f}$'
+        textstr += f' (${tau_var:.2f}$, ${p_var:.2f}$ unsmoothed)'
+
+        ax2.text(0.43, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
         # layout
         fig.tight_layout()
 
@@ -627,5 +638,4 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
     for column in df.columns:
         if (('offset50_mean' in column or 'total_precipitation' in column) and 
              'var' in column):
-            make_plot(df, column, output_dir, 'smooth')
             make_plot(df, column, output_dir, 'smooth_res')

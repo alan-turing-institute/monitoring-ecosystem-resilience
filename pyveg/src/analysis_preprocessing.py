@@ -711,11 +711,14 @@ def detrend_data(dfs, lag):
             for df_ in list(d.values())[1:]:
                 df = df.append(df_)
 
+            df.dropna(inplace=True)
+
             dfs[col_name] = df
 
         else:
             # remove seasonality for weather data, this is a simpler time series
             dfs[col_name] = detrend_df(dfs[col_name], lag)
+            df.dropna(inplace=True)
 
     return dfs
 
@@ -815,21 +818,14 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         dfs_detrended = detrend_data(dfs, lag=12)
 
         print('- Smoothing vegetation time series after removing seasonlity...')
-        dfs_detrended_smooth = smooth_veg_data(dfs_detrended, n=4)
+        dfs_detrended_smooth = smooth_veg_data(dfs_detrended, n=12)
+
 
         # combine over sub-images
-        ts_df_smooth_detrended = make_time_series(dfs_detrended)
-
         ts_df_detrended_smooth = make_time_series(dfs_detrended_smooth)
-
 
         # save output
         ts_filename_detrended = os.path.join(output_dir, 'time_series_detrended.csv')
-        print(f'Saving detrended time series to "{ts_filename_detrended}".')
-        ts_df_smooth_detrended.to_csv(ts_filename_detrended, index=False)
-
-     # save output
-        ts_filename_detrended = os.path.join(output_dir, 'time_series_detrended_smooth.csv')
         print(f'Saving detrended time series to "{ts_filename_detrended}".')
         ts_df_detrended_smooth.to_csv(ts_filename_detrended, index=False)
 
