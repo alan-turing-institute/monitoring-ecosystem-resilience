@@ -529,7 +529,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         Add suffix string to file name
     """
 
-    def make_plot(df, column, output_dir, filename_suffix):
+    def make_plot(df, column, output_dir, smoothing_option):
         """
         Parameters
         ----------
@@ -539,8 +539,8 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
             Column name an offset50 variance column in df.
         output_dir : str
             Directory to save the plot in.
-        filename_suffix: str
-            Add suffix string to file name
+        smoothing_option: str
+            Label for smoothing variable to be used
         """
 
         # get short string prefix on column name
@@ -559,10 +559,10 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         ar1 = ar1_df[column.replace('var', 'ar1')]
         ar1_se = ar1_df[column.replace('var', 'ar1_se')]
 
-        if any([filename_suffix in c for c in df.columns]):
-            variance_smooth = var_df[column.replace('offset50_mean', 'offset50_'+filename_suffix+'_mean')]
-            ar1_smooth = ar1_df[column.replace('var', 'ar1').replace('offset50_mean', 'offset50_'+filename_suffix+'_mean')]
-            ar1_se_smooth = ar1_df[column.replace('var', 'ar1_se').replace('offset50_mean', 'offset50_'+filename_suffix+'_mean')]
+        if any([smoothing_option in c for c in df.columns]):
+            variance_smooth = var_df[column.replace('offset50_mean', 'offset50_' + smoothing_option + '_mean')]
+            ar1_smooth = ar1_df[column.replace('var', 'ar1').replace('offset50_mean', 'offset50_' + smoothing_option + '_mean')]
+            ar1_se_smooth = ar1_df[column.replace('var', 'ar1_se').replace('offset50_mean', 'offset50_' + smoothing_option + '_mean')]
 
         # create a figure
         fig, ax = plt.subplots(figsize=(15, 5))
@@ -578,7 +578,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         ax.fill_between(ar1_xs, ar1 - ar1_se, ar1 + ar1_se,
                         facecolor='blue', alpha=0.1, label='AR1 SE')
 
-        if any([filename_suffix in c for c in df.columns]):
+        if any([smoothing_option in c for c in df.columns]):
             # plot smoothed vegetation ar1 and std
             ax.plot(ar1_xs, ar1_smooth, label='AR1 Smoothed', linewidth=2, color='tab:blue', linestyle='dotted')
             ax.fill_between(ar1_xs, ar1_smooth - ar1_se_smooth, ar1_smooth + ar1_se_smooth,
@@ -598,7 +598,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
 
         # plot variance
         ax2.plot(var_xs, variance, linewidth=2, color=color, alpha=0.75, label='Variance')
-        if any([filename_suffix in c for c in df.columns]):
+        if any([smoothing_option in c for c in df.columns]):
             ax2.plot(var_xs, variance_smooth, linewidth=2, color=color, alpha=0.75, 
                      linestyle='dotted', label='Variance Smoothed')
 
@@ -630,7 +630,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         fig.tight_layout()
 
         # save the plot
-        output_filename = collection_prefix + '-moving-window-AR1-var' + filename_suffix + '.png'
+        output_filename = collection_prefix + '-moving-window-AR1-var' + smoothing_option + '.png'
         print(f'Plotting {collection_prefix} moving window time series...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
 
