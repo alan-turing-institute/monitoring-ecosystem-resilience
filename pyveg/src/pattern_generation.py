@@ -5,8 +5,7 @@ import os
 import random
 import json
 import numpy as np
-import matplotlib.pyplot as plt
-
+from matplotlib import pyplot as plt
 
 class PatternGenerator(object):
     """
