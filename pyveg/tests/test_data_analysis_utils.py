@@ -2,17 +2,11 @@
 Test the functions in data_analysis_utils.py
 """
 from pyveg.src.data_analysis_utils import *
-
-
-def test_read_json_to_dataframe():
-    test_df = read_json_to_dataframe(
-        os.path.join(os.path.dirname(__file__), "..", "testdata", "network_json_data", "test-results-summary.json"))
-    print(test_df.shape)
-    assert (test_df.shape == (120, 7))
+from pyveg.src.analysis_preprocessing import *
 
 
 def test_coarse_dataframe():
-    test_df = variable_read_json_to_dataframe(
+    test_df = read_json_to_dataframes(
         os.path.join(os.path.dirname(__file__), "..", "testdata", "network_json_data/test-results-summary.json"))
 
     data_df = convert_to_geopandas(test_df['COPERNICUS/S2'])
@@ -27,7 +21,7 @@ def test_coarse_dataframe():
 def test_create_lat_long_metric_figures():
     dir_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "network_json_data/")
 
-    test_df = variable_read_json_to_dataframe(
+    test_df = read_json_to_dataframes(
         os.path.join(os.path.dirname(__file__), "..", "testdata", "network_json_data/test-results-summary.json"))
 
     data_df = convert_to_geopandas(test_df['COPERNICUS/S2'])
@@ -45,29 +39,13 @@ def test_create_lat_long_metric_figures():
     assert (len(list_png_files) == len_dates)
 
 
-def test_variable_read_json_to_dataframe():
-    test_df_dict = variable_read_json_to_dataframe(
-        os.path.join(os.path.dirname(__file__), "..", "testdata", "network_json_data/test-results-summary.json"))
-
-    print(test_df_dict.keys())
-    dict_len = len(test_df_dict.keys())
-    test_df = test_df_dict['COPERNICUS/S2']
-
-    assert (test_df.shape == (120, 9))
-    assert (dict_len == 2)
-
-def test_calculate_ar1_variance_time_series():
+def test_moving_window_analysis():
 
     path_to_dict = os.path.join(os.path.dirname(__file__), "..", "testdata", "network_json_data/results_summary.json")
-
-    dfs = variable_read_json_to_dataframe(path_to_dict)
-
+    dfs = read_json_to_dataframes(path_to_dict)
     time_series_dfs = make_time_series(dfs.copy())
 
-    ar1_var_df = calculate_ar1_variance_time_series(time_series_dfs, 2)
+    ar1_var_df = moving_window_analysis(time_series_dfs, os.path.dirname(path_to_dict), 0.5)
 
     keys_ar1 = list(ar1_var_df.keys())
-
-    assert (len(ar1_var_df.keys()) == 2)
-    assert (ar1_var_df[keys_ar1[0]].shape == (15, 3))
-    assert (ar1_var_df[keys_ar1[1]].shape == (27, 3))
+    assert (ar1_var_df.shape == (38, 7))
