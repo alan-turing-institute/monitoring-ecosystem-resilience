@@ -88,7 +88,7 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
         os.makedirs(mwa_subdir, exist_ok=True)
 
     # run 
-    mwa_df = moving_window_analysis(ts_df, mwa_subdir)
+    mwa_df = moving_window_analysis(ts_df, mwa_subdir, window_size=0.5)
 
     # make plots
     plot_moving_window_analysis(mwa_df, mwa_subdir)
@@ -113,7 +113,7 @@ def analyse_gee_data(input_dir, spatial):
     """
 
     # preprocess input data
-    ts_dirname, dfs = preprocess_data(input_dir)
+    ts_dirname, dfs = preprocess_data(input_dir, n_smooth=3)
 
     # get filenames of preprocessed data time series
     ts_filenames = [f for f in os.listdir(ts_dirname) if 'time_series' in f]

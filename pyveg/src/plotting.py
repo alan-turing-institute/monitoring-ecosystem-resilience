@@ -124,10 +124,10 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             veg_xs_b = get_datetime_xs(veg_df_b)
 
             # get vegetation y values
-            veg_means_b = veg_df[veg_prefix_b+'_offset50_mean']
+            veg_means_b = veg_df_b[veg_prefix_b+'_offset50_mean']
             #veg_std_b = veg_df[veg_prefix_b+'_offset50_std']
-            veg_means_smooth_b = veg_df[veg_prefix_b+'_offset50_smooth_mean']
-            veg_stds_smooth_b = veg_df[veg_prefix_b+'_offset50_smooth_std']
+            veg_means_smooth_b = veg_df_b[veg_prefix_b+'_offset50_smooth_mean']
+            veg_stds_smooth_b = veg_df_b[veg_prefix_b+'_offset50_smooth_std']
 
             # plot secondary time series
             ax3 = ax.twinx()
@@ -490,11 +490,12 @@ def plot_stl_decomposition(df, period, output_dir):
             ax.tick_params(labelbottom=False)
 
         # set xlabel with datetime object
-        ax_list[-1].set_xticklabels(xs, rotation=0, va="center")
+        #ax_list[-1].set_xticklabels(xs, rotation=0, va="center")
 
         # save plot
         filename = os.path.join(output_dir, column+'_STL_decomposition.png')
         plt.savefig(filename, dpi=DPI)
+        plt.close(fig)
 
         # undo rc changes
         plt.rc('figure', figsize=default_figsize)
@@ -585,7 +586,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
                             facecolor='none', alpha=0.15, label='AR1 SE Smoothed', hatch='X', edgecolor='tab:blue')
 
         # set y lim
-        ax.set_ylim([-1, 2])
+        ax.set_ylim([-0.2, 1.2])
 
         # plot legend
         plt.legend(loc='upper left')
@@ -604,7 +605,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
 
         # set y lim
         ax2.set_ylim([0, 2*max(variance)])
-        #ax2.set_ylim([0, 3500])
+
 
         # add legend
         plt.legend(loc='lower left')
@@ -633,6 +634,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         output_filename = collection_prefix + '-moving-window-AR1-var' + smoothing_option + '.png'
         print(f'Plotting {collection_prefix} moving window time series...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+        plt.close(fig)
 
 
     for column in df.columns:

@@ -14,6 +14,8 @@ import pandas as pd
 
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
+from pyveg.src.data_analysis_utils import write_to_json
+
 
 def read_json_to_dataframes(filename):
     """
@@ -724,7 +726,7 @@ def detrend_data(dfs, lag):
 
 
 def preprocess_data(input_dir, drop_outliers=True, fill_missing=True, 
-                    resample=True, smoothing=True, detrend=True):
+                    resample=True, smoothing=True, detrend=True, n_smooth=4):
     """
     This function reads and process data downloaded by GEE. Processing
     can be configured by the function arguments. Processed data is 
@@ -772,6 +774,8 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
     # keep track of time points where data is missing (by default pandas
     # groupby operations, which is used haveily in this module, drop NaNs)
     missing = get_missing_time_points(dfs)
+    missing_json = {k : list(v) for k, v in missing.items()}
+    write_to_json(os.path.join(output_dir, 'missing_dates.json'), missing_json)
 
     print('\nPreprocessing data...')
     print('-'*21)
@@ -789,7 +793,7 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
     # LOESS smoothing on sub-image time series
     if smoothing:
         print('- Smoothing vegetation time series...')
-        dfs = smooth_veg_data(dfs, n=4)
+        dfs = smooth_veg_data(dfs, n=n_smooth)
 
     # store feature vectors before averaging over sub-images
     print('- Saving feature vectors...')
