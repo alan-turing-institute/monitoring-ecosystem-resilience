@@ -23,6 +23,7 @@ def test_coarse_dataframe():
 
 
 def test_create_lat_long_metric_figures():
+
     dir_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "network_json_data/")
 
     test_df = read_json_to_dataframes(
@@ -33,16 +34,16 @@ def test_create_lat_long_metric_figures():
     for filename in os.listdir(dir_path):
         if filename.endswith('.png'):
             os.unlink(os.path.join(dir_path, filename))
+    tmp_png_path = os.path.join(dir_path, "tmp_png")
+    create_lat_long_metric_figures(data_df, 'offset50', tmp_png_path)
 
-    create_lat_long_metric_figures(data_df, 'offset50', dir_path)
-
-    list_png_files = [f for f in os.listdir(dir_path) if
-                      (os.path.isfile(os.path.join(dir_path, f)) and f.endswith(".png"))]
+    list_png_files = [f for f in os.listdir(tmp_png_path) if
+                      (os.path.isfile(os.path.join(tmp_png_path, f)) and f.endswith(".png"))]
     len_dates = len(np.unique(data_df['date']))
 
     assert (len(list_png_files)==len_dates)
     # now delete the test png files
-    shutil.rmtree(dir_path, ignore_errors=True)
+    shutil.rmtree(tmp_png_path, ignore_errors=True)
 
 
 def test_moving_window_analysis():
