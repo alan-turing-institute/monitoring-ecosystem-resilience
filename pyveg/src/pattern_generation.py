@@ -5,7 +5,6 @@ import os
 import random
 import json
 import numpy as np
-import matplotlib
 
 from matplotlib import pyplot as plt
 
