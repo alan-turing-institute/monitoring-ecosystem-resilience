@@ -824,7 +824,6 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         print('- Smoothing vegetation time series after removing seasonlity...')
         dfs_detrended_smooth = smooth_veg_data(dfs_detrended, n=12)
 
-
         # combine over sub-images
         ts_df_detrended_smooth = make_time_series(dfs_detrended_smooth)
 
@@ -832,6 +831,5 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         ts_filename_detrended = os.path.join(output_dir, 'time_series_detrended.csv')
         print(f'Saving detrended time series to "{ts_filename_detrended}".')
         ts_df_detrended_smooth.to_csv(ts_filename_detrended, index=False)
-
 
     return output_dir, dfs # for now return `dfs` for spatial plot compatibility 
