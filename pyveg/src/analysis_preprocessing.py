@@ -120,7 +120,7 @@ def make_time_series(dfs):
             if 'COPERNICUS/S2' in col_name:
                 s = 'S2_'
             elif 'LANDSAT' in col_name:
-                s = 'L' + col_name.split('/LC0')[1][0] + '_'
+                s = 'L' + col_name.split('/')[1][-1] + '_'
             else: 
                 s = col_name + '_'
             means = means.rename(columns={c: s + c + '_mean' for c in means.columns})
@@ -461,7 +461,7 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3):
     return df
 
 
-def detrend_df(df, lag):
+def detrend_df(df, lag, period='MS'):
     """
     Remove seasonality from a DataFrame containing the time series 
     for a single sub-image.
@@ -486,7 +486,7 @@ def detrend_df(df, lag):
     columns = [c for c in df.columns if any([s in c 
                 for s in ['offset50', 'precipitation', 'temperature']])]
 
-    df_out = resample_dataframe(df, columns, period='MS')
+    df_out = resample_dataframe(df, columns, period=period)
 
     # detrend veg and climate columns
     for col in columns:
@@ -550,7 +550,7 @@ def store_feature_vectors(dfs, output_dir):
             if col_name == 'COPERNICUS/S2':
                 s = 'S2'
             elif 'LANDSAT' in col_name:
-                s = 'L' + col_name.split('/LC0')[1][0] + '_'
+                s = 'L' + col_name.split('/')[1][-1] + '_'
             else:
                 s = col_name
             
@@ -670,7 +670,7 @@ def get_missing_time_points(dfs):
     return missing_points
 
 
-def detrend_data(dfs, lag):
+def detrend_data(dfs, lag, period='MS'):
     """
     Loop over each sub image time series DataFrames and remove
     time series seasonality by subtracting the previous year.
@@ -706,7 +706,7 @@ def detrend_data(dfs, lag):
             
             # for each sub-image
             for key, df_ in d.items():
-                d[key] = detrend_df(df_, lag)
+                d[key] = detrend_df(df_, lag, period)
 
             # reconstruct the DataFrame
             df = list(d.values())[0]
@@ -719,14 +719,16 @@ def detrend_data(dfs, lag):
 
         else:
             # remove seasonality for weather data, this is a simpler time series
-            dfs[col_name] = detrend_df(dfs[col_name], lag)
+
+            dfs[col_name] = detrend_df(dfs[col_name], lag, period)
             df.dropna(inplace=True)
 
     return dfs
 
 
 def preprocess_data(input_dir, drop_outliers=True, fill_missing=True, 
-                    resample=True, smoothing=True, detrend=True, n_smooth=4):
+                    resample=True, smoothing=True, detrend=True, 
+                    n_smooth=4, period='MS'):
     """
     This function reads and process data downloaded by GEE. Processing
     can be configured by the function arguments. Processed data is 
@@ -746,6 +748,10 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         Smooth the time series using LOESS smoothing.
     detrend : bool, optional
         Remove seasonal component by subtracting previous year.
+    n_smooth : int, optional
+        Number of time points to use for the smoothing window size.
+    period : str, optional 
+        Pandas DateOffset string describing sampling frequency.
 
     Returns
     ----------
@@ -807,7 +813,7 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         print('- Resampling time series...')
         columns = [c for c in ts_df.columns if any([s in c 
                      for s in ['offset50', 'precipitation', 'temperature']])]
-        ts_df = resample_dataframe(ts_df, columns, period='MS')
+        ts_df = resample_dataframe(ts_df, columns, period=period)
 
     # save as csv
     ts_filename = os.path.join(output_dir, 'time_series.csv')
@@ -819,7 +825,7 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         print('- Detrending time series...')
 
         # remove seasonality from sub-image time series
-        dfs_detrended = detrend_data(dfs, lag=12)
+        dfs_detrended = detrend_data(dfs, lag=12, period=period)
 
         print('- Smoothing vegetation time series after removing seasonlity...')
         dfs_detrended_smooth = smooth_veg_data(dfs_detrended, n=12)
