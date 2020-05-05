@@ -316,8 +316,8 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
     # use the BWDVI to mask the NDVI and calculate the average
     # pixel value of veg pixels
     veg_mask = (pillow_to_numpy(sub_image) == 0)
-    veg_ndvi_mean = pillow_to_numpy(ndvi_sub_image)[veg_mask].mean()
-    veg_ndvi_std = pillow_to_numpy(ndvi_sub_image)[veg_mask].std()
+    veg_ndvi_mean = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].mean(), 4)
+    veg_ndvi_std = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].std(), 4)
 
     image_array = pillow_to_numpy(sub_image)
     feature_vec, _ = subgraph_centrality(image_array)
