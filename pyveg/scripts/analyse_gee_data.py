@@ -113,7 +113,8 @@ def analyse_gee_data(input_dir, spatial):
     """
 
     # preprocess input data
-    ts_dirname, dfs = preprocess_data(input_dir, n_smooth=3, resample=False, period='MS')
+
+    ts_dirname, dfs = preprocess_data(input_dir, n_smooth=4, resample=False, period='MS')
 
     # get filenames of preprocessed data time series
     ts_filenames = [f for f in os.listdir(ts_dirname) if 'time_series' in f]
@@ -136,7 +137,7 @@ def analyse_gee_data(input_dir, spatial):
 
         # run the standard or detrended analysis
         if 'detrended' in filename:
-            output_subdir = os.path.join(output_dir, 'detrended')
+            output_subdir = os.path.join(output_dir, os.path.splitext(filename)[0])
             run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir, detrended=True)
         else: 
             output_subdir = output_dir

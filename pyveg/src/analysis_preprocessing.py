@@ -397,6 +397,7 @@ def smooth_subimage(df, column='offset50', n=4, it=3):
         The time-series DataFrame with a new column containing the
         smoothed results.
     """
+    df.dropna(inplace=True)
 
     # add a new column of datetime objects
     df['datetime'] = pd.to_datetime(df['date'], format='%Y/%m/%d')
@@ -413,6 +414,7 @@ def smooth_subimage(df, column='offset50', n=4, it=3):
 
     # add to df
     df[column + '_smooth'] = smoothed_y
+    df[column + '_smooth_res'] = ys - smoothed_y
 
     return df
 
@@ -489,6 +491,13 @@ def detrend_df(df, lag, period='MS'):
     # detrend veg and climate columns
     for col in columns:
         df_out[col] = df_out[col].diff(lag)
+
+    # need to keep this info for smoothing later
+    try:
+        df_out['latitude'] = df['latitude']
+        df_out['longitude'] = df['longitude']
+    except:
+        pass
 
     return df_out
 
@@ -704,11 +713,15 @@ def detrend_data(dfs, lag, period='MS'):
             for df_ in list(d.values())[1:]:
                 df = df.append(df_)
 
+            df.dropna(inplace=True)
+
             dfs[col_name] = df
 
         else:
             # remove seasonality for weather data, this is a simpler time series
+
             dfs[col_name] = detrend_df(dfs[col_name], lag, period)
+            df.dropna(inplace=True)
 
     return dfs
 
@@ -814,12 +827,15 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         # remove seasonality from sub-image time series
         dfs_detrended = detrend_data(dfs, lag=12, period=period)
 
+        print('- Smoothing vegetation time series after removing seasonlity...')
+        dfs_detrended_smooth = smooth_veg_data(dfs_detrended, n=12)
+
         # combine over sub-images
-        ts_df_detrended = make_time_series(dfs_detrended)
+        ts_df_detrended_smooth = make_time_series(dfs_detrended_smooth)
 
         # save output
         ts_filename_detrended = os.path.join(output_dir, 'time_series_detrended.csv')
         print(f'Saving detrended time series to "{ts_filename_detrended}".')
-        ts_df_detrended.to_csv(ts_filename_detrended, index=False)
-    
+        ts_df_detrended_smooth.to_csv(ts_filename_detrended, index=False)
+
     return output_dir, dfs # for now return `dfs` for spatial plot compatibility 
