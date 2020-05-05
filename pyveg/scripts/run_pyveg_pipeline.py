@@ -7,6 +7,7 @@ import time
 import json
 import argparse
 import importlib.util
+from shutil import copyfile
 
 from pyveg.src.pyveg_pipeline import Pipeline, Sequence
 from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
@@ -23,15 +24,21 @@ def build_pipeline(config_file, name="mypyveg"):
     """
     Load json config and instantiate modules
     """
-    spec = importlib.util.spec_from_file_location("myconfig",config_file)
+    spec = importlib.util.spec_from_file_location("myconfig", config_file)
     config = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(config)
+
     # instantiate and setup the pipeline
     p = Pipeline(name)
     p.output_dir = os.path.join('pyveg_output', config.output_dir)
     p.output_dir += '__' + time.strftime("%Y-%m-%d_%H-%M-%S")
     p.coords = config.coordinates
     p.date_range = config.date_range
+
+    # before we run anything, save the current config to the output dir
+    if not os.path.exists(p.output_dir):
+        os.makedirs(p.output_dir, exist_ok=True)
+    copyfile(config_file, os.path.join(p.output_dir, 'config_cached.py'))
 
     # add sequences to the pipeline to deal with different data types
     for coll in config.collections_to_use:
