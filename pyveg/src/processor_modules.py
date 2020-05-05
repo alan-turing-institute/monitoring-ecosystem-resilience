@@ -307,7 +307,18 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
     """
     date_string = input_dir.split("/")[-2]
 
+    # open BWNDVI image
     sub_image = Image.open(os.path.join(input_dir, input_filename))
+
+    # open NDVI image
+    ndvi_sub_image = Image.open(os.path.join(input_dir, input_filename.replace('BWNDVI', 'NDVI')))
+
+    # use the BWDVI to mask the NDVI and calculate the average
+    # pixel value of veg pixels
+    veg_mask = (pillow_to_numpy(sub_image) == 0)
+    veg_ndvi_mean = pillow_to_numpy(ndvi_sub_image)[veg_mask].mean()
+    veg_ndvi_std = pillow_to_numpy(ndvi_sub_image)[veg_mask].std()
+
     image_array = pillow_to_numpy(sub_image)
     feature_vec, _ = subgraph_centrality(image_array)
     # coords should be part of the filename
@@ -322,6 +333,8 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
     nc_result['date'] = date_string
     nc_result['latitude'] = coords[1]
     nc_result['longitude'] = coords[0]
+    nc_result['veg_ndvi_mean'] = veg_ndvi_mean
+    nc_result['veg_ndvi_std'] = veg_ndvi_std
 
     # save individual result for sub-image to tmp json, will combine later.
     save_json(nc_result, output_dir,
