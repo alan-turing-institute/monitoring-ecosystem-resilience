@@ -120,7 +120,7 @@ def make_time_series(dfs):
             if 'COPERNICUS/S2' in col_name:
                 s = 'S2_'
             elif 'LANDSAT' in col_name:
-                s = 'L' + col_name.split('/LC0')[1][0] + '_'
+                s = 'L' + col_name.split('/')[1][-1] + '_'
             else: 
                 s = col_name + '_'
             means = means.rename(columns={c: s + c + '_mean' for c in means.columns})
@@ -541,7 +541,7 @@ def store_feature_vectors(dfs, output_dir):
             if col_name == 'COPERNICUS/S2':
                 s = 'S2'
             elif 'LANDSAT' in col_name:
-                s = 'L' + col_name.split('/LC0')[1][0] + '_'
+                s = 'L' + col_name.split('/')[1][-1] + '_'
             else:
                 s = col_name
             
