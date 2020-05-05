@@ -108,7 +108,7 @@ def construct_image_savepath(output_dir, collection_name, coords, date_range, im
     return full_path
 
 
-def process_sub_image(i, sub, sub_rgb, output_subdir, date):
+def process_sub_image(i, sub, sub_rgb, sub_ndvi, output_subdir, date):
     """
     function to be used by multiprocessing Pool, called for every sub-image.
 
@@ -117,9 +117,11 @@ def process_sub_image(i, sub, sub_rgb, output_subdir, date):
     i : int
        index of the sub-image
     sub: (Pillow.Image, (float,float))
-       tuple containing the sub-image, and a tuple of long,lat coords.
+       tuple containing the bwndvi sub-image, and a tuple of long,lat coords.
     sub_rgb: (Pillow.Image, (float,float))
        tuple containing the rgb sub-image, and a tuple of long,lat coords.
+    sub_rgb: (Pillow.Image, (float,float))
+       tuple containing the ndvi sub-image, and a tuple of long,lat coords.
     output_subdir: str
        subdirectory into which sub-image png files will be saved.
 
@@ -147,6 +149,12 @@ def process_sub_image(i, sub, sub_rgb, output_subdir, date):
     # save accepted sub-image
     save_image(sub_image, output_subdir, output_filename)
 
+    # use the BWDVI to mask the NDVI and calculate the average
+    # pixel value of veg pixels
+    veg_mask = (pillow_to_numpy(sub_image) == 0)
+    veg_ndvi_mean = round(pillow_to_numpy(sub_ndvi[0])[veg_mask].mean(), 4)
+    veg_ndvi_std = round(pillow_to_numpy(sub_ndvi[0])[veg_mask].std(), 4)
+
     # run network centrality
     image_array = pillow_to_numpy(sub_image)
     feature_vec, _ = subgraph_centrality(image_array)
@@ -156,6 +164,8 @@ def process_sub_image(i, sub, sub_rgb, output_subdir, date):
     nc_result['latitude'] = round(sub_coords[1], 4)
     nc_result['date'] = date
     nc_result['feature_vec'] = list(feature_vec)
+    nc_result['veg_ndvi_mean'] = veg_ndvi_mean
+    nc_result['veg_ndvi_std'] = veg_ndvi_std
 
     # write json file for just this sub-image to a temporary location
     # (to be thread safe, only combine when all parallel jobs are done)
@@ -191,7 +201,8 @@ def consolidate_subimage_json(output_subdir):
     return nc_results
 
 
-def run_network_centrality(output_dir, img_thresh, img_rgb, coords, date_range, region_size, sub_image_size=[50,50], n_sub_images=-1, n_threads=4):
+def run_network_centrality(output_dir, img_thresh, img_rgb, ndvi_img, coords, date_range, region_size, 
+                           sub_image_size=[50,50], n_sub_images=-1, n_threads=4):
     """
     !! SVS: Suggest that this function should be moved to the subgraph_centrality.py module
 
@@ -246,16 +257,24 @@ def run_network_centrality(output_dir, img_thresh, img_rgb, coords, date_range, 
                                      sub_image_size[1],
                                      region_size,
                                      coords)
+    
+    sub_images_ndvi = crop_image_npix(ndvi_img,
+                                     sub_image_size[0],
+                                     sub_image_size[1],
+                                     region_size,
+                                     coords)
 
     # if requested to only look at a subset of sub-images, truncate the list here
     if n_sub_images != -1:
         sub_images = sub_images[:n_sub_images]
+
     # create a multiprocessing pool to handle each sub-image in parallel
     with Pool(processes=n_threads) as pool:
         # prepare the arguments for the process_sub_image function
-        arguments=[(i, sub, sub_images_rgb[i], output_subdir, date_range_midpoint) \
+        arguments=[(i, sub, sub_images_rgb[i], sub_images_ndvi[i], output_subdir, date_range_midpoint) \
                    for i,sub in enumerate(sub_images)]
         pool.starmap(process_sub_image, arguments)
+
     # re-combine the results from all sub-images
     nc_results = consolidate_subimage_json(output_subdir)
 
@@ -338,7 +357,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
         print('Running network centrality...')
         #n_sub_images = 20 # do this for speedup while testing
         nc_output_dir = os.path.join(output_dir, 'network_centrality')
-        nc_results = run_network_centrality(nc_output_dir, processed_ndvi, rgb_image, coords,
+        nc_results = run_network_centrality(nc_output_dir, processed_ndvi, rgb_image, ndvi_image, coords,
                                             date_range, region_size, n_sub_images=n_sub_images)
         print('\nDone.')
         return nc_results
