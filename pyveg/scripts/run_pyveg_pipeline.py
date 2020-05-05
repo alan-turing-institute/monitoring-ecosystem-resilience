@@ -43,7 +43,8 @@ def build_pipeline(config_file, name="mypyveg"):
             # and a network centrality calculator.
             s += VegetationDownloader()
             s += VegetationImageProcessor()
-            s += NetworkCentralityCalculator()
+            if coll_dict["do_network_centrality"]:
+                s += NetworkCentralityCalculator()
 
         elif coll_dict["data_type"] == "weather":
             # add a downloader module and a module to convert to json.
