@@ -583,7 +583,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
                             facecolor='none', alpha=0.15, label='AR1 SE Smoothed', hatch='X', edgecolor='tab:blue')
 
         # set y lim
-        ax.set_ylim([-0.2, 1.2])
+        ax.set_ylim([min(ar1-ar1_se)-0.8*max(ar1+ar1_se), 1.8*max(ar1+ar1_se)])
 
         # plot legend
         plt.legend(loc='upper left')
