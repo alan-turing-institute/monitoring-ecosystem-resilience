@@ -182,7 +182,13 @@ class VegetationImageProcessor(ProcessorModule):
         if (not coords_string) and "coords" in vars(self):
             coords_string = "{}_{}".format(self.coords[0],self.coords[1])
         date_string = input_filepath.split("/")[-2]
-
+        if not re.search("[\d]{4}-[\d]{2}-[\d]{2}", date_string):
+            if date_range in vars(self):
+                date_string = fid_mid_period(self.date_range[0], self.date_range[1])
+            else:
+                date_String = None
+        if not coords_string and date_string:
+            raise RuntimeError("{}: coords and date need to be defined, through file path or explicitly set")
         # save the rgb image
         rgb_ok = self.save_rgb_image(tif_filebase,
                                      input_filepath,

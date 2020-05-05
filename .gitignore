@@ -51,6 +51,12 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+# running pytest produces outputs which we can ignore here
+# (a bit hacky - test folder structure could be cleaned up)
+analysis/
+processed_data/
+offset50*.png
+
 # Translations
 *.mo
 *.pot
