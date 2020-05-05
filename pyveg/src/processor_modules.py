@@ -199,6 +199,7 @@ class VegetationImageProcessor(ProcessorModule):
         save_image(ndvi_image,
                    os.path.dirname(ndvi_filepath),
                    os.path.basename(ndvi_filepath))
+
         # preprocess and threshold the NDVI image
         processed_ndvi = process_and_threshold(ndvi_image)
         ndvi_bw_filepath = self.construct_image_savepath(date_string,
@@ -207,10 +208,18 @@ class VegetationImageProcessor(ProcessorModule):
         save_image(processed_ndvi,
                    os.path.dirname(ndvi_bw_filepath),
                    os.path.basename(ndvi_bw_filepath))
+
+        # split and save sub-images
+        self.split_and_save_sub_images(ndvi_image,
+                                       date_string,
+                                       coords_string,
+                                       "NDVI")
+
         self.split_and_save_sub_images(processed_ndvi,
                                        date_string,
                                        coords_string,
                                        "BWNDVI")
+                                       
         return True
 
 
