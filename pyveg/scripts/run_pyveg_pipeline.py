@@ -3,6 +3,7 @@ Build and run a pyveg pipeline based on a configuration json file.
 """
 
 import os
+import time
 import json
 import argparse
 import importlib.util
@@ -27,7 +28,8 @@ def build_pipeline(config_file, name="mypyveg"):
     spec.loader.exec_module(config)
     # instantiate and setup the pipeline
     p = Pipeline(name)
-    p.output_dir = config.output_dir
+    p.output_dir = os.path.join('pyveg_output', config.output_dir)
+    p.output_dir += '__' + time.strftime("%Y-%m-%d_%H-%M-%S")
     p.coords = config.coordinates
     p.date_range = config.date_range
 
