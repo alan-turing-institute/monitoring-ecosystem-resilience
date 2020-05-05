@@ -235,7 +235,7 @@ class VegetationImageProcessor(ProcessorModule):
         call process_single_date() on each of them.
         """
         super().run()
-        date_subdirs = os.listdir(self.input_dir)
+        date_subdirs = sorted(os.listdir(self.input_dir))
         for date_subdir in date_subdirs:
             if not re.search("^([\d]{4}-[\d]{2}-[\d]{2})", date_subdir):
                 print("{}: Directory name {} not in YYYY-MM-DD format"\
@@ -431,6 +431,6 @@ class NetworkCentralityCalculator(ProcessorModule):
         if "list_of_dates" in vars(self):
             date_strings = self.list_of_dates
         else:
-            date_strings = os.listdir(self.input_dir)
+            date_strings = sorted(os.listdir(self.input_dir))
         for date_string in date_strings:
             self.process_single_date(date_string)
