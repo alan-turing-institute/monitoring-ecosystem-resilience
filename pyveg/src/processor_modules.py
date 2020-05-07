@@ -225,7 +225,7 @@ class VegetationImageProcessor(ProcessorModule):
                                        date_string,
                                        coords_string,
                                        "BWNDVI")
-                                       
+
         return True
 
 
@@ -300,7 +300,7 @@ class WeatherImageToJSON(ProcessorModule):
             time_series_data[date_string] = self.process_one_date(date_string)
 
         save_json(time_series_data,
-                  os.path.join(self.input_dir, "RESULTS"),
+                  os.path.join(self.output_dir, "RESULTS"),
                   "weather_data.json")
 
 
