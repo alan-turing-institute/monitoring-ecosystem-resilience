@@ -59,17 +59,18 @@ def build_pipeline(config_file, name="mypyveg"):
             s += WeatherImageToJSON()
         # add the sequence to the pipeline
         p += s
-    # now add the combiner module in its own sequence
-    s = Sequence("combine")
-    # Combiner needs the previous sequences to finish (in case we ever try to
-    # parallelize further)
-    s.depends_on = config.collections_to_use
-    cm = VegAndWeatherJsonCombiner()
+    if len(config.collections_to_use) > 1:
+        # now add the combiner module in its own sequence
+        s = Sequence("combine")
+        # Combiner needs the previous sequences to finish (in case we ever try to
+        # parallelize further)
+        s.depends_on = config.collections_to_use
+        cm = VegAndWeatherJsonCombiner()
 
-    # add this combiner module to the combiner sequence
-    s += cm
-    # and add this combiner sequence to the pipeline.
-    p += s
+        # add this combiner module to the combiner sequence
+        s += cm
+        # and add this combiner sequence to the pipeline.
+        p += s
     return p
 
 
