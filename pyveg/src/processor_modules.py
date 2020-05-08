@@ -319,6 +319,10 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
     # open NDVI image
     ndvi_sub_image = Image.open(os.path.join(input_dir, input_filename.replace('BWNDVI', 'NDVI')))
 
+    # get average NDVI across the whole image (in case there is no patterned veg)
+    ndvi_mean = round(pillow_to_numpy(ndvi_sub_image).mean(), 4)
+    ndvi_std = round(pillow_to_numpy(ndvi_sub_image).std(), 4)
+
     # use the BWDVI to mask the NDVI and calculate the average
     # pixel value of veg pixels
     veg_mask = (pillow_to_numpy(sub_image) == 0)
@@ -339,6 +343,8 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
     nc_result['date'] = date_string
     nc_result['latitude'] = coords[1]
     nc_result['longitude'] = coords[0]
+    nc_result['ndvi_mean'] = ndvi_mean
+    nc_result['ndvi_std'] = ndvi_std
     nc_result['veg_ndvi_mean'] = veg_ndvi_mean
     nc_result['veg_ndvi_std'] = veg_ndvi_std
 
