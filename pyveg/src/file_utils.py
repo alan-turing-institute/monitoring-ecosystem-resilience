@@ -6,6 +6,7 @@ import requests
 import re
 from zipfile import ZipFile, BadZipFile
 
+from .date_utils import find_mid_period
 
 if os.name == "posix":
     TMPDIR = "/tmp/"
