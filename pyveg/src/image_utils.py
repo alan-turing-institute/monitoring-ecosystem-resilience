@@ -34,7 +34,7 @@ def save_json(out_dict, output_dir, output_filename):
     with open(output_path, 'w') as fp:
         json.dump(out_dict, fp, indent=2)
 
-    print("Saved json file '{}'".format(output_path))
+    #print("Saved json file '{}'".format(output_path))
 
 
 def save_image(image, output_dir, output_filename):
@@ -48,7 +48,7 @@ def save_image(image, output_dir, output_filename):
         os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, output_filename)
     image.save(output_path)
-    print("Saved image '{}'".format(output_path))
+    #print("Saved image '{}'".format(output_path))
 
 
 def image_from_array(input_array, output_size=None, sel_val=200):
@@ -179,7 +179,7 @@ def scale_tif(input_filebase, band):
     # create a new image where we will fill RGB pixel values from 0 to 255
     def get_pix_val(ix, iy): return \
         max(0, int((pix[ix, iy]-min_val) * 255 /
-                   (max_val - min_val))
+                   max((max_val - min_val),1))
             )
     new_img = Image.new("RGB", im.size)
     for ix in range(im.size[0]):
@@ -376,9 +376,11 @@ def create_gif_from_images(directory_path, output_name, string_in_filename=""):
 
         image_dates_df.sort_values(by=['date'], inplace=True, ascending=True)
         imageio.mimsave(os.path.join(directory_path, output_name +
-                                     '.gif'), image_dates_df['images'], duration=1)
+                                     '.gif'), image_dates_df['images'], duration=0.5)
 
     print("Saved gif file containing '{}' images in directory '{}'".format(image_dates_df.shape[0],directory_path))
+
+    return os.path.join(directory_path, output_name +'.gif')
 
 
 
@@ -473,7 +475,7 @@ def pillow_to_numpy(pil_image):
     # check that 3rd index is equal
     r, g, b = numpy_image[:, :, 0], numpy_image[:, :, 1], numpy_image[:, :, 2]
 
-    if (b == g).all() and (b == r).all():
+    if (b == g).all() and (b == r).all() and not (b == 0).all():
         return numpy_image[:, :, 0] # return with 3rd index removed
     else:
         return numpy_image # return colour image
@@ -573,10 +575,10 @@ def process_and_threshold(img, r=3):
 # ---------------------------------------------------------------------
 
 
-def check_image_ok(rgb_image):
+def check_image_ok(rgb_image, black_pix_threshold=0.05):
     """
     Check the quality of an RGB image. Currently checking if we have
-    > 5% pixels being masked. This indicates problems with cloud masking
+    > X% pixels being masked. This indicates problems with cloud masking
     in previous steps.
 
     Parameters
@@ -593,11 +595,12 @@ def check_image_ok(rgb_image):
 
     img_array = pillow_to_numpy(rgb_image)
 
+    if len(img_array.shape) < 3:
+        return False
     black = [0,0,0]
-    black_pix_threshold = 0.05
     n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
 
-    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) > black_pix_threshold:
+    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) >= black_pix_threshold:
         return False
     else:
         return True

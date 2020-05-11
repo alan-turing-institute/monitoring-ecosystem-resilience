@@ -1,78 +1,151 @@
 #!/usr/bin/env python
 
 """
-Scripts to process the output of the GEE images and json files with network centrality measures.
+This script analyses data previously download with `download_gee_data.py`.
+First, data is preprocessed using the `analysis_preprocessing.py` module.
+Plots are produced from the processed data.
 
-The json outputs are turned into a dataframe and the values of a particular metric a plotted
-as a function of time.
-
-Finally a GIF file is produced with all of the network metric images, as well as the original 10km x 10km dowloaded images.
 """
 
 import argparse
 import os
 
+import pandas as pd
+
+from pyveg.src.analysis_preprocessing import preprocess_data
+
 from pyveg.src.data_analysis_utils import (
-    variable_read_json_to_dataframe,
-    drop_veg_outliers,
-    smooth_veg_data,
-    make_time_series,
     create_lat_long_metric_figures,
     convert_to_geopandas,
     coarse_dataframe,
-    write_slimmed_csv,
-    get_AR1_parameter_estimate
+    moving_window_analysis
 )
 
 from pyveg.src.plotting import (
-    plot_time_series, 
-    plot_smoothed_time_series, 
+    plot_stl_decomposition,
+    plot_feature_vector,
+    plot_time_series,
     plot_autocorrelation_function,
-    plot_feature_vectors
-)
-
-from pyveg.src.image_utils import (
-    create_gif_from_images
+    plot_cross_correlations,
+    plot_moving_window_analysis
 )
 
 
-def main():
+def run_time_series_analysis(filename, output_dir, detrended=False):
     """
-    CLI interface for gee data analysis.
-    """
-    parser = argparse.ArgumentParser(description="process json files with network centrality measures from from GEE images")
-    parser.add_argument("--input_dir",help="results directory from `download_gee_data` script, containing `results_summary.json`")
-    parser.add_argument('--spatial_plot', action='store_true')
-    parser.add_argument('--time_series_plot', action='store_true', default=True)
-    
-    print('-'*35)
-    print('Running analyse_gee_data.py')
-    print('-'*35)
+    Make plots for the time series data. This function can
+    be called for the seasonal or detrended process data.
 
-    # parse args
-    args = parser.parse_args()
-    input_dir = args.input_dir
+    Parameters
+    ----------
+    filename : str
+        Path to the time series csv to analyse.
+    output_dir : str
+        Path to the directory to save plots to.
+    """
+
+    # read processed data
+    ts_df = pd.read_csv(filename)
 
     # put output plots in the results dir
-    output_dir = os.path.join(input_dir, 'analysis')
-
-    # check input file exists
-    json_summary_path = os.path.join(input_dir, 'results_summary.json')
-    if not os.path.exists(json_summary_path):
-        raise FileNotFoundError(f'Could not find file "{os.path.abspath(json_summary_path)}".')
-
-    # make output subdir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    # read all json files in the directory and produce a dataframe
-    print(f"Reading results from '{os.path.abspath(json_summary_path)}'...")
-    dfs = variable_read_json_to_dataframe(json_summary_path)
+    # auto- and cross-correlations
+    # --------------------------------------------------
+    # create new subdir for correlation plots
+    corr_subdir = os.path.join(output_dir, 'correlations')
+    if not os.path.exists(corr_subdir):
+        os.makedirs(corr_subdir, exist_ok=True)
 
+    # make autocorrelation plots
+    plot_autocorrelation_function(ts_df, corr_subdir)
 
-    # spatial analysis and plotting 
+    # make cross correlation scatterplot matrix plots
+    plot_cross_correlations(ts_df, corr_subdir)
+    # --------------------------------------------------
+
+    # time series
     # ------------------------------------------------
-    if args.spatial_plot:
+    # create new subdir for time series analysis
+    tsa_subdir = os.path.join(output_dir, 'time-series')
+    if not os.path.exists(tsa_subdir):
+        os.makedirs(tsa_subdir, exist_ok=True)
+
+    # make a smoothed time series plot
+    plot_time_series(ts_df, tsa_subdir)
+
+    # plot the result of running STL decomposition
+    if not detrended:
+        plot_stl_decomposition(ts_df, 12, os.path.join(output_dir, 'detrended'))
+    # ------------------------------------------------
+
+    # moving window analysis
+    # ------------------------------------------------
+    # create new subdir for this sub-analysis
+    mwa_subdir = os.path.join(output_dir, 'moving-window')
+    if not os.path.exists(mwa_subdir):
+        os.makedirs(mwa_subdir, exist_ok=True)
+
+    # run 
+    mwa_df = moving_window_analysis(ts_df, mwa_subdir, window_size=0.5)
+
+    # make plots
+    plot_moving_window_analysis(mwa_df, mwa_subdir)
+
+    # save to csv
+    mwa_df.to_csv(os.path.join(mwa_subdir, 'moving-window-analysis.csv'), index=False)
+    # ------------------------------------------------
+
+
+def analyse_gee_data(input_dir, spatial):
+    """
+    Run analysis on dowloaded gee data
+
+    Parameters
+    ----------
+    input_dir : string
+        Path to directory with downloaded dada
+    do_spatial_plot: bool
+        Option to run spatial analysis and do plots
+    do_time_series_plot: bool
+        Option to run time-series analysis and do plots
+    """
+
+    # preprocess input data
+
+    ts_dirname, dfs = preprocess_data(input_dir, n_smooth=4, resample=False, period='MS')
+
+    # get filenames of preprocessed data time series
+    ts_filenames = [f for f in os.listdir(ts_dirname) if 'time_series' in f]
+    
+    # put all analysis results in this dir
+    output_dir = os.path.join(input_dir, 'analysis')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
+    print('Running Analysis...')
+    print('-'*len('Running Analysis...'))
+
+    # plot the feature vectors
+    plot_feature_vector(output_dir)
+
+    # for each time series
+    for filename in ts_filenames:
+        
+        print(f'\nAnalysing "{filename}"...')
+
+        # run the standard or detrended analysis
+        if 'detrended' in filename:
+            output_subdir = os.path.join(output_dir, os.path.splitext(filename)[0])
+            run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir, detrended=True)
+        else: 
+            output_subdir = output_dir
+            run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir)
+
+    # spatial analysis and plotting
+    # ------------------------------------------------
+    if spatial:
 
         # from the dataframe, produce network metric figure for each avalaible date
         print('\nCreating spatial plots...')
@@ -84,50 +157,33 @@ def main():
 
         for collection_name, df in dfs.items():
             if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-                data_df_geo = convert_to_geopandas(df)
-                data_df_geo_coarse = coarse_dataframe(data_df_geo, 2)
+                data_df_geo = convert_to_geopandas(df.copy())
+                data_df_geo_coarse = coarse_dataframe(data_df_geo.copy(), 2)
                 create_lat_long_metric_figures(data_df_geo_coarse, 'offset50', spatial_subdir)
     # ------------------------------------------------
 
-    # time series analysis and plotting 
-    # ------------------------------------------------
-    if args.time_series_plot:
+    print('\nAnalysis complete.\n')
 
-        # create new subdir for time series analysis
-        #tsa_subdir = os.path.join(output_dir, 'time-series') # if we start to have more and more results
-        tsa_subdir = output_dir
 
-        if not os.path.exists(tsa_subdir):
-            os.makedirs(tsa_subdir, exist_ok=True)
+def main():
+    """
+    CLI interface for gee data analysis.
+    """
+    parser = argparse.ArgumentParser(description="process json files with network centrality measures from from GEE images")
+    parser.add_argument("--input_dir", help="results directory from `download_gee_data` script, containing `results_summary.json`")
+    parser.add_argument('--spatial', action='store_true', default=False) # off by deafult as this takes a non-negligable amount of time
 
-        # convert to time series
-        time_series_dfs = make_time_series(dfs.copy())
+    print('-' * 35)
+    print('Running analyse_gee_data.py')
+    print('-' * 35)
 
-        # make the old time series plot
-        #print('\nPlotting time series...')
-        #plot_time_series(time_series_dfs, tsa_subdir)
+    # parse args
+    args = parser.parse_args()
+    input_dir = args.input_dir
+    spatial = args.spatial
 
-        # remove outliers from the time series
-        dfs = drop_veg_outliers(dfs, sigmas=3) # not convinced this is really helping much
-
-        # plot the feature vectors averaged over all time points and sub images
-        plot_feature_vectors(dfs, tsa_subdir)
-
-        # LOESS smoothing on sub-image time series
-        smoothed_time_series_dfs = make_time_series(smooth_veg_data(dfs.copy(), n=5)) # increase smoothing with n>5
-
-        # make a smoothed time series plot
-        plot_smoothed_time_series(smoothed_time_series_dfs, tsa_subdir)
-
-        # make autocorrelation plots
-        plot_autocorrelation_function(smoothed_time_series_dfs, tsa_subdir)
-
-        # write csv for easy external analysis
-        write_slimmed_csv(smoothed_time_series_dfs, tsa_subdir)
-    # ------------------------------------------------
-
-    print('\nDone!\n')
-
+    # run analysis code
+    analyse_gee_data(input_dir, spatial)
 
 
 if __name__ == "__main__":

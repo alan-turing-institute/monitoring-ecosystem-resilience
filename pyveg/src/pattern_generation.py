@@ -5,13 +5,11 @@ import os
 import random
 import json
 import numpy as np
-import matplotlib
-matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
 
 class PatternGenerator(object):
     """
-    Class that can generate simulated vegetation patterns, optionally
+    Class that can generate simulated veget  ation patterns, optionally
     from a loaded starting pattern, and propagate through time according
     to various amounts of rainfall and/or surface and soil water density.
     """
@@ -29,6 +27,29 @@ class PatternGenerator(object):
         self.initialize()
         self.time = 0
         pass
+
+
+    def print_config(self):
+
+        params = ["m",
+                  "delta_x","delta_y",
+                  "diffusion_plant","diffusion_soil","diffusion_surface",
+                  "surface_water_frac",
+                  "bare_soil_infiltration",
+                  "grazing_loss",
+                  "soil_water_loss",
+                  "plant_uptake",
+                  "plant_growth",
+                  "plant_senescence",
+                  "plant_uptake_saturation",
+                  "water_infilt_saturation",
+                  "veg_mass_per_cell",
+                  "fraction_plant_cells"
+                  ]
+        print("\nCurrent configuration:\n======================\n")
+
+        for param in params:
+            print("{}: {}".format(param, self.__getattribute__(param)))
 
 
     def set_rainfall(self, rainfall):
@@ -113,7 +134,7 @@ class PatternGenerator(object):
 
         # Starting biomass in a vegetation-covered cell.
         self.veg_mass_per_cell = self.config["vmass"] # how much biomass in vegetation-covered cells?
-
+        self.fraction_plant_cells = self.config["frac"] # fraction of starting cells with plants
 
     def initialize(self):
         """
@@ -315,7 +336,9 @@ class PatternGenerator(object):
         - for anything below, set to zero, for anything above, set to 1
         """
         if not threshold:
-            threshold = (self.plant_biomass.max() + self.plant_biomass.min()) / 2.
+            threshold = (np.quantile(self.plant_biomass, 0.9) \
+                         + np.quantile(self.plant_biomass, 0.1)) / 2.
+#            threshold = (self.plant_biomass.max() + self.plant_biomass.min()) / 2.
         new_list_x = []
         for row in self.plant_biomass:
             new_list_y = np.array([255*int(val < threshold) for val in row])

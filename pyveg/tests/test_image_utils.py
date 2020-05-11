@@ -46,7 +46,7 @@ def test_create_gif_from_images():
 
 
 def test_pillow_to_numpy():
-    img = Image.open(os.path.join(os.path.dirname(__file__),"..","testdata","black.png"))
+    img = Image.open(os.path.join(os.path.dirname(__file__),"..","testdata","white.png"))
     img_array = pillow_to_numpy(img)
     assert(img_array.ndim == 2)
 

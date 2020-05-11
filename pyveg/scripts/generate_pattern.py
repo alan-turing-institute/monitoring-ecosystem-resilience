@@ -30,7 +30,7 @@ def main():
     pg.set_rainfall(args.rainfall)
 
     if args.input_config:
-        pg.set_config(args.input_config)
+        pg.load_config(args.input_config)
     
     pg.initial_conditions()
     
