@@ -57,3 +57,30 @@ def test_ERA5_image_to_json():
     assert isinstance(results["2016-01-16"]["mean_2m_air_temperature"], float)
     assert isinstance(results["2016-01-16"]["total_precipitation"], float)
     shutil.rmtree(tmp_json_path)
+
+
+
+def test_network_centrality_calculator():
+    """
+    Test that we can go from a directory containing some 50x50 BWNVI images
+    to a json file containing network centrality values.
+    """
+    dir_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "Sentinel2", "test_png")
+    tmp_json_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "Sentinel2", "tmp_json")
+    ncc = NetworkCentralityCalculator()
+    ncc.input_dir = dir_path
+    ncc.output_dir = tmp_json_path
+    ncc.configure()
+    ncc.run()
+    assert os.path.exists(os.path.join(tmp_json_path, "2018-03-01","network_centralities.json"))
+    nc_json = json.load(open(os.path.join(tmp_json_path, "2018-03-01","network_centralities.json")))
+    assert isinstance(nc_json, list)
+    assert isinstance(nc_json[0], dict)
+    # test float values
+    for key in ["latitude", "longitude", "offset50", "veg_ndvi_mean"]:
+        assert key in nc_json[0].keys()
+        assert isinstance(nc_json[0][key], float)
+        assert nc_json[0][key] != 0.
+    assert "date" in nc_json[0].keys()
+    assert isinstance(nc_json[0]["date"], str)
+    shutil.rmtree(tmp_json_path)

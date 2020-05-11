@@ -421,7 +421,7 @@ class NetworkCentralityCalculator(ProcessorModule):
         consolidate_json_to_list(os.path.join(self.input_dir,
                                               date_string,
                                               "tmp_json"),
-                                 os.path.join(self.input_dir,
+                                 os.path.join(self.output_dir,
                                               date_string),
                                  "network_centralities.json")
 
