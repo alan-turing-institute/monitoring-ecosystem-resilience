@@ -25,6 +25,7 @@ from pyveg.src.plotting import (
     plot_stl_decomposition,
     plot_feature_vector,
     plot_time_series,
+    plot_ndvi_time_series,
     plot_autocorrelation_function,
     plot_cross_correlations,
     plot_moving_window_analysis
@@ -74,6 +75,7 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
 
     # make a smoothed time series plot
     plot_time_series(ts_df, tsa_subdir)
+    plot_ndvi_time_series(ts_df, tsa_subdir)
 
     # plot the result of running STL decomposition
     if not detrended:
