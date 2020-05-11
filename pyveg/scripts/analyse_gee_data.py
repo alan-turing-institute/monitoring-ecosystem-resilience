@@ -83,8 +83,8 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
 
 def run_early_warnings_resilience_analysis(filename, output_dir):
     """
-    Make plots for the time series data. This function can
-    be called for the seasonal or detrended process data.
+    Run early warning resilience analysis on time series data. This function can
+    be called on the detrended process data.
 
     Parameters
     ----------
@@ -138,10 +138,10 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
                                    band_width=0.2)
 
     # good place to do the plotting.
-
-
-    ### We can maybe then wrap up these lines into a new function
-
+    #
+    #
+    # We can maybe then wrap up these lines into a new function
+    #
     # ------------------------------------------
     for key, df in ews_dic_veg.items():
 
