@@ -180,7 +180,7 @@ def run_network_centrality(output_dir, img_thresh, img_rgb, ndvi_img, coords, da
     #nc_results = consolidate_subimage_json(output_subdir) # pre pipline way
 
     # re-combine the results from all sub-images
-    nc_results = consolidate_json_to_list(output_subdir,
+    nc_results = consolidate_json_to_list(os.path.join(output_subdir, 'tmp_json'),
                                           output_subdir,
                                           "network_centralities.json")
 
@@ -262,7 +262,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     # run network centrality on the sub-images
     if collection_dict['do_network_centrality']:
         print('Running network centrality...')
-        #n_sub_images = 20 # do this for speedup while testing
+        n_sub_images = 20 # do this for speedup while testing
         nc_output_dir = os.path.join(output_dir, 'network_centrality')
         nc_results = run_network_centrality(nc_output_dir, processed_ndvi, rgb_image, ndvi_image, coords,
                                             date_range, region_size, n_sub_images=n_sub_images)
