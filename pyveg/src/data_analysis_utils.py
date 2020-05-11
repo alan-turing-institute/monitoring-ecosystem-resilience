@@ -347,7 +347,8 @@ def get_AR1_parameter_estimate(ys):
 
     ys = ys.dropna()
 
-    if len(ys) < 5:
+    if len(ys) < 4:
+        print('Time series too short to reliably calculate AR1')
         return np.NaN, np.NaN
 
     from statsmodels.tsa.ar_model import AutoReg

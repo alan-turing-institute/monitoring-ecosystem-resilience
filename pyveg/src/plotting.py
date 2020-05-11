@@ -285,7 +285,7 @@ def plot_ndvi_time_series(df, output_dir):
     for column in df.columns:
         if 'veg_ndvi_mean' in column:
             veg_prefix = column.split('_')[0]
-            print(f'Plotting {veg_prefix} time series.')
+            print(f'Plotting {veg_prefix} NDVI time series.')
             make_plot(df, veg_prefix, output_dir)
 
     
@@ -657,7 +657,10 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
                             facecolor='none', alpha=0.15, label='AR1 SE Smoothed', hatch='X', edgecolor='tab:blue')
 
         # set y lim
-        ax.set_ylim([min(ar1-ar1_se)-0.8*max(ar1+ar1_se), 1.8*max(ar1+ar1_se)])
+        try: # in case there are no ar1 values, the array will be empty
+            ax.set_ylim([min(ar1-ar1_se)-0.8*max(ar1+ar1_se), 1.8*max(ar1+ar1_se)])
+        except:
+            return
 
         # plot legend
         plt.legend(loc='upper left')
