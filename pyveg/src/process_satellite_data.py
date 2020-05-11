@@ -18,95 +18,17 @@ from .image_utils import (
     save_image,
     convert_to_rgb,
     scale_tif,
-    save_json,
     pillow_to_numpy,
     process_and_threshold,
     check_image_ok
 )
 
+from .file_utils import save_json, construct_image_savepath
+
 from .subgraph_centrality import (
     subgraph_centrality,
     feature_vector_metrics,
 )
-
-def find_mid_period(start_time, end_time):
-    """
-    Given two strings in the format YYYY-MM-DD return a
-    string in the same format representing the middle (to
-    the nearest day)
-    """
-    t0 = dateparser.parse(start_time)
-    t1 = dateparser.parse(end_time)
-    td = (t1 - t0).days
-    mid = (t0 + timedelta(days=(td//2))).isoformat()
-    return mid.split("T")[0]
-
-
-def slice_time_period(start_date, end_date, n):
-    """
-    Divide the full period between the start_date and end_date into n equal-length
-    (to the nearest day) chunks.
-    Takes start_date and end_date as strings 'YYYY-MM-DD'.
-    Returns a list of tuples
-    [ (chunk0_start,chunk0_end),...]
-    """
-    start = dateparser.parse(start_date)
-    end = dateparser.parse(end_date)
-    if (not isinstance(start, datetime)) or (not isinstance(end, datetime)):
-        raise RuntimeError("invalid time strings")
-    td = end - start
-    if td.days <= 0:
-        raise RuntimeError("end_date must be after start_date")
-    days_per_chunk = td.days // n
-    output_list = []
-    for i in range(n):
-        chunk_start = start + timedelta(days=(i*days_per_chunk))
-        chunk_end = start + timedelta(days=((i+1)*days_per_chunk))
-        ## unless we are in the last chunk, which should finish at end_date
-        if i == n-1:
-            chunk_end = end
-        output_list.append((chunk_start.isoformat().split("T")[0],
-                           chunk_end.isoformat().split("T")[0]))
-    return output_list
-
-
-def get_num_n_day_slices(start_date, end_date, days_per_chunk):
-    """
-    Divide the full period between the start_date and end_date into n equal-length
-    (to the nearest day) chunks. The size of the chunk is defined by days_per_chunk.
-    Takes start_date and end_date as strings 'YYYY-MM-DD'.
-    Returns an integer with the number of possible points avalaible in that time period]
-    """
-    start = dateparser.parse(start_date)
-    end = dateparser.parse(end_date)
-    if (not isinstance(start, datetime)) or (not isinstance(end, datetime)):
-        raise RuntimeError("invalid time strings")
-    td = end - start
-    if td.days <= 0:
-        raise RuntimeError("end_date must be after start_date")
-    n = td.days//days_per_chunk
-
-    return  n
-
-
-def construct_image_savepath(output_dir, collection_name, coords, date_range, image_type):
-    """
-    Function to abstract output image filename construction. Current approach is to create
-    a new dir inside `output_dir` for the satellite, and then save date and coordinate
-    stamped images in this dir.
-    """
-
-    # get the mid point of the date range
-    mid_period_string = find_mid_period(date_range[0], date_range[1])
-
-    # filename is the date, coordinates, and image type
-    filename = f'{mid_period_string}_{coords[0]}-{coords[1]}_{image_type}.png'
-
-    # full path is dir + filename
-    full_path = os.path.join(output_dir, filename)
-
-    return full_path
-
 
 def process_sub_image(i, sub, sub_rgb, output_subdir, date):
     """
@@ -164,34 +86,18 @@ def process_sub_image(i, sub, sub_rgb, output_subdir, date):
     print(f'Processed {n_processed} sub-images...', end='\r')
 
 
-def consolidate_subimage_json(output_subdir):
-    """
-    Load all the json files from individual sub-images, and return
-    a list of dictionaries, to be written out into one json file.
-
-    Parameters
-    ----------
-    output_subdir : str
-        Directory where temporary json files for each sub-image are
-        stored.
-    """
-    nc_results = []
-    tmp_json_dir = os.path.join(output_subdir,"tmp_json")
-
-    # if no sub-images were processed, return
-    if not os.path.exists(tmp_json_dir):
-        print('No sub-images processed!')
-        return
-
-    # otherwise collate all sub-image outputs
-    for filename in os.listdir(tmp_json_dir):
-        nc_results.append(json.load(open(os.path.join(tmp_json_dir,filename))))
-    save_json(nc_results, output_subdir, "network_centralities.json")
-
-    return nc_results
 
 
-def run_network_centrality(output_dir, img_thresh, img_rgb, coords, date_range, region_size, sub_image_size=[50,50], n_sub_images=-1, n_threads=4):
+
+def run_network_centrality(output_dir,
+                           img_thresh,
+                           img_rgb,
+                           coords,
+                           date_range,
+                           region_size,
+                           sub_image_size=[50,50],
+                           n_sub_images=-1,
+                           n_threads=4):
     """
     !! SVS: Suggest that this function should be moved to the subgraph_centrality.py module
 
@@ -310,6 +216,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
 
     # save the rgb image
     rgb_image = convert_to_rgb(tif_filebase, collection_dict['RGB_bands'])
+
 
     # check that RGB image isn't entirely black
     if not check_image_ok(rgb_image, 1.0):
