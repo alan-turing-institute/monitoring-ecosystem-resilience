@@ -22,14 +22,16 @@ from .image_utils import (
     check_image_ok
 )
 
-from .file_utils import save_json, construct_image_savepath, save_image
+from .file_utils import save_json, construct_image_savepath, save_image, consolidate_json_to_list
+from .date_utils import find_mid_period, get_num_n_day_slices, slice_time_period
 
 from .subgraph_centrality import (
     subgraph_centrality,
     feature_vector_metrics,
 )
 
-def process_sub_image(i, sub, sub_rgb, output_subdir, date):
+
+def process_sub_image(i, sub, sub_rgb, sub_ndvi, output_subdir, date):
     """
     function to be used by multiprocessing Pool, called for every sub-image.
 
@@ -99,8 +101,6 @@ def process_sub_image(i, sub, sub_rgb, output_subdir, date):
     save_json(nc_result, os.path.join(output_subdir,"tmp_json"), f"network_centrality_sub{i}.json")
     n_processed = len(os.listdir(os.path.join(output_subdir,"tmp_json")))
     print(f'Processed {n_processed} sub-images...', end='\r')
-
-    return nc_results
 
 
 def run_network_centrality(output_dir, img_thresh, img_rgb, ndvi_img, coords, date_range, region_size, 
@@ -177,8 +177,12 @@ def run_network_centrality(output_dir, img_thresh, img_rgb, ndvi_img, coords, da
                    for i,sub in enumerate(sub_images)]
         pool.starmap(process_sub_image, arguments)
 
+    #nc_results = consolidate_subimage_json(output_subdir) # pre pipline way
+
     # re-combine the results from all sub-images
-    nc_results = consolidate_subimage_json(output_subdir)
+    nc_results = consolidate_json_to_list(output_subdir,
+                                          output_subdir,
+                                          "network_centralities.json")
 
     return nc_results
 
@@ -337,8 +341,16 @@ def process_all_collections(output_dir, collections, coords, date_range, region_
 
         # get the list of time intervals
         num_days_per_point = collection_dict['num_days_per_point']
-        num_slices = get_num_n_day_slices(start_date, end_date, num_days_per_point)
-        date_ranges = slice_time_period(date_range[0], date_range[1], num_slices)
+
+        # pre pipeline
+        #num_slices = get_num_n_day_slices(start_date, end_date, num_days_per_point)
+        #date_ranges = slice_time_period(date_range[0], date_range[1], num_slices) # pass the number of slices
+
+        # more advanced date slicing method
+        date_ranges = slice_time_period(start_date,
+                                        end_date,
+                                        num_days_per_point+'d') # pass directly the time interval
+    
 
         # get the data
         results = process_single_collection(output_dir, collection_dict, coords, date_ranges, region_size, scale)
