@@ -15,7 +15,6 @@ from .gee_interface import ee_download
 
 from .image_utils import (
     crop_image_npix,
-    save_image,
     convert_to_rgb,
     scale_tif,
     pillow_to_numpy,
@@ -23,7 +22,7 @@ from .image_utils import (
     check_image_ok
 )
 
-from .file_utils import save_json, construct_image_savepath
+from .file_utils import save_json, construct_image_savepath, save_image
 
 from .subgraph_centrality import (
     subgraph_centrality,

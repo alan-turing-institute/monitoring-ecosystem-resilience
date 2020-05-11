@@ -22,7 +22,7 @@ matplotlib.use('PS')
 import matplotlib.pyplot as plt
 
 from .coordinate_utils import get_sub_image_coords
-
+from .file_utils import save_image
 
 def image_from_array(input_array, output_size=None, sel_val=200):
     """
