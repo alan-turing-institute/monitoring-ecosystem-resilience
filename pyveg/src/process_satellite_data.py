@@ -349,7 +349,7 @@ def process_all_collections(output_dir, collections, coords, date_range, region_
         # more advanced date slicing method
         date_ranges = slice_time_period(start_date,
                                         end_date,
-                                        num_days_per_point+'d') # pass directly the time interval
+                                        str(num_days_per_point)+'d') # pass directly the time interval
     
 
         # get the data
