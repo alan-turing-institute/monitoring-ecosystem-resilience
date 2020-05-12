@@ -28,7 +28,8 @@ from pyveg.src.plotting import (
     plot_time_series,
     plot_autocorrelation_function,
     plot_cross_correlations,
-    plot_moving_window_analysis
+    plot_moving_window_analysis,
+    sensitivity_heatmap
 )
 
 
@@ -139,8 +140,14 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
                                    band_width=0.2)
 
 
-    sensitivity = early_warnings_sensitivity_analysis(ts_df[variable],
-                                                      indicators = ews)
+    sensitivity = early_warnings_sensitivity_analysis(ts_df[variable],indicators = ews)
+
+    # create new subdir for this sub-analysis
+    mwa_subdir_variable = os.path.join(mwa_subdir, variable)
+    if not os.path.exists(mwa_subdir_variable):
+        os.makedirs(mwa_subdir_variable, exist_ok=True)
+
+    sensitivity_heatmap(sensitivity,mwa_subdir_variable)
 
     print (sensitivity)
     # good place to do the plotting.

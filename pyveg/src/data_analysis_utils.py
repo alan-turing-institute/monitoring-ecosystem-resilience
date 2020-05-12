@@ -667,11 +667,11 @@ def get_datetime_xs(df):
 
 def early_warnings_sensitivity_analysis(series,
                                         indicators=['var','ac'],
-                                        winsizerange = [0.25, 0.75],
-                                        incrwinsize = 25,
+                                        winsizerange = [0.10, 0.8],
+                                        incrwinsize = 0.10,
                                         smooth = "Gaussian",
-                                        bandwidthrange = [0.05, 1],
-                                        spanrange = [0.05, 1],
+                                        bandwidthrange = [0.05, 1.],
+                                        spanrange = [0.05, 1.1],
                                         incrbandwidth = 0.2,
                                         incrspanrange = 0.1):
 
@@ -715,12 +715,14 @@ def early_warnings_sensitivity_analysis(series,
     '''
 
     results_kendal_tau = []
-    for winsize in np.arange(winsizerange[0],winsizerange[1],incrwinsize):
+    for winsize in np.arange(winsizerange[0],winsizerange[1]+0.01,incrwinsize):
 
+        winsize = round(winsize,3)
         if smooth == "Gaussian":
 
-            for bw in np.arange(bandwidthrange[0], bandwidthrange[1], incrbandwidth):
+            for bw in np.arange(bandwidthrange[0], bandwidthrange[1]+0.01, incrbandwidth):
 
+                bw = round(bw, 3)
                 ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
                                                         roll_window=winsize,
                                                         smooth=smooth,
@@ -737,8 +739,9 @@ def early_warnings_sensitivity_analysis(series,
 
         elif smooth =="Lowess":
 
-            for span in np.arange(spanrange[0], spanrange[1], incrspanrange):
+            for span in np.arange(spanrange[0], spanrange[1]+0.01, incrspanrange):
 
+                span = round(span,2)
                 ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
                                                         roll_window=winsize,
                                                         smooth=smooth,
