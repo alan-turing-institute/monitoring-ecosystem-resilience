@@ -150,10 +150,16 @@ def scale_tif(input_filebase, band):
                 min_val = pix[ix, iy]
 
     # create a new image where we will fill RGB pixel values from 0 to 255
+    # image dependent NDVI scaling:
+    #def get_pix_val(ix, iy): return \
+    #    max(0, int((pix[ix, iy]-min_val) * 255 /
+    #               max((max_val - min_val),1)))
+
+    # global linear transform from [-1, 1] -> [0, 255]
+    # tested in issue #224
     def get_pix_val(ix, iy): return \
-        max(0, int((pix[ix, iy]-min_val) * 255 /
-                   max((max_val - min_val),1))
-            )
+        int((pix[ix, iy] + 1 ) / 2 * 255)
+
     new_img = Image.new("RGB", im.size)
     for ix in range(im.size[0]):
         for iy in range(im.size[1]):
