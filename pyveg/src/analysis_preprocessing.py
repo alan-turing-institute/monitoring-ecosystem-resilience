@@ -54,7 +54,7 @@ def read_json_to_dataframes(filename):
         for date, time_point in coll_results['time-series-data'].items():
 
             # check we have data for this time point
-            if time_point is None or time_point == {}:
+            if time_point is None or time_point == {} or time_point == []:
                 
                 # add Null row if data is missing at this time point    
                 rows_list.append({'date': date})
