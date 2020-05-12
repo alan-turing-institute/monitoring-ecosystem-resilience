@@ -11,7 +11,7 @@ import argparse
 import os
 
 import pandas as pd
-
+import ewstools
 from pyveg.src.analysis_preprocessing import preprocess_data
 
 from pyveg.src.data_analysis_utils import (
@@ -80,14 +80,36 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
         plot_stl_decomposition(ts_df, 12, os.path.join(output_dir, 'detrended'))
     # ------------------------------------------------
 
-    # moving window analysis
+
+def run_early_warnings_resilience_analysis(filename, output_dir):
+    """
+    Run early warning resilience analysis on time series data. This function can
+    be called on the detrended process data.
+
+    Parameters
+    ----------
+    filename : str
+        Path to the time series csv to analyse.
+    output_dir : str
+        Path to the directory to save plots to.
+    """
+
+    # read processed data
+    ts_df = pd.read_csv(filename)
+
+    # put output plots in the results dir
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
+
+    # old moving window analysis
     # ------------------------------------------------
     # create new subdir for this sub-analysis
     mwa_subdir = os.path.join(output_dir, 'moving-window')
     if not os.path.exists(mwa_subdir):
         os.makedirs(mwa_subdir, exist_ok=True)
 
-    # run 
+    # run
     mwa_df = moving_window_analysis(ts_df, mwa_subdir, window_size=0.5)
 
     # make plots
@@ -96,6 +118,48 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
     # save to csv
     mwa_df.to_csv(os.path.join(mwa_subdir, 'moving-window-analysis.csv'), index=False)
     # ------------------------------------------------
+
+    # new resilience analysis
+    # ------------------------------------------------
+    # create new subdir for this sub-analysis
+    mwa_subdir = os.path.join(output_dir, 'early-warning-analysis')
+    if not os.path.exists(mwa_subdir):
+        os.makedirs(mwa_subdir, exist_ok=True)
+
+    # run resilience analysis on vegetation data
+    variable = 'S2_offset50_mean'
+    ews = ['var', 'sd', 'ac', 'skew', 'kurt', 'ac', 'smax', 'cf', 'aic']  # EWS to compute (let's do all of them)
+
+    ews_dic_veg = ewstools.core.ews_compute(ts_df[variable].dropna(),
+                                   roll_window=0.5,
+                                   smooth='Gaussian',
+                                   lag_times=[1,2],
+                                   ews=ews,
+                                   band_width=0.2)
+
+    # good place to do the plotting.
+    #
+    #
+    # We can maybe then wrap up these lines into a new function
+    #
+    # ------------------------------------------
+    for key, df in ews_dic_veg.items():
+
+        df.to_csv(os.path.join(mwa_subdir, 'vegetation-resilience-analysis-'+key.replace(' ', '')+'.csv'), index=False)
+
+    # run resilience analysis on precipitation data
+    variable = 'total_precipitation'
+
+    ews_dic_prep = ewstools.core.ews_compute(ts_df[variable].dropna(),
+                                        roll_window=0.5,
+                                        smooth='Gaussian',
+                                        lag_times=[1, 2],
+                                        ews=ews,
+                                        band_width=0.2)
+
+    for key, df in ews_dic_prep.items():
+
+        df.to_csv(os.path.join(mwa_subdir, 'precipitation-resilience-analysis-' + key.replace(' ', '') + '.csv'), index=False)
 
 
 def analyse_gee_data(input_dir, spatial):
@@ -139,7 +203,9 @@ def analyse_gee_data(input_dir, spatial):
         if 'detrended' in filename:
             output_subdir = os.path.join(output_dir, os.path.splitext(filename)[0])
             run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir, detrended=True)
-        else: 
+            run_early_warnings_resilience_analysis(os.path.join(ts_dirname, filename), output_subdir)
+
+        else:
             output_subdir = output_dir
             run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir)
 
