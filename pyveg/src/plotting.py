@@ -226,8 +226,9 @@ def plot_ndvi_time_series(df, output_dir):
         veg_xs = get_datetime_xs(veg_df)
 
         # get vegetation y values
+        ndvi_means = veg_df[veg_prefix + '_ndvi_mean_mean']
         veg_means = veg_df[veg_prefix + '_veg_ndvi_mean_mean']
-        veg_std = veg_df[veg_prefix + '_veg_ndvi_mean_std']
+        #veg_std = veg_df[veg_prefix + '_veg_ndvi_mean_std']
         veg_std = veg_df[veg_prefix + '_veg_ndvi_std_mean']
 
         # create a figure
@@ -241,13 +242,15 @@ def plot_ndvi_time_series(df, output_dir):
         ax.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
 
         # plot ndvi
+        ax.plot(veg_xs, ndvi_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
+
         ax.plot(veg_xs, veg_means, marker='o', markersize=7, 
                 markeredgecolor=(0.9172, 0.9627, 0.9172), markeredgewidth=2,
                 label='Smoothed', linewidth=2, color='green')
 
         ax.fill_between(veg_xs, veg_means - veg_std, veg_means + veg_std, 
                         facecolor='green', alpha=0.1, label='Std Dev')
-                        
+
         # plot precipitation if availible
         if 'total_precipitation' in df.columns:
             # handle the case where vegetation and precipitation have mismatched NaNs
