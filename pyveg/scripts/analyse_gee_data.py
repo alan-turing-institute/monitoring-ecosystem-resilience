@@ -18,7 +18,8 @@ from pyveg.src.data_analysis_utils import (
     create_lat_long_metric_figures,
     convert_to_geopandas,
     coarse_dataframe,
-    moving_window_analysis
+    moving_window_analysis,
+    early_warnings_sensitivity_analysis
 )
 
 from pyveg.src.plotting import (
@@ -128,7 +129,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
     # run resilience analysis on vegetation data
     variable = 'S2_offset50_mean'
-    ews = ['var', 'sd', 'ac', 'skew', 'kurt', 'ac', 'smax', 'cf', 'aic']  # EWS to compute (let's do all of them)
+    ews = ['var', 'sd', 'ac', 'skew', 'kurt', 'ac']  # EWS to compute (let's do all of them)
 
     ews_dic_veg = ewstools.core.ews_compute(ts_df[variable].dropna(),
                                    roll_window=0.5,
@@ -137,6 +138,11 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
                                    ews=ews,
                                    band_width=0.2)
 
+
+    sensitivity = early_warnings_sensitivity_analysis(ts_df[variable],
+                                                      indicators = ews)
+
+    print (sensitivity)
     # good place to do the plotting.
     #
     #

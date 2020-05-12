@@ -21,6 +21,7 @@ import matplotlib.cm as cm
 from scipy.fftpack import fft
 from scipy.stats import sem, t
 from statsmodels.tsa.seasonal import STL
+import ewstools
 
 
 def convert_to_geopandas(df):
@@ -666,7 +667,7 @@ def get_datetime_xs(df):
 
 def early_warnings_sensitivity_analysis(series,
                                         indicators=['var','ac'],
-                                        winsizerange = [25, 75],
+                                        winsizerange = [0.25, 0.75],
                                         incrwinsize = 25,
                                         smooth = "Gaussian",
                                         bandwidthrange = [0.05, 1],
@@ -674,12 +675,100 @@ def early_warnings_sensitivity_analysis(series,
                                         incrbandwidth = 0.2,
                                         incrspanrange = 0.1):
 
-    return None
-    #for winsize in range(winsizerange[0],winsizerange[1],incrwinsize):
+    '''
 
-    #    if smooth == "Gaussian":
+    Function to estimate the sensitivity of the early warnings analysis to the smoothing and windowsize used. The function
+    returns a dataframe that contains the Kendall tau rank correlation estimates for the rolling window sizes (winsize variable)
+    and bandwidths or span sizes depending on the de-trending (smooth variable).
+
+    This function is inspired in the sensitivity_ews.R function from Vasilis Dakos, Leo Lahti in the early-warnings-R package
+    https://github.com/earlywarningtoolbox/earlywarnings-R.
+
+    Parameters
+    ----------
+    series : pandas Series
+        Time series observations.
+    indicators: list of strings
+        The statistics (leading indicator) selected for which the sensitivity analysis is perfomed.
+    winsizerange: list of float
+        Range of the rolling window sizes expressed as ratio of the timeseries length (must be numeric between 0 and 1). Default is 0.25 - 0.75.
+    incrwinsize: float
+        Increments the rolling window size (must be numeric between 0 and 1). Default is 0.25.
+    smooth: string
+        Type of detrending. It can be {'Gaussian', 'Lowess', 'None'}.
+    bandwidthrange: list of float
+        Range of the bandwidth used for the Gaussian kernel when gaussian filtering is selected. It is expressed as percentage of the timeseries length (must be numeric between 0 and 100). Default is 5\% - 100\%.
+    spanrange: list of float
+        Parameter that controls the degree of Lowess smoothing (numeric between 0 and 1). Default is 0.05 - 1.
+    incrbandwidth: float
+        Size to increment the bandwidth used for the Gaussian kernel when gaussian filtering is applied. It is expressed as percentage of the timeseries length (must be numeric between 0 and 1). Default is 0.2.
+    incrspanrange: float
+        Size to increment the the span used for the Lowess smoothing
+
+    Returns
+    --------
+    DataFrame:
+        A dataframe that contains the Kendall tau rank correlation estimates for the rolling window sizes (winsize variable)
+     and bandwidths or span sizes depending on the de-trending (smooth variable).
 
 
+    '''
+
+    results_kendal_tau = []
+    for winsize in np.arange(winsizerange[0],winsizerange[1],incrwinsize):
+
+        if smooth == "Gaussian":
+
+            for bw in np.arange(bandwidthrange[0], bandwidthrange[1], incrbandwidth):
+
+                ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
+                                                        roll_window=winsize,
+                                                        smooth=smooth,
+                                                        lag_times=[1, 2],
+                                                        ews=indicators,
+                                                        band_width=bw)
+
+                result = ews_dic_veg['Kendall tau']
+                result['smooth'] = bw
+                result['winsize'] = winsize
+
+                results_kendal_tau.append(result)
+
+
+        elif smooth =="Lowess":
+
+            for span in np.arange(spanrange[0], spanrange[1], incrspanrange):
+
+                ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
+                                                        roll_window=winsize,
+                                                        smooth=smooth,
+                                                        lag_times=[1, 2],
+                                                        ews=indicators,
+                                                        span=span)
+
+                result = ews_dic_veg['Kendall tau']
+                result['smooth'] = bw
+                result['winsize'] = winsize
+
+                results_kendal_tau.append(result)
+
+        else:
+
+            ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
+                                                    roll_window=winsize,
+                                                    smooth='None',
+                                                    lag_times=[1, 2],
+                                                    ews=indicators)
+
+            result = ews_dic_veg['Kendall tau']
+            result['smooth'] = 0
+            result['winsize'] = winsize
+
+            results_kendal_tau.append(result)
+
+    sensitivity_df = pd.concat(results_kendal_tau)
+
+    return sensitivity_df
 
 
 
