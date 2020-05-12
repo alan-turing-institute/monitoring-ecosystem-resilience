@@ -131,7 +131,7 @@ def make_time_series(dfs):
             ts_df = pd.merge_ordered(ts_df, df, on='date', how='outer')
 
         # add climate data if availible
-        elif 'ECMWF/ERA5/MONTHLY' == col_name:
+        elif 'ECMWF/ERA5/' in col_name:
             df = df.set_index('date')
             ts_df = pd.merge_ordered(ts_df, df, on='date', how='outer')
 
@@ -804,7 +804,7 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
     # store feature vectors before averaging over sub-images
     print('- Saving feature vectors...')
     store_feature_vectors(dfs, output_dir)
-    
+
     # average over sub-images
     ts_df = make_time_series(dfs)
 
