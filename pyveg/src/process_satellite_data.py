@@ -72,9 +72,12 @@ def process_sub_image(i, sub, sub_rgb, sub_ndvi, output_subdir, date):
     # save accepted sub-image
     save_image(sub_image, output_subdir, output_filename)
 
-    # average NDVI of all pixels (in case there is no veg pattern)
-    ndvi_mean = round(pillow_to_numpy(sub_ndvi[0]).mean(), 4)
-    ndvi_std = round(pillow_to_numpy(sub_ndvi[0]).std(), 4)
+    # get cloud mask from colour sub-image
+    cloud_mask = (colour_subimage != 0)
+
+    # average NDVI of all uncloudy pixels (in case there is no veg pattern)
+    ndvi_mean = round(pillow_to_numpy(sub_ndvi[0])[cloud_mask].mean(), 4)
+    ndvi_std = round(pillow_to_numpy(sub_ndvi[0])[cloud_mask].std(), 4)
 
     # use the BWDVI to mask the NDVI and calculate the average
     # pixel value of veg pixels
