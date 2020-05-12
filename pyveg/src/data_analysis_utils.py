@@ -663,3 +663,23 @@ def get_datetime_xs(df):
         xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in df.date]
 
     return xs
+
+def early_warnings_sensitivity_analysis(series,
+                                        indicators=['var','ac'],
+                                        winsizerange = [25, 75],
+                                        incrwinsize = 25,
+                                        smooth = "Gaussian",
+                                        bandwidthrange = [0.05, 1],
+                                        spanrange = [0.05, 1],
+                                        incrbandwidth = 0.2,
+                                        incrspanrange = 0.1):
+
+    return None
+    #for winsize in range(winsizerange[0],winsizerange[1],incrwinsize):
+
+    #    if smooth == "Gaussian":
+
+
+
+
+
