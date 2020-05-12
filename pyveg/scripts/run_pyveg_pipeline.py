@@ -30,8 +30,9 @@ def build_pipeline(config_file, name="mypyveg"):
 
     # instantiate and setup the pipeline
     p = Pipeline(name)
-    p.output_dir = os.path.join('pyveg_output', config.output_dir)
-    p.output_dir += '__' + time.strftime("%Y-%m-%d_%H-%M-%S")
+    p.output_location = os.path.join('pyveg_output', config.output_dir)
+    p.output_location += '__' + time.strftime("%Y-%m-%d_%H-%M-%S")
+    p.output_location_type = "local"
     p.coords = config.coordinates
     p.date_range = config.date_range
 
