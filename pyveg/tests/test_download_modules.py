@@ -65,7 +65,7 @@ def test_veg_downloader_run_sentinel2():
     veg_downloader.cloudy_pix_frac = 50
     veg_downloader.cloudy_pix_flag = "CLOUDY_PIXEL_PERCENTAGE"
     veg_downloader.mask_cloud = True
-    veg_downloader.output_dir = os.path.join(TMPDIR,"testveg")
+    veg_downloader.output_location = os.path.join(TMPDIR,"testveg")
     veg_downloader.configure()
     veg_downloader.run()
     tif_dir = os.path.join(TMPDIR,"testveg","2017-01-16","RAW")
@@ -119,7 +119,7 @@ def test_weather_downloader_run_era5():
     weather_downloader.coords = (11.45,27.5)
     weather_downloader.date_range = ["2017-01-01","2017-02-01"]
     weather_downloader.time_per_point = "1m"
-    weather_downloader.output_dir = os.path.join(TMPDIR,"testweather")
+    weather_downloader.output_location = os.path.join(TMPDIR,"testweather")
     weather_downloader.configure()
     weather_downloader.run()
     tif_dir = os.path.join(TMPDIR,"testweather","2017-01-16","RAW")

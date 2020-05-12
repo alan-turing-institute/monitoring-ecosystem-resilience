@@ -44,7 +44,8 @@ class BaseDownloader(BaseModule):
                          ("date_range", [list, tuple]),
                          ("region_size", [float]),
                          ("scale", [int]),
-                         ("output_dir", [str])]
+                         ("output_location", [str]),
+                         ("output_location_type", [str])]
         return
 
 
@@ -57,23 +58,32 @@ class BaseDownloader(BaseModule):
 
         self.region_size = 0.1
         self.scale = 10
-        if not "output_dir" in vars(self):
-            self.set_output_dir()
+        self.output_location_type = "local"
+        if not "output_location" in vars(self):
+            self.set_output_location()
         return
 
 
-    def set_output_dir(self, output_dir=None):
+    def set_output_location(self, output_location=None):
         """
         If provided an output directory name, set it here,
         otherwise, construct one from coords and collection name.
+
+        Parameters
+        ==========
+        output_location: tuple of strings (location, location_type)
+
         """
-        if output_dir:
-            self.output_dir = output_dir
+        if output_location:
+            self.output_location = output_location[0]
+            self.output_location_type = output_location[1]
+
         elif ("coords" in vars(self)) and ("collection_name" in vars(self)):
-            self.output_dir = f'gee_{self.coords[0]}_{self.coords[1]}'\
+            self.output_location = f'gee_{self.coords[0]}_{self.coords[1]}'\
                 +"_"+self.collection_name.replace('/', '-')
+
         else:
-            raise RuntimeError("{}: need to set collection_name and coords before calling set_output_dir()"\
+            raise RuntimeError("{}: need to set collection_name and coords before calling set_output_location()"\
                                .format(self.name))
 
 
@@ -141,14 +151,16 @@ class BaseDownloader(BaseModule):
                                                               date_range)
 
         mid_date = find_mid_period(date_range[0], date_range[1])
-        download_dir = os.path.join(self.output_dir, mid_date, "RAW")
+        download_location = os.path.join(self.output_location, mid_date, "RAW")
 
         # download files and unzip to temporary directory
         for download_url in download_urls:
-            download_and_unzip(download_url, download_dir)
+            download_and_unzip(download_url,
+                               download_location)
+#                               self.output_location_type)
 
         # return the path so downloaded files can be handled by caller
-        return download_dir
+        return download_location
 
 
     def run(self):
@@ -157,15 +169,15 @@ class BaseDownloader(BaseModule):
         date_ranges = slice_time_period(start_date,
                                         end_date,
                                         self.time_per_point)
-        download_dirs = []
+        download_locations = []
         for date_range in date_ranges:
             urls = self.prep_data(date_range)
             print("{}: got URL {} for date range {}".format(self.name,
                                                             urls,
                                                             date_range))
-            download_dir = self.download_data(urls, date_range)
-            download_dirs.append(download_dir)
-        return download_dirs
+            download_location = self.download_data(urls, date_range)
+            download_locations.append(download_location)
+        return download_locations
 
 
 ##############################################################################

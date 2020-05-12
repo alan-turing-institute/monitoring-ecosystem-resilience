@@ -23,8 +23,8 @@ def test_Sentinel2_image_processor():
     tmp_png_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "Sentinel2", "tmp_png")
 
     vip = VegetationImageProcessor()
-    vip.input_dir = dir_path
-    vip.output_dir = tmp_png_path
+    vip.input_location = dir_path
+    vip.output_location = tmp_png_path
     vip.coords = [11.58,27.95]
     vip.configure()
     vip.run()
@@ -44,8 +44,8 @@ def test_ERA5_image_to_json():
     tmp_json_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "ERA5", "tmp_json")
 
     wip = WeatherImageToJSON()
-    wip.input_dir = dir_path
-    wip.output_dir = tmp_json_path
+    wip.input_location = dir_path
+    wip.output_location = tmp_json_path
     wip.coords = [11.58,27.95]
     wip.configure()
     wip.run()
@@ -68,8 +68,8 @@ def test_network_centrality_calculator():
     dir_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "Sentinel2", "test_png")
     tmp_json_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "Sentinel2", "tmp_json")
     ncc = NetworkCentralityCalculator()
-    ncc.input_dir = dir_path
-    ncc.output_dir = tmp_json_path
+    ncc.input_location = dir_path
+    ncc.output_location = tmp_json_path
     ncc.configure()
     ncc.run()
     assert os.path.exists(os.path.join(tmp_json_path, "2018-03-01","network_centralities.json"))

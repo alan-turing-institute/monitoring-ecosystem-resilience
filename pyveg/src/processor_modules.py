@@ -42,8 +42,10 @@ class VegetationImageProcessor(ProcessorModule):
     """
     def __init__(self, name=None):
         super().__init__(name)
-        self.params += [("input_dir", [str]),
-                        ("output_dir", [str]),
+        self.params += [("input_location", [str]),
+                        ("input_location_type", [str]),
+                        ("output_location", [str]),
+                        ("output_location_type", [str]),
                         ("region_size", [float]),
                         ("RGB_bands", [list]),
                         ("split_RGB_images", [bool])
@@ -59,7 +61,8 @@ class VegetationImageProcessor(ProcessorModule):
         self.region_size = 0.1
         self.RGB_bands = ["B4","B3","B2"]
         self.split_RGB_images = True
-
+        self.input_location_type = "local"
+        self.output_location_type = "local"
 
 
     def construct_image_savepath(self, date_string, coords_string, image_type):
@@ -72,14 +75,14 @@ class VegetationImageProcessor(ProcessorModule):
         """
 
         if "SUB" in image_type:
-            output_dir = os.path.join(self.output_dir, date_string, "SPLIT")
+            output_location = os.path.join(self.output_location, date_string, "SPLIT")
         else:
-            output_dir = os.path.join(self.output_dir, date_string, "PROCESSED")
+            output_location = os.path.join(self.output_location, date_string, "PROCESSED")
         # filename is the date, coordinates, and image type
         filename = f'{date_string}_{coords_string}_{image_type}.png'
 
         # full path is dir + filename
-        full_path = os.path.join(output_dir, filename)
+        full_path = os.path.join(output_location, filename)
 
         return full_path
 
@@ -136,7 +139,7 @@ class VegetationImageProcessor(ProcessorModule):
                                      region_size=self.region_size,
                                      coords = coords)
 
-        output_dir = os.path.dirname(self.construct_image_savepath(date_string,
+        output_location = os.path.dirname(self.construct_image_savepath(date_string,
                                                                    coords_string,
                                                                    'SUB_'+image_type))
         for i, sub in enumerate(sub_images):
@@ -147,7 +150,7 @@ class VegetationImageProcessor(ProcessorModule):
                                                            sub_coords[1])
             output_filename += "_{}".format(image_type)
             output_filename += '.png'
-            save_image(sub_image, output_dir, output_filename, verbose=False)
+            save_image(sub_image, output_location, output_filename, verbose=False)
         return True
 
 
@@ -164,13 +167,13 @@ class VegetationImageProcessor(ProcessorModule):
         ==========
         input_filepath: str, full path to directory containing tif files
                        downloaded from GEE.  This will normally be
-                       self.output_dir/<mid-point-date>/RAW
+                       self.output_location/<mid-point-date>/RAW
 
         Returns
         =======
         True if everything was processed and saved OK, False otherwise.
         """
-        filenames = [filename for filename in os.listdir(input_filepath) \
+        filenames = [filename for filename in list_directory(input_filepath) \
                      if filename.endswith(".tif")]
 
         # extract this to feed into `convert_to_rgb()`
@@ -235,13 +238,13 @@ class VegetationImageProcessor(ProcessorModule):
         call process_single_date() on each of them.
         """
         super().run()
-        date_subdirs = sorted(os.listdir(self.input_dir))
+        date_subdirs = sorted(list_directory(self.input_location))
         for date_subdir in date_subdirs:
             if not re.search("^([\d]{4}-[\d]{2}-[\d]{2})", date_subdir):
                 print("{}: Directory name {} not in YYYY-MM-DD format"\
                       .format(self.name, date_subdir))
                 continue
-            date_path = os.path.join(self.input_dir, date_subdir, "RAW")
+            date_path = os.path.join(self.input_location, date_subdir, "RAW")
             processed_ok = self.process_single_date(date_path)
             if not processed_ok:
                 continue
@@ -255,9 +258,21 @@ class WeatherImageToJSON(ProcessorModule):
 
     def __init__(self, name=None):
         super().__init__(name)
-        self.params += [("input_dir", [str]),
-                        ("output_dir", [str])
+        self.params += [("input_location", [str]),
+                        ("output_location", [str]),
+                        ("input_location_type", [str]),
+                        ("output_location_type", [str])
         ]
+
+
+    def set_default_parameters(self):
+        """
+        Set some basic defaults.  Note that these might get overriden
+        by a parent Sequence, or by calling configure() with a dict of values
+        """
+        super().set_default_parameters()
+        self.input_location_type = "local"
+        self.output_location_type = "local"
 
 
     def process_one_date(self, date_string):
@@ -276,11 +291,11 @@ class WeatherImageToJSON(ProcessorModule):
         """
         metrics_dict = {}
 
-        input_dir = os.path.join(self.input_dir, date_string, "RAW")
-        for filename in os.listdir(input_dir):
+        input_location = os.path.join(self.input_location, date_string, "RAW")
+        for filename in list_directory(input_location):
             if filename.endswith(".tif"):
                 name_variable = (filename.split('.'))[1]
-                variable_array = cv.imread(os.path.join(input_dir, filename),
+                variable_array = cv.imread(os.path.join(input_location, filename),
                                            cv.IMREAD_ANYDEPTH)
 
                 metrics_dict[name_variable] = variable_array.mean()\
@@ -292,7 +307,7 @@ class WeatherImageToJSON(ProcessorModule):
         super().run()
         # sub-directories of our input directory should be dates.
         time_series_data = {}
-        date_strings = os.listdir(self.input_dir)
+        date_strings = list_directory(self.input_location)
         date_strings.sort()
         for date_string in date_strings:
             if date_string == "RESULTS":
@@ -300,24 +315,24 @@ class WeatherImageToJSON(ProcessorModule):
             time_series_data[date_string] = self.process_one_date(date_string)
 
         save_json(time_series_data,
-                  os.path.join(self.output_dir, "RESULTS"),
+                  os.path.join(self.output_location, "RESULTS"),
                   "weather_data.json")
 
 
 
 #######################################################################
 
-def process_sub_image(i, input_filename, input_dir, output_dir):
+def process_sub_image(i, input_filename, input_location, output_location):
     """
     Read file and run network centrality
     """
-    date_string = input_dir.split("/")[-2]
+    date_string = input_location.split("/")[-2]
 
     # open BWNDVI image
-    sub_image = Image.open(os.path.join(input_dir, input_filename))
+    sub_image = Image.open(os.path.join(input_location, input_filename))
 
     # open NDVI image
-    ndvi_sub_image = Image.open(os.path.join(input_dir, input_filename.replace('BWNDVI', 'NDVI')))
+    ndvi_sub_image = Image.open(os.path.join(input_location, input_filename.replace('BWNDVI', 'NDVI')))
 
     # get average NDVI across the whole image (in case there is no patterned veg)
     ndvi_mean = round(pillow_to_numpy(ndvi_sub_image).mean(), 4)
@@ -331,7 +346,7 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
 
     image_array = pillow_to_numpy(sub_image)
     feature_vec, _ = subgraph_centrality(image_array)
-    # coords should be part of the filename
+    # coords should be part of the filepath
     coords_string = find_coords_string(input_filename)
     if not coords_string:
         raise RuntimeError("Unable to find coordinates in {}"\
@@ -349,10 +364,10 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
     nc_result['veg_ndvi_std'] = veg_ndvi_std
 
     # save individual result for sub-image to tmp json, will combine later.
-    save_json(nc_result, output_dir,
+    save_json(nc_result, output_location,
               f"network_centrality_sub{i}.json", verbose=False)
     # count and print how many sub-images we have done.
-    n_processed = len(os.listdir(output_dir))
+    n_processed = len(list_directory(output_location))
     print(f'Processed {n_processed} sub-images...', end='\r')
     return True
 
@@ -368,11 +383,13 @@ class NetworkCentralityCalculator(ProcessorModule):
     def __init__(self, name=None):
         super().__init__(name)
         self.params += [
-            ("input_dir", [str]),
-            ("output_dir", [str]),
+            ("input_location", [str]),
+            ("output_location", [str]),
+            ("input_location_type", [str]),
+            ("output_location_type", [str]),
             ("n_threads", [int]),
             ("n_sub_images", [int])
-                        ]
+        ]
 
     def set_default_parameters(self):
         """
@@ -382,7 +399,8 @@ class NetworkCentralityCalculator(ProcessorModule):
         super().set_default_parameters()
         self.n_threads = 4
         self.n_sub_images = -1 # do all-sub-images
-
+        self.input_location_type = "local"
+        self.output_location_type = "local"
 
     def check_sub_image(self, ndvi_filename, input_path):
         """
@@ -401,17 +419,17 @@ class NetworkCentralityCalculator(ProcessorModule):
         sub-images.
         """
 
-        input_path = os.path.join(self.input_dir, date_string, "SPLIT")
+        input_path = os.path.join(self.input_location, date_string, "SPLIT")
         if not os.path.exists(input_path):
             print("{}: No sub-images for date {}".format(self.name,
                                                          date_string))
             return
         # list all the "BWNDVI" sub-images where
         # RGB image passes quality check
-        input_files = [filename for filename in os.listdir(input_path) \
+        input_files = [filename for filename in list_directory(input_path) \
                        if "BWNDVI" in filename and \
                        self.check_sub_image(filename,input_path)]
-        tmp_json_dir = os.path.join(self.input_dir, date_string,"tmp_json")
+        tmp_json_dir = os.path.join(self.input_location, date_string,"tmp_json")
 
         # if we only want a subset of sub-images, truncate the list here
         if self.n_sub_images > 0:
@@ -424,10 +442,10 @@ class NetworkCentralityCalculator(ProcessorModule):
                    for i, filename in enumerate(input_files)]
             pool.starmap(process_sub_image, arguments)
         # put all the output json files for subimages together into one for this date
-        consolidate_json_to_list(os.path.join(self.input_dir,
+        consolidate_json_to_list(os.path.join(self.input_location,
                                               date_string,
                                               "tmp_json"),
-                                 os.path.join(self.output_dir,
+                                 os.path.join(self.output_location,
                                               date_string),
                                  "network_centralities.json")
 
@@ -437,6 +455,6 @@ class NetworkCentralityCalculator(ProcessorModule):
         if "list_of_dates" in vars(self):
             date_strings = self.list_of_dates
         else:
-            date_strings = sorted(os.listdir(self.input_dir))
+            date_strings = sorted(list_directory(self.input_location, self.input_location_type))
         for date_string in date_strings:
             self.process_single_date(date_string)

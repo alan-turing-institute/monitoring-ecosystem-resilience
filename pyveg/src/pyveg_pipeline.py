@@ -14,7 +14,10 @@ the results of the different SEQUENCES into one output file.
 """
 
 import os
-
+try:
+    from pyveg.src import azure_utils
+except:
+    print("Azure utils could not be imported - is Azure SDK installed?")
 
 class Pipeline(object):
     """
@@ -28,7 +31,8 @@ class Pipeline(object):
         self.sequences = []
         self.coords = None
         self.date_range = None
-        self.output_dir = None
+        self.output_location = None
+        self.output_location_type = None
         self.is_configured = False
 
 
@@ -51,7 +55,8 @@ class Pipeline(object):
         output += "=======================\n"
         output += "coordinates: {}\n".format(self.coords)
         output += "date_range:  {}\n".format(self.date_range)
-        output += "output_dir:  {}\n".format(self.output_dir)
+        output += "output_location:  {}\n".format(self.output_location)
+        output += "output_location_type:  {}\n".format(self.output_location_type)
         output += "\n ------- Sequences ----------\n\n"
         for s in self.sequences:
             output += s.__repr__()
@@ -72,7 +77,7 @@ class Pipeline(object):
         """
         Configure all the sequences in this pipeline.
         """
-        for var in ["coords", "date_range", "output_dir"]:
+        for var in ["coords", "date_range", "output_location","output_location_type"]:
             if (not var in vars(self)) or ( not self.__getattribute__(var)):
                 raise RuntimeError("{}: need to set {} before calling configure()"\
                                    .format(self.name, var))
@@ -109,7 +114,8 @@ class Sequence(object):
         self.modules = []
         self.depends_on = []
         self.parent = None
-        self.output_dir = None
+        self.output_location = None
+        self.output_location_type = None
         self.is_configured = False
 
 
@@ -129,14 +135,16 @@ class Sequence(object):
         return self
 
 
-    def set_output_dir(self):
+    def set_output_location(self):
         if self.parent:
-            self.output_dir = os.path.join(self.parent.output_dir,
+            self.output_location = os.path.join(self.parent.output_location,
                                            f'gee_{self.coords[0]}_{self.coords[1]}'\
                                            +"_"+self.name.replace('/', '-'))
+            self.output_location_type = self.parent.output_location_type
         else:
-            self.output_dir = f'gee_{self.coords[0]}_{self.coords[1]}'\
+            self.output_location = f'gee_{self.coords[0]}_{self.coords[1]}'\
                 +"_"+self.name.replace('/', '-')
+            self.output_location_type = "local"
 
 
     def set_config(self, config_dict):
@@ -151,13 +159,13 @@ class Sequence(object):
         if (not self.coords) or (not self.date_range):
             raise RuntimeError("{}: Need to set coords and date range before calling configure()"\
                                .format(self.name))
-        if not self.output_dir:
-            self.set_output_dir()
-
+        if not self.output_location:
+            self.set_output_location()
+        # set the input location for each module to be the output of the previous one.
         for i, module in enumerate(self.modules):
-            module.output_dir = self.output_dir
+            module.output_location = self.output_location
             if i>0:
-                module.input_dir = self.modules[i-1].output_dir
+                module.input_location = self.modules[i-1].output_location
             module.coords = self.coords
             module.date_range = self.date_range
             module.configure()
@@ -203,7 +211,7 @@ class BaseModule(object):
     (e.g. Downloads from GEE, processes some images, ...) and produces some output.
     The working directory for all modules within a sequence will be given by the sequence -
     modules may write output to subdirectories of this (e.g. for different dates), but what
-    we call "output_dir" will be the base directory common to all modules, and will contain
+    we call "output_location" will be the base directory common to all modules, and will contain
     info about the image collection name, and the coordinates.
     """
     def __init__(self, name=None):
@@ -270,7 +278,6 @@ class BaseModule(object):
     def run(self):
         if not self.is_configured:
             raise RuntimeError("Module {} needs to be configured before running".format(self.name))
-
 
 
     def __repr__(self):
