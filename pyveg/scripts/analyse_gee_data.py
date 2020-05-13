@@ -109,6 +109,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
     # old moving window analysis
     # ------------------------------------------------
+    print('Running moving window analysis...')
     # create new subdir for this sub-analysis
     mwa_subdir = os.path.join(output_dir, 'moving-window')
     if not os.path.exists(mwa_subdir):
@@ -126,6 +127,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
     # new resilience analysis
     # ------------------------------------------------
+    print('Running ewstools resiliance analysis...')
     # create new subdir for this sub-analysis
     mwa_subdir = os.path.join(output_dir, 'early-warning-analysis')
     if not os.path.exists(mwa_subdir):
@@ -203,12 +205,15 @@ def analyse_gee_data(input_dir, spatial):
             output_subdir = os.path.join(output_dir, 'detrended')
             run_time_series_analysis(ts_file, output_subdir, detrended=True)
 
-            ews_subdir = os.path.join(output_dir, 'ews')
+            ews_subdir = os.path.join(output_dir, 'resiliance/deseasonalised')
             run_early_warnings_resilience_analysis(ts_file, ews_subdir)
 
         else:
             output_subdir = output_dir
             run_time_series_analysis(ts_file, output_subdir)
+
+            ews_subdir = os.path.join(output_dir, 'resiliance/seasonal')
+            run_early_warnings_resilience_analysis(ts_file, ews_subdir)
 
         print('.'*50, '\n')
 
