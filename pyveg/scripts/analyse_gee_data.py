@@ -128,8 +128,9 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
     # new resilience analysis
     # ------------------------------------------------
     print('Running ewstools resiliance analysis...')
+    
     # create new subdir for this sub-analysis
-    mwa_subdir = os.path.join(output_dir, 'early-warning-analysis')
+    mwa_subdir = os.path.join(output_dir, 'ewstools')
     if not os.path.exists(mwa_subdir):
         os.makedirs(mwa_subdir, exist_ok=True)
     
