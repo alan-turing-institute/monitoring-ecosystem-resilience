@@ -220,15 +220,15 @@ def plot_time_series(df, output_dir, filename_suffix =''):
 
 def plot_ndvi_time_series(df, output_dir):
     def make_plot(df, veg_prefix, output_dir):
-        veg_df = df.dropna(subset=[veg_prefix+'_veg_ndvi_mean'])
+        veg_df = df.dropna(subset=[veg_prefix+'_ndvi_veg_mean'])
 
         # get vegetation x values to datetime objects
         veg_xs = get_datetime_xs(veg_df)
 
         # get vegetation y values
         ndvi_means = veg_df[veg_prefix + '_ndvi_mean']
-        veg_means = veg_df[veg_prefix + '_veg_ndvi_mean']
-        veg_std = veg_df[veg_prefix + '_veg_ndvi_std']
+        veg_means = veg_df[veg_prefix + '_ndvi_veg_mean']
+        veg_std = veg_df[veg_prefix + '_ndvi_veg_std']
 
         # create a figure
         fig, ax = plt.subplots(figsize=(15, 4.5))
@@ -285,7 +285,7 @@ def plot_ndvi_time_series(df, output_dir):
 
     # make plots for selected columns
     for column in df.columns:
-        if 'veg_ndvi_mean' in column:
+        if 'ndvi_veg_mean' in column:
             veg_prefix = column.split('_')[0]
             print(f'Plotting {veg_prefix} NDVI time series.')
             make_plot(df, veg_prefix, output_dir)
