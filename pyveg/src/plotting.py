@@ -712,7 +712,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         fig.tight_layout()
 
         # save the plot
-        output_filename = collection_prefix + '-moving-window-AR1-var' + smoothing_option + '.png'
+        output_filename = collection_prefix + '-AR1-var-' + smoothing_option + '.png'
         print(f'Plotting {collection_prefix} moving window time series...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
         plt.close(fig)
