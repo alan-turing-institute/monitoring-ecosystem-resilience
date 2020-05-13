@@ -343,10 +343,10 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
     nc_result['date'] = date_string
     nc_result['latitude'] = coords[1]
     nc_result['longitude'] = coords[0]
-    nc_result['ndvi_mean'] = ndvi_mean
-    nc_result['ndvi_std'] = ndvi_std
-    nc_result['veg_ndvi_mean'] = veg_ndvi_mean
-    nc_result['veg_ndvi_std'] = veg_ndvi_std
+    nc_result['ndvi'] = ndvi_mean
+    #nc_result['ndvi_std'] = ndvi_std
+    nc_result['veg_ndvi'] = veg_ndvi_mean
+    #nc_result['veg_ndvi_std'] = veg_ndvi_std
 
     # save individual result for sub-image to tmp json, will combine later.
     save_json(nc_result, output_dir,

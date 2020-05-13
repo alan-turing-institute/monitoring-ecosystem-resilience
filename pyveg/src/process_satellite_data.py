@@ -94,10 +94,10 @@ def process_sub_image(i, sub, sub_rgb, sub_ndvi, output_subdir, date):
     nc_result['latitude'] = round(sub_coords[1], 4)
     nc_result['date'] = date
     nc_result['feature_vec'] = list(feature_vec)
-    nc_result['ndvi_mean'] = ndvi_mean
-    nc_result['ndvi_std'] = ndvi_std
-    nc_result['veg_ndvi_mean'] = veg_ndvi_mean
-    nc_result['veg_ndvi_std'] = veg_ndvi_std
+    nc_result['ndvi'] = ndvi_mean
+    #nc_result['ndvi_std'] = ndvi_std
+    nc_result['veg_ndvi'] = veg_ndvi_mean
+    #nc_result['veg_ndvi_std'] = veg_ndvi_std
 
     # write json file for just this sub-image to a temporary location
     # (to be thread safe, only combine when all parallel jobs are done)
