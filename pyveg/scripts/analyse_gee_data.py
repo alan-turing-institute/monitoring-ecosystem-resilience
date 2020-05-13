@@ -194,7 +194,7 @@ def analyse_gee_data(input_dir, spatial):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    print('Running Analysis...')
+    print('\nRunning Analysis...')
     print('-'*len('Running Analysis...'))
 
     # plot the feature vectors
@@ -203,17 +203,21 @@ def analyse_gee_data(input_dir, spatial):
     # for each time series
     for filename in ts_filenames:
         
-        print(f'\nAnalysing "{filename}"...')
+        ts_file = os.path.join(ts_dirname, filename)
+        print(f'\n* Analysing "{ts_file}"...')
+        print('.'*50)
 
         # run the standard or detrended analysis
         if 'detrended' in filename:
             output_subdir = os.path.join(output_dir, os.path.splitext(filename)[0])
-            run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir, detrended=True)
-            run_early_warnings_resilience_analysis(os.path.join(ts_dirname, filename), output_subdir)
+            run_time_series_analysis(ts_file, output_subdir, detrended=True)
+            run_early_warnings_resilience_analysis(ts_file, output_subdir)
 
         else:
             output_subdir = output_dir
-            run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir)
+            run_time_series_analysis(ts_file, output_subdir)
+
+        print('.'*50, '\n')
 
     # spatial analysis and plotting
     # ------------------------------------------------
