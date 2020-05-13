@@ -461,47 +461,6 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3):
     return df
 
 
-def detrend_df(df, lag, period='MS'):
-    """
-    Remove seasonality from a DataFrame containing the time series 
-    for a single sub-image.
-
-    Parameters
-    ----------
-    df : DataFrame
-        Time series data for a single sub-image location.
-    lag : int
-        Length of season in number of observations.
-
-    Returns
-    ----------
-    DataFrame
-        Input with seasonality removed from time series columns.
-    """
-
-    # new empty df to deal with length mismatches after resampling
-    df_out = pd.DataFrame()
-
-    # resample time series (in case not done already)
-    columns = [c for c in df.columns if any([s in c 
-                for s in ['offset50', 'precipitation', 'temperature']])]
-
-    df_out = resample_dataframe(df, columns, period=period)
-
-    # detrend veg and climate columns
-    for col in columns:
-        df_out[col] = df_out[col].diff(lag)
-
-    # need to keep this info for smoothing later
-    try:
-        df_out['latitude'] = df['latitude']
-        df_out['longitude'] = df['longitude']
-    except:
-        pass
-
-    return df_out
-
-
 def store_feature_vectors(dfs, output_dir):
     """
     Write out all feature vector information to a csv file, to be read
@@ -670,7 +629,55 @@ def get_missing_time_points(dfs):
     return missing_points
 
 
-def detrend_data(dfs, lag, period='MS'):
+def detrend_df(df, period='MS'):
+    """
+    Remove seasonality from a DataFrame containing the time series 
+    for a single sub-image.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Time series data for a single sub-image location.
+    period : str, optional
+    `   Resample time series to this frequency and then infer
+        lag to use for deseasonalizing.
+
+    Returns
+    ----------
+    DataFrame
+        Input with seasonality removed from time series columns.
+    """
+
+    # infer lag from period
+    if period == 'MS':
+        lag = 12
+    else:
+        raise ValueError('Periods other than "MS" are not well supported yet!')
+
+    # new empty df to deal with length mismatches after resampling
+    df_out = pd.DataFrame()
+
+    # resample time series (in case not done already)
+    columns = [c for c in df.columns if any([s in c 
+                for s in ['offset50', 'precipitation', 'temperature']])]
+
+    df_out = resample_dataframe(df, columns, period=period)
+
+    # detrend veg and climate columns
+    for col in columns:
+        df_out[col] = df_out[col].diff(lag)
+
+    # need to keep this info for smoothing later
+    try:
+        df_out['latitude'] = df['latitude']
+        df_out['longitude'] = df['longitude']
+    except:
+        pass
+
+    return df_out
+
+
+def detrend_data(dfs, period='MS'):
     """
     Loop over each sub image time series DataFrames and remove
     time series seasonality by subtracting the previous year.
@@ -680,8 +687,9 @@ def detrend_data(dfs, lag, period='MS'):
     ----------
     dfs : dict of DataFrame
         Time series data for multiple sub-image locations.
-    lag : float
-        Periodicity to remove
+    period : str, optional
+    `   Resample time series to this frequency and then infer
+        lag to use for deseasonalizing.
 
     Returns
     ----------
@@ -706,7 +714,7 @@ def detrend_data(dfs, lag, period='MS'):
             
             # for each sub-image
             for key, df_ in d.items():
-                d[key] = detrend_df(df_, lag, period)
+                d[key] = detrend_df(df_, period)
 
             # reconstruct the DataFrame
             df = list(d.values())[0]
@@ -720,7 +728,7 @@ def detrend_data(dfs, lag, period='MS'):
         else:
             # remove seasonality for weather data, this is a simpler time series
 
-            dfs[col_name] = detrend_df(dfs[col_name], lag, period)
+            dfs[col_name] = detrend_df(dfs[col_name], period)
             df.dropna(inplace=True)
 
     return dfs
@@ -817,7 +825,7 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
 
     # save as csv
     ts_filename = os.path.join(output_dir, 'time_series.csv')
-    print(f'Saving time series to "{ts_filename}".')
+    print(f'- Saving time series to "{ts_filename}".')
     ts_df.to_csv(ts_filename, index=False)
 
     # additionally save resampled & detrended time series
@@ -825,7 +833,7 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         print('- Detrending time series...')
 
         # remove seasonality from sub-image time series
-        dfs_detrended = detrend_data(dfs, lag=12, period=period)
+        dfs_detrended = detrend_data(dfs, period=period)
 
         print('- Smoothing vegetation time series after removing seasonlity...')
         dfs_detrended_smooth = smooth_veg_data(dfs_detrended, n=12)
@@ -835,7 +843,7 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
 
         # save output
         ts_filename_detrended = os.path.join(output_dir, 'time_series_detrended.csv')
-        print(f'Saving detrended time series to "{ts_filename_detrended}".')
+        print(f'- Saving detrended time series to "{ts_filename_detrended}".')
         ts_df_detrended_smooth.to_csv(ts_filename_detrended, index=False)
 
     return output_dir, dfs # for now return `dfs` for spatial plot compatibility 
