@@ -41,7 +41,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         Directory to save the plots in.
     """
 
-    def make_plot(df, veg_prefix, output_dir, veg_prefix_b=None, smoothing_option ='smooth'):
+    def make_plot(df, veg_prefix, output_dir, veg_prefix_b=None, smoothing_option='smooth'):
 
         # handle the case where vegetation and precipitation have mismatched NaNs
         veg_df = df.dropna(subset=[veg_prefix+'_offset50_mean'])
@@ -191,7 +191,8 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         sns.set_style('white')
         fig.tight_layout()
 
-        filename_suffix = smoothing_option
+        filename_suffix = '_' + smoothing_option
+
         # save the plot
         output_filename = veg_prefix + '-time-series' + filename_suffix + '.png'
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
@@ -207,7 +208,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             veg_prefix = column.split('_')[0]
             print(f'Plotting {veg_prefix} time series.')
             make_plot(df, veg_prefix, output_dir)
-            make_plot(df, veg_prefix, output_dir,smoothing_option='smooth_res')
+            make_plot(df, veg_prefix, output_dir, smoothing_option='smooth_res')
 
     # if we have two vegetation time series availible, plot them both
     if np.sum(df.columns.str.contains('offset50_mean')) == 2:
@@ -217,7 +218,80 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         make_plot(df, veg_prefixes[0], output_dir, veg_prefix_b=veg_prefixes[1])
 
 
+def plot_ndvi_time_series(df, output_dir):
+    def make_plot(df, veg_prefix, output_dir):
+        veg_df = df.dropna(subset=[veg_prefix+'_veg_ndvi_mean_mean'])
 
+        # get vegetation x values to datetime objects
+        veg_xs = get_datetime_xs(veg_df)
+
+        # get vegetation y values
+        ndvi_means = veg_df[veg_prefix + '_ndvi_mean_mean']
+        veg_means = veg_df[veg_prefix + '_veg_ndvi_mean_mean']
+        #veg_std = veg_df[veg_prefix + '_veg_ndvi_mean_std']
+        veg_std = veg_df[veg_prefix + '_veg_ndvi_std_mean']
+
+        # create a figure
+        fig, ax = plt.subplots(figsize=(15, 4.5))
+        plt.xlabel('Time', fontsize=14)
+
+        # set up veg y axis
+        color = 'tab:green'
+        ax.set_ylabel(f'{veg_prefix} NDVI', color=color, fontsize=14)
+        ax.tick_params(axis='y', labelcolor=color)
+        ax.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
+
+        # plot ndvi
+        ax.plot(veg_xs, ndvi_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
+
+        ax.plot(veg_xs, veg_means, marker='o', markersize=7, 
+                markeredgecolor=(0.9172, 0.9627, 0.9172), markeredgewidth=2,
+                label='Smoothed', linewidth=2, color='green')
+
+        ax.fill_between(veg_xs, veg_means - veg_std, veg_means + veg_std, 
+                        facecolor='green', alpha=0.1, label='Std Dev')
+
+        # plot precipitation if availible
+        if 'total_precipitation' in df.columns:
+            # handle the case where vegetation and precipitation have mismatched NaNs
+            precip_df = df.dropna(subset=['total_precipitation'])
+            precip_ys = precip_df.total_precipitation
+
+            # get precipitation x values to datetime objects
+            precip_xs = get_datetime_xs(precip_df)
+
+            # duplicate axis for preciptation
+            ax2 = ax.twinx()
+            color = 'tab:blue'
+            ax2.set_ylabel(f'Precipitation [mm]', color=color, fontsize=14)
+            ax2.tick_params(axis='y', labelcolor=color)
+            ax2.set_ylim([min(precip_ys)-1*np.array(precip_ys).std(), max(precip_ys)+2*np.array(precip_ys).std()])
+
+            # plot precipitation
+            ax2.plot(precip_xs, precip_ys, linewidth=2, color=color, alpha=0.75)
+
+
+        # layout
+        sns.set_style('white')
+        fig.tight_layout()
+
+        # save the plot
+        output_filename = veg_prefix + '-ndvi-time-series.png'
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+        plt.close(fig)
+
+    # make output dir if necessary
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
+    # make plots for selected columns
+    for column in df.columns:
+        if 'veg_ndvi_mean' in column:
+            veg_prefix = column.split('_')[0]
+            print(f'Plotting {veg_prefix} NDVI time series.')
+            make_plot(df, veg_prefix, output_dir)
+
+    
 def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
     """
     Given a time series DataFrames (constructed with `make_time_series`),
@@ -586,7 +660,10 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
                             facecolor='none', alpha=0.15, label='AR1 SE Smoothed', hatch='X', edgecolor='tab:blue')
 
         # set y lim
-        ax.set_ylim([min(ar1-ar1_se)-0.8*max(ar1+ar1_se), 1.8*max(ar1+ar1_se)])
+        try: # in case there are no ar1 values, the array will be empty
+            ax.set_ylim([min(ar1-ar1_se)-0.8*max(ar1+ar1_se), 1.8*max(ar1+ar1_se)])
+        except:
+            return
 
         # plot legend
         plt.legend(loc='upper left')

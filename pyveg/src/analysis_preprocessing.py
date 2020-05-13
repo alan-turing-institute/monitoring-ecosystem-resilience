@@ -54,7 +54,7 @@ def read_json_to_dataframes(filename):
         for date, time_point in coll_results['time-series-data'].items():
 
             # check we have data for this time point
-            if time_point is None or time_point == {}:
+            if time_point is None or time_point == {} or time_point == []:
                 
                 # add Null row if data is missing at this time point    
                 rows_list.append({'date': date})
@@ -131,7 +131,7 @@ def make_time_series(dfs):
             ts_df = pd.merge_ordered(ts_df, df, on='date', how='outer')
 
         # add climate data if availible
-        elif 'ECMWF/ERA5/MONTHLY' == col_name:
+        elif 'ECMWF/ERA5/' in col_name:
             df = df.set_index('date')
             ts_df = pd.merge_ordered(ts_df, df, on='date', how='outer')
 
@@ -804,7 +804,7 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
     # store feature vectors before averaging over sub-images
     print('- Saving feature vectors...')
     store_feature_vectors(dfs, output_dir)
-    
+
     # average over sub-images
     ts_df = make_time_series(dfs)
 

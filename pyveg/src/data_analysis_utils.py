@@ -314,7 +314,7 @@ def fft_series(time_series):
 def write_slimmed_csv(dfs, output_dir, filename_suffix=''):
     for collection_name, veg_df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-            df_summary = dfs['ECMWF/ERA5/MONTHLY']
+            df_summary = dfs['ECMWF/ERA5/DAILY']
             df_summary.loc[veg_df.index, 'offset50_mean'] = veg_df['offset50_mean']
             df_summary.loc[veg_df.index, 'offset50_std'] = veg_df['offset50_std']
             df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
@@ -347,7 +347,8 @@ def get_AR1_parameter_estimate(ys):
 
     ys = ys.dropna()
 
-    if len(ys) < 5:
+    if len(ys) < 4:
+        print('Time series too short to reliably calculate AR1')
         return np.NaN, np.NaN
 
     from statsmodels.tsa.ar_model import AutoReg
