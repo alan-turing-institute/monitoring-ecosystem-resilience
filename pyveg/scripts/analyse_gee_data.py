@@ -79,7 +79,7 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
 
     # plot the result of running STL decomposition
     if not detrended:
-        plot_stl_decomposition(ts_df, 12, os.path.join(output_dir, 'detrended'))
+        plot_stl_decomposition(ts_df, 12, os.path.join(output_dir, 'detrended/STL'))
     # ------------------------------------------------
 
 
@@ -95,6 +95,9 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
     output_dir : str
         Path to the directory to save plots to.
     """
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
 
     # read processed data
     ts_df = pd.read_csv(filename)
@@ -127,17 +130,17 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
     mwa_subdir = os.path.join(output_dir, 'early-warning-analysis')
     if not os.path.exists(mwa_subdir):
         os.makedirs(mwa_subdir, exist_ok=True)
+    
+    # EWS to compute (let's do all of them)
+    ews = ['var', 'sd', 'ac', 'skew', 'kurt', 'ac', 'smax', 'cf', 'aic']
 
     # select columns to run ews on 
     column_names = [c for c in ts_df.columns if 'offset50_mean' in c or 
                                                 'ndvi_mean' in c or 
                                                 'total_precipitation' in c]
-    
-    # EWS to compute (let's do all of them)
-    ews = ['var', 'sd', 'ac', 'skew', 'kurt', 'ac', 'smax', 'cf', 'aic']
-
+    # for each relevant column
     for column_name in column_names:
-    
+
         # run resilience analysis on vegetation data
         ews_dic_veg = ewstools.core.ews_compute(ts_df[column_name].dropna(),
                                     roll_window=0.5,
@@ -197,9 +200,11 @@ def analyse_gee_data(input_dir, spatial):
 
         # run the standard or detrended analysis
         if 'detrended' in filename:
-            output_subdir = os.path.join(output_dir, os.path.splitext(filename)[0])
+            output_subdir = os.path.join(output_dir, 'detrended')
             run_time_series_analysis(ts_file, output_subdir, detrended=True)
-            run_early_warnings_resilience_analysis(ts_file, output_subdir)
+
+            ews_subdir = os.path.join(output_dir, 'ews')
+            run_early_warnings_resilience_analysis(ts_file, ews_subdir)
 
         else:
             output_subdir = output_dir

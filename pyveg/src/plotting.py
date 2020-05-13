@@ -462,10 +462,15 @@ def plot_feature_vector(output_dir):
         plt.ylabel('$X(V-E)$', fontsize=14)
         plt.tight_layout()
 
+        # create new subdir for feature vectors
+        fv_subdir = os.path.join(output_dir, 'feature-vectors')
+        if not os.path.exists(fv_subdir):
+            os.makedirs(fv_subdir, exist_ok=True)
+
         # save the plot
         output_filename = fv_filename.split('_')[0] + '-feature-vector-summary.png'
         print(f'Plotting feature vector "{os.path.abspath(output_filename)}"...')
-        plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+        plt.savefig(os.path.join(fv_subdir, output_filename), dpi=DPI)
         plt.close(fig)
 
         feature_vecs = []
@@ -508,11 +513,11 @@ def plot_feature_vector(output_dir):
         plt.ylabel('$X(V-E)$', fontsize=14)
         plt.legend()
         plt.tight_layout()
-
+        
         # save the plot
         output_filename = fv_filename.split('_')[0] + '-feature-vector-minmax.png'
         print(f'Plotting minmax feature vector "{os.path.abspath(output_filename)}"...')
-        plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+        plt.savefig(os.path.join(fv_subdir, output_filename), dpi=DPI)
         plt.close(fig)
 
 
