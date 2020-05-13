@@ -129,7 +129,9 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
         os.makedirs(mwa_subdir, exist_ok=True)
 
     # select columns to run ews on 
-    column_names = [c for c in ts_df.columns if 'offset50_mean' in c or 'total_precipitation' in c]
+    column_names = [c for c in ts_df.columns if 'offset50_mean' in c or 
+                                                'ndvi_mean' in c or 
+                                                'total_precipitation' in c]
     
     # EWS to compute (let's do all of them)
     ews = ['var', 'sd', 'ac', 'skew', 'kurt', 'ac', 'smax', 'cf', 'aic']
