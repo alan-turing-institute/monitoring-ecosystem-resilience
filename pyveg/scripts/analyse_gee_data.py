@@ -156,20 +156,6 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
         for key, df in ews_dic_veg.items():
             df.to_csv(os.path.join(mwa_subdir, f'ews-{column_name}-'+key.replace(' ', '')+'.csv'), index=False)
 
-"""    # run resilience analysis on precipitation data
-    variable = 'total_precipitation'
-
-    ews_dic_prep = ewstools.core.ews_compute(ts_df[variable].dropna(),
-                                        roll_window=0.5,
-                                        smooth='Gaussian',
-                                        lag_times=[1, 2],
-                                        ews=ews,
-                                        band_width=0.2)
-
-    for key, df in ews_dic_prep.items():
-
-        df.to_csv(os.path.join(mwa_subdir, 'precipitation-resilience-analysis-' + key.replace(' ', '') + '.csv'), index=False)
-"""
 
 def analyse_gee_data(input_dir, spatial):
     """
