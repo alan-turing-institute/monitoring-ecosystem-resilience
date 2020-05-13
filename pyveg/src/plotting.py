@@ -580,7 +580,7 @@ def plot_stl_decomposition(df, period, output_dir):
 
     # make plots for selected columns
     for column in df.columns:
-        if 'offset50' in column and 'mean' in column or 'total_precipitation' in column:
+        if ('offset50' in column or 'ndvi' in column) and 'mean' in column or 'total_precipitation' in column:
             
             print(f'Plotting STL decomposition for "{column}"...')
             
