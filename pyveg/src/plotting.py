@@ -220,16 +220,15 @@ def plot_time_series(df, output_dir, filename_suffix =''):
 
 def plot_ndvi_time_series(df, output_dir):
     def make_plot(df, veg_prefix, output_dir):
-        veg_df = df.dropna(subset=[veg_prefix+'_veg_ndvi_mean_mean'])
+        veg_df = df.dropna(subset=[veg_prefix+'_veg_ndvi_mean'])
 
         # get vegetation x values to datetime objects
         veg_xs = get_datetime_xs(veg_df)
 
         # get vegetation y values
-        ndvi_means = veg_df[veg_prefix + '_ndvi_mean_mean']
-        veg_means = veg_df[veg_prefix + '_veg_ndvi_mean_mean']
-        #veg_std = veg_df[veg_prefix + '_veg_ndvi_mean_std']
-        veg_std = veg_df[veg_prefix + '_veg_ndvi_std_mean']
+        ndvi_means = veg_df[veg_prefix + '_ndvi_mean']
+        veg_means = veg_df[veg_prefix + '_veg_ndvi_mean']
+        veg_std = veg_df[veg_prefix + '_veg_ndvi_std']
 
         # create a figure
         fig, ax = plt.subplots(figsize=(15, 4.5))
@@ -332,7 +331,7 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
         
     # make plots for selected columns
     for column in df.columns:
-        if 'offset50' in column and 'mean' in column or 'total_precipitation' in column:
+        if ('offset50' in column or 'ndvi' in column) and 'mean' in column or 'total_precipitation' in column:
             print(f'Plotting autocorrelation functions for "{column}"...')
             make_plots(df[column].dropna(), output_dir, filename_suffix=filename_suffix)
 
