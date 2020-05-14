@@ -7,8 +7,9 @@ Plots are produced from the processed data.
 
 """
 
-import argparse
 import os
+import argparse
+
 
 import pandas as pd
 import ewstools
