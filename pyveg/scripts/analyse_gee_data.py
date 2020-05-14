@@ -149,7 +149,6 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
     sensitivity_heatmap(sensitivity,mwa_subdir_variable)
 
-    print (sensitivity)
     # good place to do the plotting.
     #
     #
