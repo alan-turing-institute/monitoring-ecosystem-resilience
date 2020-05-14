@@ -640,7 +640,7 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
     for column in df.columns:
 
         # run moving window analysis veg and precip columns
-        if ( 'offset50' in column and 'mean' in column or 
+        if ( ('offset50' in column or 'ndvi' in column) and 'mean' in column or 
              'total_precipitation' in column ):
             
             # reindex time series using data
