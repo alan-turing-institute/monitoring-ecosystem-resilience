@@ -362,6 +362,7 @@ def smooth_veg_data(dfs, column='offset50', n=4):
 
         #  if vegetation data
         if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+
             # remove outliers and smooth
             df = smooth_all_sub_images(df, column=column, n=n)
 
@@ -659,7 +660,7 @@ def detrend_df(df, period='MS'):
 
     # resample time series (in case not done already)
     columns = [c for c in df.columns if any([s in c 
-                for s in ['offset50', 'precipitation', 'temperature']])]
+                for s in ['offset50', 'precipitation', 'temperature', 'ndvi']])]
 
     df_out = resample_dataframe(df, columns, period=period)
 
