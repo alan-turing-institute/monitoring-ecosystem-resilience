@@ -731,14 +731,14 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
 
     Parameters
     ----------
-    df : DataFrame
-        The time-series results for variance and AR1.
-    column : str
-        Column name an offset50 variance column in df.
-    output_dir : str
-        Directory to save the plot in.
-    smoothing_option: str
-        Label for smoothing variable to be used
+    series_name : str
+        String containing data collection and time series variable.
+    EWSmetrics_df : DataFrame
+        DataFrame from ewstools containing ews time series.
+    Kendalltau_df : DataFrame
+        DataFrame from ewstools containing Kendall tau values for EWSmetrics_df time series
+    output_dir: str
+        Output dir to save plot in.
     """
     def zoom_out(ys):
         ymin = ys.mean() - 2*((ys.mean() - ys).abs().max())
