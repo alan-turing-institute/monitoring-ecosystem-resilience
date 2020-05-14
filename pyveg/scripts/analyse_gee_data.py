@@ -28,7 +28,8 @@ from pyveg.src.plotting import (
     plot_ndvi_time_series,
     plot_autocorrelation_function,
     plot_cross_correlations,
-    plot_moving_window_analysis
+    plot_moving_window_analysis,
+    plot_ews_resiliance
 )
 
 
@@ -141,6 +142,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
     column_names = [c for c in ts_df.columns if 'offset50_mean' in c or 
                                                 'ndvi_mean' in c or 
                                                 'total_precipitation' in c]
+
     # for each relevant column
     for column_name in column_names:
 
@@ -152,15 +154,13 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
                                     ews=ews,
                                     band_width=0.2)
 
-        # good place to do the plotting.
-        #
-        #
-        # We can maybe then wrap up these lines into a new function
-        #
-        # ------------------------------------------
+        # make plots
+        series_name = column_name.replace('_', ' ')
+        plot_ews_resiliance(series_name, ews_dic_veg['EWS metrics'], ews_dic_veg['Kendall tau'], mwa_subdir)
+
         # save results
         for key, df in ews_dic_veg.items():
-            df.to_csv(os.path.join(mwa_subdir, f'ews-{column_name}-'+key.replace(' ', '')+'.csv'), index=False)
+            df.to_csv(os.path.join(mwa_subdir, f'ews-{column_name}__'+key.replace(' ', '')+'.csv'), index=False)
 
 
 def analyse_gee_data(input_dir, spatial):
