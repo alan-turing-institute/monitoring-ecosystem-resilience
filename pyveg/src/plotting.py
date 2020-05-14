@@ -758,21 +758,21 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
     ys = EWSmetrics_df['State variable']
     plt.plot(ys, color='black')
     plt.plot(EWSmetrics_df['Smoothing'], color='red', linestyle='dashed')
-    plt.gca().tick_params(direction='in')
+    plt.gca().tick_params(axis='x', direction='in')
     plt.ylim(zoom_out(ys))
     annotate(series_name)
 
     plt.subplot(612, sharex=ax)
     ys = EWSmetrics_df['Residuals']
     plt.plot(ys, color='black', label='Time Series')
-    plt.gca().tick_params(direction='in')
+    plt.gca().tick_params(axis='x', direction='in')
     plt.ylim(zoom_out(ys))
     annotate('Residuals')
 
     plt.subplot(613, sharex=ax)
     ys = EWSmetrics_df['Lag-1 AC']
     plt.plot(ys, color='black')
-    plt.gca().tick_params(direction='in')
+    plt.gca().tick_params(axis='x', direction='in')
     plt.ylim(zoom_out(ys))
     annotate('Lag-1 AC')
     tau = Kendalltau_df['Lag-1 AC'].iloc[0]
@@ -788,7 +788,7 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
     plt.subplot(614, sharex=ax)
     ys = EWSmetrics_df['Standard deviation']
     plt.plot(ys, color='black')
-    plt.gca().tick_params(direction='in')
+    plt.gca().tick_params(axis='x', direction='in')
     plt.ylim(zoom_out(ys))
     annotate('Standard deviation')
     tau = Kendalltau_df['Standard deviation'].iloc[0]
@@ -797,7 +797,7 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
     plt.subplot(615, sharex=ax)
     ys = EWSmetrics_df['Skewness']
     plt.plot(ys, color='black')
-    plt.gca().tick_params(direction='in')
+    plt.gca().tick_params(axis='x', direction='in')
     plt.ylim(zoom_out(ys))
     annotate('Skewness')
     tau = Kendalltau_df['Skewness'].iloc[0]
@@ -806,7 +806,7 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
     plt.subplot(616, sharex=ax)
     ys = EWSmetrics_df['Kurtosis']
     plt.plot(ys, color='black')
-    plt.gca().tick_params(direction='in')
+    plt.gca().tick_params(axis='x', direction='in')
     plt.ylim(zoom_out(ys))
     annotate('Kurtosis')
     tau = Kendalltau_df['Kurtosis'].iloc[0]
