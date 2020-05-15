@@ -817,7 +817,6 @@ def early_warnings_null_hypothesis(series,
     #TODO: Fix this line for generating samplee
     #ts = result.generate_sample(nsample=1000)
 
-    print (ts)
 
      #### ----------------------------------------------------------
     def calculate_indicators(eval_series):
