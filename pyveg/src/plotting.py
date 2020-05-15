@@ -696,18 +696,23 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         tau, p = get_kendell_tau(ar1)
         tau_var, p_var = get_kendell_tau(variance)
 
-        tau_smooth, p_smooth = get_kendell_tau(ar1_smooth)
-        tau_var_smooth, p_var_smooth = get_kendell_tau(variance_smooth)
+        if any([smoothing_option in c for c in df.columns]):
+            tau_smooth, p_smooth = get_kendell_tau(ar1_smooth)
+            tau_var_smooth, p_var_smooth = get_kendell_tau(variance_smooth)
 
         # add to plot
-        textstr = f'AR1 Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_smooth:.2f}$, ${p_smooth:.2f}$'
+        textstr = ''
+        if any([smoothing_option in c for c in df.columns]):
+            textstr += f'AR1 Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_smooth:.2f}$, ${p_smooth:.2f}$'
         textstr += f' (${tau:.2f}$, ${p:.2f}$ unsmoothed)'
-
         ax2.text(0.43, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
-        textstr = f'Variance Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_var_smooth:.2f}$, ${p_var_smooth:.2f}$'
-        textstr += f' (${tau_var:.2f}$, ${p_var:.2f}$ unsmoothed)'
 
+        textstr = ''
+        if any([smoothing_option in c for c in df.columns]):
+            textstr += f'Variance Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_var_smooth:.2f}$, ${p_var_smooth:.2f}$'
+        textstr += f' (${tau_var:.2f}$, ${p_var:.2f}$ unsmoothed)'
         ax2.text(0.43, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+        
         # layout
         fig.tight_layout()
 
