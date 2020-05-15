@@ -6,7 +6,6 @@ import requests
 import re
 from zipfile import ZipFile, BadZipFile
 
-import pyveg.src.azure_utils
 
 if os.name == "posix":
     TMPDIR = "/tmp/"
@@ -14,6 +13,22 @@ else:
     TMPDIR = "%TMP%"
 
 LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
+
+
+def split_filepath(path):
+    allparts = []
+    while True:
+        parts = os.path.split(path)
+        if parts[0] == path:  # sentinel for absolute paths
+            allparts.insert(0, parts[0])
+            break
+        elif parts[1] == path: # sentinel for relative paths
+            allparts.insert(0, parts[1])
+            break
+        else:
+            path = parts[0]
+            allparts.insert(0, parts[1])
+    return allparts
 
 
 def list_directory(directory, location_type="local"):

@@ -37,9 +37,9 @@ def build_pipeline(config_file, name="mypyveg"):
     p.date_range = config.date_range
 
     # before we run anything, save the current config to the output dir
-    if not os.path.exists(p.output_dir):
-        os.makedirs(p.output_dir, exist_ok=True)
-    copyfile(config_file, os.path.join(p.output_dir, 'config_cached.py'))
+    if not os.path.exists(p.output_location):
+        os.makedirs(p.output_location, exist_ok=True)
+    copyfile(config_file, os.path.join(p.output_location, 'config_cached.py'))
 
     # add sequences to the pipeline to deal with different data types
     for coll in config.collections_to_use:
@@ -50,9 +50,9 @@ def build_pipeline(config_file, name="mypyveg"):
             # add a vegetation downloader, a vegetation image_processor,
             # and a network centrality calculator.
             s += VegetationDownloader()
-            s += VegetationImageProcessor()
-            if coll_dict["do_network_centrality"]:
-                s += NetworkCentralityCalculator()
+#            s += VegetationImageProcessor()
+#            if coll_dict["do_network_centrality"]:
+#                s += NetworkCentralityCalculator()
 
         elif coll_dict["data_type"] == "weather":
             # add a downloader module and a module to convert to json.
