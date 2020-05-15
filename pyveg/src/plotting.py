@@ -663,7 +663,7 @@ def sensitivity_heatmap(df, output_dir):
         else:
             fig, ax = plt.subplots(figsize=(5, 5))
             piv = pd.pivot_table(df, values=column, index=["smooth"], columns=["winsize"], fill_value=0)
-            ax = sns.heatmap(piv, square=True,cmap='viridis')
+            ax = sns.heatmap(piv, square=True,cmap='viridis',vmin=-1, vmax=1)
             ax.set_title('Sensitivity for '+ column)
             plt.setp(ax.xaxis.get_majorticklabels(), rotation=90)
             plt.tight_layout()
