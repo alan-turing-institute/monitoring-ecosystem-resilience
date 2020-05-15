@@ -774,4 +774,109 @@ def early_warnings_sensitivity_analysis(series,
     return sensitivity_df
 
 
+def ews_null_hypothesis(series,
+                roll_window=0.4,
+                smooth='Lowess',
+                span=0.1,
+                band_width=0.2,
+                upto='Full',
+                ews=['var', 'ac'],
+                lag_times=[1]):
+
+
+    ews_dic = ewstools.core.ews_compute(series,
+                                        roll_window=roll_window,
+                                        smooth=smooth,
+                                        span=span,
+                                        band_width=band_width,
+                                        ews=ews,
+                                        lag_times=lag_times)
+
+
+
+    # Use the short_series EWS if smooth='None'. Otherwise use reiduals.
+    eval_series = ews_dic['EWS metrics']['Residuals']
+
+
+
+
+
+     #### ----------------------------------------------------------
+    def calculate_indicators(eval_series):
+
+        df_ews = pd.DataFrame()
+        # Compute the rolling window size (integer value)
+        rw_size = int(np.floor(roll_window * eval_series.shape[0]))
+
+        # ------------ Compute temporal EWS---------------#
+
+        # Compute standard deviation as a Series and add to the DataFrame
+        if 'sd' in ews:
+            roll_sd = eval_series.rolling(window=rw_size).std()
+            df_ews['Standard deviation'] = roll_sd
+
+        # Compute variance as a Series and add to the DataFrame
+        if 'var' in ews:
+            roll_var = eval_series.rolling(window=rw_size).var()
+            df_ews['Variance'] = roll_var
+
+        # Compute autocorrelation for each lag in lag_times and add to the DataFrame
+        if 'ac' in ews:
+            for i in range(len(lag_times)):
+                roll_ac = eval_series.rolling(window=rw_size).apply(
+                    func=lambda x: pd.Series(x).autocorr(lag=lag_times[i]),
+                    raw=True)
+                df_ews['Lag-' + str(lag_times[i]) + ' AC'] = roll_ac
+
+        # Compute Coefficient of Variation (C.V) and add to the DataFrame
+        if 'cv' in ews:
+            # mean of raw_series
+            roll_mean = eval_series.rolling(window=rw_size).mean()
+            # standard deviation of residuals
+            roll_std = eval_series.rolling(window=rw_size).std()
+            # coefficient of variation
+            roll_cv = roll_std.divide(roll_mean)
+            df_ews['Coefficient of variation'] = roll_cv
+
+        # Compute skewness and add to the DataFrame
+        if 'skew' in ews:
+            roll_skew = eval_series.rolling(window=rw_size).skew()
+            df_ews['Skewness'] = roll_skew
+
+        # Compute Kurtosis and add to DataFrame
+        if 'kurt' in ews:
+            roll_kurt = eval_series.rolling(window=rw_size).kurt()
+            df_ews['Kurtosis'] = roll_kurt
+
+
+        # ------------Compute Kendall tau coefficients----------------#
+
+        ''' In this section we compute the kendall correlation coefficients for each EWS
+            with respect to time. Values close to one indicate high correlation (i.e. EWS
+            increasing with time), values close to zero indicate no significant correlation,
+            and values close to negative one indicate high negative correlation (i.e. EWS
+            decreasing with time).'''
+
+        # Put time values as their own series for correlation computation
+        time_vals = pd.Series(df_ews.index, index=df_ews.index)
+
+        # List of EWS that can be used for Kendall tau computation
+        ktau_metrics = ['Variance', 'Standard deviation', 'Skewness', 'Kurtosis', 'Coefficient of variation', 'Smax',
+                        'Smax/Var', 'Smax/Mean'] + ['Lag-' + str(i) + ' AC' for i in lag_times]
+        # Find intersection with this list and EWS computed
+        ews_list = df_ews.columns.values.tolist()
+        ktau_metrics = list(set(ews_list) & set(ktau_metrics))
+
+        # Find Kendall tau for each EWS and store in a DataFrame
+        dic_ktau = {x: df_ews[x].corr(time_vals, method='kendall') for x in ktau_metrics}  # temporary dictionary
+        df_ktau = pd.DataFrame(dic_ktau, index=[0])  # DataFrame (easier for concatenation purposes)
+
+        # -------------Organise final output and return--------------#
+
+        # Ouptut a dictionary containing EWS DataFrame, power spectra DataFrame, and Kendall tau values
+        output_dic = {'EWS metrics': df_ews, 'Kendall tau': df_ktau}
+
+    return
+
+
 
