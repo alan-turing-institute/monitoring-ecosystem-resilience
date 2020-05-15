@@ -774,32 +774,50 @@ def early_warnings_sensitivity_analysis(series,
     return sensitivity_df
 
 
-def ews_null_hypothesis(series,
+def early_warnings_null_hypothesis(series,
                 roll_window=0.4,
                 smooth='Lowess',
                 span=0.1,
                 band_width=0.2,
-                upto='Full',
-                ews=['var', 'ac'],
-                lag_times=[1]):
+                indicators=['var', 'ac'],
+                lag_times=[1],
+                n_simulations = 1000):
 
 
-    ews_dic = ewstools.core.ews_compute(series,
+    ews_dic = ewstools.core.ews_compute(series.dropna(),
                                         roll_window=roll_window,
                                         smooth=smooth,
                                         span=span,
                                         band_width=band_width,
-                                        ews=ews,
+                                        ews=indicators,
                                         lag_times=lag_times)
 
-
+    from statsmodels.tsa.arima_model import ARIMA
 
     # Use the short_series EWS if smooth='None'. Otherwise use reiduals.
     eval_series = ews_dic['EWS metrics']['Residuals']
 
+    # Fit ARMA model based on AIC
+    aic_max = 10000
 
+    for i in range(0,2):
+        for j in range(0,2):
 
+            model = ARIMA(eval_series, order=(i, j, 0))
+            model_fit = model.fit()
+            aic = model_fit.aic
 
+            print ("AR", "MA", "AIC")
+            print (i, j, aic)
+
+            if aic < aic_max:
+                aic_max = aic
+                result = model_fit
+
+    #TODO: Fix this line for generating samplee
+    #ts = result.generate_sample(nsample=1000)
+
+    print (ts)
 
      #### ----------------------------------------------------------
     def calculate_indicators(eval_series):
@@ -811,17 +829,17 @@ def ews_null_hypothesis(series,
         # ------------ Compute temporal EWS---------------#
 
         # Compute standard deviation as a Series and add to the DataFrame
-        if 'sd' in ews:
+        if 'sd' in indicators:
             roll_sd = eval_series.rolling(window=rw_size).std()
             df_ews['Standard deviation'] = roll_sd
 
         # Compute variance as a Series and add to the DataFrame
-        if 'var' in ews:
+        if 'var' in indicators:
             roll_var = eval_series.rolling(window=rw_size).var()
             df_ews['Variance'] = roll_var
 
         # Compute autocorrelation for each lag in lag_times and add to the DataFrame
-        if 'ac' in ews:
+        if 'ac' in indicators:
             for i in range(len(lag_times)):
                 roll_ac = eval_series.rolling(window=rw_size).apply(
                     func=lambda x: pd.Series(x).autocorr(lag=lag_times[i]),
@@ -829,7 +847,7 @@ def ews_null_hypothesis(series,
                 df_ews['Lag-' + str(lag_times[i]) + ' AC'] = roll_ac
 
         # Compute Coefficient of Variation (C.V) and add to the DataFrame
-        if 'cv' in ews:
+        if 'cv' in indicators:
             # mean of raw_series
             roll_mean = eval_series.rolling(window=rw_size).mean()
             # standard deviation of residuals
@@ -839,12 +857,12 @@ def ews_null_hypothesis(series,
             df_ews['Coefficient of variation'] = roll_cv
 
         # Compute skewness and add to the DataFrame
-        if 'skew' in ews:
+        if 'skew' in indicators:
             roll_skew = eval_series.rolling(window=rw_size).skew()
             df_ews['Skewness'] = roll_skew
 
         # Compute Kurtosis and add to DataFrame
-        if 'kurt' in ews:
+        if 'kurt' in indicators:
             roll_kurt = eval_series.rolling(window=rw_size).kurt()
             df_ews['Kurtosis'] = roll_kurt
 
