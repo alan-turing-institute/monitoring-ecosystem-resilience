@@ -2,9 +2,9 @@
 Plotting code.
 """
 
-import datetime
 import os
 import json
+import datetime
 
 import numpy as np
 import pandas as pd
@@ -827,3 +827,33 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
     print(f'Plotting {series_name} ews plots...')
     plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
     plt.close(fig)
+
+
+def sensitivity_heatmap(df, output_dir):
+    """
+    Produce heatmap plot for the sensitivy analysis
+
+    Parameters
+    ----------
+
+    df: Dataframe
+        The output dataframe from the sensitivity analysis function.
+    output_dir:
+        Path to the directory to save the produced figures
+    """
+
+    for column in df.columns:
+        if column == "smooth" or column=="winsize":
+            continue
+        else:
+            fig, ax = plt.subplots(figsize=(5, 5))
+            piv = pd.pivot_table(df, values=column, index=["smooth"], columns=["winsize"], fill_value=0)
+            ax = sns.heatmap(piv, square=True,cmap='viridis',vmin=-1, vmax=1)
+            ax.set_title('Sensitivity for '+ column)
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=90)
+            plt.tight_layout()
+            plt.xlabel('Rolling Window')
+            plt.ylabel('Smoothing')
+            plt.savefig(os.path.join(output_dir, 'sensitivity_'+column+'.png'), dpi=DPI)
+            plt.close(fig)
+

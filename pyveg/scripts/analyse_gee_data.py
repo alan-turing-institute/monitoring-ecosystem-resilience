@@ -7,8 +7,9 @@ Plots are produced from the processed data.
 
 """
 
-import argparse
 import os
+import argparse
+
 
 import pandas as pd
 import ewstools
@@ -18,7 +19,8 @@ from pyveg.src.data_analysis_utils import (
     create_lat_long_metric_figures,
     convert_to_geopandas,
     coarse_dataframe,
-    moving_window_analysis
+    moving_window_analysis,
+    early_warnings_sensitivity_analysis
 )
 
 from pyveg.src.plotting import (
@@ -29,7 +31,8 @@ from pyveg.src.plotting import (
     plot_autocorrelation_function,
     plot_cross_correlations,
     plot_moving_window_analysis,
-    plot_ews_resiliance
+    plot_ews_resiliance,
+    sensitivity_heatmap
 )
 
 
@@ -136,7 +139,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
         os.makedirs(mwa_subdir, exist_ok=True)
     
     # EWS to compute (let's do all of them)
-    ews = ['var', 'sd', 'ac', 'skew', 'kurt', 'ac', 'smax', 'cf', 'aic']
+    ews = ['var', 'sd', 'ac', 'skew', 'kurt', 'ac']
 
     # select columns to run ews on 
     column_names = [c for c in ts_df.columns if 'offset50_mean' in c or 
@@ -157,6 +160,10 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
         # make plots
         series_name = column_name.replace('_', ' ')
         plot_ews_resiliance(series_name, ews_dic_veg['EWS metrics'], ews_dic_veg['Kendall tau'], mwa_subdir)
+
+        # sensitivity analysis
+        sensitivity = early_warnings_sensitivity_analysis(ts_df[column_name].dropna(, indicators=ews)
+        sensitivity_heatmap(sensitivity, mwa_subdir)
 
         # save results
         for key, df in ews_dic_veg.items():
