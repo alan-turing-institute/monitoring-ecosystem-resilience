@@ -308,13 +308,14 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
     def make_plots(series, output_dir, filename_suffix=''):
 
         # make the full autocorrelation function plot
-        plt.figure(figsize=(8,5))
+        fig, _ = plt.subplots(figsize=(8,5))
         pd.plotting.autocorrelation_plot(series, label=series.name)
         plt.legend()
 
         # save the plot
         output_filename = series.name + '-autocorrelation-function' + filename_suffix + '.png'
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+        plt.close(fig)
 
         # use statsmodels for partial autocorrelation
         from statsmodels.graphics.tsaplots import plot_pacf
