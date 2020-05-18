@@ -361,7 +361,7 @@ def get_AR1_parameter_estimate(ys):
     ys.index = pd.DatetimeIndex(ys.index, freq=pd.infer_freq(ys.index))
 
     # create and fit the AR(1) model
-    model = AutoReg(ys, lags=1, missing='drop').fit() # currently warning
+    model = AutoReg(ys, lags=1, missing='drop').fit()  # currently warning
 
     # get the single parameter value
     parameter = model.params[1]
@@ -478,11 +478,11 @@ def get_max_lagged_cor(dirname, veg_prefix):
         Max correlation, and lag, for smoothed and unsmoothed vegetation time
         series.
     """
-    
+
     # construct path to lagged correlations file
     filename = os.path.join(dirname, 'correlations', 'lagged_correlations.json')
-    
-     # check file exists
+
+    # check file exists
     if not os.path.exists(filename):
         raise FileNotFoundError(f'Could not find file "{os.path.abspath(filename)}".')
 
@@ -522,13 +522,13 @@ def variance_moving_average_time_series(series, length=1):
     pandas Series: 
         pandas Series with datetime index, and one column, one row per date.
     """
-    
+
     # just in case the index isn't already datetime type
     series.index = pd.to_datetime(series.index)
 
     variance = series.rolling(length).var()
 
-    variance.name = series.name+"_var"
+    variance.name = series.name + "_var"
 
     return variance
 
@@ -557,15 +557,15 @@ def ar1_moving_average_time_series(series, length=1):
     ar1_se = []
     index = []
 
-    for i in range(len(series) - length ):
-        #print(series[i:(length  + i)])
-        param, se = get_AR1_parameter_estimate(series[i:(length  + i)])
+    for i in range(len(series) - length):
+        # print(series[i:(length  + i)])
+        param, se = get_AR1_parameter_estimate(series[i:(length + i)])
         ar1.append(param)
         ar1_se.append(se)
-        index.append(series.index[length  + i])
+        index.append(series.index[length + i])
 
-    ar1_name = series.name+"_ar1"
-    ar1_se_name = series.name+"_ar1_se"
+    ar1_name = series.name + "_ar1"
+    ar1_se_name = series.name + "_ar1_se"
 
     ar1_df = pd.DataFrame()
     ar1_df[ar1_name] = pd.Series(ar1)
@@ -637,16 +637,14 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
     for column in df.columns:
 
         # run moving window analysis veg and precip columns
-        if ( 'offset50' in column and 'mean' in column or 
-             'total_precipitation' in column ):
-            
+        if ('offset50' in column and 'mean' in column or
+                'total_precipitation' in column):
             # reindex time series using data
             time_series = df.set_index('date')[column]
 
             # compute AR1 and variance time series
             df_ = get_ar1_var_timeseries_df(time_series, window_size)
             mwa_df = mwa_df.join(df_, how='outer')
-
 
     # use date as a column, and reset index
     mwa_df.index.name = 'date'
@@ -656,7 +654,6 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
 
 
 def get_datetime_xs(df):
-    
     try:
         xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in df.date]
     except:
@@ -665,16 +662,16 @@ def get_datetime_xs(df):
 
     return xs
 
-def early_warnings_sensitivity_analysis(series,
-                                        indicators=['var','ac'],
-                                        winsizerange = [0.10, 0.8],
-                                        incrwinsize = 0.10,
-                                        smooth = "Gaussian",
-                                        bandwidthrange = [0.05, 1.],
-                                        spanrange = [0.05, 1.1],
-                                        incrbandwidth = 0.2,
-                                        incrspanrange = 0.1):
 
+def early_warnings_sensitivity_analysis(series,
+                                        indicators=['var', 'ac'],
+                                        winsizerange=[0.10, 0.8],
+                                        incrwinsize=0.10,
+                                        smooth="Gaussian",
+                                        bandwidthrange=[0.05, 1.],
+                                        spanrange=[0.05, 1.1],
+                                        incrbandwidth=0.2,
+                                        incrspanrange=0.1):
     '''
 
     Function to estimate the sensitivity of the early warnings analysis to the smoothing and windowsize used. The function
@@ -715,13 +712,12 @@ def early_warnings_sensitivity_analysis(series,
     '''
 
     results_kendal_tau = []
-    for winsize in np.arange(winsizerange[0],winsizerange[1]+0.01,incrwinsize):
+    for winsize in np.arange(winsizerange[0], winsizerange[1] + 0.01, incrwinsize):
 
-        winsize = round(winsize,3)
+        winsize = round(winsize, 3)
         if smooth == "Gaussian":
 
-            for bw in np.arange(bandwidthrange[0], bandwidthrange[1]+0.01, incrbandwidth):
-
+            for bw in np.arange(bandwidthrange[0], bandwidthrange[1] + 0.01, incrbandwidth):
                 bw = round(bw, 3)
                 ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
                                                         roll_window=winsize,
@@ -737,11 +733,10 @@ def early_warnings_sensitivity_analysis(series,
                 results_kendal_tau.append(result)
 
 
-        elif smooth =="Lowess":
+        elif smooth == "Lowess":
 
-            for span in np.arange(spanrange[0], spanrange[1]+0.01, incrspanrange):
-
-                span = round(span,2)
+            for span in np.arange(spanrange[0], spanrange[1] + 0.01, incrspanrange):
+                span = round(span, 2)
                 ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
                                                         roll_window=winsize,
                                                         smooth=smooth,
@@ -775,14 +770,13 @@ def early_warnings_sensitivity_analysis(series,
 
 
 def early_warnings_null_hypothesis(series,
-                roll_window=0.4,
-                smooth='Lowess',
-                span=0.1,
-                band_width=0.2,
-                indicators=['var', 'ac'],
-                lag_times=[1],
-                n_simulations = 1000):
-
+                                   roll_window=0.4,
+                                   smooth='Lowess',
+                                   span=0.1,
+                                   band_width=0.2,
+                                   indicators=['var', 'ac'],
+                                   lag_times=[1],
+                                   n_simulations=1000):
 
     ews_dic = ewstools.core.ews_compute(series.dropna(),
                                         roll_window=roll_window,
@@ -793,6 +787,7 @@ def early_warnings_null_hypothesis(series,
                                         lag_times=lag_times)
 
     from statsmodels.tsa.arima_model import ARIMA
+    from statsmodels.tsa.arima_process import ArmaProcess
 
     # Use the short_series EWS if smooth='None'. Otherwise use reiduals.
     eval_series = ews_dic['EWS metrics']['Residuals']
@@ -800,26 +795,21 @@ def early_warnings_null_hypothesis(series,
     # Fit ARMA model based on AIC
     aic_max = 10000
 
-    for i in range(0,2):
-        for j in range(0,2):
+    for i in range(0, 2):
+        for j in range(0, 2):
 
             model = ARIMA(eval_series, order=(i, j, 0))
             model_fit = model.fit()
             aic = model_fit.aic
 
-            print ("AR", "MA", "AIC")
-            print (i, j, aic)
+            print("AR", "MA", "AIC")
+            print(i, j, aic)
 
             if aic < aic_max:
                 aic_max = aic
                 result = model_fit
 
-    #TODO: Fix this line for generating samplee
-    #ts = result.generate_sample(nsample=1000)
-
-
-     #### ----------------------------------------------------------
-    def calculate_indicators(eval_series):
+    def compute_indicators(eval_series):
 
         df_ews = pd.DataFrame()
         # Compute the rolling window size (integer value)
@@ -865,7 +855,6 @@ def early_warnings_null_hypothesis(series,
             roll_kurt = eval_series.rolling(window=rw_size).kurt()
             df_ews['Kurtosis'] = roll_kurt
 
-
         # ------------Compute Kendall tau coefficients----------------#
 
         ''' In this section we compute the kendall correlation coefficients for each EWS
@@ -893,7 +882,25 @@ def early_warnings_null_hypothesis(series,
         # Ouptut a dictionary containing EWS DataFrame, power spectra DataFrame, and Kendall tau values
         output_dic = {'EWS metrics': df_ews, 'Kendall tau': df_ktau}
 
-    return
+        return output_dic
 
+    process = ArmaProcess.from_estimation(result)
 
+    # run simulations on best fitted ARIMA process and get values
+    kendall_tau = []
+    for i in range(n_simulations):
+        ts = process.generate_sample(len(eval_series))
 
+        kendall_tau.append(compute_indicators(pd.Series(ts))['Kendall tau'])
+
+    surrogates_kendall_tau_df = pd.concat(kendall_tau)
+    surrogates_kendall_tau_df['true_data'] = False
+
+    # get results for true data
+    data_kendall_tau_df = compute_indicators(eval_series)['Kendall tau']
+    data_kendall_tau_df['true_data'] = True
+
+    # return dataframe with both surrogates and true data
+    kendall_tau_df = pd.concat([data_kendall_tau_df,surrogates_kendall_tau_df])
+
+    return kendall_tau_df
