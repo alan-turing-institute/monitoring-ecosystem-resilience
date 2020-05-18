@@ -98,8 +98,8 @@ def process_sub_image(i, sub, sub_rgb, sub_ndvi, output_subdir, date):
     nc_result['date'] = date
     nc_result['feature_vec'] = list(feature_vec)
     nc_result['ndvi'] = ndvi_mean
-    #nc_result['ndvi_std'] = ndvi_std
     nc_result['ndvi_veg'] = ndvi_veg_mean
+    #nc_result['ndvi_std'] = ndvi_std
     #nc_result['veg_ndvi_std'] = veg_ndvi_std
 
     # write json file for just this sub-image to a temporary location
@@ -178,12 +178,12 @@ def run_network_centrality(output_dir, img_thresh, img_rgb, ndvi_img, coords, da
 
     # create a multiprocessing pool to handle each sub-image in parallel
     with Pool(processes=n_threads) as pool:
+
         # prepare the arguments for the process_sub_image function
         arguments=[(i, sub, sub_images_rgb[i], sub_images_ndvi[i], output_subdir, date_range_midpoint) \
                    for i,sub in enumerate(sub_images)]
-        pool.starmap(process_sub_image, arguments)
 
-    #nc_results = consolidate_subimage_json(output_subdir) # pre pipline way
+        pool.starmap(process_sub_image, arguments)
 
     # re-combine the results from all sub-images
     nc_results = consolidate_json_to_list(os.path.join(output_subdir, 'tmp_json'),
