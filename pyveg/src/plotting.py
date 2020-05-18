@@ -718,3 +718,34 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         if (('offset50_mean' in column or 'total_precipitation' in column) and 
              'var' in column):
             make_plot(df, column, output_dir, 'smooth_res')
+
+
+def sensitivity_heatmap(df, output_dir):
+    '''
+
+    Produce heatmap plot for the sensitivy analysis
+
+    Parameters
+    ----------
+
+    df: Dataframe
+        The output dataframe from the sensitivity analysis function.
+    output_dir:
+        Path to the directory to save the produced figures
+    '''
+
+    for column in df.columns:
+        if column == "smooth" or column=="winsize":
+            continue
+        else:
+            fig, ax = plt.subplots(figsize=(5, 5))
+            piv = pd.pivot_table(df, values=column, index=["smooth"], columns=["winsize"], fill_value=0)
+            ax = sns.heatmap(piv, square=True,cmap='viridis',vmin=-1, vmax=1)
+            ax.set_title('Sensitivity for '+ column)
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=90)
+            plt.tight_layout()
+            plt.xlabel('Rolling Window')
+            plt.ylabel('Smoothing')
+            plt.savefig(os.path.join(output_dir, 'sensitivity_'+column+'.png'), dpi=DPI)
+            plt.close(fig)
+
