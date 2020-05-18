@@ -32,7 +32,7 @@ from pyveg.src.plotting import (
     plot_cross_correlations,
     plot_moving_window_analysis,
     plot_ews_resiliance,
-    sensitivity_heatmap
+    plot_sensitivity_heatmap
 )
 
 
@@ -162,8 +162,8 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
         plot_ews_resiliance(series_name, ews_dic_veg['EWS metrics'], ews_dic_veg['Kendall tau'], mwa_subdir)
 
         # sensitivity analysis
-        sensitivity = early_warnings_sensitivity_analysis(ts_df[column_name].dropna(, indicators=ews)
-        sensitivity_heatmap(sensitivity, mwa_subdir)
+        sensitivity = early_warnings_sensitivity_analysis(ts_df[column_name].dropna(), indicators=ews)
+        plot_sensitivity_heatmap(series_name, sensitivity, mwa_subdir)
 
         # save results
         for key, df in ews_dic_veg.items():

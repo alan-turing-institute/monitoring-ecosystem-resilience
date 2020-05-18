@@ -823,13 +823,13 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
     plt.subplots_adjust(hspace=0.0)
 
     # save the plot
-    output_filename = series_name + '-ews.png'
+    output_filename = series_name.replace(' ', '-') + '-ews.png'
     print(f'Plotting {series_name} ews plots...')
     plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
     plt.close(fig)
 
 
-def sensitivity_heatmap(df, output_dir):
+def plot_sensitivity_heatmap(series_name, df, output_dir):
     """
     Produce heatmap plot for the sensitivy analysis
 
@@ -854,6 +854,8 @@ def sensitivity_heatmap(df, output_dir):
             plt.tight_layout()
             plt.xlabel('Rolling Window')
             plt.ylabel('Smoothing')
-            plt.savefig(os.path.join(output_dir, 'sensitivity_'+column+'.png'), dpi=DPI)
-            plt.close(fig)
 
+            output_filename = series_name.replace(' ', '-') + '-' + column + '-sensitivity.png'
+            print(f'Plotting {series_name} sensitivity plots...')
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+            plt.close(fig)
