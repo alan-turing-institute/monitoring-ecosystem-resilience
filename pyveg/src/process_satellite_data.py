@@ -82,7 +82,10 @@ def process_sub_image(i, sub, sub_rgb, sub_ndvi, output_subdir, date):
     # use the BWDVI to mask the NDVI and calculate the average
     # pixel value of veg pixels
     veg_mask = (pillow_to_numpy(sub_image) == 0)
-    ndvi_veg_mean = round(pillow_to_numpy(sub_ndvi[0])[veg_mask].mean(), 4)
+    if veg_mask.sum() > 0:
+        ndvi_veg_mean = round(pillow_to_numpy(sub_ndvi[0])[veg_mask].mean(), 4)
+    else:
+        ndvi_veg_mean = np.NaN
     #veg_ndvi_std = round(pillow_to_numpy(sub_ndvi[0])[veg_mask].std(), 4)
 
     # run network centrality
