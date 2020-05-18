@@ -856,6 +856,6 @@ def plot_sensitivity_heatmap(series_name, df, output_dir):
             plt.ylabel('Smoothing')
 
             output_filename = series_name.replace(' ', '-') + '-' + column + '-sensitivity.png'
-            print(f'Plotting {series_name} {column} sensitivity plots...')
+            print(f'Plotting {series_name} {column} sensitivity plot...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
             plt.close(fig)
