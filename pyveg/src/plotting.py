@@ -751,33 +751,32 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
         ymax = ys.mean() + 2*((ys.mean() - ys).abs().max())
         return [ymin, ymax]
 
-    def annotate(text, xy=(8, 70), size=10):
+    def annotate(text, xy=(6    , 70), size=10):
         if 'Kendall' in text:
             xy = (xy[0], 60)
         plt.gca().annotate(text, xy=xy, xycoords='axes points',
                            size=size, ha='left', va='top')
 
+    dates = get_datetime_xs(pd.DataFrame(dates).dropna())
     fig, _ = plt.subplots(figsize=(4,8), sharex='col')
 
-    ax = plt.subplot(611)
+    ax1 = plt.subplot(611)
     ys = EWSmetrics_df['State variable']
-    plt.plot(ys, color='black')
-    plt.plot(EWSmetrics_df['Smoothing'], color='red', linestyle='dashed')
-    plt.gca().tick_params(axis='x', direction='in')
+
+    plt.plot(dates[-len(ys):], ys, color='black')
+    plt.plot(dates[-len(ys):], EWSmetrics_df['Smoothing'], color='red', linestyle='dashed')
     plt.ylim(zoom_out(ys))
     annotate(series_name)
 
-    plt.subplot(612, sharex=ax)
+    ax2 = plt.subplot(612, sharex=ax1)
     ys = EWSmetrics_df['Residuals']
-    plt.plot(ys, color='black', label='Time Series')
-    plt.gca().tick_params(axis='x', direction='in')
+    plt.plot(dates[-len(ys):], ys, color='black', label='Time Series')
     plt.ylim(zoom_out(ys))
     annotate('Residuals')
 
-    plt.subplot(613, sharex=ax)
+    ax3 = plt.subplot(613, sharex=ax1)
     ys = EWSmetrics_df['Lag-1 AC']
-    plt.plot(ys, color='black')
-    plt.gca().tick_params(axis='x', direction='in')
+    plt.plot(dates[-len(ys):], ys, color='black')
     plt.ylim(zoom_out(ys))
     annotate('Lag-1 AC')
     tau = Kendalltau_df['Lag-1 AC'].iloc[0]
@@ -790,58 +789,40 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
     tau = Kendalltau_df['Lag-1 AC'].iloc[0]
     annotate(f'Kendall $\\tau = {tau:.2f}$', xy=(8, 55), size=8)"""
         
-    plt.subplot(614, sharex=ax)
+    ax4 = plt.subplot(614, sharex=ax1)
     ys = EWSmetrics_df['Standard deviation']
-    plt.plot(ys, color='black')
-    plt.gca().tick_params(axis='x', direction='in')
+    plt.plot(dates[-len(ys):], ys, color='black')
     plt.ylim(zoom_out(ys))
     annotate('Standard deviation')
     tau = Kendalltau_df['Standard deviation'].iloc[0]
     annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
     
-    plt.subplot(615, sharex=ax)
+    ax5 = plt.subplot(615, sharex=ax1)
     ys = EWSmetrics_df['Skewness']
-    plt.plot(ys, color='black')
-    plt.gca().tick_params(axis='x', direction='in')
+    plt.plot(dates[-len(ys):], ys, color='black')
     plt.ylim(zoom_out(ys))
     annotate('Skewness')
     tau = Kendalltau_df['Skewness'].iloc[0]
     annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
     
-    plt.subplot(616, sharex=ax)
-    
-
-
+    ax6 = plt.subplot(616, sharex=ax1)
     ys = EWSmetrics_df['Kurtosis']
-    plt.plot(ys, color='black')
-    plt.gca().tick_params(axis='x', direction='in')
+    plt.plot(dates[-len(ys):], ys, color='black')
     plt.ylim(zoom_out(ys))
     annotate('Kurtosis')
     tau = Kendalltau_df['Kurtosis'].iloc[0]
     annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
-
-    
-    import matplotlib.dates as mdates
-    dates = get_datetime_xs(pd.DataFrame(dates))
-    print(dates)
-    xfmt = mdates.DateFormatter('%Y-%m-%d')
-    plt.gca().xaxis.set_major_formatter(xfmt)
-    plt.gca().set_xticks(dates)
-    plt.xticks(rotation=25)
-
-
-    #plt.gca().set_xticklabels()
-    #plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
-    #plt.xticks(range(len(ys)), get_datetime_xs(pd.DataFrame(dates)))
-    #plt.gca().xaxis.set_major_locator(mdates.YearLocator())
-    #plt.gcf().autofmt_xdate()
-
-
     
     plt.xlabel('Time')
 
     # remove vertical space between plots
     plt.subplots_adjust(hspace=0.0)
+    
+    # tick formatting
+    ax1.tick_params(axis='both', which='both', bottom=True, top=False, labelbottom=False, left=True, labelleft=True, direction='out')
+    for ax in [ax2, ax3, ax4, ax5]:
+        ax.tick_params(axis='both', which='both', bottom=True, top=False, labelbottom=False, left=True, labelleft=True, direction='out')
+    ax6.tick_params(axis='both', which='both', bottom=True, top=False, labelbottom=True, left=True, labelleft=True, direction='out')
 
     # save the plot
     output_filename = series_name.replace(' ', '-') + '-ews.png'
