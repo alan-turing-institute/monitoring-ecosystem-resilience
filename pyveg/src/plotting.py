@@ -830,7 +830,7 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
     # save the plot
     output_filename = series_name.replace(' ', '-') + '-ews.png'
     print(f'Plotting {series_name} ews plots...')
-    plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+    plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI, bbox_inches='tight')
     plt.close(fig)
 
 
