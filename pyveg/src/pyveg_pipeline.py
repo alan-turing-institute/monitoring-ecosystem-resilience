@@ -14,6 +14,7 @@ the results of the different SEQUENCES into one output file.
 """
 
 import os
+import subprocess
 try:
     from pyveg.src import azure_utils
 except:
@@ -81,6 +82,11 @@ class Pipeline(object):
             if (not var in vars(self)) or ( not self.__getattribute__(var)):
                 raise RuntimeError("{}: need to set {} before calling configure()"\
                                    .format(self.name, var))
+        if self.output_location_type == "azure":
+            container_name = azure_utils.sanitize_container_name(self.output_location)
+            print("Create container {}".format(container_name))
+            azure_utils.create_container(container_name)
+            self.output_location = container_name
 
         for sequence in self.sequences:
             if not "coords" in vars(sequence):
@@ -88,6 +94,8 @@ class Pipeline(object):
             if not "date_range" in vars(sequence):
                 sequence.date_range = self.date_range
             sequence.configure()
+
+
         self.is_configured = True
 
 
@@ -153,7 +161,6 @@ class Sequence(object):
             self.__setattr__(k,v)
 
 
-
     def configure(self):
 
         if (not self.coords) or (not self.date_range):
@@ -202,7 +209,6 @@ class Sequence(object):
         for module in self.modules:
             if module.name == mod_name:
                 return module
-
 
 
 class BaseModule(object):
@@ -293,3 +299,26 @@ class BaseModule(object):
             output += "        {}: {}\n".format(k,v)
         output += "        =======================\n\n"
         return output
+
+
+    def copy_to_output_location(self, tmpdir, output_location, file_endings=[]):
+
+        if self.output_location_type == "local":
+            os.makedirs(output_location, exist_ok=True)
+            for root, dirs, files in os.walk(tmpdir):
+                for filename in files:
+                    if file_endings:
+                        for ending in file_endings:
+                            if filename.endswith(ending):
+                                subprocess.run(["cp","-r",os.path.join(root, filename),
+                                                os.path.join(output_location, filename)])
+                    else:
+                        subprocess.run(["cp","-r",os.path.join(root, filename),
+                                        os.path.join(output_location, filename)])
+        elif self.output_location_type == "azure":
+            # first part of self.output_location should be the container name
+            container_name = self.output_location.split("/")[0]
+            azure_utils.write_files_to_blob(tmpdir,
+                                            container_name,
+                                            output_location,
+                                            file_endings)

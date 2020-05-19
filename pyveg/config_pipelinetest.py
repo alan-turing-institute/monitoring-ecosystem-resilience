@@ -3,7 +3,9 @@
 from pyveg.coordinates import coordinate_store
 
 #Define directory to save all outputs
-output_dir = '/tmp/newtestoutput'
+output_location = 'aztestoutput'
+output_location_type = "azure"
+#output_dir = '/tmp/aztestoutput'
 
 # modify this line to set coords based on entries in `coordinates.py`
 coordinate_id = '00'
@@ -15,14 +17,15 @@ coordinates = (entry.longitude, entry.latitude)
 
 # date range for Copernicus
 #date_range = ['2015-01-01', '2020-01-01']
-date_range = ['2016-01-01', '2016-03-01']
+
+date_range = ['2016-01-01', '2017-03-01']
 
 #date range for landsat 5
 #date_range = ('1988-01-01', '2003-01-01')
 
 
 # collections for Copernicus
-collections_to_use = ['Sentinel2', 'ERA5']
+collections_to_use = ['Sentinel2']#, 'ERA5']
 
 # collections to use for old Landsat
 #collections_to_use = ['Landsat4','Landsat5']
