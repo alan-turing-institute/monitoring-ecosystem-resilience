@@ -6,6 +6,8 @@ import os
 import requests
 from datetime import datetime, timedelta
 import dateparser
+import tempfile
+import subprocess
 
 from geetools import cloud_mask
 import cv2 as cv
@@ -134,6 +136,7 @@ class BaseDownloader(BaseModule):
         return url_list
 
 
+
     def download_data(self, download_urls, date_range):
         """
         Download zip file(s) from GEE to configured output location.
@@ -154,11 +157,13 @@ class BaseDownloader(BaseModule):
         download_location = os.path.join(self.output_location, mid_date, "RAW")
 
         # download files and unzip to temporary directory
+        tempdir = tempfile.TemporaryDirectory()
         for download_url in download_urls:
             download_and_unzip(download_url,
-                               download_location)
-#                               self.output_location_type)
-
+                               tempdir.name)
+        print("Wrote zipfiles to {}".format(tempdir.name))
+        print("download_location is {}".format(download_location))
+        self.copy_to_output_location(tempdir.name, download_location, [".tif"])
         # return the path so downloaded files can be handled by caller
         return download_location
 
