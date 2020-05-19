@@ -220,16 +220,15 @@ def plot_time_series(df, output_dir, filename_suffix =''):
 
 def plot_ndvi_time_series(df, output_dir):
     def make_plot(df, veg_prefix, output_dir):
-        veg_df = df.dropna(subset=[veg_prefix+'_veg_ndvi_mean_mean'])
+        veg_df = df.dropna(subset=[veg_prefix+'_ndvi_veg_mean'])
 
         # get vegetation x values to datetime objects
         veg_xs = get_datetime_xs(veg_df)
 
         # get vegetation y values
-        ndvi_means = veg_df[veg_prefix + '_ndvi_mean_mean']
-        veg_means = veg_df[veg_prefix + '_veg_ndvi_mean_mean']
-        #veg_std = veg_df[veg_prefix + '_veg_ndvi_mean_std']
-        veg_std = veg_df[veg_prefix + '_veg_ndvi_std_mean']
+        ndvi_means = veg_df[veg_prefix + '_ndvi_mean']
+        veg_means = veg_df[veg_prefix + '_ndvi_veg_mean']
+        veg_std = veg_df[veg_prefix + '_ndvi_veg_std']
 
         # create a figure
         fig, ax = plt.subplots(figsize=(15, 4.5))
@@ -286,7 +285,7 @@ def plot_ndvi_time_series(df, output_dir):
 
     # make plots for selected columns
     for column in df.columns:
-        if 'veg_ndvi_mean' in column:
+        if 'ndvi_veg_mean' in column:
             veg_prefix = column.split('_')[0]
             print(f'Plotting {veg_prefix} NDVI time series.')
             make_plot(df, veg_prefix, output_dir)
@@ -309,13 +308,14 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
     def make_plots(series, output_dir, filename_suffix=''):
 
         # make the full autocorrelation function plot
-        plt.figure(figsize=(8,5))
+        fig, _ = plt.subplots(figsize=(8,5))
         pd.plotting.autocorrelation_plot(series, label=series.name)
         plt.legend()
 
         # save the plot
         output_filename = series.name + '-autocorrelation-function' + filename_suffix + '.png'
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+        plt.close(fig)
 
         # use statsmodels for partial autocorrelation
         from statsmodels.graphics.tsaplots import plot_pacf
@@ -332,7 +332,7 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
         
     # make plots for selected columns
     for column in df.columns:
-        if 'offset50' in column and 'mean' in column or 'total_precipitation' in column:
+        if ('offset50' in column or 'ndvi' in column) and 'mean' in column or 'total_precipitation' in column:
             print(f'Plotting autocorrelation functions for "{column}"...')
             make_plots(df[column].dropna(), output_dir, filename_suffix=filename_suffix)
 
@@ -463,10 +463,15 @@ def plot_feature_vector(output_dir):
         plt.ylabel('$X(V-E)$', fontsize=14)
         plt.tight_layout()
 
+        # create new subdir for feature vectors
+        fv_subdir = os.path.join(output_dir, 'feature-vectors')
+        if not os.path.exists(fv_subdir):
+            os.makedirs(fv_subdir, exist_ok=True)
+
         # save the plot
         output_filename = fv_filename.split('_')[0] + '-feature-vector-summary.png'
         print(f'Plotting feature vector "{os.path.abspath(output_filename)}"...')
-        plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+        plt.savefig(os.path.join(fv_subdir, output_filename), dpi=DPI)
         plt.close(fig)
 
         feature_vecs = []
@@ -509,11 +514,11 @@ def plot_feature_vector(output_dir):
         plt.ylabel('$X(V-E)$', fontsize=14)
         plt.legend()
         plt.tight_layout()
-
+        
         # save the plot
         output_filename = fv_filename.split('_')[0] + '-feature-vector-minmax.png'
         print(f'Plotting minmax feature vector "{os.path.abspath(output_filename)}"...')
-        plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+        plt.savefig(os.path.join(fv_subdir, output_filename), dpi=DPI)
         plt.close(fig)
 
 
@@ -581,7 +586,7 @@ def plot_stl_decomposition(df, period, output_dir):
 
     # make plots for selected columns
     for column in df.columns:
-        if 'offset50' in column and 'mean' in column or 'total_precipitation' in column:
+        if ('offset50' in column or 'ndvi' in column) and 'mean' in column or 'total_precipitation' in column:
             
             print(f'Plotting STL decomposition for "{column}"...')
             
@@ -692,23 +697,28 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         tau, p = get_kendell_tau(ar1)
         tau_var, p_var = get_kendell_tau(variance)
 
-        tau_smooth, p_smooth = get_kendell_tau(ar1_smooth)
-        tau_var_smooth, p_var_smooth = get_kendell_tau(variance_smooth)
+        if any([smoothing_option in c for c in df.columns]):
+            tau_smooth, p_smooth = get_kendell_tau(ar1_smooth)
+            tau_var_smooth, p_var_smooth = get_kendell_tau(variance_smooth)
 
         # add to plot
-        textstr = f'AR1 Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_smooth:.2f}$, ${p_smooth:.2f}$'
+        textstr = ''
+        if any([smoothing_option in c for c in df.columns]):
+            textstr += f'AR1 Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_smooth:.2f}$, ${p_smooth:.2f}$'
         textstr += f' (${tau:.2f}$, ${p:.2f}$ unsmoothed)'
-
         ax2.text(0.43, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
-        textstr = f'Variance Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_var_smooth:.2f}$, ${p_var_smooth:.2f}$'
-        textstr += f' (${tau_var:.2f}$, ${p_var:.2f}$ unsmoothed)'
 
+        textstr = ''
+        if any([smoothing_option in c for c in df.columns]):
+            textstr += f'Variance Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_var_smooth:.2f}$, ${p_var_smooth:.2f}$'
+        textstr += f' (${tau_var:.2f}$, ${p_var:.2f}$ unsmoothed)'
         ax2.text(0.43, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+        
         # layout
         fig.tight_layout()
 
         # save the plot
-        output_filename = collection_prefix + '-moving-window-AR1-var' + smoothing_option + '.png'
+        output_filename = collection_prefix + '-AR1-var-' + smoothing_option + '.png'
         print(f'Plotting {collection_prefix} moving window time series...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
         plt.close(fig)
@@ -720,9 +730,107 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
             make_plot(df, column, output_dir, 'smooth_res')
 
 
-def sensitivity_heatmap(df, output_dir):
-    '''
+def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
+    """
+    Make early warning signals resiliance plots using the output
+    from the ewstools package.
 
+    Parameters
+    ----------
+    series_name : str
+        String containing data collection and time series variable.
+    EWSmetrics_df : DataFrame
+        DataFrame from ewstools containing ews time series.
+    Kendalltau_df : DataFrame
+        DataFrame from ewstools containing Kendall tau values for EWSmetrics_df time series
+    output_dir: str
+        Output dir to save plot in.
+    """
+    def zoom_out(ys):
+        ymin = ys.mean() - 2*((ys.mean() - ys).abs().max())
+        ymax = ys.mean() + 2*((ys.mean() - ys).abs().max())
+        return [ymin, ymax]
+
+    def annotate(text, xy=(8, 70), size=10):
+        if 'Kendall' in text:
+            xy = (xy[0], 60)
+        plt.gca().annotate(text, xy=xy, xycoords='axes points',
+                           size=size, ha='left', va='top')
+    
+
+    fig, _ = plt.subplots(figsize=(4,8), sharex='col')
+
+    ax = plt.subplot(611)
+    ys = EWSmetrics_df['State variable']
+    plt.plot(ys, color='black')
+    plt.plot(EWSmetrics_df['Smoothing'], color='red', linestyle='dashed')
+    plt.gca().tick_params(axis='x', direction='in')
+    plt.ylim(zoom_out(ys))
+    annotate(series_name)
+
+    plt.subplot(612, sharex=ax)
+    ys = EWSmetrics_df['Residuals']
+    plt.plot(ys, color='black', label='Time Series')
+    plt.gca().tick_params(axis='x', direction='in')
+    plt.ylim(zoom_out(ys))
+    annotate('Residuals')
+
+    plt.subplot(613, sharex=ax)
+    ys = EWSmetrics_df['Lag-1 AC']
+    plt.plot(ys, color='black')
+    plt.gca().tick_params(axis='x', direction='in')
+    plt.ylim(zoom_out(ys))
+    annotate('Lag-1 AC')
+    tau = Kendalltau_df['Lag-1 AC'].iloc[0]
+    annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
+    
+    """ys = EWSmetrics_df['Lag-2 AC']
+    plt.plot(ys, color='navy')
+    plt.ylim(zoom_out(ys))
+    annotate('Lag-1 AC', xy=(8, 65))
+    tau = Kendalltau_df['Lag-1 AC'].iloc[0]
+    annotate(f'Kendall $\\tau = {tau:.2f}$', xy=(8, 55), size=8)"""
+        
+    plt.subplot(614, sharex=ax)
+    ys = EWSmetrics_df['Standard deviation']
+    plt.plot(ys, color='black')
+    plt.gca().tick_params(axis='x', direction='in')
+    plt.ylim(zoom_out(ys))
+    annotate('Standard deviation')
+    tau = Kendalltau_df['Standard deviation'].iloc[0]
+    annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
+    
+    plt.subplot(615, sharex=ax)
+    ys = EWSmetrics_df['Skewness']
+    plt.plot(ys, color='black')
+    plt.gca().tick_params(axis='x', direction='in')
+    plt.ylim(zoom_out(ys))
+    annotate('Skewness')
+    tau = Kendalltau_df['Skewness'].iloc[0]
+    annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
+    
+    plt.subplot(616, sharex=ax)
+    ys = EWSmetrics_df['Kurtosis']
+    plt.plot(ys, color='black')
+    plt.gca().tick_params(axis='x', direction='in')
+    plt.ylim(zoom_out(ys))
+    annotate('Kurtosis')
+    tau = Kendalltau_df['Kurtosis'].iloc[0]
+    annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
+    
+    plt.xlabel('Time')
+    #plt.tight_layout()
+    plt.subplots_adjust(hspace=0.0)
+
+    # save the plot
+    output_filename = series_name.replace(' ', '-') + '-ews.png'
+    print(f'Plotting {series_name} ews plots...')
+    plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+    plt.close(fig)
+
+
+def plot_sensitivity_heatmap(series_name, df, output_dir):
+    """
     Produce heatmap plot for the sensitivy analysis
 
     Parameters
@@ -732,7 +840,7 @@ def sensitivity_heatmap(df, output_dir):
         The output dataframe from the sensitivity analysis function.
     output_dir:
         Path to the directory to save the produced figures
-    '''
+    """
 
     for column in df.columns:
         if column == "smooth" or column=="winsize":
@@ -746,6 +854,8 @@ def sensitivity_heatmap(df, output_dir):
             plt.tight_layout()
             plt.xlabel('Rolling Window')
             plt.ylabel('Smoothing')
-            plt.savefig(os.path.join(output_dir, 'sensitivity_'+column+'.png'), dpi=DPI)
-            plt.close(fig)
 
+            output_filename = series_name.replace(' ', '-') + '-' + column + '-sensitivity.png'
+            print(f'Plotting {series_name} {column} sensitivity plot...')
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+            plt.close(fig)

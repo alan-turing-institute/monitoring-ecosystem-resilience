@@ -358,11 +358,14 @@ def get_AR1_parameter_estimate(ys):
     # from statsmodels.tsa.statespace.sarimax import SARIMAX
     # from statsmodels.tsa.arima_model import ARMA
 
-    # explicitly add frequency to index to prevent warnings
-    ys.index = pd.DatetimeIndex(ys.index, freq=pd.infer_freq(ys.index))
-
     # create and fit the AR(1) model
-    model = AutoReg(ys, lags=1, missing='drop').fit() # currently warning
+    if pd.infer_freq(ys.index) is not None:
+        # explicitly add frequency to index to prevent warnings
+        ys.index = pd.DatetimeIndex(ys.index, freq=pd.infer_freq(ys.index))
+        model = AutoReg(ys, lags=1, missing='drop').fit() # currently warning
+    else:
+        # remove index
+        model = AutoReg(ys.values, lags=1, missing='drop').fit() # currently warning
 
     # get the single parameter value
     parameter = model.params[1]
@@ -638,7 +641,7 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
     for column in df.columns:
 
         # run moving window analysis veg and precip columns
-        if ( 'offset50' in column and 'mean' in column or 
+        if ( ('offset50' in column or 'ndvi' in column) and 'mean' in column or 
              'total_precipitation' in column ):
             
             # reindex time series using data

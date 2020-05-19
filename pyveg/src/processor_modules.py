@@ -321,13 +321,13 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
 
     # get average NDVI across the whole image (in case there is no patterned veg)
     ndvi_mean = round(pillow_to_numpy(ndvi_sub_image).mean(), 4)
-    ndvi_std = round(pillow_to_numpy(ndvi_sub_image).std(), 4)
+    #ndvi_std = round(pillow_to_numpy(ndvi_sub_image).std(), 4)
 
     # use the BWDVI to mask the NDVI and calculate the average
     # pixel value of veg pixels
     veg_mask = (pillow_to_numpy(sub_image) == 0)
-    veg_ndvi_mean = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].mean(), 4)
-    veg_ndvi_std = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].std(), 4)
+    ndvi_veg_mean = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].mean(), 4)
+    #veg_ndvi_std = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].std(), 4)
 
     image_array = pillow_to_numpy(sub_image)
     feature_vec, _ = subgraph_centrality(image_array)
@@ -343,10 +343,10 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
     nc_result['date'] = date_string
     nc_result['latitude'] = coords[1]
     nc_result['longitude'] = coords[0]
-    nc_result['ndvi_mean'] = ndvi_mean
-    nc_result['ndvi_std'] = ndvi_std
-    nc_result['veg_ndvi_mean'] = veg_ndvi_mean
-    nc_result['veg_ndvi_std'] = veg_ndvi_std
+    nc_result['ndvi'] = ndvi_mean
+    #nc_result['ndvi_std'] = ndvi_std
+    nc_result['ndvi_veg'] = ndvi_veg_mean
+    #nc_result['veg_ndvi_std'] = veg_ndvi_std
 
     # save individual result for sub-image to tmp json, will combine later.
     save_json(nc_result, output_dir,

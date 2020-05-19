@@ -77,13 +77,16 @@ def process_sub_image(i, sub, sub_rgb, sub_ndvi, output_subdir, date):
 
     # average NDVI of all uncloudy pixels (in case there is no veg pattern)
     ndvi_mean = round(pillow_to_numpy(sub_ndvi[0])[cloud_mask].mean(), 4)
-    ndvi_std = round(pillow_to_numpy(sub_ndvi[0])[cloud_mask].std(), 4)
+    #ndvi_std = round(pillow_to_numpy(sub_ndvi[0])[cloud_mask].std(), 4)
 
     # use the BWDVI to mask the NDVI and calculate the average
     # pixel value of veg pixels
     veg_mask = (pillow_to_numpy(sub_image) == 0)
-    veg_ndvi_mean = round(pillow_to_numpy(sub_ndvi[0])[veg_mask].mean(), 4)
-    veg_ndvi_std = round(pillow_to_numpy(sub_ndvi[0])[veg_mask].std(), 4)
+    if veg_mask.sum() > 0:
+        ndvi_veg_mean = round(pillow_to_numpy(sub_ndvi[0])[veg_mask].mean(), 4)
+    else:
+        ndvi_veg_mean = np.NaN
+    #veg_ndvi_std = round(pillow_to_numpy(sub_ndvi[0])[veg_mask].std(), 4)
 
     # run network centrality
     image_array = pillow_to_numpy(sub_image)
@@ -94,10 +97,10 @@ def process_sub_image(i, sub, sub_rgb, sub_ndvi, output_subdir, date):
     nc_result['latitude'] = round(sub_coords[1], 4)
     nc_result['date'] = date
     nc_result['feature_vec'] = list(feature_vec)
-    nc_result['ndvi_mean'] = ndvi_mean
-    nc_result['ndvi_std'] = ndvi_std
-    nc_result['veg_ndvi_mean'] = veg_ndvi_mean
-    nc_result['veg_ndvi_std'] = veg_ndvi_std
+    nc_result['ndvi'] = ndvi_mean
+    nc_result['ndvi_veg'] = ndvi_veg_mean
+    #nc_result['ndvi_std'] = ndvi_std
+    #nc_result['veg_ndvi_std'] = veg_ndvi_std
 
     # write json file for just this sub-image to a temporary location
     # (to be thread safe, only combine when all parallel jobs are done)
@@ -175,12 +178,12 @@ def run_network_centrality(output_dir, img_thresh, img_rgb, ndvi_img, coords, da
 
     # create a multiprocessing pool to handle each sub-image in parallel
     with Pool(processes=n_threads) as pool:
+
         # prepare the arguments for the process_sub_image function
         arguments=[(i, sub, sub_images_rgb[i], sub_images_ndvi[i], output_subdir, date_range_midpoint) \
                    for i,sub in enumerate(sub_images)]
-        pool.starmap(process_sub_image, arguments)
 
-    #nc_results = consolidate_subimage_json(output_subdir) # pre pipline way
+        pool.starmap(process_sub_image, arguments)
 
     # re-combine the results from all sub-images
     nc_results = consolidate_json_to_list(os.path.join(output_subdir, 'tmp_json'),
@@ -265,7 +268,7 @@ def get_vegetation(output_dir, collection_dict, coords, date_range, region_size=
     # run network centrality on the sub-images
     if collection_dict['do_network_centrality']:
         print('Running network centrality...')
-        #n_sub_images = 20 # do this for speedup while testing
+        #n_sub_images = 10 # do this for speedup while testing
         nc_output_dir = os.path.join(output_dir, 'network_centrality')
         nc_results = run_network_centrality(nc_output_dir, processed_ndvi, rgb_image, ndvi_image, coords,
                                             date_range, region_size, n_sub_images=n_sub_images)
