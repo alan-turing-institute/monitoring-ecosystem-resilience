@@ -169,14 +169,14 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
         # significance tests
 
-        significance_df = early_warnings_null_hypothesis(ts_df[column_name].dropna(),
+        significance = early_warnings_null_hypothesis(ts_df[column_name].dropna(),
                                     roll_window=0.5,
                                     smooth='Gaussian',
                                     lag_times=[1, 2],
                                     indicators=ews,
                                     band_width=0.2)
 
-        kendall_tau_histograms(significance_df,mwa_subdir)
+        kendall_tau_histograms(series_name, significance,mwa_subdir)
 
         # save results
         for key, df in ews_dic_veg.items():

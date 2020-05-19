@@ -862,7 +862,7 @@ def plot_sensitivity_heatmap(series_name, df, output_dir):
 
 
 
-def kendall_tau_histograms(df, output_dir):
+def kendall_tau_histograms(series_name, df, output_dir):
     '''
 
       Produce heatmap plot for the sensitivy analysis
@@ -890,10 +890,11 @@ def kendall_tau_histograms(df, output_dir):
             plt.axvline(data_df.values, color='black', linestyle='solid', linewidth=2)
             plt.axvline(surrogates_df.quantile(.9), color='black', linestyle='dashed', linewidth=2)
             ax.set_title('Significance testing for '+ column)
-            plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
             plt.xlabel('Kendall tau')
             plt.ylabel('Frequency')
-            plt.savefig(os.path.join(output_dir, 'Significance_'+column+'.png'), dpi=DPI)
+            output_filename = series_name.replace(' ', '-') + '-' + column + '-significance.png'
+
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
             plt.close(fig)
 
 
