@@ -173,7 +173,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
                                     roll_window=0.5,
                                     smooth='Gaussian',
                                     lag_times=[1, 2],
-                                    ews=ews,
+                                    indicators=ews,
                                     band_width=0.2)
 
         kendall_tau_histograms(significance_df,mwa_subdir)
