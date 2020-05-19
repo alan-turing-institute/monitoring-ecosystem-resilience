@@ -809,28 +809,32 @@ def early_warnings_null_hypothesis(series,
                 aic_max = aic
                 result = model_fit
 
-    def compute_indicators(eval_series):
+    def compute_indicators(series):
+
+        ''' Rolling window indicators computation based on the ewstools.core.ews_compute function from
+        ewstools
+        '''
 
         df_ews = pd.DataFrame()
         # Compute the rolling window size (integer value)
-        rw_size = int(np.floor(roll_window * eval_series.shape[0]))
+        rw_size = int(np.floor(roll_window * series.shape[0]))
 
         # ------------ Compute temporal EWS---------------#
 
         # Compute standard deviation as a Series and add to the DataFrame
         if 'sd' in indicators:
-            roll_sd = eval_series.rolling(window=rw_size).std()
+            roll_sd = series.rolling(window=rw_size).std()
             df_ews['Standard deviation'] = roll_sd
 
         # Compute variance as a Series and add to the DataFrame
         if 'var' in indicators:
-            roll_var = eval_series.rolling(window=rw_size).var()
+            roll_var = series.rolling(window=rw_size).var()
             df_ews['Variance'] = roll_var
 
         # Compute autocorrelation for each lag in lag_times and add to the DataFrame
         if 'ac' in indicators:
             for i in range(len(lag_times)):
-                roll_ac = eval_series.rolling(window=rw_size).apply(
+                roll_ac = series.rolling(window=rw_size).apply(
                     func=lambda x: pd.Series(x).autocorr(lag=lag_times[i]),
                     raw=True)
                 df_ews['Lag-' + str(lag_times[i]) + ' AC'] = roll_ac
@@ -838,21 +842,21 @@ def early_warnings_null_hypothesis(series,
         # Compute Coefficient of Variation (C.V) and add to the DataFrame
         if 'cv' in indicators:
             # mean of raw_series
-            roll_mean = eval_series.rolling(window=rw_size).mean()
+            roll_mean = series.rolling(window=rw_size).mean()
             # standard deviation of residuals
-            roll_std = eval_series.rolling(window=rw_size).std()
+            roll_std = series.rolling(window=rw_size).std()
             # coefficient of variation
             roll_cv = roll_std.divide(roll_mean)
             df_ews['Coefficient of variation'] = roll_cv
 
         # Compute skewness and add to the DataFrame
         if 'skew' in indicators:
-            roll_skew = eval_series.rolling(window=rw_size).skew()
+            roll_skew = series.rolling(window=rw_size).skew()
             df_ews['Skewness'] = roll_skew
 
         # Compute Kurtosis and add to DataFrame
         if 'kurt' in indicators:
-            roll_kurt = eval_series.rolling(window=rw_size).kurt()
+            roll_kurt = series.rolling(window=rw_size).kurt()
             df_ews['Kurtosis'] = roll_kurt
 
         # ------------Compute Kendall tau coefficients----------------#

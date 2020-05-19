@@ -151,7 +151,11 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
     sensitivity_heatmap(sensitivity,mwa_subdir_variable)
 
-    null_hypothesis_df = early_warnings_null_hypothesis(ts_df[variable], indicators = ews)
+    null_hypothesis_df = early_warnings_null_hypothesis(ts_df[variable], indicators = ews,
+                                                        roll_window=0.5,
+                                                        smooth='Gaussian',
+                                                        lag_times=[1, 2],
+                                                        band_width=0.2)
 
     kendall_tau_histograms(null_hypothesis_df,mwa_subdir_variable)
 
