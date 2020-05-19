@@ -1,5 +1,6 @@
 import os
 import arrow
+import re
 
 from pyveg.src.file_utils import split_filepath
 
@@ -15,6 +16,25 @@ except:
 
 from azure.storage.blob import BlockBlobService, PublicAccess, ContainerPermissions
 from azure.common import AzureMissingResourceHttpError
+
+
+def sanitize_container_name(orig_name):
+    """
+    only allowed alphanumeric characters and dashes.
+    """
+    sanitized_name = ""
+    previous_character = None
+    for character in orig_name:
+        if not re.search("[-a-zA-Z\d]",character):
+           if not previous_character == "-":
+               sanitized_name += "-"
+               previous_character = "-"
+           else:
+               continue
+        else:
+            sanitized_name += character
+            previous_character = character
+    return sanitized_name
 
 
 def check_container_exists(container_name, bbs=None):
@@ -90,20 +110,26 @@ def list_directory(path, container_name, bbs=None):
     return output_names
 
 
-def construct_blob_name(filepath, container_name):
-        # container name will generally be part of filepath - we want
-        # the blob name to be the bit after that
-        blob_name_parts = []
-        filepath_parts = split_filepath(filepath)
-        container_name_found = False
-        for path_part in filepath_parts:
-            if container_name_found:
-                blob_name_parts.append(path_part)
-            if path_part == container_name:
-                container_name_found = True
-        if len(blob_name_parts) == 0:
-            return None
-        return os.path.join(*blob_name_parts)
+
+def remove_container_name_from_blob_path(blob_path, container_name):
+    """
+    Get the bit of the filepath after the container name.
+    """
+    # container name will often be part of filepath - we want
+    # the blob name to be the bit after that
+    if not container_name in blob_path:
+        return blob_path
+    blob_name_parts = []
+    filepath_parts = split_filepath(blob_path)
+    container_name_found = False
+    for path_part in filepath_parts:
+        if container_name_found:
+            blob_name_parts.append(path_part)
+        if path_part == container_name:
+            container_name_found = True
+    if len(blob_name_parts) == 0:
+        return None
+    return os.path.join(*blob_name_parts)
 
 
 def write_file_to_blob(file_path, blob_name, container_name, bbs=None):
@@ -113,7 +139,13 @@ def write_file_to_blob(file_path, blob_name, container_name, bbs=None):
     bbs.create_blob_from_path(container_name, blob_name, file_path)
 
 
-def write_files_to_blob(path, container_name, file_endings = [], bbs=None):
+def write_files_to_blob(path, container_name, blob_path = None, file_endings = [], bbs=None):
+    """
+    Upload a whole directory structure to blob storage.
+    If we are given 'blob_path' we use that - if not we preserve the given file path structure.
+    In both cases we take care to remove the container name from the start of the blob path
+    """
+
     if not bbs:
         bbs = BlockBlobService(account_name=config["account_name"],
                                account_key=config["account_key"])
@@ -128,5 +160,11 @@ def write_files_to_blob(path, container_name, file_endings = [], bbs=None):
             else:
                 filepaths_to_upload.append(filepath)
     for filepath in filepaths_to_upload:
-        blob_name = construct_blob_name(filepath, container_name)
+        if blob_path:
+            blob_fullpath = os.path.join(blob_path, os.path.split(filepath)[-1])
+        else:
+            blob_fullpath = filepath
+        blob_name = remove_container_name_from_blob_path(blob_fullpath, container_name)
+        print("Will write {} to blob {}".format(filepath, blob_name))
+
         write_file_to_blob(filepath, blob_name, container_name, bbs)
