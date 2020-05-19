@@ -730,7 +730,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
             make_plot(df, column, output_dir, 'smooth_res')
 
 
-def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
+def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output_dir):
     """
     Make early warning signals resiliance plots using the output
     from the ewstools package.
@@ -756,7 +756,6 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
             xy = (xy[0], 60)
         plt.gca().annotate(text, xy=xy, xycoords='axes points',
                            size=size, ha='left', va='top')
-    
 
     fig, _ = plt.subplots(figsize=(4,8), sharex='col')
 
@@ -810,6 +809,9 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
     annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
     
     plt.subplot(616, sharex=ax)
+    
+
+
     ys = EWSmetrics_df['Kurtosis']
     plt.plot(ys, color='black')
     plt.gca().tick_params(axis='x', direction='in')
@@ -817,9 +819,28 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, output_dir):
     annotate('Kurtosis')
     tau = Kendalltau_df['Kurtosis'].iloc[0]
     annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
+
+    
+    import matplotlib.dates as mdates
+    dates = get_datetime_xs(pd.DataFrame(dates))
+    print(dates)
+    xfmt = mdates.DateFormatter('%Y-%m-%d')
+    plt.gca().xaxis.set_major_formatter(xfmt)
+    plt.gca().set_xticks(dates)
+    plt.xticks(rotation=25)
+
+
+    #plt.gca().set_xticklabels()
+    #plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+    #plt.xticks(range(len(ys)), get_datetime_xs(pd.DataFrame(dates)))
+    #plt.gca().xaxis.set_major_locator(mdates.YearLocator())
+    #plt.gcf().autofmt_xdate()
+
+
     
     plt.xlabel('Time')
-    #plt.tight_layout()
+
+    # remove vertical space between plots
     plt.subplots_adjust(hspace=0.0)
 
     # save the plot
