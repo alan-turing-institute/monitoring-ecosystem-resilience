@@ -35,6 +35,7 @@ from pyveg.src.plotting import (
     plot_ews_resiliance,
     plot_sensitivity_heatmap,
     kendall_tau_histograms
+
 )
 
 
@@ -177,6 +178,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
                                     band_width=0.2)
 
         kendall_tau_histograms(series_name, significance,mwa_subdir)
+
 
         # save results
         for key, df in ews_dic_veg.items():
