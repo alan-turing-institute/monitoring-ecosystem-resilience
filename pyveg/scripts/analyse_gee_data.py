@@ -159,7 +159,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
         # make plots
         series_name = column_name.replace('_', ' ')
-        plot_ews_resiliance(series_name, ews_dic_veg['EWS metrics'], ews_dic_veg['Kendall tau'], mwa_subdir)
+        plot_ews_resiliance(series_name, ews_dic_veg['EWS metrics'], ews_dic_veg['Kendall tau'], ts_df['date'], mwa_subdir)
 
         # sensitivity analysis
         sensitivity = early_warnings_sensitivity_analysis(ts_df[column_name].dropna(), indicators=ews)

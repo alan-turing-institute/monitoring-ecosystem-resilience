@@ -660,7 +660,15 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
 
 
 def get_datetime_xs(df):
-    
+    """
+    Return the date column of `df` as datetime objects.
+    """
+
+    # check the column exists
+    if 'date' not in df.columns:
+        raise RuntimeError("Couldn't find column 'date' in input df")
+
+    # safely read date column and convert to datetime objects
     try:
         xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in df.date]
     except:
@@ -668,6 +676,7 @@ def get_datetime_xs(df):
         xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in df.date]
 
     return xs
+
 
 def early_warnings_sensitivity_analysis(series,
                                         indicators=['var','ac'],
