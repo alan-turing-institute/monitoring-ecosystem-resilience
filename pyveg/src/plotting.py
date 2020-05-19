@@ -819,10 +819,13 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
     plt.subplots_adjust(hspace=0.0)
     
     # tick formatting
-    ax1.tick_params(axis='both', which='both', bottom=True, top=False, labelbottom=False, left=True, labelleft=True, direction='out')
-    for ax in [ax2, ax3, ax4, ax5]:
-        ax.tick_params(axis='both', which='both', bottom=True, top=False, labelbottom=False, left=True, labelleft=True, direction='out')
-    ax6.tick_params(axis='both', which='both', bottom=True, top=False, labelbottom=True, left=True, labelleft=True, direction='out')
+    for ax in [ax1, ax2, ax3, ax4, ax5]:
+        ax.tick_params(axis='both', which='both', bottom=True, top=False, labelbottom=False, 
+                      left=True, labelleft=True, direction='out', labelsize=8)
+    
+    # show x labels for bottom plot                      
+    ax6.tick_params(axis='both', which='both', bottom=True, top=False, labelbottom=True, 
+                    left=True, labelleft=True, direction='out', labelsize=8)
 
     # save the plot
     output_filename = series_name.replace(' ', '-') + '-ews.png'
