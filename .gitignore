@@ -105,3 +105,6 @@ output/
 # R stuff
 .RData
 .Rhistory
+
+# azure secrets
+pyveg/azure_config.py
