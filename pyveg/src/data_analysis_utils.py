@@ -315,7 +315,7 @@ def fft_series(time_series):
 def write_slimmed_csv(dfs, output_dir, filename_suffix=''):
     for collection_name, veg_df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-            df_summary = dfs['ECMWF/ERA5/MONTHLY']
+            df_summary = dfs['ECMWF/ERA5/DAILY']
             df_summary.loc[veg_df.index, 'offset50_mean'] = veg_df['offset50_mean']
             df_summary.loc[veg_df.index, 'offset50_std'] = veg_df['offset50_std']
             df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
@@ -348,7 +348,8 @@ def get_AR1_parameter_estimate(ys):
 
     ys = ys.dropna()
 
-    if len(ys) < 5:
+    if len(ys) < 4:
+        print('Time series too short to reliably calculate AR1')
         return np.NaN, np.NaN
 
     from statsmodels.tsa.ar_model import AutoReg
@@ -357,11 +358,14 @@ def get_AR1_parameter_estimate(ys):
     # from statsmodels.tsa.statespace.sarimax import SARIMAX
     # from statsmodels.tsa.arima_model import ARMA
 
-    # explicitly add frequency to index to prevent warnings
-    ys.index = pd.DatetimeIndex(ys.index, freq=pd.infer_freq(ys.index))
-
     # create and fit the AR(1) model
-    model = AutoReg(ys, lags=1, missing='drop').fit()  # currently warning
+    if pd.infer_freq(ys.index) is not None:
+        # explicitly add frequency to index to prevent warnings
+        ys.index = pd.DatetimeIndex(ys.index, freq=pd.infer_freq(ys.index))
+        model = AutoReg(ys, lags=1, missing='drop').fit() # currently warning
+    else:
+        # remove index
+        model = AutoReg(ys.values, lags=1, missing='drop').fit() # currently warning
 
     # get the single parameter value
     parameter = model.params[1]
@@ -478,11 +482,11 @@ def get_max_lagged_cor(dirname, veg_prefix):
         Max correlation, and lag, for smoothed and unsmoothed vegetation time
         series.
     """
-
+    
     # construct path to lagged correlations file
     filename = os.path.join(dirname, 'correlations', 'lagged_correlations.json')
-
-    # check file exists
+    
+     # check file exists
     if not os.path.exists(filename):
         raise FileNotFoundError(f'Could not find file "{os.path.abspath(filename)}".')
 
@@ -522,13 +526,13 @@ def variance_moving_average_time_series(series, length=1):
     pandas Series: 
         pandas Series with datetime index, and one column, one row per date.
     """
-
+    
     # just in case the index isn't already datetime type
     series.index = pd.to_datetime(series.index)
 
     variance = series.rolling(length).var()
 
-    variance.name = series.name + "_var"
+    variance.name = series.name+"_var"
 
     return variance
 
@@ -557,15 +561,15 @@ def ar1_moving_average_time_series(series, length=1):
     ar1_se = []
     index = []
 
-    for i in range(len(series) - length):
-        # print(series[i:(length  + i)])
-        param, se = get_AR1_parameter_estimate(series[i:(length + i)])
+    for i in range(len(series) - length ):
+        #print(series[i:(length  + i)])
+        param, se = get_AR1_parameter_estimate(series[i:(length  + i)])
         ar1.append(param)
         ar1_se.append(se)
-        index.append(series.index[length + i])
+        index.append(series.index[length  + i])
 
-    ar1_name = series.name + "_ar1"
-    ar1_se_name = series.name + "_ar1_se"
+    ar1_name = series.name+"_ar1"
+    ar1_se_name = series.name+"_ar1_se"
 
     ar1_df = pd.DataFrame()
     ar1_df[ar1_name] = pd.Series(ar1)
@@ -637,14 +641,16 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
     for column in df.columns:
 
         # run moving window analysis veg and precip columns
-        if ('offset50' in column and 'mean' in column or
-                'total_precipitation' in column):
+        if ( ('offset50' in column or 'ndvi' in column) and 'mean' in column or 
+             'total_precipitation' in column ):
+            
             # reindex time series using data
             time_series = df.set_index('date')[column]
 
             # compute AR1 and variance time series
             df_ = get_ar1_var_timeseries_df(time_series, window_size)
             mwa_df = mwa_df.join(df_, how='outer')
+
 
     # use date as a column, and reset index
     mwa_df.index.name = 'date'
@@ -654,6 +660,7 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
 
 
 def get_datetime_xs(df):
+    
     try:
         xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in df.date]
     except:
@@ -662,16 +669,16 @@ def get_datetime_xs(df):
 
     return xs
 
-
 def early_warnings_sensitivity_analysis(series,
-                                        indicators=['var', 'ac'],
-                                        winsizerange=[0.10, 0.8],
-                                        incrwinsize=0.10,
-                                        smooth="Gaussian",
-                                        bandwidthrange=[0.05, 1.],
-                                        spanrange=[0.05, 1.1],
-                                        incrbandwidth=0.2,
-                                        incrspanrange=0.1):
+                                        indicators=['var','ac'],
+                                        winsizerange = [0.10, 0.8],
+                                        incrwinsize = 0.10,
+                                        smooth = "Gaussian",
+                                        bandwidthrange = [0.05, 1.],
+                                        spanrange = [0.05, 1.1],
+                                        incrbandwidth = 0.2,
+                                        incrspanrange = 0.1):
+
     '''
 
     Function to estimate the sensitivity of the early warnings analysis to the smoothing and windowsize used. The function
@@ -712,12 +719,13 @@ def early_warnings_sensitivity_analysis(series,
     '''
 
     results_kendal_tau = []
-    for winsize in np.arange(winsizerange[0], winsizerange[1] + 0.01, incrwinsize):
+    for winsize in np.arange(winsizerange[0],winsizerange[1]+0.01,incrwinsize):
 
-        winsize = round(winsize, 3)
+        winsize = round(winsize,3)
         if smooth == "Gaussian":
 
-            for bw in np.arange(bandwidthrange[0], bandwidthrange[1] + 0.01, incrbandwidth):
+            for bw in np.arange(bandwidthrange[0], bandwidthrange[1]+0.01, incrbandwidth):
+
                 bw = round(bw, 3)
                 ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
                                                         roll_window=winsize,
@@ -733,10 +741,11 @@ def early_warnings_sensitivity_analysis(series,
                 results_kendal_tau.append(result)
 
 
-        elif smooth == "Lowess":
+        elif smooth =="Lowess":
 
-            for span in np.arange(spanrange[0], spanrange[1] + 0.01, incrspanrange):
-                span = round(span, 2)
+            for span in np.arange(spanrange[0], spanrange[1]+0.01, incrspanrange):
+
+                span = round(span,2)
                 ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
                                                         roll_window=winsize,
                                                         smooth=smooth,
@@ -778,7 +787,7 @@ def early_warnings_null_hypothesis(series,
                                    lag_times=[1],
                                    n_simulations=1000):
 
-    ews_dic = ewstools.core.ews_compute(series.dropna(),
+    ews_dic = ewstools.core.ews_compute(series,
                                         roll_window=roll_window,
                                         smooth=smooth,
                                         span=span,

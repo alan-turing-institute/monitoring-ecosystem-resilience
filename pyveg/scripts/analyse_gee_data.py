@@ -7,8 +7,9 @@ Plots are produced from the processed data.
 
 """
 
-import argparse
 import os
+import argparse
+
 
 import pandas as pd
 import ewstools
@@ -27,10 +28,12 @@ from pyveg.src.plotting import (
     plot_stl_decomposition,
     plot_feature_vector,
     plot_time_series,
+    plot_ndvi_time_series,
     plot_autocorrelation_function,
     plot_cross_correlations,
     plot_moving_window_analysis,
-    sensitivity_heatmap,
+    plot_ews_resiliance,
+    plot_sensitivity_heatmap,
     kendall_tau_histograms
 )
 
@@ -78,10 +81,11 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
 
     # make a smoothed time series plot
     plot_time_series(ts_df, tsa_subdir)
+    plot_ndvi_time_series(ts_df, tsa_subdir)
 
     # plot the result of running STL decomposition
     if not detrended:
-        plot_stl_decomposition(ts_df, 12, os.path.join(output_dir, 'detrended'))
+        plot_stl_decomposition(ts_df, 12, os.path.join(output_dir, 'detrended/STL'))
     # ------------------------------------------------
 
 
@@ -98,6 +102,9 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
         Path to the directory to save plots to.
     """
 
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
     # read processed data
     ts_df = pd.read_csv(filename)
 
@@ -108,6 +115,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
     # old moving window analysis
     # ------------------------------------------------
+    print('Running moving window analysis...')
     # create new subdir for this sub-analysis
     mwa_subdir = os.path.join(output_dir, 'moving-window')
     if not os.path.exists(mwa_subdir):
@@ -125,63 +133,54 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
     # new resilience analysis
     # ------------------------------------------------
+    print('Running ewstools resiliance analysis...')
+    
     # create new subdir for this sub-analysis
-    mwa_subdir = os.path.join(output_dir, 'early-warning-analysis')
+    mwa_subdir = os.path.join(output_dir, 'ewstools')
     if not os.path.exists(mwa_subdir):
         os.makedirs(mwa_subdir, exist_ok=True)
+    
+    # EWS to compute (let's do all of them)
+    ews = ['var', 'sd', 'ac', 'skew', 'kurt', 'ac']
 
-    # run resilience analysis on vegetation data
-    variable = 'S2_offset50_mean'
-    ews = ['var', 'sd', 'ac', 'skew', 'kurt', 'ac']  # EWS to compute (let's do all of them)
+    # select columns to run ews on 
+    column_names = [c for c in ts_df.columns if 'offset50_mean' in c or 
+                                                'ndvi_mean' in c or 
+                                                'total_precipitation' in c]
 
-    ews_dic_veg = ewstools.core.ews_compute(ts_df[variable].dropna(),
-                                   roll_window=0.5,
-                                   smooth='Gaussian',
-                                   lag_times=[1,2],
-                                   ews=ews,
-                                   band_width=0.2)
+    # for each relevant column
+    for column_name in column_names:
 
+        # run resilience analysis on vegetation data
+        ews_dic_veg = ewstools.core.ews_compute(ts_df[column_name].dropna(),
+                                    roll_window=0.5,
+                                    smooth='Gaussian',
+                                    lag_times=[1, 2],
+                                    ews=ews,
+                                    band_width=0.2)
 
-    sensitivity = early_warnings_sensitivity_analysis(ts_df[variable], indicators = ews)
+        # make plots
+        series_name = column_name.replace('_', ' ')
+        plot_ews_resiliance(series_name, ews_dic_veg['EWS metrics'], ews_dic_veg['Kendall tau'], mwa_subdir)
 
-    # create new subdir for this sub-analysis
-    mwa_subdir_variable = os.path.join(mwa_subdir, variable)
-    if not os.path.exists(mwa_subdir_variable):
-        os.makedirs(mwa_subdir_variable, exist_ok=True)
+        # sensitivity analysis
+        sensitivity = early_warnings_sensitivity_analysis(ts_df[column_name].dropna(), indicators=ews)
+        plot_sensitivity_heatmap(series_name, sensitivity, mwa_subdir)
 
-    sensitivity_heatmap(sensitivity,mwa_subdir_variable)
+        # significance tests
 
-    null_hypothesis_df = early_warnings_null_hypothesis(ts_df[variable], indicators = ews,
-                                                        roll_window=0.5,
-                                                        smooth='Gaussian',
-                                                        lag_times=[1, 2],
-                                                        band_width=0.2)
+        significance_df = early_warnings_null_hypothesis(ts_df[column_name].dropna(),
+                                    roll_window=0.5,
+                                    smooth='Gaussian',
+                                    lag_times=[1, 2],
+                                    ews=ews,
+                                    band_width=0.2)
 
-    kendall_tau_histograms(null_hypothesis_df,mwa_subdir_variable)
+        kendall_tau_histograms(significance_df,mwa_subdir)
 
-    # good place to do the plotting.
-    #
-    #
-    # We can maybe then wrap up these lines into a new function
-    #
-    # ------------------------------------------
-    for key, df in ews_dic_veg.items():
-
-        df.to_csv(os.path.join(mwa_subdir, 'vegetation-resilience-analysis-'+key.replace(' ', '')+'.csv'), index=False)
-
-    # run resilience analysis on precipitation data
-    variable = 'total_precipitation'
-
-    ews_dic_prep = ewstools.core.ews_compute(ts_df[variable].dropna(),
-                                        roll_window=0.5,
-                                        smooth='Gaussian',
-                                        lag_times=[1, 2],
-                                        ews=ews,
-                                        band_width=0.2)
-
-    for key, df in ews_dic_prep.items():
-
-        df.to_csv(os.path.join(mwa_subdir, 'precipitation-resilience-analysis-' + key.replace(' ', '') + '.csv'), index=False)
+        # save results
+        for key, df in ews_dic_veg.items():
+            df.to_csv(os.path.join(mwa_subdir, f'ews-{column_name}__'+key.replace(' ', '')+'.csv'), index=False)
 
 
 def analyse_gee_data(input_dir, spatial):
@@ -199,7 +198,6 @@ def analyse_gee_data(input_dir, spatial):
     """
 
     # preprocess input data
-
     ts_dirname, dfs = preprocess_data(input_dir, n_smooth=4, resample=False, period='MS')
 
     # get filenames of preprocessed data time series
@@ -210,7 +208,7 @@ def analyse_gee_data(input_dir, spatial):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    print('Running Analysis...')
+    print('\nRunning Analysis...')
     print('-'*len('Running Analysis...'))
 
     # plot the feature vectors
@@ -219,17 +217,26 @@ def analyse_gee_data(input_dir, spatial):
     # for each time series
     for filename in ts_filenames:
         
-        print(f'\nAnalysing "{filename}"...')
+        ts_file = os.path.join(ts_dirname, filename)
+        print(f'\n* Analysing "{ts_file}"...')
+        print('.'*50)
 
         # run the standard or detrended analysis
         if 'detrended' in filename:
-            output_subdir = os.path.join(output_dir, os.path.splitext(filename)[0])
-            run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir, detrended=True)
-            run_early_warnings_resilience_analysis(os.path.join(ts_dirname, filename), output_subdir)
+            output_subdir = os.path.join(output_dir, 'detrended')
+            run_time_series_analysis(ts_file, output_subdir, detrended=True)
+
+            ews_subdir = os.path.join(output_dir, 'resiliance/deseasonalised')
+            run_early_warnings_resilience_analysis(ts_file, ews_subdir)
 
         else:
             output_subdir = output_dir
-            run_time_series_analysis(os.path.join(ts_dirname, filename), output_subdir)
+            run_time_series_analysis(ts_file, output_subdir)
+
+            ews_subdir = os.path.join(output_dir, 'resiliance/seasonal')
+            run_early_warnings_resilience_analysis(ts_file, ews_subdir)
+
+        print('.'*50, '\n')
 
     # spatial analysis and plotting
     # ------------------------------------------------
