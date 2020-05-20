@@ -171,8 +171,10 @@ class Sequence(object):
         # set the input location for each module to be the output of the previous one.
         for i, module in enumerate(self.modules):
             module.output_location = self.output_location
+            module.output_location_type = self.output_location_type
             if i>0:
                 module.input_location = self.modules[i-1].output_location
+                module.input_location_type = self.modules[i-1].output_location_type
             module.coords = self.coords
             module.date_range = self.date_range
             module.configure()
@@ -322,3 +324,30 @@ class BaseModule(object):
                                             container_name,
                                             output_location,
                                             file_endings)
+
+
+    def list_directory(self, directory_path, location_type):
+        """
+        List contents of a directory, either on local file system
+        or Azure blob storage.
+        """
+        if location_type == "local":
+            return os.listdir(directory_path)
+        elif location_type == "azure":
+            # first part of self.output_location should be the container name
+            container_name = self.output_location.split("/")[0]
+            return azure_utils.list_directory(directory_path, container_name)
+        else:
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
+
+
+    def save_json(self, data, filename, location, location_type):
+        """
+        Save json to local filesystem or blob storage depending on location_type
+        """
+        if location_type == "local":
+            save_json( data, location, filename)
+        elif location_type == "azure":
+            # first part of self.output_location should be the container name
+            container_name = self.output_location.split("/")[0]
+            azure_utils.save_json(data, location, filename, container_name)
