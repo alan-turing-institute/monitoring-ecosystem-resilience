@@ -1,6 +1,11 @@
 import os
+import io
+import json
+
 import arrow
 import re
+import tempfile
+from PIL import Image
 
 from pyveg.src.file_utils import split_filepath
 
@@ -54,6 +59,18 @@ def create_container(container_name, bbs=None):
     exists = check_container_exists(container_name, bbs)
     if not exists:
         bbs.create_container(container_name)
+
+
+def check_blob_exists(blob_name, container_name, bbs=None):
+    """
+    See if a blob already exists for this account name.
+    """
+    if not bbs:
+        bbs = BlockBlobService(account_name=config["account_name"],
+                               account_key=config["account_key"])
+    blob_names = bbs.list_blob_names(container_name)
+    return blob_name in blob_names
+
 
 
 def get_sas_token(container_name, token_duration=1, permissions="READ", bbs=None):
@@ -132,6 +149,17 @@ def remove_container_name_from_blob_path(blob_path, container_name):
     return os.path.join(*blob_name_parts)
 
 
+def delete_blob(blob_name, container_name, bbs=None):
+    if not bbs:
+        bbs = BlockBlobService(account_name=config["account_name"],
+                               account_key=config["account_key"])
+    blob_exists = check_blob_exists(blob_name, container_name, bbs)
+    if not blob_exists:
+        return
+    bbs.delete_blob(container_name, blob_name)
+
+
+
 def write_file_to_blob(file_path, blob_name, container_name, bbs=None):
     if not bbs:
         bbs = BlockBlobService(account_name=config["account_name"],
@@ -168,3 +196,54 @@ def write_files_to_blob(path, container_name, blob_path = None, file_endings = [
         print("Will write {} to blob {}".format(filepath, blob_name))
 
         write_file_to_blob(filepath, blob_name, container_name, bbs)
+
+
+
+def save_image(image, output_location, output_filename, container_name, format="png", bbs=None):
+    """
+    Given a PIL.Image (list of pixel values), save
+    to requested filename - note that the file extension
+    will determine the output file type, can be .png, .tif,
+    probably others...
+    """
+    if not bbs:
+        bbs = BlockBlobService(account_name=config["account_name"],
+                               account_key=config["account_key"])
+    output_path = os.path.join(output_location, output_filename)
+    blob_name = remove_container_name_from_blob_path(output_path,
+                                                     container_name)
+    im_bytes = io.BytesIO()
+    image.save(im_bytes, format=format)
+    bbs.create_blob_from_bytes(container_name, blob_name, im_bytes.getvalue())
+
+
+
+def read_image(blob_name, container_name, bbs=None):
+    if not bbs:
+        bbs = BlockBlobService(account_name=config["account_name"],
+                               account_key=config["account_key"])
+    blob_name = remove_container_name_from_blob_path(blob_name, container_name)
+    img_bytes = bbs.get_blob_to_bytes(container_name, blob_name)
+    image = Image.open(io.BytesIO(img_bytes.content))
+    return image
+
+
+
+def save_json(data, blob_path, filename, container_name, bbs=None):
+    if not bbs:
+        bbs = BlockBlobService(account_name=config["account_name"],
+                               account_key=config["account_key"])
+    blob_name = os.path.join(blob_path, filename)
+    blob_name = remove_container_name_from_blob_path(blob_name, container_name)
+    bbs.create_blob_from_text(container_name, blob_name, json.dumps(data))
+
+
+
+def read_json(blob_name, container_name, bbs=None):
+    if not bbs:
+        bbs = BlockBlobService(account_name=config["account_name"],
+                               account_key=config["account_key"])
+    blob_name = remove_container_name_from_blob_path(blob_name, container_name)
+    data_blob = bbs.get_blob_to_text(container_name, blob_name)
+    data = json.loads(data_blob.content)
+    return data
