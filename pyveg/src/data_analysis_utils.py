@@ -779,13 +779,50 @@ def early_warnings_sensitivity_analysis(series,
 
 
 def early_warnings_null_hypothesis(series,
+                                   indicators=['var', 'ac'],
                                    roll_window=0.4,
                                    smooth='Lowess',
                                    span=0.1,
                                    band_width=0.2,
-                                   indicators=['var', 'ac'],
                                    lag_times=[1],
                                    n_simulations=1000):
+    '''
+
+       Function to estimate the significance of the early warnings analysis by performing a null hypothesis test. The function
+    estimate distributions of trends in early warning indicators from different surrogate timeseries generated after fitting an ARMA(p,q) model on the original data.
+     The trends are estimated by the nonparametric Kendall tau correlation coefficient and can be compared to the trends estimated in the original timeseries
+     to produce probabilities of false positives. The function returns a dataframe that contains the Kendall tau rank correlation estimates for orignal data and surrogates.
+
+    Parameters
+    ----------
+    series : pandas Series
+        Time series observations.
+    indicators: list of strings
+        The statistics (leading indicator) selected for which the sensitivity analysis is perfomed.
+    roll_window: float
+        Rolling window size as a proportion of the length of the time-series
+        data.
+    smooth : string
+        Type of detrending. It can be {'Gaussian', 'Lowess', 'None'}.
+    span: float
+        Span of time-series data used for Lowess filtering. Taken as a
+        proportion of time-series length if in (0,1), otherwise taken as
+        absolute.
+    band_width: float
+        Bandwidth of Gaussian kernel. Taken as a proportion of time-series length if in (0,1),
+        otherwise taken as absolute.
+    lag_times: list of int
+        List of lag times at which to compute autocorrelation.
+    n_simulations: int
+        The number of surrogate data. Default is 1000.
+
+    Returns
+    --------
+    DataFrame:
+        A dataframe that contains the Kendall tau rank correlation estimates for each indicator estimated on each surrogate
+        dataset.
+
+    '''
 
     ews_dic = ewstools.core.ews_compute(series,
                                         roll_window=roll_window,

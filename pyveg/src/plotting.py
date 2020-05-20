@@ -864,11 +864,12 @@ def plot_sensitivity_heatmap(series_name, df, output_dir):
 def kendall_tau_histograms(series_name, df, output_dir):
     '''
 
-      Produce heatmap plot for the sensitivy analysis
+      Produce histograms with kendall tau distribution from surrogates for significance analysis
 
       Parameters
       ----------
-
+    series_name : str
+        String containing data collection and time series variable.
       df: Dataframe
           The output dataframe from the sensitivity analysis function.
       output_dir:
@@ -887,7 +888,9 @@ def kendall_tau_histograms(series_name, df, output_dir):
 
             ax.hist(surrogates_df)
             plt.axvline(data_df.values, color='black', linestyle='solid', linewidth=2)
-            plt.axvline(surrogates_df.quantile(.9), color='black', linestyle='dashed', linewidth=2)
+            plt.text(data_df.values, ax.get_ylim()[0] + 8, 'Data',horizontalalignment='left',color='black')
+            plt.axvline(surrogates_df.quantile(.95), color='black', linestyle='dashed', linewidth=2)
+            plt.text(surrogates_df.quantile(.95), ax.get_ylim()[1] - 8, '0.95 quantile',horizontalalignment='left',color='black')
             ax.set_title('Significance testing for '+ column)
             plt.xlabel('Kendall tau')
             plt.ylabel('Frequency')
