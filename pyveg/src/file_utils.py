@@ -31,19 +31,6 @@ def split_filepath(path):
     return allparts
 
 
-def list_directory(directory, location_type="local"):
-    """
-    List contents of a directory, either on local file system
-    or Azure blob storage.
-    """
-    if location_type == "local":
-        return os.listdir(directory)
-    elif location_type == "azure":
-        return azure_utils.list_directory(directory)
-    else:
-        raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
-
-
 
 def download_and_unzip(url, output_tmpdir):
     """
