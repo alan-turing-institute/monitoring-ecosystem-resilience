@@ -5,6 +5,7 @@ that can be chained together to build a sequence.
 
 import os
 import re
+import tempfile
 
 import cv2 as cv
 
@@ -25,6 +26,17 @@ class ProcessorModule(BaseModule):
 
     def __init__(self, name):
         super().__init__(name)
+
+    def save_image(self, image, output_location, output_filename, verbose=True):
+        if self.output_location_type == "local":
+            # use the file_utils function
+            save_image(image, output_location, output_filename, verbose)
+        elif self.output_location_type == "azure":
+            azure_utils.save_image(image, output_location, output_filename, verbose)
+        else:
+            raise RuntimeError("Unknown output location type {}"\
+                               .format(self.output_location_type))
+
 
 
 class VegetationImageProcessor(ProcessorModule):
@@ -61,8 +73,6 @@ class VegetationImageProcessor(ProcessorModule):
         self.region_size = 0.1
         self.RGB_bands = ["B4","B3","B2"]
         self.split_RGB_images = True
-        self.input_location_type = "local"
-        self.output_location_type = "local"
 
 
     def construct_image_savepath(self, date_string, coords_string, image_type):
@@ -103,7 +113,7 @@ class VegetationImageProcessor(ProcessorModule):
         rgb_filepath = self.construct_image_savepath(date_string,
                                                      coords_string,
                                                      'RGB')
-        save_image(rgb_image, os.path.dirname(rgb_filepath),
+        self.save_image(rgb_image, os.path.dirname(rgb_filepath),
                    os.path.basename(rgb_filepath))
         if self.split_RGB_images:
             self.split_and_save_sub_images(rgb_image,
@@ -150,7 +160,7 @@ class VegetationImageProcessor(ProcessorModule):
                                                            sub_coords[1])
             output_filename += "_{}".format(image_type)
             output_filename += '.png'
-            save_image(sub_image, output_location, output_filename, verbose=False)
+            self.save_image(sub_image, output_location, output_filename, verbose=False)
         return True
 
 
@@ -205,18 +215,18 @@ class VegetationImageProcessor(ProcessorModule):
         ndvi_filepath = self.construct_image_savepath(date_string,
                                                       coords_string,
                                                       'NDVI')
-        save_image(ndvi_image,
-                   os.path.dirname(ndvi_filepath),
-                   os.path.basename(ndvi_filepath))
+        self.save_image(ndvi_image,
+                        os.path.dirname(ndvi_filepath),
+                        os.path.basename(ndvi_filepath))
 
         # preprocess and threshold the NDVI image
         processed_ndvi = process_and_threshold(ndvi_image)
         ndvi_bw_filepath = self.construct_image_savepath(date_string,
                                                          coords_string,
                                                          'BWNDVI')
-        save_image(processed_ndvi,
-                   os.path.dirname(ndvi_bw_filepath),
-                   os.path.basename(ndvi_bw_filepath))
+        self.save_image(processed_ndvi,
+                        os.path.dirname(ndvi_bw_filepath),
+                        os.path.basename(ndvi_bw_filepath))
 
         # split and save sub-images
         self.split_and_save_sub_images(ndvi_image,
@@ -271,8 +281,6 @@ class WeatherImageToJSON(ProcessorModule):
         by a parent Sequence, or by calling configure() with a dict of values
         """
         super().set_default_parameters()
-        self.input_location_type = "local"
-        self.output_location_type = "local"
 
 
     def process_one_date(self, date_string):
@@ -290,11 +298,12 @@ class WeatherImageToJSON(ProcessorModule):
                            and values as floats.
         """
         metrics_dict = {}
-
+        print("Processing date {}".format(date_string))
         input_location = os.path.join(self.input_location, date_string, "RAW")
-        for filename in list_directory(input_location):
+        for filename in self.list_directory(input_location, self.input_location_type):
             if filename.endswith(".tif"):
                 name_variable = (filename.split('.'))[1]
+                print("looking at {}".format(name_variable))
                 variable_array = cv.imread(os.path.join(input_location, filename),
                                            cv.IMREAD_ANYDEPTH)
 
@@ -307,16 +316,19 @@ class WeatherImageToJSON(ProcessorModule):
         super().run()
         # sub-directories of our input directory should be dates.
         time_series_data = {}
-        date_strings = list_directory(self.input_location)
+        date_strings = self.list_directory(self.input_location, self.input_location_type)
         date_strings.sort()
         for date_string in date_strings:
             if date_string == "RESULTS":
                 continue
             time_series_data[date_string] = self.process_one_date(date_string)
 
-        save_json(time_series_data,
-                  os.path.join(self.output_location, "RESULTS"),
-                  "weather_data.json")
+        self.save_json(time_series_data,
+                       "weather_data.json",
+                       os.path.join(self.output_location, "RESULTS"),
+                       self.output_location,
+                       self.output_location_type
+                       )
 
 
 
