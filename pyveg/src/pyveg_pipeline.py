@@ -351,3 +351,17 @@ class BaseModule(object):
             # first part of self.output_location should be the container name
             container_name = self.output_location.split("/")[0]
             azure_utils.save_json(data, location, filename, container_name)
+
+
+    def get_file(self, filename, location_type):
+        """
+        Just return the filename if location _type is "local".
+        Otherwise return a tempfile with the contents of a blob if the location
+        is "azure".
+        """
+        if location_type == "local":
+            return filename
+        elif location_type == "azure":
+            # first part of self.output_location should be the container name
+            container_name = self.output_location.split("/")[0]
+            return azure_utils.get_blob_to_tempfile(filename, container_name)

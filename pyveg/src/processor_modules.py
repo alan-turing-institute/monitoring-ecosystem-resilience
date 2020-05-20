@@ -304,7 +304,9 @@ class WeatherImageToJSON(ProcessorModule):
             if filename.endswith(".tif"):
                 name_variable = (filename.split('.'))[1]
                 print("looking at {}".format(name_variable))
-                variable_array = cv.imread(os.path.join(input_location, filename),
+                variable_array = cv.imread(self.get_file(os.path.join(input_location,
+                                                                      filename),
+                                                         self.input_location_type),
                                            cv.IMREAD_ANYDEPTH)
 
                 metrics_dict[name_variable] = variable_array.mean()\
@@ -326,7 +328,6 @@ class WeatherImageToJSON(ProcessorModule):
         self.save_json(time_series_data,
                        "weather_data.json",
                        os.path.join(self.output_location, "RESULTS"),
-                       self.output_location,
                        self.output_location_type
                        )
 

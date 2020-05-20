@@ -247,3 +247,15 @@ def read_json(blob_name, container_name, bbs=None):
     data_blob = bbs.get_blob_to_text(container_name, blob_name)
     data = json.loads(data_blob.content)
     return data
+
+
+
+def get_blob_to_tempfile(filename, container_name, bbs=None):
+    if not bbs:
+        bbs = BlockBlobService(account_name=config["account_name"],
+                               account_key=config["account_key"])
+    blob_name = remove_container_name_from_blob_path(filename, container_name)
+    td = tempfile.mkdtemp()
+    output_name = os.path.join(td, os.path.basename(filename))
+    bbs.get_blob_to_path(container_name, blob_name, output_name)
+    return output_name
