@@ -53,3 +53,15 @@ def test_read_json():
     data = read_json(blob_name, TEST_CONTAINER)
     assert isinstance(data, dict)
     assert data["abc"]==44
+
+
+def test_get_blob_to_tmpfile():
+    create_container(TEST_CONTAINER)
+    blob_name = "test_tmpfile.json"
+    delete_blob(blob_name, TEST_CONTAINER)
+    data = {"abc":44,"def":55}
+    save_json(data, "", blob_name, TEST_CONTAINER)
+    tmp_output = get_blob_to_tempfile(blob_name, TEST_CONTAINER)
+    assert os.path.exists(tmp_output)
+    j = json.load(open(tmp_output))
+    assert isinstance(j, dict)
