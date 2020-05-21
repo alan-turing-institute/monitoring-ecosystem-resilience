@@ -3,10 +3,12 @@ Build and run a pyveg pipeline based on a configuration json file.
 """
 
 import os
+import sys
 import time
 import json
 import argparse
 import importlib.util
+import inspect
 from shutil import copyfile
 
 from pyveg.src.pyveg_pipeline import Pipeline, Sequence
@@ -46,18 +48,12 @@ def build_pipeline(config_file, name="mypyveg"):
         s = Sequence(coll)
         coll_dict = config.data_collections[coll]
         s.set_config(coll_dict)
-        if coll_dict["data_type"] == "vegetation":
-            # add a vegetation downloader, a vegetation image_processor,
-            # and a network centrality calculator.
-            s += VegetationDownloader()
-#            s += VegetationImageProcessor()
-#            if coll_dict["do_network_centrality"]:
-#                s += NetworkCentralityCalculator()
+        # add modules to the sequence
+        for module_name in config.modules_to_use[coll]:
+            for n, c in inspect.getmembers(sys.modules[__name__]):
+                if n == module_name:
+                    s += c()
 
-        elif coll_dict["data_type"] == "weather":
-            # add a downloader module and a module to convert to json.
-            s += WeatherDownloader()
-            s += WeatherImageToJSON()
         # add the sequence to the pipeline
         p += s
     if len(config.collections_to_use) > 1:
@@ -66,10 +62,12 @@ def build_pipeline(config_file, name="mypyveg"):
         # Combiner needs the previous sequences to finish (in case we ever try to
         # parallelize further)
         s.depends_on = config.collections_to_use
-        cm = VegAndWeatherJsonCombiner()
 
-        # add this combiner module to the combiner sequence
-        s += cm
+        for module_name in config.modules_to_use["combine"]:
+            for n, c in inspect.getmembers(sys.modules[__name__]):
+                if n == module_name:
+                    s += c()
+
         # and add this combiner sequence to the pipeline.
         p += s
     return p
