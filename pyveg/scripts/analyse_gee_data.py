@@ -155,7 +155,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
                                     smooth='Gaussian',
                                     lag_times=[1, 2],
                                     ews=ews,
-                                    band_width=0.2)
+                                    band_width=0.05)
 
         # make plots
         series_name = column_name.replace('_', ' ')
