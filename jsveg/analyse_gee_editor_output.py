@@ -16,7 +16,7 @@ import datetime
 import pandas as pd
 
 from pyveg.src.analysis_preprocessing import resample_dataframe
-from pyveg.scripts.analyse_gee_data import run_time_series_analysis
+from pyveg.scripts.analyse_gee_data import run_time_series_analysis, run_early_warnings_resilience_analysis
 
 def convert_gee_date(gee_date_series):
     """
@@ -127,6 +127,9 @@ def main():
 
     # run analysis
     run_time_series_analysis(filename, output_dir)
+
+    ews_subdir = os.path.join(output_dir, 'resiliance/seasonal')
+    run_early_warnings_resilience_analysis(filename, ews_subdir)
 
 
 if __name__ == "__main__":
