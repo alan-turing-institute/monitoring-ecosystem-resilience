@@ -54,9 +54,10 @@ class BaseDownloader(BaseModule):
         Note that these can be overriden by either values held by a parent Sequence
         or by calling configure() with a configuration dictionary.
         """
-
-        self.region_size = 0.1
-        self.scale = 10
+        if not "region_size" in vars(self):
+            self.region_size = 0.08
+        if not "scale" in vars(self):
+            self.scale = 10
         if not "output_dir" in vars(self):
             self.set_output_dir()
         return
