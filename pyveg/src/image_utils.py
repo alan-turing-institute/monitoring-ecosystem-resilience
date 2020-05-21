@@ -98,12 +98,12 @@ def combine_tif(input_filebase, bands=["B4", "B3", "B2"]):
     else:
         raise RuntimeError("Need three bands to combine into RGB image")
     for col in band_dict.keys():
-        im = Image.open(input_filebase+"."+band_dict[col]["band"]+".tif")
-        pix = im.load()
+
+        pix = cv.imread(input_filebase+"."+band_dict[col]["band"]+".tif",cv.IMREAD_ANYDEPTH)
         # find the minimum and maximum pixel values in the original scale
         #print("Found image of size {}".format(im.size))
-        for ix in range(im.size[0]):
-            for iy in range(im.size[1]):
+        for ix in range(pix.shape[0]):
+            for iy in range(pix.shape[1]):
                 if pix[ix, iy] > band_dict[col]["max_val"]:
                     band_dict[col]["max_val"] = pix[ix, iy]
                 elif pix[ix, iy] < band_dict[col]["min_val"]:
@@ -122,9 +122,9 @@ def combine_tif(input_filebase, bands=["B4", "B3", "B2"]):
                    #                   band_dict[col]["max_val"]
                    (overall_max+1)
                    ))
-    new_img = Image.new("RGB", im.size)
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
+    new_img = Image.new("RGB", pix.shape)
+    for ix in range(new_img.size[0]):
+        for iy in range(new_img.size[1]):
             new_img.putpixel((ix, iy), tuple(get_pix_val(ix, iy, col)
                                              for col in ["r", "g", "b"]))
     return new_img
@@ -138,12 +138,11 @@ def scale_tif(input_filebase, band):
     max_val = -1*sys.maxsize
     min_val = sys.maxsize
     # load the single band file and extract pixel data
-    im = Image.open(input_filebase+"."+band+".tif")
-    pix = im.load()
+    pix = cv.imread(input_filebase+"."+band+".tif",cv.IMREAD_ANYDEPTH)
     # find the minimum and maximum pixel values in the original scale
     #print("Found image of size {}".format(im.size))
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
+    for ix in range(pix.shape[0]):
+        for iy in range(pix.shape[1]):
             if pix[ix, iy] > max_val:
                 max_val = pix[ix, iy]
             elif pix[ix, iy] < min_val:
@@ -160,9 +159,9 @@ def scale_tif(input_filebase, band):
     def get_pix_val(ix, iy): return \
         int((pix[ix, iy] + 1 ) / 2 * 255)
 
-    new_img = Image.new("RGB", im.size)
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
+    new_img = Image.new("RGB", pix.shape)
+    for ix in range(new_img.size[0]):
+        for iy in range(new_img.size[1]):
             new_img.putpixel((ix, iy), tuple(get_pix_val(ix, iy)
                                              for col in ["r", "g", "b"]))
     return new_img
