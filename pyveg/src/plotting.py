@@ -859,8 +859,49 @@ def plot_sensitivity_heatmap(series_name, df, output_dir):
             plt.tight_layout()
             plt.xlabel('Rolling Window')
             plt.ylabel('Smoothing')
-
             output_filename = series_name.replace(' ', '-') + '-' + column + '-sensitivity.png'
             print(f'Plotting {series_name} {column} sensitivity plot...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
             plt.close(fig)
+
+
+
+def kendall_tau_histograms(series_name, df, output_dir):
+    '''
+
+      Produce histograms with kendall tau distribution from surrogates for significance analysis
+
+      Parameters
+      ----------
+    series_name : str
+        String containing data collection and time series variable.
+      df: Dataframe
+          The output dataframe from the sensitivity analysis function.
+      output_dir:
+          Path to the directory to save the produced figures
+      '''
+
+    for column in df.columns:
+
+        if column == "true_data":
+            continue
+
+        else:
+            data_df = df[df['true_data']==True][column]
+            surrogates_df = df[df['true_data'] != True][column]
+            fig, ax = plt.subplots(figsize=(5, 5))
+
+            ax.hist(surrogates_df)
+            plt.axvline(data_df.values, color='black', linestyle='solid', linewidth=2)
+            plt.text(data_df.values, ax.get_ylim()[0] + 8, 'Data',horizontalalignment='left',color='black')
+            plt.axvline(surrogates_df.quantile(.95), color='black', linestyle='dashed', linewidth=2)
+            plt.text(surrogates_df.quantile(.95), ax.get_ylim()[1] - 12, '0.95 \nquantile',horizontalalignment='left',color='black')
+            ax.set_title('Significance testing for '+ column)
+            plt.xlabel('Kendall tau')
+            plt.ylabel('Frequency')
+            output_filename = series_name.replace(' ', '-') + '-' + column + '-significance.png'
+
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+            plt.close(fig)
+
+

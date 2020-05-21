@@ -787,4 +787,179 @@ def early_warnings_sensitivity_analysis(series,
     return sensitivity_df
 
 
+def early_warnings_null_hypothesis(series,
+                                   indicators=['var', 'ac'],
+                                   roll_window=0.4,
+                                   smooth='Lowess',
+                                   span=0.1,
+                                   band_width=0.2,
+                                   lag_times=[1],
+                                   n_simulations=1000):
+    '''
 
+       Function to estimate the significance of the early warnings analysis by performing a null hypothesis test. The function
+    estimate distributions of trends in early warning indicators from different surrogate timeseries generated after fitting an ARMA(p,q) model on the original data.
+     The trends are estimated by the nonparametric Kendall tau correlation coefficient and can be compared to the trends estimated in the original timeseries
+     to produce probabilities of false positives. The function returns a dataframe that contains the Kendall tau rank correlation estimates for orignal data and surrogates.
+
+    Parameters
+    ----------
+    series : pandas Series
+        Time series observations.
+    indicators: list of strings
+        The statistics (leading indicator) selected for which the sensitivity analysis is perfomed.
+    roll_window: float
+        Rolling window size as a proportion of the length of the time-series
+        data.
+    smooth : string
+        Type of detrending. It can be {'Gaussian', 'Lowess', 'None'}.
+    span: float
+        Span of time-series data used for Lowess filtering. Taken as a
+        proportion of time-series length if in (0,1), otherwise taken as
+        absolute.
+    band_width: float
+        Bandwidth of Gaussian kernel. Taken as a proportion of time-series length if in (0,1),
+        otherwise taken as absolute.
+    lag_times: list of int
+        List of lag times at which to compute autocorrelation.
+    n_simulations: int
+        The number of surrogate data. Default is 1000.
+
+    Returns
+    --------
+    DataFrame:
+        A dataframe that contains the Kendall tau rank correlation estimates for each indicator estimated on each surrogate
+        dataset.
+
+    '''
+
+    ews_dic = ewstools.core.ews_compute(series,
+                                        roll_window=roll_window,
+                                        smooth=smooth,
+                                        span=span,
+                                        band_width=band_width,
+                                        ews=indicators,
+                                        lag_times=lag_times)
+
+    from statsmodels.tsa.arima_model import ARIMA
+    from statsmodels.tsa.arima_process import ArmaProcess
+
+    # Use the short_series EWS if smooth='None'. Otherwise use reiduals.
+    eval_series = ews_dic['EWS metrics']['Residuals']
+
+    # Fit ARMA model based on AIC
+    aic_max = 10000
+
+    for i in range(0, 2):
+        for j in range(0, 2):
+
+            model = ARIMA(eval_series, order=(i, j, 0))
+            model_fit = model.fit()
+            aic = model_fit.aic
+
+            print("AR", "MA", "AIC")
+            print(i, j, aic)
+
+            if aic < aic_max:
+                aic_max = aic
+                result = model_fit
+
+    def compute_indicators(series):
+
+        ''' Rolling window indicators computation based on the ewstools.core.ews_compute function from
+        ewstools
+        '''
+
+        df_ews = pd.DataFrame()
+        # Compute the rolling window size (integer value)
+        rw_size = int(np.floor(roll_window * series.shape[0]))
+
+        # ------------ Compute temporal EWS---------------#
+
+        # Compute standard deviation as a Series and add to the DataFrame
+        if 'sd' in indicators:
+            roll_sd = series.rolling(window=rw_size).std()
+            df_ews['Standard deviation'] = roll_sd
+
+        # Compute variance as a Series and add to the DataFrame
+        if 'var' in indicators:
+            roll_var = series.rolling(window=rw_size).var()
+            df_ews['Variance'] = roll_var
+
+        # Compute autocorrelation for each lag in lag_times and add to the DataFrame
+        if 'ac' in indicators:
+            for i in range(len(lag_times)):
+                roll_ac = series.rolling(window=rw_size).apply(
+                    func=lambda x: pd.Series(x).autocorr(lag=lag_times[i]),
+                    raw=True)
+                df_ews['Lag-' + str(lag_times[i]) + ' AC'] = roll_ac
+
+        # Compute Coefficient of Variation (C.V) and add to the DataFrame
+        if 'cv' in indicators:
+            # mean of raw_series
+            roll_mean = series.rolling(window=rw_size).mean()
+            # standard deviation of residuals
+            roll_std = series.rolling(window=rw_size).std()
+            # coefficient of variation
+            roll_cv = roll_std.divide(roll_mean)
+            df_ews['Coefficient of variation'] = roll_cv
+
+        # Compute skewness and add to the DataFrame
+        if 'skew' in indicators:
+            roll_skew = series.rolling(window=rw_size).skew()
+            df_ews['Skewness'] = roll_skew
+
+        # Compute Kurtosis and add to DataFrame
+        if 'kurt' in indicators:
+            roll_kurt = series.rolling(window=rw_size).kurt()
+            df_ews['Kurtosis'] = roll_kurt
+
+        # ------------Compute Kendall tau coefficients----------------#
+
+        ''' In this section we compute the kendall correlation coefficients for each EWS
+            with respect to time. Values close to one indicate high correlation (i.e. EWS
+            increasing with time), values close to zero indicate no significant correlation,
+            and values close to negative one indicate high negative correlation (i.e. EWS
+            decreasing with time).'''
+
+        # Put time values as their own series for correlation computation
+        time_vals = pd.Series(df_ews.index, index=df_ews.index)
+
+        # List of EWS that can be used for Kendall tau computation
+        ktau_metrics = ['Variance', 'Standard deviation', 'Skewness', 'Kurtosis', 'Coefficient of variation', 'Smax',
+                        'Smax/Var', 'Smax/Mean'] + ['Lag-' + str(i) + ' AC' for i in lag_times]
+        # Find intersection with this list and EWS computed
+        ews_list = df_ews.columns.values.tolist()
+        ktau_metrics = list(set(ews_list) & set(ktau_metrics))
+
+        # Find Kendall tau for each EWS and store in a DataFrame
+        dic_ktau = {x: df_ews[x].corr(time_vals, method='kendall') for x in ktau_metrics}  # temporary dictionary
+        df_ktau = pd.DataFrame(dic_ktau, index=[0])  # DataFrame (easier for concatenation purposes)
+
+        # -------------Organise final output and return--------------#
+
+        # Ouptut a dictionary containing EWS DataFrame, power spectra DataFrame, and Kendall tau values
+        output_dic = {'EWS metrics': df_ews, 'Kendall tau': df_ktau}
+
+        return output_dic
+
+    process = ArmaProcess.from_estimation(result)
+
+    # run simulations on best fitted ARIMA process and get values
+    kendall_tau = []
+    for i in range(n_simulations):
+        ts = process.generate_sample(len(eval_series))
+
+        kendall_tau.append(compute_indicators(pd.Series(ts))['Kendall tau'])
+
+    surrogates_kendall_tau_df = pd.concat(kendall_tau)
+    surrogates_kendall_tau_df['true_data'] = False
+
+    # get results for true data
+    data_kendall_tau_df = compute_indicators(eval_series)['Kendall tau']
+    data_kendall_tau_df['true_data'] = True
+
+    # return dataframe with both surrogates and true data
+    kendall_tau_df = pd.concat([data_kendall_tau_df,surrogates_kendall_tau_df])
+
+    return kendall_tau_df

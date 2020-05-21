@@ -20,7 +20,8 @@ from pyveg.src.data_analysis_utils import (
     convert_to_geopandas,
     coarse_dataframe,
     moving_window_analysis,
-    early_warnings_sensitivity_analysis
+    early_warnings_sensitivity_analysis,
+    early_warnings_null_hypothesis
 )
 
 from pyveg.src.plotting import (
@@ -32,7 +33,9 @@ from pyveg.src.plotting import (
     plot_cross_correlations,
     plot_moving_window_analysis,
     plot_ews_resiliance,
-    plot_sensitivity_heatmap
+    plot_sensitivity_heatmap,
+    kendall_tau_histograms
+
 )
 
 
@@ -164,6 +167,18 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
         # sensitivity analysis
         sensitivity = early_warnings_sensitivity_analysis(ts_df[column_name].dropna(), indicators=ews)
         plot_sensitivity_heatmap(series_name, sensitivity, mwa_subdir)
+
+        # significance tests
+
+        significance = early_warnings_null_hypothesis(ts_df[column_name].dropna(),
+                                    roll_window=0.5,
+                                    smooth='Gaussian',
+                                    lag_times=[1, 2],
+                                    indicators=ews,
+                                    band_width=0.2)
+
+        kendall_tau_histograms(series_name, significance,mwa_subdir)
+
 
         # save results
         for key, df in ews_dic_veg.items():
