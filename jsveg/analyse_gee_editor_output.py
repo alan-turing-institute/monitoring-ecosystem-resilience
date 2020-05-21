@@ -15,7 +15,7 @@ import datetime
 
 import pandas as pd
 
-from pyveg.src.analysis_preprocessing import resample_dataframe
+from pyveg.src.analysis_preprocessing import resample_dataframe, detrend_df
 from pyveg.scripts.analyse_gee_data import run_time_series_analysis, run_early_warnings_resilience_analysis
 
 def convert_gee_date(gee_date_series):
@@ -95,11 +95,15 @@ def convert_gee_outputs(input_dir):
         # join with out_df
         out_df = pd.merge(out_df, df, how='outer')
 
+    detrended_df = detrend_df(out_df)
+
     # save the df
     out_filename = os.path.join(input_dir, 'time_series.csv')
+    out_filename_detrended = os.path.join(input_dir, 'time_series_detrended.csv')
     out_df.to_csv(out_filename, index=False)
+    detrended_df.to_csv(out_filename_detrended, index=False)
 
-    return out_filename
+    return out_filename, out_filename_detrended
 
 
 def main():
@@ -117,20 +121,36 @@ def main():
     args = parser.parse_args()
     input_dir = args.input_dir
 
-    # convert GEE Editor files
-    filename = convert_gee_outputs(input_dir)
-
     # put output plots in the results dir
     output_dir = os.path.join(input_dir, 'analysis')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    # run analysis
-    run_time_series_analysis(filename, output_dir)
+    # convert GEE Editor files
+    ts_filenames = convert_gee_outputs(input_dir)
 
-    ews_subdir = os.path.join(output_dir, 'resiliance/seasonal')
-    run_early_warnings_resilience_analysis(filename, ews_subdir)
+    # for each time series
+    for filename in ts_filenames:
+        
+        ts_file = filename
+        print(f'\n* Analysing "{ts_file}"...')
+        print('.'*50)
 
+        # run the standard or detrended analysis
+        if 'detrended' in filename:
+            output_subdir = os.path.join(output_dir, 'detrended')
+            run_time_series_analysis(ts_file, output_subdir, detrended=True)
+
+            ews_subdir = os.path.join(output_dir, 'resiliance/deseasonalised')
+            run_early_warnings_resilience_analysis(ts_file, ews_subdir)
+
+        else:
+            output_subdir = output_dir
+            run_time_series_analysis(ts_file, output_subdir)
+
+            ews_subdir = os.path.join(output_dir, 'resiliance/seasonal')
+            run_early_warnings_resilience_analysis(ts_file, ews_subdir)
+            
 
 if __name__ == "__main__":
     main()
