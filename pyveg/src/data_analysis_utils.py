@@ -688,13 +688,15 @@ def early_warnings_sensitivity_analysis(series,
                                         incrbandwidth = 0.2,
                                         incrspanrange = 0.1):
 
-    '''
+    """
+    Function to estimate the sensitivity of the early warnings analysis to 
+    the smoothing and windowsize used. The function returns a dataframe that 
+    contains the Kendall tau rank correlation estimates for the rolling window 
+    sizes (winsize variable) and bandwidths or span sizes depending on the 
+    de-trending (smooth variable).
 
-    Function to estimate the sensitivity of the early warnings analysis to the smoothing and windowsize used. The function
-    returns a dataframe that contains the Kendall tau rank correlation estimates for the rolling window sizes (winsize variable)
-    and bandwidths or span sizes depending on the de-trending (smooth variable).
-
-    This function is inspired in the sensitivity_ews.R function from Vasilis Dakos, Leo Lahti in the early-warnings-R package
+    This function is inspired in the sensitivity_ews.R function from Vasilis 
+    Dakos, Leo Lahti in the early-warnings-R package:
     https://github.com/earlywarningtoolbox/earlywarnings-R.
 
     Parameters
@@ -723,9 +725,7 @@ def early_warnings_sensitivity_analysis(series,
     DataFrame:
         A dataframe that contains the Kendall tau rank correlation estimates for the rolling window sizes (winsize variable)
      and bandwidths or span sizes depending on the de-trending (smooth variable).
-
-
-    '''
+    """
 
     results_kendal_tau = []
     for winsize in np.arange(winsizerange[0],winsizerange[1]+0.01,incrwinsize):
@@ -795,12 +795,16 @@ def early_warnings_null_hypothesis(series,
                                    band_width=0.2,
                                    lag_times=[1],
                                    n_simulations=1000):
-    '''
-
-       Function to estimate the significance of the early warnings analysis by performing a null hypothesis test. The function
-    estimate distributions of trends in early warning indicators from different surrogate timeseries generated after fitting an ARMA(p,q) model on the original data.
-     The trends are estimated by the nonparametric Kendall tau correlation coefficient and can be compared to the trends estimated in the original timeseries
-     to produce probabilities of false positives. The function returns a dataframe that contains the Kendall tau rank correlation estimates for orignal data and surrogates.
+    """
+    Function to estimate the significance of the early warnings analysis 
+    by performing a null hypothesis test. The function estimate distributions 
+    of trends in early warning indicators from different surrogate timeseries 
+    generated after fitting an ARMA(p,q) model on the original data.
+    The trends are estimated by the nonparametric Kendall tau correlation 
+    coefficient and can be compared to the trends estimated in the original 
+    timeseries to produce probabilities of false positives. The function 
+    returns a dataframe that contains the Kendall tau rank correlation 
+    estimates for orignal data and surrogates.
 
     Parameters
     ----------
@@ -828,10 +832,10 @@ def early_warnings_null_hypothesis(series,
     Returns
     --------
     DataFrame:
-        A dataframe that contains the Kendall tau rank correlation estimates for each indicator estimated on each surrogate
-        dataset.
+        A dataframe that contains the Kendall tau rank correlation estimates for each 
+        indicator estimated on each surrogate dataset.
 
-    '''
+    """
 
     ews_dic = ewstools.core.ews_compute(series,
                                         roll_window=roll_window,
@@ -865,10 +869,10 @@ def early_warnings_null_hypothesis(series,
                 result = model_fit
 
     def compute_indicators(series):
-
-        ''' Rolling window indicators computation based on the ewstools.core.ews_compute function from
+        """
+        Rolling window indicators computation based on the ewstools.core.ews_compute function from
         ewstools
-        '''
+        """
 
         df_ews = pd.DataFrame()
         # Compute the rolling window size (integer value)
