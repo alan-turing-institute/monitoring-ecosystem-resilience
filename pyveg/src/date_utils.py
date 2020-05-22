@@ -78,10 +78,12 @@ def slice_time_period(start_date, end_date, period_length):
     periods = []
     start_datetime = datetime.fromisoformat(start_date)
     end_datetime = datetime.fromisoformat(end_date)
+
     # parse the period_length
     match = re.search("^([\d]+)([dwmy])", period_length)
     if not match:
         raise RuntimeError("Period length must be in format '<int><d|w|m|y>', e.g. 30d")
+    
     num, units = match.groups()
     num = int(num)
     previous_date = start_datetime

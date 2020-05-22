@@ -75,7 +75,7 @@ data_collections = {
         'num_days_per_point': 90
     },
     'ERA5' : {
-        'collection_name': 'ECMWF/ERA5/MONTHLY',
+        'collection_name': 'ECMWF/ERA5/DAILY',
         'type': 'weather',
         'precipitation_band': ['total_precipitation'],
         'temperature_band': ['mean_2m_air_temperature'],

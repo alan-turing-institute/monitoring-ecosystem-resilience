@@ -6,6 +6,7 @@ import requests
 import re
 from zipfile import ZipFile, BadZipFile
 
+from .date_utils import find_mid_period
 
 if os.name == "posix":
     TMPDIR = "/tmp/"
@@ -49,7 +50,7 @@ def download_and_unzip(url, output_tmpdir):
     tif_filenames: list of strings, the full paths to unpacked tif files.
     """
 
-    print("Will download {} to {}".format(url, output_tmpdir))
+    #print("Will download {} to {}".format(url, output_tmpdir))
     # GET the URL
     r = requests.get(url)
     if not r.status_code == 200:
@@ -86,7 +87,7 @@ def download_and_unzip(url, output_tmpdir):
     return tif_filenames
 
 
-def save_json(out_dict, output_dir, output_filename, verbose=True):
+def save_json(out_dict, output_dir, output_filename, verbose=False):
     """
     Given a dictionary, save
     to requested filename -
@@ -101,7 +102,7 @@ def save_json(out_dict, output_dir, output_filename, verbose=True):
         print("Saved json file '{}'".format(output_path))
 
 
-def save_image(image, output_dir, output_filename, verbose=True):
+def save_image(image, output_dir, output_filename, verbose=False):
     """
     Given a PIL.Image (list of pixel values), save
     to requested filename - note that the file extension

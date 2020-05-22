@@ -10,9 +10,10 @@ requests
 dateparser
 python-igraph
 geopandas
-earthengine-api==0.1.210
+earthengine-api==0.1.222
 geetools
 pillow
 imageio
 opencv-python
 statsmodels
+ewstools

@@ -22,7 +22,7 @@ matplotlib.use('PS')
 import matplotlib.pyplot as plt
 
 from .coordinate_utils import get_sub_image_coords
-
+from .file_utils import save_image
 
 def image_from_array(input_array, output_size=None, sel_val=200):
     """
@@ -98,12 +98,12 @@ def combine_tif(input_filebase, bands=["B4", "B3", "B2"]):
     else:
         raise RuntimeError("Need three bands to combine into RGB image")
     for col in band_dict.keys():
-        im = Image.open(input_filebase+"."+band_dict[col]["band"]+".tif")
-        pix = im.load()
+
+        pix = cv.imread(input_filebase+"."+band_dict[col]["band"]+".tif",cv.IMREAD_ANYDEPTH)
         # find the minimum and maximum pixel values in the original scale
         #print("Found image of size {}".format(im.size))
-        for ix in range(im.size[0]):
-            for iy in range(im.size[1]):
+        for ix in range(pix.shape[0]):
+            for iy in range(pix.shape[1]):
                 if pix[ix, iy] > band_dict[col]["max_val"]:
                     band_dict[col]["max_val"] = pix[ix, iy]
                 elif pix[ix, iy] < band_dict[col]["min_val"]:
@@ -122,9 +122,9 @@ def combine_tif(input_filebase, bands=["B4", "B3", "B2"]):
                    #                   band_dict[col]["max_val"]
                    (overall_max+1)
                    ))
-    new_img = Image.new("RGB", im.size)
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
+    new_img = Image.new("RGB", pix.shape)
+    for ix in range(new_img.size[0]):
+        for iy in range(new_img.size[1]):
             new_img.putpixel((ix, iy), tuple(get_pix_val(ix, iy, col)
                                              for col in ["r", "g", "b"]))
     return new_img
@@ -138,25 +138,30 @@ def scale_tif(input_filebase, band):
     max_val = -1*sys.maxsize
     min_val = sys.maxsize
     # load the single band file and extract pixel data
-    im = Image.open(input_filebase+"."+band+".tif")
-    pix = im.load()
+    pix = cv.imread(input_filebase+"."+band+".tif",cv.IMREAD_ANYDEPTH)
     # find the minimum and maximum pixel values in the original scale
     #print("Found image of size {}".format(im.size))
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
+    for ix in range(pix.shape[0]):
+        for iy in range(pix.shape[1]):
             if pix[ix, iy] > max_val:
                 max_val = pix[ix, iy]
             elif pix[ix, iy] < min_val:
                 min_val = pix[ix, iy]
 
     # create a new image where we will fill RGB pixel values from 0 to 255
+    # image dependent NDVI scaling:
+    #def get_pix_val(ix, iy): return \
+    #    max(0, int((pix[ix, iy]-min_val) * 255 /
+    #               max((max_val - min_val),1)))
+
+    # global linear transform from [-1, 1] -> [0, 255]
+    # tested in issue #224
     def get_pix_val(ix, iy): return \
-        max(0, int((pix[ix, iy]-min_val) * 255 /
-                   max((max_val - min_val),1))
-            )
-    new_img = Image.new("RGB", im.size)
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
+        int((pix[ix, iy] + 1 ) / 2 * 255)
+
+    new_img = Image.new("RGB", pix.shape)
+    for ix in range(new_img.size[0]):
+        for iy in range(new_img.size[1]):
             new_img.putpixel((ix, iy), tuple(get_pix_val(ix, iy)
                                              for col in ["r", "g", "b"]))
     return new_img

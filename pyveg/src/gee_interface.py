@@ -11,6 +11,8 @@ import cv2 as cv
 import ee
 ee.Initialize()
 
+from .file_utils import download_and_unzip
+
 if os.name == "posix":
     TMPDIR = "/tmp/"
 else:

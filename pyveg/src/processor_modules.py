@@ -70,10 +70,12 @@ class VegetationImageProcessor(ProcessorModule):
         by a parent Sequence, or by calling configure() with a dict of values
         """
         super().set_default_parameters()
-        self.region_size = 0.1
-        self.RGB_bands = ["B4","B3","B2"]
-        self.split_RGB_images = True
-
+        if not "region_size" in vars(self):
+            self.region_size = 0.1
+        if not "RGB_bands" in vars(self):
+            self.RGB_bands = ["B4","B3","B2"]
+        if not "split_RGB_images" in vars(self):
+            self.split_RGB_images = True
 
     def construct_image_savepath(self, date_string, coords_string, image_type):
         """
@@ -351,13 +353,13 @@ def process_sub_image(i, input_filename, input_location, output_location):
 
     # get average NDVI across the whole image (in case there is no patterned veg)
     ndvi_mean = round(pillow_to_numpy(ndvi_sub_image).mean(), 4)
-    ndvi_std = round(pillow_to_numpy(ndvi_sub_image).std(), 4)
+    #ndvi_std = round(pillow_to_numpy(ndvi_sub_image).std(), 4)
 
     # use the BWDVI to mask the NDVI and calculate the average
     # pixel value of veg pixels
     veg_mask = (pillow_to_numpy(sub_image) == 0)
-    veg_ndvi_mean = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].mean(), 4)
-    veg_ndvi_std = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].std(), 4)
+    ndvi_veg_mean = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].mean(), 4)
+    #veg_ndvi_std = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].std(), 4)
 
     image_array = pillow_to_numpy(sub_image)
     feature_vec, _ = subgraph_centrality(image_array)
@@ -373,10 +375,10 @@ def process_sub_image(i, input_filename, input_location, output_location):
     nc_result['date'] = date_string
     nc_result['latitude'] = coords[1]
     nc_result['longitude'] = coords[0]
-    nc_result['ndvi_mean'] = ndvi_mean
-    nc_result['ndvi_std'] = ndvi_std
-    nc_result['veg_ndvi_mean'] = veg_ndvi_mean
-    nc_result['veg_ndvi_std'] = veg_ndvi_std
+    nc_result['ndvi'] = ndvi_mean
+    #nc_result['ndvi_std'] = ndvi_std
+    nc_result['ndvi_veg'] = ndvi_veg_mean
+    #nc_result['veg_ndvi_std'] = veg_ndvi_std
 
     # save individual result for sub-image to tmp json, will combine later.
     save_json(nc_result, output_location,
