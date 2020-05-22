@@ -183,7 +183,8 @@ class VegetationImageProcessor(ProcessorModule):
         =======
         True if everything was processed and saved OK, False otherwise.
         """
-        filenames = [filename for filename in list_directory(input_filepath) \
+        filenames = [filename for filename in self.list_directory(input_filepath,
+                                                                  self.input_location_type) \
                      if filename.endswith(".tif")]
 
         # extract this to feed into `convert_to_rgb()`
@@ -248,7 +249,8 @@ class VegetationImageProcessor(ProcessorModule):
         call process_single_date() on each of them.
         """
         super().run()
-        date_subdirs = sorted(list_directory(self.input_location))
+        date_subdirs = sorted(self.list_directory(self.input_location,
+                                                  self.input_location_type))
         for date_subdir in date_subdirs:
             if not re.search("^([\d]{4}-[\d]{2}-[\d]{2})", date_subdir):
                 print("{}: Directory name {} not in YYYY-MM-DD format"\
