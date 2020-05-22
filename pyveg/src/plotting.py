@@ -219,16 +219,18 @@ def plot_time_series(df, output_dir, filename_suffix =''):
 
 
 def plot_ndvi_time_series(df, output_dir):
-    def make_plot(df, veg_prefix, output_dir):
-        veg_df = df.dropna(subset=[veg_prefix+'_ndvi_veg_mean'])
+    def make_plot(df, veg_prefix, col_name, utput_dir):
+
+        veg_df = df.dropna(subset=[col_name])
 
         # get vegetation x values to datetime objects
         veg_xs = get_datetime_xs(veg_df)
 
         # get vegetation y values
-        ndvi_means = veg_df[veg_prefix + '_ndvi_mean']
-        veg_means = veg_df[veg_prefix + '_ndvi_veg_mean']
-        veg_std = veg_df[veg_prefix + '_ndvi_veg_std']
+        veg_means = veg_df[col_name]
+        #veg_means = veg_df[veg_prefix + '_ndvi_veg_mean']
+        if any([col_name.replace('mean', 'std') == c for c in df.columns]):
+            veg_std = veg_df[col_name.replace('mean', 'std')]
 
         # create a figure
         fig, ax = plt.subplots(figsize=(15, 4.5))
@@ -238,17 +240,20 @@ def plot_ndvi_time_series(df, output_dir):
         color = 'tab:green'
         ax.set_ylabel(f'{veg_prefix} NDVI', color=color, fontsize=14)
         ax.tick_params(axis='y', labelcolor=color)
-        ax.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
+
+        if any([col_name.replace('mean', 'std') == c for c in df.columns]):
+            ax.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
 
         # plot ndvi
-        ax.plot(veg_xs, ndvi_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
+        #ax.plot(veg_xs, ndvi_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
 
         ax.plot(veg_xs, veg_means, marker='o', markersize=7, 
                 markeredgecolor=(0.9172, 0.9627, 0.9172), markeredgewidth=2,
                 label='Smoothed', linewidth=2, color='green')
 
-        ax.fill_between(veg_xs, veg_means - veg_std, veg_means + veg_std, 
-                        facecolor='green', alpha=0.1, label='Std Dev')
+        if any([col_name.replace('mean', 'std') == c for c in df.columns]):
+            ax.fill_between(veg_xs, veg_means - veg_std, veg_means + veg_std, 
+                            facecolor='green', alpha=0.1, label='Std Dev')
 
         # plot precipitation if availible
         if 'total_precipitation' in df.columns:
@@ -269,7 +274,6 @@ def plot_ndvi_time_series(df, output_dir):
             # plot precipitation
             ax2.plot(precip_xs, precip_ys, linewidth=2, color=color, alpha=0.75)
 
-
         # layout
         sns.set_style('white')
         fig.tight_layout()
@@ -285,10 +289,10 @@ def plot_ndvi_time_series(df, output_dir):
 
     # make plots for selected columns
     for column in df.columns:
-        if 'ndvi_veg_mean' in column:
+        if 'ndvi' in column and 'mean' in column:
             veg_prefix = column.split('_')[0]
             print(f'Plotting {veg_prefix} NDVI time series.')
-            make_plot(df, veg_prefix, output_dir)
+            make_plot(df, veg_prefix, column, output_dir)
 
     
 def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
