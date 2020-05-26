@@ -193,7 +193,6 @@ def write_files_to_blob(path, container_name, blob_path = None, file_endings = [
         else:
             blob_fullpath = filepath
         blob_name = remove_container_name_from_blob_path(blob_fullpath, container_name)
-        print("Will write {} to blob {}".format(filepath, blob_name))
 
         write_file_to_blob(filepath, blob_name, container_name, bbs)
 
