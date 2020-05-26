@@ -901,19 +901,18 @@ def plot_sensitivity_heatmap(series_name, df, output_dir):
 
 
 def kendall_tau_histograms(series_name, df, output_dir):
-    '''
+    """
+    Produce histograms with kendall tau distribution from surrogates for significance analysis
 
-      Produce histograms with kendall tau distribution from surrogates for significance analysis
-
-      Parameters
-      ----------
+    Parameters
+    ----------
     series_name : str
         String containing data collection and time series variable.
-      df: Dataframe
+    df: Dataframe
           The output dataframe from the sensitivity analysis function.
-      output_dir:
+    output_dir:
           Path to the directory to save the produced figures
-      '''
+    """
 
     for column in df.columns:
 
