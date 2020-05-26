@@ -20,6 +20,7 @@ from pyveg.src.data_analysis_utils import (
     write_to_json, 
     stl_decomposition,
     get_max_lagged_cor,
+    get_corrs_by_lag,
     get_datetime_xs
 )
 
@@ -273,6 +274,13 @@ def plot_ndvi_time_series(df, output_dir):
 
             # plot precipitation
             ax2.plot(precip_xs, precip_ys, linewidth=2, color=color, alpha=0.75)
+
+            # add correlation information
+            correlations = get_corrs_by_lag(df[col_name], df['total_precipitation'])
+            max_corr = np.max(np.array(correlations))
+            max_corr_lag = np.array(np.argmax(correlations))
+            textstr = f'$r_{{t-{max_corr_lag}}}={max_corr:.2f}$ '
+            ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
         # layout
         sns.set_style('white')
@@ -598,7 +606,7 @@ def plot_stl_decomposition(df, period, output_dir):
             make_plot(df.dropna(), column, output_dir)
 
 
-def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
+def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
     """
     Given a moving window time series DataFrame, plot the time series 
     of AR1 and Variance.
@@ -732,6 +740,28 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
         if (('offset50_mean' in column or 'total_precipitation' in column) and 
              'var' in column):
             make_plot(df, column, output_dir, 'smooth_res')
+
+
+def plot_correlation_mwa(df, output_dir, filename_suffix=''):
+
+    def make_plot(df, column_name, output_dir, filename_suffix):
+
+        collection_prefix = column_name.split('_')[0]
+        # create a figure
+        fig, _ = plt.subplots(figsize=(15, 5))
+        plt.plot(df[column_name])
+
+        # save the plot
+        output_filename = f'{column_name}' + filename_suffix + '.png'
+        print(f'Plotting {collection_prefix} correlation moving window analysis...')
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+        plt.close(fig)
+
+
+
+    for column in df.columns:
+        if 'veg_precip' in column:
+            make_plot(df, column, output_dir, filename_suffix)
 
 
 def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output_dir):

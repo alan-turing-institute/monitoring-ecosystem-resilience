@@ -510,7 +510,7 @@ def get_max_lagged_cor(dirname, veg_prefix):
     return max_corr_smooth, max_corr_unsmoothed
 
 
-def variance_moving_average_time_series(series, length=1):
+def variance_moving_average_time_series(series, length):
     """
     Calculate a variance time series using a moving average
 
@@ -614,6 +614,100 @@ def get_ar1_var_timeseries_df(series, window_size=0.5):
     return ar1_var_df
 
 
+def get_corrs_by_lag(series_A, series_B):
+
+    # set up
+    max_lag = 6 # assuming monthly sampling we shouldn't need to go past this
+    correlations = []
+
+    # loop through offsets
+    for lag in range(0, max_lag):
+
+        # shift vegetation time series back
+        lagged_data = series_A.shift(-lag) 
+
+        # correlate with series_B
+        corr = series_B.corr(lagged_data)
+        correlations.append(round(corr,4))
+    print(correlations)
+    return correlations
+
+
+def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
+    """
+    Given two time series and a lag betweent them, calculate the 
+    lagged correlation between the two time series using a moving 
+    window. Additionally calculate the lag of the maximum precipitation 
+    using the moving window..
+
+    Parameters
+    ----------
+    series_A : pandas Series
+        Observations of the first time series.
+    series_B : pandas Series
+        Observations of the second time series.
+    window_size: float (optional)
+        Size of the moving window as a fraction of the time series length.
+
+    Returns
+    ----------
+    DataFrame
+        Lagged corrleation and lag which maximises the correlation time series.s
+    """
+
+    # get correlations as a function of lag
+    correlations = get_corrs_by_lag(series_A, series_B)
+
+    # get the lag which maximises the correlation
+    lag_max_cor = np.argmax(np.array(correlations))
+
+    # create an offset version of series_A
+    series_A_lagged = series_A.shift(-lag_max_cor)
+
+    # compute the length of the moving window in number of observations
+    length = round(len(series_A) * window_size)
+
+    # just in case the index isn't already datetime type
+    series_A.index = pd.to_datetime(series_A.index)
+    series_B.index = pd.to_datetime(series_B.index)
+
+    # place to store results
+    correlations_mw = []
+    mag_max_cors_mw = []
+    index = []
+
+    # for each step along the moving window
+    for i in range(len(series_A) - length):
+
+        # get the slices of the timeseries
+        frame_A = series_A[i:(length + i)]
+        frame_A_lagged = series_A_lagged[i:(length + i)]
+        frame_B = series_B[i:(length + i)]
+
+        # compute the lagged correlation using the lag 
+        # which maximises the global correlation
+        frame_corr = frame_B.corr(frame_A_lagged)
+
+        # compute the correlation which maximises the lag
+        frame_correlations = get_corrs_by_lag(frame_A, frame_B)
+        frame_lag_max_cor = np.argmax(np.array(frame_correlations))
+
+        # store results
+        correlations_mw.append(frame_corr)
+        mag_max_cors_mw.append(frame_lag_max_cor)
+        index.append(series_A_lagged.index[length + i])
+
+    correlations_mva_series_name = series_A.name.split('_')[0] + '_veg_precip_corr'
+    mag_max_cors_mw_series_name = series_A.name.split('_')[0] + '_veg_precip_lag'
+
+    out_df = pd.DataFrame()
+    out_df[correlations_mva_series_name] = pd.Series(correlations_mw)
+    out_df[mag_max_cors_mw_series_name] = pd.Series(mag_max_cors_mw)
+    out_df.index = index
+
+    return out_df
+
+
 def moving_window_analysis(df, output_dir, window_size=0.5):
     """
     Run moving window AR1 and variance calculations for several
@@ -639,7 +733,7 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
 
     # loop through columns
     for column in df.columns:
-
+        
         # run moving window analysis veg and precip columns
         if ( ('offset50' in column or 'ndvi' in column) and 'mean' in column or 
              'total_precipitation' in column ):
@@ -651,11 +745,17 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
             df_ = get_ar1_var_timeseries_df(time_series, window_size)
             mwa_df = mwa_df.join(df_, how='outer')
 
+        # for the precipitation column, look at correlations to veg
+        if 'total_precipitation' in column:
+            for column_veg in df.columns:
+                if ('offset50' in column_veg or 'ndvi' in column_veg) and 'mean' in column_veg:
+                    mwa_df = mwa_df.join(get_correlation_lag_ts(df.set_index('date')[column_veg],
+                                                                df.set_index('date')[column]), how='outer')
 
     # use date as a column, and reset index
     mwa_df.index.name = 'date'
     mwa_df = mwa_df.reset_index()
-
+    
     return mwa_df
 
 
