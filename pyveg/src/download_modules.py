@@ -47,7 +47,8 @@ class BaseDownloader(BaseModule):
                          ("region_size", [float]),
                          ("scale", [int]),
                          ("output_location", [str]),
-                         ("output_location_type", [str])]
+                         ("output_location_type", [str]),
+                         ("replace_existing_files", [bool]) ]
         return
 
 
@@ -63,6 +64,8 @@ class BaseDownloader(BaseModule):
             self.scale = 10
         if not "output_location" in vars(self):
             self.set_output_location()
+        if not "replace_existing_files" in vars(self):
+            self.replace_existing_files = False
 
         return
 
@@ -168,6 +171,17 @@ class BaseDownloader(BaseModule):
         # return the path so downloaded files can be handled by caller
         return download_location
 
+    def check_for_existing_files(self, date_range):
+
+        mid_date = find_mid_period(date_range[0], date_range[1])
+        location = os.path.join(self.output_location, mid_date, "RAW")
+        existing_files = self.list_directory(location, self.output_location_type)
+        if len(existing_files) == self.num_files_per_point:
+            print("{}: Already found {} files for {} - skipping"\
+                  .format(self.name, self.num_files_per_point, mid_date))
+            return True
+        return False
+
 
     def run(self):
         super().run()
@@ -177,6 +191,9 @@ class BaseDownloader(BaseModule):
                                         self.time_per_point)
         download_locations = []
         for date_range in date_ranges:
+            if not self.replace_existing_files and \
+               self.check_for_existing_files(date_range):
+                continue
             urls = self.prep_data(date_range)
             print("{}: got URL {} for date range {}".format(self.name,
                                                             urls,
@@ -206,7 +223,8 @@ class VegetationDownloader(BaseDownloader):
                         ("cloudy_pix_frac", [int]),
                         ("RGB_bands", [list]),
                         ("NIR_band", [str]),
-                        ("time_per_point", [str])
+                        ("time_per_point", [str]),
+                        ("num_files_per_point", [int])
         ]
 
 
@@ -218,7 +236,7 @@ class VegetationDownloader(BaseDownloader):
         super().set_default_parameters()
         self.mask_cloud=True
         self.cloudy_pix_frac = 50
-
+        self.num_files_per_point = 4
 
     def prep_images(self, dataset):
         """
@@ -258,8 +276,18 @@ class WeatherDownloader(BaseDownloader):
         super().__init__(name)
         self.params += [("temperature_band", [list]),
                         ("precipitation_band", [list]),
-                        ("time_per_point", [str])
+                        ("time_per_point", [str]),
+                        ("num_files_per_point", [int])
         ]
+
+
+    def set_default_parameters(self):
+        """
+        Set some defaults.  Note that these can be overriden, either
+        by parent Sequence, or by calling configure() with a dict.
+        """
+        super().set_default_parameters()
+        self.num_files_per_point = 2
 
 
     def prep_images(self, dataset):
