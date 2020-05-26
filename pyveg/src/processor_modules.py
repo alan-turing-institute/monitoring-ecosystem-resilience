@@ -18,6 +18,7 @@ from pyveg.src.subgraph_centrality import (
     subgraph_centrality,
     feature_vector_metrics,
 )
+from pyveg.src import azure_utils
 
 from pyveg.src.pyveg_pipeline import BaseModule
 
@@ -32,7 +33,10 @@ class ProcessorModule(BaseModule):
             # use the file_utils function
             save_image(image, output_location, output_filename, verbose)
         elif self.output_location_type == "azure":
-            azure_utils.save_image(image, output_location, output_filename, verbose)
+            # container name will be the first bit of self.output_location.
+            container_name = self.output_location.split("/")[0]
+            azure_utils.save_image(image, output_location, output_filename,
+                                   container_name)
         else:
             raise RuntimeError("Unknown output location type {}"\
                                .format(self.output_location_type))
@@ -99,14 +103,14 @@ class VegetationImageProcessor(ProcessorModule):
         return full_path
 
 
-    def save_rgb_image(self, tif_filebase, input_filepath,
+    def save_rgb_image(self, band_dict,
                        date_string, coords_string):
         """
         Merge the seperate tif files for the R,G,B bands into
         one image, and save it.
         """
-        print("{}: Processing {}".format(self.name, tif_filebase))
-        rgb_image = convert_to_rgb(tif_filebase, self.RGB_bands)
+        print("{}: Saving RGB image for {} {}".format(self.name, date_string, coords_string))
+        rgb_image = convert_to_rgb(band_dict)
 
         # check image quality on the colour image
         if not check_image_ok(rgb_image, 1.0):
@@ -115,6 +119,8 @@ class VegetationImageProcessor(ProcessorModule):
         rgb_filepath = self.construct_image_savepath(date_string,
                                                      coords_string,
                                                      'RGB')
+        print("Will save image to {} / {}".format(os.path.dirname(rgb_filepath),
+                                                  os.path.basename(rgb_filepath)))
         self.save_image(rgb_image, os.path.dirname(rgb_filepath),
                    os.path.basename(rgb_filepath))
         if self.split_RGB_images:
@@ -190,6 +196,16 @@ class VegetationImageProcessor(ProcessorModule):
                      if filename.endswith(".tif")]
 
         # extract this to feed into `convert_to_rgb()`
+        band_dict = {}
+        for icol, col in enumerate('rgb'):
+            band = self.RGB_bands[icol]
+            filename = self.get_file(os.path.join(input_filepath,
+                                                  "download.{}.tif".format(band)),
+                                     self.input_location_type)
+            band_dict[col] = {"band": band,
+                              "filename": filename
+                              }
+
         tif_filebase = os.path.join(input_filepath,
                                     filenames[0].split('.')[0])
         # normally the coordinates will be part of the file path
@@ -206,15 +222,17 @@ class VegetationImageProcessor(ProcessorModule):
         if not coords_string and date_string:
             raise RuntimeError("{}: coords and date need to be defined, through file path or explicitly set")
         # save the rgb image
-        rgb_ok = self.save_rgb_image(tif_filebase,
-                                     input_filepath,
+        rgb_ok = self.save_rgb_image(band_dict,
                                      date_string,
                                      coords_string)
         if not rgb_ok:
             return False
 
         # save the NDVI image
-        ndvi_image = scale_tif(tif_filebase, "NDVI")
+        ndvi_tif = self.get_file(os.path.join(input_filepath,
+                                              "download.NDVI.tif"),
+                                 self.input_location_type)
+        ndvi_image = scale_tif(ndvi_tif)
         ndvi_filepath = self.construct_image_savepath(date_string,
                                                       coords_string,
                                                       'NDVI')
@@ -307,7 +325,6 @@ class WeatherImageToJSON(ProcessorModule):
         for filename in self.list_directory(input_location, self.input_location_type):
             if filename.endswith(".tif"):
                 name_variable = (filename.split('.'))[1]
-                print("looking at {}".format(name_variable))
                 variable_array = cv.imread(self.get_file(os.path.join(input_location,
                                                                       filename),
                                                          self.input_location_type),
@@ -415,9 +432,13 @@ class NetworkCentralityCalculator(ProcessorModule):
         """
         super().set_default_parameters()
         self.n_threads = 4
-        self.n_sub_images = -1 # do all-sub-images
-        self.input_location_type = "local"
-        self.output_location_type = "local"
+        if not "n_sub_images" in vars(self):
+            self.n_sub_images = -1 # do all-sub-images
+        if not "input_location_type" in vars(self):
+            self.input_location_type = "local"
+        if not "output_location_type" in vars(self):
+            self.output_location_type = "local"
+
 
     def check_sub_image(self, ndvi_filename, input_path):
         """
@@ -441,9 +462,8 @@ class NetworkCentralityCalculator(ProcessorModule):
             print("{}: No sub-images for date {}".format(self.name,
                                                          date_string))
             return
-        # list all the "BWNDVI" sub-images where
-        # RGB image passes quality check
-        input_files = [filename for filename in list_directory(input_path) \
+        # list all the "BWNDVI" sub-images where RGB image passes quality check
+        input_files = [filename for filename in self.list_directory(input_path) \
                        if "BWNDVI" in filename and \
                        self.check_sub_image(filename,input_path)]
         tmp_json_dir = os.path.join(self.input_location, date_string,"tmp_json")
@@ -472,6 +492,7 @@ class NetworkCentralityCalculator(ProcessorModule):
         if "list_of_dates" in vars(self):
             date_strings = self.list_of_dates
         else:
-            date_strings = sorted(list_directory(self.input_location, self.input_location_type))
+            date_strings = sorted(self.list_directory(self.input_location,
+                                                      self.input_location_type))
         for date_string in date_strings:
             self.process_single_date(date_string)
