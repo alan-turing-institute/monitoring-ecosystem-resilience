@@ -743,21 +743,44 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
 
 
 def plot_correlation_mwa(df, output_dir, filename_suffix=''):
+    """
+    Given a moving window time series DataFrame, plot the time series 
+    of veg-precip correlation.
+
+    Parameters
+    ----------
+    df : DataFrame
+        The time-series results for veg-precip correlation coeff and lag.
+    output_dir : str
+        Directory to save the plot in.
+    filename_suffix: str
+        Add suffix string to file name
+    """
 
     def make_plot(df, column_name, output_dir, filename_suffix):
 
-        collection_prefix = column_name.split('_')[0]
+        # get datetime x-values
+        xs = get_datetime_xs(df)
+        
         # create a figure
-        fig, _ = plt.subplots(figsize=(15, 5))
-        plt.plot(df[column_name])
+        fig, ax = plt.subplots(figsize=(15, 4.5))
+        plt.plot(xs, df[column_name])
+
+        # label axes
+        plt.xlabel('Time', fontsize=12)
+        plt.ylabel(column_name, fontsize=12)
+
+        # calculate Kendall taus and annotate plot
+        tau, p = get_kendell_tau(df[column_name].dropna())
+        textstr = f'Kendall $\\tau,~p = {tau:.3f}$, ${p:.4f}$'
+        ax.text(0.1, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
 
         # save the plot
         output_filename = f'{column_name}' + filename_suffix + '.png'
+        collection_prefix = column_name.split('_')[0]
         print(f'Plotting {collection_prefix} correlation moving window analysis...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
         plt.close(fig)
-
-
 
     for column in df.columns:
         if 'veg_precip' in column:

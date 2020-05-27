@@ -629,7 +629,7 @@ def get_corrs_by_lag(series_A, series_B):
         # correlate with series_B
         corr = series_B.corr(lagged_data)
         correlations.append(round(corr,4))
-    print(correlations)
+
     return correlations
 
 
