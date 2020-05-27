@@ -56,10 +56,12 @@ class VegetationImageProcessor(ProcessorModule):
         by a parent Sequence, or by calling configure() with a dict of values
         """
         super().set_default_parameters()
-        self.region_size = 0.1
-        self.RGB_bands = ["B4","B3","B2"]
-        self.split_RGB_images = True
-
+        if not "region_size" in vars(self):
+            self.region_size = 0.1
+        if not "RGB_bands" in vars(self):
+            self.RGB_bands = ["B4","B3","B2"]
+        if not "split_RGB_images" in vars(self):
+            self.split_RGB_images = True
 
 
     def construct_image_savepath(self, date_string, coords_string, image_type):
