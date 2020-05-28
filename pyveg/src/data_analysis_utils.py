@@ -749,7 +749,8 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
         # for the precipitation column, look at correlations to veg
         if 'total_precipitation' in column:
             for column_veg in df.columns:
-                if ('offset50' in column_veg or 'ndvi' in column_veg) and 'mean' in column_veg:
+                if (('offset50' in column_veg or 'ndvi' in column_veg) and 
+                     'mean' in column_veg and 'smooth' not in column_veg):
                     mwa_df = mwa_df.join(get_correlation_lag_ts(df.set_index('date')[column_veg],
                                                                 df.set_index('date')[column]), how='outer')
 
