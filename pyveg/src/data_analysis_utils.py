@@ -697,8 +697,9 @@ def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
         mag_max_cors_mw.append(frame_lag_max_cor)
         index.append(series_A_lagged.index[length + i])
 
-    correlations_mva_series_name = series_A.name.split('_')[0] + '_veg_precip_corr'
-    mag_max_cors_mw_series_name = series_A.name.split('_')[0] + '_veg_precip_lag'
+    s = 'ndvi' if 'ndvi' in series_A else 'offest50'
+    correlations_mva_series_name = series_A.name.split('_')[0] + '_' + s + '_precip_corr'
+    mag_max_cors_mw_series_name = series_A.name.split('_')[0] + '_' + s + '_precip_lag'
 
     out_df = pd.DataFrame()
     out_df[correlations_mva_series_name] = pd.Series(correlations_mw)
