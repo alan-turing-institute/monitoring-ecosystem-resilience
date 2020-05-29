@@ -512,6 +512,7 @@ class NetworkCentralityCalculator(ProcessorModule):
                    for i, filename in enumerate(input_files)]
             pool.starmap(process_sub_image, arguments)
         # put all the output json files for subimages together into one for this date
+        print("\n Consolidating json from all subimages")
         all_subimages = consolidate_json_to_list(tmp_json_dir)
         self.save_json(all_subimages, "network_centralities.json",
                        output_location,
