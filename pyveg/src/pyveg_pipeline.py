@@ -14,7 +14,10 @@ the results of the different SEQUENCES into one output file.
 """
 
 import os
+import json
 import subprocess
+
+from pyveg.src.file_utils import save_json
 try:
     from pyveg.src import azure_utils
 except:
@@ -232,10 +235,16 @@ class BaseModule(object):
         self.is_configured = False
 
 
+    def set_parameters(self, config_dict):
+        for k, v in config_dict.items():
+            print("{}: setting {} to {}".format(self.name,k,v))
+            self.__setattr__(k, v)
+
+
     def configure(self, config_dict=None):
         """
-        Order of preference for configuring:
-        1) configuration dictionary
+        Order of preference for configuriation:
+        1) config_dict
         2) values held by the parent Sequence
         3) default values
         So we set them in reverse order here, so higher priorities will override.
@@ -247,9 +256,7 @@ class BaseModule(object):
                 if param in vars(self.parent):
                     self.__setattr__(param, self.parent.__getattribute__(param))
         if config_dict:
-            for k, v in config_dict.items():
-                print("{}: setting {} to {}".format(self.name,k,v))
-                self.__setattr__(k, v)
+            self.set_parameters(config_dict)
 
         self.check_config()
         self.is_configured = True
@@ -351,6 +358,22 @@ class BaseModule(object):
             # first part of self.output_location should be the container name
             container_name = self.output_location.split("/")[0]
             azure_utils.save_json(data, location, filename, container_name)
+        else:
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
+
+
+    def get_json(self, filepath, location_type):
+        """
+        Read a json file either local or blob storage.
+        """
+        if location_type == "local":
+            return json.load(open(filepath))
+        elif location_type == "azure":
+            # first part of filepath  should be the container name
+            container_name = filepath.split("/")[0]
+            return azure_utils.read_json(filepath, container_name)
+        else:
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
 
 
     def get_file(self, filename, location_type):
@@ -365,3 +388,23 @@ class BaseModule(object):
             # first part of self.output_location should be the container name
             container_name = self.output_location.split("/")[0]
             return azure_utils.get_blob_to_tempfile(filename, container_name)
+        else:
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
+
+
+    def check_for_existing_files(self, location, num_files_expected):
+        """
+        See if there are already num_files in the specified location
+        """
+        # if we haven't specified number of expected files per point it will be -1
+        if num_files_expected < 0:
+            return False
+
+        if self.output_location_type == "local":
+            os.makedirs(location, exist_ok=True)
+        existing_files = self.list_directory(location, self.output_location_type)
+        if len(existing_files) == num_files_expected:
+            print("{}: Already found {} files in {} - skipping"\
+                  .format(self.name, num_files_expected, location))
+            return True
+        return False

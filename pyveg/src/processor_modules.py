@@ -5,6 +5,7 @@ that can be chained together to build a sequence.
 
 import os
 import re
+import shutil
 import tempfile
 
 import cv2 as cv
@@ -27,6 +28,27 @@ class ProcessorModule(BaseModule):
 
     def __init__(self, name):
         super().__init__(name)
+        self.params += [
+            ("replace_existing_files", [bool]),
+            ("input_location", [str]),
+            ("input_location_type", [str]),
+            ("output_location", [str]),
+            ("output_location_type", [str]),
+            ("num_files_per_point", [int])
+        ]
+
+
+    def get_image(self, image_location):
+        if self.input_location_type == "local":
+            return Image.open(image_location)
+        elif self.input_location_type == "azure":
+            # container name will be the first bit of self.input_location.
+            container_name = self.input_location.split("/")[0]
+            return azure_utils.read_image(image_location, container_name)
+        else:
+            raise RuntimeError("Unknown output location type {}"\
+                               .format(self.output_location_type))
+
 
     def save_image(self, image, output_location, output_filename, verbose=True):
         if self.output_location_type == "local":
@@ -41,6 +63,21 @@ class ProcessorModule(BaseModule):
             raise RuntimeError("Unknown output location type {}"\
                                .format(self.output_location_type))
 
+
+    def set_default_parameters(self):
+        """
+        Set some basic defaults.  Note that these might get overriden
+        by a parent Sequence, or by calling configure() with a dict of values
+        """
+        super().set_default_parameters()
+        if not "replace_existing_files" in vars(self):
+            self.replace_existing_files = False
+        if not "num_files_per_point" in vars(self):
+            self.num_files_per_point = -1
+        if not "input_location_type" in vars(self):
+            self.input_location_type = "local"
+        if not "output_location_type" in vars(self):
+            self.output_location_type = "local"
 
 
 class VegetationImageProcessor(ProcessorModule):
@@ -58,10 +95,7 @@ class VegetationImageProcessor(ProcessorModule):
     """
     def __init__(self, name=None):
         super().__init__(name)
-        self.params += [("input_location", [str]),
-                        ("input_location_type", [str]),
-                        ("output_location", [str]),
-                        ("output_location_type", [str]),
+        self.params += [
                         ("region_size", [float]),
                         ("RGB_bands", [list]),
                         ("split_RGB_images", [bool])
@@ -75,13 +109,16 @@ class VegetationImageProcessor(ProcessorModule):
         """
         super().set_default_parameters()
         if not "region_size" in vars(self):
-            self.region_size = 0.1
+            self.region_size = 0.08
         if not "RGB_bands" in vars(self):
             self.RGB_bands = ["B4","B3","B2"]
         if not "split_RGB_images" in vars(self):
             self.split_RGB_images = True
+        # in PROCESSED dir we expect RGB. NDVI, BWNDVI
+        self.num_files_per_point = 3
 
-    def construct_image_savepath(self, date_string, coords_string, image_type):
+
+    def construct_image_savepath(self, date_string, coords_string, image_type="RGB"):
         """
         Function to abstract output image filename construction.
         Current approach is to create a 'PROCESSED' subdir inside the
@@ -191,6 +228,30 @@ class VegetationImageProcessor(ProcessorModule):
         =======
         True if everything was processed and saved OK, False otherwise.
         """
+        # first see if there are already files in the output location
+        # (in which case we can skip this date)
+
+        # normally the coordinates will be part of the file path
+        coords_string = find_coords_string(input_filepath)
+        # if not though, we might have coords set explicitly
+        if (not coords_string) and "coords" in vars(self):
+            coords_string = "{}_{}".format(self.coords[0],self.coords[1])
+        date_string = input_filepath.split("/")[-2]
+        if not re.search("[\d]{4}-[\d]{2}-[\d]{2}", date_string):
+            if date_range in vars(self):
+                date_string = fid_mid_period(self.date_range[0], self.date_range[1])
+            else:
+                date_String = None
+        if not coords_string and date_string:
+            raise RuntimeError("{}: coords and date need to be defined, through file path or explicitly set")
+
+        output_location = os.path.dirname(self.construct_image_savepath(date_string,
+                                                                        coords_string))
+        if (not self.replace_existing_files) and \
+           self.check_for_existing_files(output_location, self.num_files_per_point):
+            return True
+        print("Proceeding.")
+        # If no files already there, proceed.
         filenames = [filename for filename in self.list_directory(input_filepath,
                                                                   self.input_location_type) \
                      if filename.endswith(".tif")]
@@ -208,24 +269,13 @@ class VegetationImageProcessor(ProcessorModule):
 
         tif_filebase = os.path.join(input_filepath,
                                     filenames[0].split('.')[0])
-        # normally the coordinates will be part of the file path
-        coords_string = find_coords_string(input_filepath)
-        # if not though, we might have coords set explicitly
-        if (not coords_string) and "coords" in vars(self):
-            coords_string = "{}_{}".format(self.coords[0],self.coords[1])
-        date_string = input_filepath.split("/")[-2]
-        if not re.search("[\d]{4}-[\d]{2}-[\d]{2}", date_string):
-            if date_range in vars(self):
-                date_string = fid_mid_period(self.date_range[0], self.date_range[1])
-            else:
-                date_String = None
-        if not coords_string and date_string:
-            raise RuntimeError("{}: coords and date need to be defined, through file path or explicitly set")
+
         # save the rgb image
         rgb_ok = self.save_rgb_image(band_dict,
                                      date_string,
                                      coords_string)
         if not rgb_ok:
+            print("Problem with the rgb image?")
             return False
 
         # save the NDVI image
@@ -290,11 +340,6 @@ class WeatherImageToJSON(ProcessorModule):
 
     def __init__(self, name=None):
         super().__init__(name)
-        self.params += [("input_location", [str]),
-                        ("output_location", [str]),
-                        ("input_location_type", [str]),
-                        ("output_location_type", [str])
-        ]
 
 
     def set_default_parameters(self):
@@ -332,7 +377,12 @@ class WeatherImageToJSON(ProcessorModule):
 
                 metrics_dict[name_variable] = variable_array.mean()\
                                                             .astype(np.float64)
-        return metrics_dict
+        self.save_json(metrics_dict, "weather_data.json",
+                       os.path.join(self.output_location,
+                                    date_string,
+                                    "JSON","WEATHER"),
+                       self.output_location_type)
+        return True
 
 
     def run(self):
@@ -342,49 +392,26 @@ class WeatherImageToJSON(ProcessorModule):
         date_strings = self.list_directory(self.input_location, self.input_location_type)
         date_strings.sort()
         for date_string in date_strings:
-            if date_string == "RESULTS":
-                continue
-            time_series_data[date_string] = self.process_one_date(date_string)
-
-        self.save_json(time_series_data,
-                       "weather_data.json",
-                       os.path.join(self.output_location, "RESULTS"),
-                       self.output_location_type
-                       )
+           processed_ok = self.process_one_date(date_string)
+           if not processed_ok:
+               raise RuntimeError("{}: problem processing {}".format(self.name, date_string))
+        return True
 
 
 
 #######################################################################
 
-def process_sub_image(i, input_filename, input_location, output_location):
+def process_sub_image(i, input_filepath, output_location, date_string, coords_string):
     """
     Read file and run network centrality
     """
-    date_string = input_location.split("/")[-2]
 
     # open BWNDVI image
-    sub_image = Image.open(os.path.join(input_location, input_filename))
-
-    # open NDVI image
-    ndvi_sub_image = Image.open(os.path.join(input_location, input_filename.replace('BWNDVI', 'NDVI')))
-
-    # get average NDVI across the whole image (in case there is no patterned veg)
-    ndvi_mean = round(pillow_to_numpy(ndvi_sub_image).mean(), 4)
-    #ndvi_std = round(pillow_to_numpy(ndvi_sub_image).std(), 4)
-
-    # use the BWDVI to mask the NDVI and calculate the average
-    # pixel value of veg pixels
-    veg_mask = (pillow_to_numpy(sub_image) == 0)
-    ndvi_veg_mean = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].mean(), 4)
-    #veg_ndvi_std = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].std(), 4)
+    sub_image = Image.open(input_filepath)
 
     image_array = pillow_to_numpy(sub_image)
     feature_vec, _ = subgraph_centrality(image_array)
-    # coords should be part of the filepath
-    coords_string = find_coords_string(input_filename)
-    if not coords_string:
-        raise RuntimeError("Unable to find coordinates in {}"\
-                           .format(input_filename))
+
     coords = [float(c) for c in coords_string.split("_")]
 
     nc_result = feature_vector_metrics(feature_vec)
@@ -392,16 +419,12 @@ def process_sub_image(i, input_filename, input_location, output_location):
     nc_result['date'] = date_string
     nc_result['latitude'] = coords[1]
     nc_result['longitude'] = coords[0]
-    nc_result['ndvi'] = ndvi_mean
-    #nc_result['ndvi_std'] = ndvi_std
-    nc_result['ndvi_veg'] = ndvi_veg_mean
-    #nc_result['veg_ndvi_std'] = veg_ndvi_std
 
     # save individual result for sub-image to tmp json, will combine later.
     save_json(nc_result, output_location,
               f"network_centrality_sub{i}.json", verbose=False)
     # count and print how many sub-images we have done.
-    n_processed = len(list_directory(output_location))
+    n_processed = len(os.listdir(output_location))
     print(f'Processed {n_processed} sub-images...', end='\r')
     return True
 
@@ -417,10 +440,6 @@ class NetworkCentralityCalculator(ProcessorModule):
     def __init__(self, name=None):
         super().__init__(name)
         self.params += [
-            ("input_location", [str]),
-            ("output_location", [str]),
-            ("input_location_type", [str]),
-            ("output_location_type", [str]),
             ("n_threads", [int]),
             ("n_sub_images", [int])
         ]
@@ -434,10 +453,7 @@ class NetworkCentralityCalculator(ProcessorModule):
         self.n_threads = 4
         if not "n_sub_images" in vars(self):
             self.n_sub_images = -1 # do all-sub-images
-        if not "input_location_type" in vars(self):
-            self.input_location_type = "local"
-        if not "output_location_type" in vars(self):
-            self.output_location_type = "local"
+
 
 
     def check_sub_image(self, ndvi_filename, input_path):
@@ -446,27 +462,39 @@ class NetworkCentralityCalculator(ProcessorModule):
         looks OK.
         """
         rgb_filename = re.sub("BWNDVI","RGB",ndvi_filename)
-        rgb_img = Image.open(os.path.join(input_path, rgb_filename))
+        rgb_img = Image.open(self.get_file(os.path.join(input_path, rgb_filename),
+                                           self.input_location_type))
         img_ok = check_image_ok(rgb_img, 0.05)
         return img_ok
 
 
     def process_single_date(self, date_string):
         """
-        Each date will have a subdirectory called 'SPLIT' with ~500
+        Each date will have a subdirectory called 'SPLIT' with ~400 BWNDVI
         sub-images.
         """
+        # see if there is already a network_centralities.json file in
+        # the output location - if so, skip
+        output_location = os.path.join(self.output_location, date_string,"JSON","NC")
+        if (not self.replace_existing_files) and \
+           self.check_for_existing_files(output_location, 1):
+            return True
 
         input_path = os.path.join(self.input_location, date_string, "SPLIT")
-        if not os.path.exists(input_path):
+        all_input_files = self.list_directory(input_path, self.input_location_type)
+        print("input path is {}".format(input_path))
+
+        # list all the "BWNDVI" sub-images where RGB image passes quality check
+        input_files = [filename for filename in all_input_files \
+                       if "BWNDVI" in filename and \
+                       self.check_sub_image(filename, input_path)]
+        if len(input_files) == 0:
             print("{}: No sub-images for date {}".format(self.name,
                                                          date_string))
             return
-        # list all the "BWNDVI" sub-images where RGB image passes quality check
-        input_files = [filename for filename in self.list_directory(input_path) \
-                       if "BWNDVI" in filename and \
-                       self.check_sub_image(filename,input_path)]
-        tmp_json_dir = os.path.join(self.input_location, date_string,"tmp_json")
+        else:
+            print("{} found {} sub-images".format(self.name, len(input_files)))
+        tmp_json_dir = tempfile.mkdtemp()
 
         # if we only want a subset of sub-images, truncate the list here
         if self.n_sub_images > 0:
@@ -475,16 +503,147 @@ class NetworkCentralityCalculator(ProcessorModule):
         # create a multiprocessing pool to handle each sub-image in parallel
         with Pool(processes=self.n_threads) as pool:
             # prepare the arguments for the process_sub_image function
-            arguments=[(i, filename, input_path, tmp_json_dir) \
+            arguments=[(i,
+                        self.get_file(os.path.join(input_path,filename),
+                                      self.input_location_type),
+                        tmp_json_dir,
+                        date_string,
+                        find_coords_string(filename)) \
                    for i, filename in enumerate(input_files)]
             pool.starmap(process_sub_image, arguments)
         # put all the output json files for subimages together into one for this date
-        consolidate_json_to_list(os.path.join(self.input_location,
-                                              date_string,
-                                              "tmp_json"),
-                                 os.path.join(self.output_location,
-                                              date_string),
-                                 "network_centralities.json")
+        all_subimages = consolidate_json_to_list(tmp_json_dir)
+        self.save_json(all_subimages, "network_centralities.json",
+                       output_location,
+                       self.output_location_type)
+        shutil.rmtree(tmp_json_dir)
+        return True
+
+
+    def run(self):
+        super().run()
+        if "list_of_dates" in vars(self):
+            date_strings = self.list_of_dates
+        else:
+            date_strings = sorted(self.list_directory(self.input_location,
+                                                      self.input_location_type))
+        for date_string in date_strings:
+            self.process_single_date(date_string)
+
+
+
+class NDVICalculator(ProcessorModule):
+    """
+    Class to look at NDVI on sub-images
+    images, and return the results as json.
+    Note that the input directory is expected to be the level above
+    the subdirectories for the date sub-ranges.
+    """
+
+    def __init__(self, name=None):
+        super().__init__(name)
+        self.params += [
+            ("n_sub_images", [int])
+        ]
+
+
+    def set_default_parameters(self):
+        """
+        Default values. Note that these can be overridden by parent Sequence
+        or by calling configure().
+        """
+        super().set_default_parameters()
+        if not "n_sub_images" in vars(self):
+            self.n_sub_images = -1 # do all-sub-images
+
+
+    def check_sub_image(self, ndvi_filename, input_path):
+        """
+        Check the RGB sub-image corresponding to this NDVI image
+        looks OK.
+        """
+        rgb_filename = re.sub("NDVI","RGB",ndvi_filename)
+#        rgb_img = Image.open(self.get_file(os.path.join(input_path, rgb_filename),
+#                                           self.input_location_type))
+        rgb_img = self.get_image(os.path.join(input_path, rgb_filename))
+
+        img_ok = check_image_ok(rgb_img, 0.05)
+        return img_ok
+
+
+    def process_sub_image(self, ndvi_filepath, date_string, coords_string):
+        """
+        Calculate mean and standard deviation of NDVI in a sub-image,
+        both with and without masking out non-vegetation pixels.
+        """
+        # open NDVI image
+        ndvi_sub_image = self.get_image(ndvi_filepath)
+        bwndvi_sub_image = self.get_image(ndvi_filepath.replace('NDVI', 'BWNDVI'))
+        # get average NDVI across the whole image (in case there is no patterned veg)
+        ndvi_mean = round(pillow_to_numpy(ndvi_sub_image).mean(), 4)
+        ndvi_std = round(pillow_to_numpy(ndvi_sub_image).std(), 4)
+
+        # use the BWDVI to mask the NDVI and calculate the average  pixel value of veg pixels
+        veg_mask = (pillow_to_numpy(bwndvi_sub_image) == 0)
+        ndvi_veg_mean = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].mean(), 4)
+        veg_ndvi_std = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].std(), 4)
+
+        coords = [float(c) for c in coords_string.split("_")]
+
+        ndvi_result = {}
+        ndvi_result['date'] = date_string
+        ndvi_result['latitude'] = coords[1]
+        ndvi_result['longitude'] = coords[0]
+        ndvi_result['ndvi'] = ndvi_mean
+        ndvi_result['ndvi_std'] = ndvi_std
+        ndvi_result['ndvi_veg'] = ndvi_veg_mean
+        ndvi_result['veg_ndvi_std'] = veg_ndvi_std
+        return ndvi_result
+
+
+    def process_single_date(self, date_string):
+        """
+        Each date will have a subdirectory called 'SPLIT' with ~400 NDVI
+        sub-images.
+        """
+        # see if there is already a ndvi.json file in
+        # the output location - if so, skip
+        output_location = os.path.join(self.output_location, date_string,"JSON","NDVI")
+        if (not self.replace_existing_files) and \
+           self.check_for_existing_files(output_location, 1):
+            return True
+
+        input_path = os.path.join(self.input_location, date_string, "SPLIT")
+        all_input_files = self.list_directory(input_path, self.input_location_type)
+        print("input path is {}".format(input_path))
+
+        # list all the "NDVI" sub-images where RGB image passes quality check
+        input_files = [filename for filename in all_input_files \
+                       if "_NDVI" in filename and \
+                       self.check_sub_image(filename, input_path)]
+
+        if len(input_files) == 0:
+            print("{}: No sub-images for date {}".format(self.name,
+                                                         date_string))
+            return
+        else:
+            print("{} found {} sub-images".format(self.name, len(input_files)))
+        # if we only want a subset of sub-images, truncate the list here
+        if self.n_sub_images > 0:
+            input_files = input_files[:self.n_sub_images]
+
+        ndvi_vals = []
+        for ndvi_file in input_files:
+            coords_string = find_coords_string(ndvi_file)
+            ndvi_dict = self.process_sub_image(os.path.join(input_path, ndvi_file),
+                                               date_string, coords_string)
+            ndvi_vals.append(ndvi_dict)
+
+        self.save_json(ndvi_vals, "ndvi_values.json",
+                       output_location,
+                       self.output_location_type)
+        return True
+
 
 
     def run(self):

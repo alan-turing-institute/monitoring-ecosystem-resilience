@@ -64,6 +64,8 @@ class BaseDownloader(BaseModule):
             self.scale = 10
         if not "output_location" in vars(self):
             self.set_output_location()
+        if not "output_location_type" in vars(self):
+            self.output_location_type = "local"
         if not "replace_existing_files" in vars(self):
             self.replace_existing_files = False
 
@@ -89,8 +91,9 @@ class BaseDownloader(BaseModule):
                 +"_"+self.collection_name.replace('/', '-')
 
         else:
-            raise RuntimeError("{}: need to set collection_name and coords before calling set_output_location()"\
-                               .format(self.name))
+            raise RuntimeError("""
+            {}: need to set collection_name and coords before calling set_output_location()
+            """.format(self.name))
 
 
     def prep_data(self, date_range):
@@ -141,24 +144,23 @@ class BaseDownloader(BaseModule):
 
 
 
-    def download_data(self, download_urls, date_range):
+    def download_data(self, download_urls, download_location):
         """
         Download zip file(s) from GEE to configured output location.
 
         Parameters
         ---------
         download_urls: list of strings (URLs) from gee_prep_data
-        date_range: list of strings 'YYYY-MM-DD' - note that this will
-                    generally be a sub range of the object's overall
-                    date_range.
+        download_location: str, this will generally be <base_dir>/<date>/RAW
+
+        Returns:
+        --------
+        bool, True if downloaded something, False otherwise
         """
         if len(download_urls) == 0:
-            return None, "{}: No URLs found for {} {}".format(self.name,
-                                                              self.coords,
-                                                              date_range)
-
-        mid_date = find_mid_period(date_range[0], date_range[1])
-        download_location = os.path.join(self.output_location, mid_date, "RAW")
+            print("{}: No URLs found for {} {}".format(self.name,
+                                                       self.coords))
+            return False
 
         # download files and unzip to temporary directory
         tempdir = tempfile.TemporaryDirectory()
@@ -168,19 +170,7 @@ class BaseDownloader(BaseModule):
         print("Wrote zipfiles to {}".format(tempdir.name))
         print("download_location is {}".format(download_location))
         self.copy_to_output_location(tempdir.name, download_location, [".tif"])
-        # return the path so downloaded files can be handled by caller
-        return download_location
-
-    def check_for_existing_files(self, date_range):
-
-        mid_date = find_mid_period(date_range[0], date_range[1])
-        location = os.path.join(self.output_location, mid_date, "RAW")
-        existing_files = self.list_directory(location, self.output_location_type)
-        if len(existing_files) == self.num_files_per_point:
-            print("{}: Already found {} files for {} - skipping"\
-                  .format(self.name, self.num_files_per_point, mid_date))
-            return True
-        return False
+        return True
 
 
     def run(self):
@@ -191,15 +181,18 @@ class BaseDownloader(BaseModule):
                                         self.time_per_point)
         download_locations = []
         for date_range in date_ranges:
+            mid_date = find_mid_period(date_range[0], date_range[1])
+            location = os.path.join(self.output_location, mid_date, "RAW")
             if not self.replace_existing_files and \
-               self.check_for_existing_files(date_range):
+               self.check_for_existing_files(location, self.num_files_per_point):
                 continue
             urls = self.prep_data(date_range)
             print("{}: got URL {} for date range {}".format(self.name,
                                                             urls,
                                                             date_range))
-            download_location = self.download_data(urls, date_range)
-            download_locations.append(download_location)
+            downloaded_ok = self.download_data(urls, location)
+            if downloaded_ok:
+                download_locations.append(location)
         return download_locations
 
 

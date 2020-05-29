@@ -16,13 +16,14 @@ from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
 from pyveg.src.processor_modules import (
     VegetationImageProcessor,
     NetworkCentralityCalculator,
+    NDVICalculator,
     WeatherImageToJSON
 )
 
 from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
 
 
-def build_pipeline(config_file, name="mypyveg"):
+def build_pipeline(config_file):
     """
     Load json config and instantiate modules
     """
@@ -31,9 +32,9 @@ def build_pipeline(config_file, name="mypyveg"):
     spec.loader.exec_module(config)
 
     # instantiate and setup the pipeline
-    p = Pipeline(name)
+    p = Pipeline(config.name)
     p.output_location = config.output_location
-    p.output_location += '__' + time.strftime("%Y-%m-%d_%H-%M-%S")
+#    p.output_location += '__' + time.strftime("%Y-%m-%d_%H-%M-%S")
     p.output_location_type = config.output_location_type
     p.coords = config.coordinates
     p.date_range = config.date_range
@@ -52,8 +53,10 @@ def build_pipeline(config_file, name="mypyveg"):
         for module_name in config.modules_to_use[coll]:
             for n, c in inspect.getmembers(sys.modules[__name__]):
                 if n == module_name:
-                    s += c()
-
+                    module = c()
+                    if n in config.special_config.keys():
+                        module.set_parameters(config.special_config[n])
+                    s += module
         # add the sequence to the pipeline
         p += s
     if len(config.collections_to_use) > 1:
@@ -84,10 +87,9 @@ def configure_and_run_pipeline(pipeline):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", help="Path to config file", required=True)
-    parser.add_argument("--name", help="(optional) identifying name", default="mypyveg")
 
     args = parser.parse_args()
-    pipeline = build_pipeline(args.config_file, args.name)
+    pipeline = build_pipeline(args.config_file)
     configure_and_run_pipeline(pipeline)
 
 

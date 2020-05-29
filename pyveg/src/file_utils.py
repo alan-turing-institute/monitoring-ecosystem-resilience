@@ -136,7 +136,7 @@ def construct_image_savepath(output_dir, collection_name, coords, date_range, im
     return full_path
 
 
-def consolidate_json_to_list(json_dir, output_dir, output_filename):
+def consolidate_json_to_list(json_dir, output_dir=None, output_filename=None):
     """
     Load all the json files (e.g. from individual sub-images), and return
     a list of dictionaries, to be written out into one json file.
@@ -144,8 +144,14 @@ def consolidate_json_to_list(json_dir, output_dir, output_filename):
     Parameters
     ==========
     json_dir: str, full path to directory containing temporary json files
-    output_dir: str, full path to desired output directory
+    output_dir: str, full path to desired output directory.
+                     Can be None, in which case no output written to disk.
     output_filename: str, name of the output json file.
+                     Can be None, in which case no output written to disk.
+
+    Returns
+    =======
+    results: list of dicts.
     """
     results = []
 
@@ -156,5 +162,6 @@ def consolidate_json_to_list(json_dir, output_dir, output_filename):
 
     for filename in os.listdir(json_dir):
         results.append(json.load(open(os.path.join(json_dir,filename))))
-    save_json(results, output_dir, output_filename)
+    if output_dir and output_filename:
+        save_json(results, output_dir, output_filename)
     return results
