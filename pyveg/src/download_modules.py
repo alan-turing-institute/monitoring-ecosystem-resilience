@@ -58,13 +58,14 @@ class BaseDownloader(BaseModule):
         Note that these can be overriden by either values held by a parent Sequence
         or by calling configure() with a configuration dictionary.
         """
+        super().set_default_parameters()
         if not "region_size" in vars(self):
             self.region_size = 0.08
         if not "scale" in vars(self):
             self.scale = 10
         if not "output_location" in vars(self):
             self.set_output_location()
-        if not "output_location_type" in vars(self):
+        if not "output_location_type" in vars(self) or not self.output_location_type:
             self.output_location_type = "local"
         if not "replace_existing_files" in vars(self):
             self.replace_existing_files = False
@@ -84,7 +85,6 @@ class BaseDownloader(BaseModule):
         """
         if output_location:
             self.output_location = output_location[0]
-            self.output_location_type = output_location[1]
 
         elif ("coords" in vars(self)) and ("collection_name" in vars(self)):
             self.output_location = f'gee_{self.coords[0]}_{self.coords[1]}'\
