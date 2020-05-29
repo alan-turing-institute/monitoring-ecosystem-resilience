@@ -34,8 +34,8 @@ from pyveg.src.plotting import (
     plot_moving_window_analysis,
     plot_ews_resiliance,
     plot_sensitivity_heatmap,
+    plot_correlation_mwa,
     kendall_tau_histograms
-
 )
 
 
@@ -127,6 +127,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
     # make plots
     plot_moving_window_analysis(mwa_df, mwa_subdir)
+    plot_correlation_mwa(mwa_df, mwa_subdir)
 
     # save to csv
     mwa_df.to_csv(os.path.join(mwa_subdir, 'moving-window-analysis.csv'), index=False)

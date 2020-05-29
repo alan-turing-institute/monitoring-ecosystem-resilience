@@ -510,7 +510,7 @@ def get_max_lagged_cor(dirname, veg_prefix):
     return max_corr_smooth, max_corr_unsmoothed
 
 
-def variance_moving_average_time_series(series, length=1):
+def variance_moving_average_time_series(series, length):
     """
     Calculate a variance time series using a moving average
 
@@ -614,6 +614,101 @@ def get_ar1_var_timeseries_df(series, window_size=0.5):
     return ar1_var_df
 
 
+def get_corrs_by_lag(series_A, series_B):
+
+    # set up
+    max_lag = 6 # assuming monthly sampling we shouldn't need to go past this
+    correlations = []
+
+    # loop through offsets
+    for lag in range(0, max_lag):
+
+        # shift vegetation time series back
+        lagged_data = series_A.shift(-lag) 
+
+        # correlate with series_B
+        corr = series_B.corr(lagged_data)
+        correlations.append(round(corr,4))
+
+    return correlations
+
+
+def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
+    """
+    Given two time series and a lag betweent them, calculate the 
+    lagged correlation between the two time series using a moving 
+    window. Additionally calculate the lag of the maximum precipitation 
+    using the moving window..
+
+    Parameters
+    ----------
+    series_A : pandas Series
+        Observations of the first time series.
+    series_B : pandas Series
+        Observations of the second time series.
+    window_size: float (optional)
+        Size of the moving window as a fraction of the time series length.
+
+    Returns
+    ----------
+    DataFrame
+        Lagged corrleation and lag which maximises the correlation time series.s
+    """
+
+    # get correlations as a function of lag
+    correlations = get_corrs_by_lag(series_A, series_B)
+
+    # get the lag which maximises the correlation
+    lag_max_cor = np.argmax(np.array(correlations))
+
+    # create an offset version of series_A
+    series_A_lagged = series_A.shift(-lag_max_cor)
+
+    # compute the length of the moving window in number of observations
+    length = round(len(series_A) * window_size)
+
+    # just in case the index isn't already datetime type
+    series_A.index = pd.to_datetime(series_A.index)
+    series_B.index = pd.to_datetime(series_B.index)
+
+    # place to store results
+    correlations_mw = []
+    mag_max_cors_mw = []
+    index = []
+
+    # for each step along the moving window
+    for i in range(len(series_A) - length):
+
+        # get the slices of the timeseries
+        frame_A = series_A[i:(length + i)]
+        frame_A_lagged = series_A_lagged[i:(length + i)]
+        frame_B = series_B[i:(length + i)]
+
+        # compute the lagged correlation using the lag 
+        # which maximises the global correlation
+        frame_corr = frame_B.corr(frame_A_lagged)
+
+        # compute the correlation which maximises the lag
+        frame_correlations = get_corrs_by_lag(frame_A, frame_B)
+        frame_lag_max_cor = np.argmax(np.array(frame_correlations))
+
+        # store results
+        correlations_mw.append(frame_corr)
+        mag_max_cors_mw.append(frame_lag_max_cor)
+        index.append(series_A_lagged.index[length + i])
+
+    s = 'ndvi' if 'ndvi' in series_A else 'offest50'
+    correlations_mva_series_name = series_A.name.split('_')[0] + '_' + s + '_precip_corr'
+    mag_max_cors_mw_series_name = series_A.name.split('_')[0] + '_' + s + '_precip_lag'
+
+    out_df = pd.DataFrame()
+    out_df[correlations_mva_series_name] = pd.Series(correlations_mw)
+    out_df[mag_max_cors_mw_series_name] = pd.Series(mag_max_cors_mw)
+    out_df.index = index
+
+    return out_df
+
+
 def moving_window_analysis(df, output_dir, window_size=0.5):
     """
     Run moving window AR1 and variance calculations for several
@@ -639,7 +734,7 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
 
     # loop through columns
     for column in df.columns:
-
+        
         # run moving window analysis veg and precip columns
         if ( ('offset50' in column or 'ndvi' in column) and 'mean' in column or 
              'total_precipitation' in column ):
@@ -651,11 +746,18 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
             df_ = get_ar1_var_timeseries_df(time_series, window_size)
             mwa_df = mwa_df.join(df_, how='outer')
 
+        # for the precipitation column, look at correlations to veg
+        if 'total_precipitation' in column:
+            for column_veg in df.columns:
+                if (('offset50' in column_veg or 'ndvi' in column_veg) and 
+                     'mean' in column_veg and 'smooth' not in column_veg):
+                    mwa_df = mwa_df.join(get_correlation_lag_ts(df.set_index('date')[column_veg],
+                                                                df.set_index('date')[column]), how='outer')
 
     # use date as a column, and reset index
     mwa_df.index.name = 'date'
     mwa_df = mwa_df.reset_index()
-
+    
     return mwa_df
 
 
@@ -688,13 +790,15 @@ def early_warnings_sensitivity_analysis(series,
                                         incrbandwidth = 0.2,
                                         incrspanrange = 0.1):
 
-    '''
+    """
+    Function to estimate the sensitivity of the early warnings analysis to 
+    the smoothing and windowsize used. The function returns a dataframe that 
+    contains the Kendall tau rank correlation estimates for the rolling window 
+    sizes (winsize variable) and bandwidths or span sizes depending on the 
+    de-trending (smooth variable).
 
-    Function to estimate the sensitivity of the early warnings analysis to the smoothing and windowsize used. The function
-    returns a dataframe that contains the Kendall tau rank correlation estimates for the rolling window sizes (winsize variable)
-    and bandwidths or span sizes depending on the de-trending (smooth variable).
-
-    This function is inspired in the sensitivity_ews.R function from Vasilis Dakos, Leo Lahti in the early-warnings-R package
+    This function is inspired in the sensitivity_ews.R function from Vasilis 
+    Dakos, Leo Lahti in the early-warnings-R package:
     https://github.com/earlywarningtoolbox/earlywarnings-R.
 
     Parameters
@@ -723,9 +827,7 @@ def early_warnings_sensitivity_analysis(series,
     DataFrame:
         A dataframe that contains the Kendall tau rank correlation estimates for the rolling window sizes (winsize variable)
      and bandwidths or span sizes depending on the de-trending (smooth variable).
-
-
-    '''
+    """
 
     results_kendal_tau = []
     for winsize in np.arange(winsizerange[0],winsizerange[1]+0.01,incrwinsize):
@@ -795,12 +897,16 @@ def early_warnings_null_hypothesis(series,
                                    band_width=0.2,
                                    lag_times=[1],
                                    n_simulations=1000):
-    '''
-
-       Function to estimate the significance of the early warnings analysis by performing a null hypothesis test. The function
-    estimate distributions of trends in early warning indicators from different surrogate timeseries generated after fitting an ARMA(p,q) model on the original data.
-     The trends are estimated by the nonparametric Kendall tau correlation coefficient and can be compared to the trends estimated in the original timeseries
-     to produce probabilities of false positives. The function returns a dataframe that contains the Kendall tau rank correlation estimates for orignal data and surrogates.
+    """
+    Function to estimate the significance of the early warnings analysis 
+    by performing a null hypothesis test. The function estimate distributions 
+    of trends in early warning indicators from different surrogate timeseries 
+    generated after fitting an ARMA(p,q) model on the original data.
+    The trends are estimated by the nonparametric Kendall tau correlation 
+    coefficient and can be compared to the trends estimated in the original 
+    timeseries to produce probabilities of false positives. The function 
+    returns a dataframe that contains the Kendall tau rank correlation 
+    estimates for orignal data and surrogates.
 
     Parameters
     ----------
@@ -828,10 +934,10 @@ def early_warnings_null_hypothesis(series,
     Returns
     --------
     DataFrame:
-        A dataframe that contains the Kendall tau rank correlation estimates for each indicator estimated on each surrogate
-        dataset.
+        A dataframe that contains the Kendall tau rank correlation estimates for each 
+        indicator estimated on each surrogate dataset.
 
-    '''
+    """
 
     ews_dic = ewstools.core.ews_compute(series,
                                         roll_window=roll_window,
@@ -865,10 +971,10 @@ def early_warnings_null_hypothesis(series,
                 result = model_fit
 
     def compute_indicators(series):
-
-        ''' Rolling window indicators computation based on the ewstools.core.ews_compute function from
+        """
+        Rolling window indicators computation based on the ewstools.core.ews_compute function from
         ewstools
-        '''
+        """
 
         df_ews = pd.DataFrame()
         # Compute the rolling window size (integer value)
