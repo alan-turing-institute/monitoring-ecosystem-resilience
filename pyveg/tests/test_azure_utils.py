@@ -22,7 +22,9 @@ def test_save_image():
     delete_blob(blob_name, TEST_CONTAINER)
 
 
-
+@unittest.skipIf(not os.path.exists(os.path.join(os.path.dirname(__file__),
+                                                 "..", "azure_config.py")),
+                 reason="Azure config not set")
 def test_read_image():
     create_container(TEST_CONTAINER)
     # delete blob if it's already there
@@ -33,7 +35,9 @@ def test_read_image():
     new_img = read_image(blob_name, TEST_CONTAINER)
     assert isinstance(new_img, PIL.PngImagePlugin.PngImageFile)
 
-
+@unittest.skipIf(not os.path.exists(os.path.join(os.path.dirname(__file__),
+                                                 "..", "azure_config.py")),
+                 reason="Azure config not set")
 def test_save_json():
     create_container(TEST_CONTAINER)
     blob_name = "test.json"
@@ -43,7 +47,9 @@ def test_save_json():
     assert check_blob_exists(blob_name, TEST_CONTAINER)
     delete_blob(blob_name, TEST_CONTAINER)
 
-
+@unittest.skipIf(not os.path.exists(os.path.join(os.path.dirname(__file__),
+                                                 "..", "azure_config.py")),
+                 reason="Azure config not set")
 def test_read_json():
     create_container(TEST_CONTAINER)
     blob_name = "test_read.json"
@@ -54,7 +60,9 @@ def test_read_json():
     assert isinstance(data, dict)
     assert data["abc"]==44
 
-
+@unittest.skipIf(not os.path.exists(os.path.join(os.path.dirname(__file__),
+                                                 "..", "azure_config.py")),
+                 reason="Azure config not set")
 def test_get_blob_to_tmpfile():
     create_container(TEST_CONTAINER)
     blob_name = "test_tmpfile.json"
