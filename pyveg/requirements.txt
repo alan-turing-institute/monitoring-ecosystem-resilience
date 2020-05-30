@@ -1,4 +1,5 @@
 argparse
+arrow
 azure-storage-blob
 datetime
 numpy
