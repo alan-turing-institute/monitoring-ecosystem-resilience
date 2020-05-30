@@ -1,6 +1,7 @@
 argparse
 arrow
-azure-storage-blob
+azure-storage-blob==1.5.0
+azure-storage-common==1.4.2
 datetime
 numpy
 scipy
