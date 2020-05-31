@@ -34,16 +34,20 @@ def build_pipeline(config_file):
     # instantiate and setup the pipeline
     p = Pipeline(config.name)
     p.output_location = config.output_location
-#    p.output_location += '__' + time.strftime("%Y-%m-%d_%H-%M-%S")
+    p.output_location += '__' + time.strftime("%Y-%m-%d_%H-%M-%S")
     p.output_location_type = config.output_location_type
     p.coords = config.coordinates
     p.date_range = config.date_range
 
-    # before we run anything, save the current config to the output dir
-    if not os.path.exists(p.output_location):
-        os.makedirs(p.output_location, exist_ok=True)
-    copyfile(config_file, os.path.join(p.output_location, 'config_cached.py'))
+    # before we run anything, save the current config to the configs dir
+    configs_dir = os.path.dirname(config_file)
+    cached_config_file = config_file[:-3] + \
+        '__' + time.strftime("%Y-%m-%d_%H-%M-%S") + ".py"
 
+    copyfile(config_file, cached_config_file)
+
+    if config.output_location_type=="local" and not os.path.exists(p.output_location):
+        os.makedirs(p.output_location, exist_ok=True)
     # add sequences to the pipeline to deal with different data types
     for coll in config.collections_to_use:
         s = Sequence(coll)
