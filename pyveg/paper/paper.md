@@ -36,7 +36,7 @@ bibliography: paper.bib
 
 # Acknowledgements
 
-We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-Oh, and support from Kathryn Johnston during the genesis of this project.
+We acknowledge contributions and support from Tim Lenton, Chris Boulton, 
+and Jessie Abrams during the course of this project.
 
 # References
