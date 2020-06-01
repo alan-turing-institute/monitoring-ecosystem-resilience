@@ -323,36 +323,37 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
 
     # get average NDVI across the whole image (in case there is no patterned veg)
     ndvi_mean = round(pillow_to_numpy(ndvi_sub_image).mean(), 4)
-    #ndvi_std = round(pillow_to_numpy(ndvi_sub_image).std(), 4)
 
-    # use the BWDVI to mask the NDVI and calculate the average
-    # pixel value of veg pixels
-    veg_mask = (pillow_to_numpy(sub_image) == 0)
-    ndvi_veg_mean = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].mean(), 4)
-    #veg_ndvi_std = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].std(), 4)
-
+    # use the BWDVI to mask the NDVI and calculate the average pixel value of veg pixels
     image_array = pillow_to_numpy(sub_image)
+    veg_mask = (image_array == 0)
+    ndvi_veg_mean = round(image_array[veg_mask].mean(), 4) if len(image_array[veg_mask]) > 0 else np.NaN
+
+    # run network centrality 
     feature_vec, _ = subgraph_centrality(image_array)
+    
     # coords should be part of the filename
     coords_string = find_coords_string(input_filename)
+    
     if not coords_string:
         raise RuntimeError("Unable to find coordinates in {}"\
                            .format(input_filename))
-    coords = [float(c) for c in coords_string.split("_")]
+    
+    coords = [round(float(c), 4) for c in coords_string.split("_")]
 
+    # store results in a dict
     nc_result = feature_vector_metrics(feature_vec)
     nc_result['feature_vec'] = list(feature_vec)
     nc_result['date'] = date_string
     nc_result['latitude'] = coords[1]
     nc_result['longitude'] = coords[0]
     nc_result['ndvi'] = ndvi_mean
-    #nc_result['ndvi_std'] = ndvi_std
     nc_result['ndvi_veg'] = ndvi_veg_mean
-    #nc_result['veg_ndvi_std'] = veg_ndvi_std
 
     # save individual result for sub-image to tmp json, will combine later.
     save_json(nc_result, output_dir,
               f"network_centrality_sub{i}.json", verbose=False)
+              
     # count and print how many sub-images we have done.
     n_processed = len(os.listdir(output_dir))
     print(f'Processed {n_processed} sub-images...', end='\r')
