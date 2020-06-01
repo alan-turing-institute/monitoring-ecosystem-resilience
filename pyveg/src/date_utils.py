@@ -83,7 +83,7 @@ def slice_time_period(start_date, end_date, period_length):
     match = re.search("^([\d]+)([dwmy])", period_length)
     if not match:
         raise RuntimeError("Period length must be in format '<int><d|w|m|y>', e.g. 30d")
-    
+
     num, units = match.groups()
     num = int(num)
     previous_date = start_datetime
@@ -128,3 +128,28 @@ def find_mid_period(start_time, end_time):
     mid = (t0 + timedelta(days=(td//2))).isoformat()
     mid_date = mid.split("T")[0]
     return mid_date
+
+
+
+def get_date_range_for_collection(date_range, coll_dict):
+    """
+    Return the intersection of the date range asked for by
+    the user, and the min and max dates for that collection.
+
+    Parameters
+    ==========
+    date_range: list or tuple of strings, format YYYY-MM-DD
+    coll_dict: dictionary containing min_date and max_date kyes
+
+    Returns
+    =======
+    tuple of strings, format YYYY-MM-DD
+    """
+    if not "min_date" in coll_dict.keys() or (not "max_date" in coll_dict.keys()):
+        return date_range
+    datetime_range = [dateparser.parse(d) for d in date_range]
+    collection_min =  dateparser.parse(coll_dict["min_date"])
+    collection_max =  dateparser.parse(coll_dict["max_date"])
+    date_min = datetime_range[0] if datetime_range[0] > collection_min else collection_min
+    date_max = datetime_range[1] if datetime_range[1] < collection_min else collection_max
+    return (date_min.isoformat().split("T")[0], date_max.isoformat().split("T")[0])

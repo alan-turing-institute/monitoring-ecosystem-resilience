@@ -11,7 +11,9 @@ import importlib.util
 import inspect
 from shutil import copyfile
 import re
+import datetime
 
+from pyveg.src.date_utils import get_date_range_for_collection
 from pyveg.src.pyveg_pipeline import Pipeline, Sequence
 from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
 from pyveg.src.processor_modules import (
@@ -22,6 +24,7 @@ from pyveg.src.processor_modules import (
 )
 
 from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
+
 
 
 def build_pipeline(config_file, from_cache=False):
@@ -68,6 +71,9 @@ def build_pipeline(config_file, from_cache=False):
         s = Sequence(coll)
         coll_dict = config.data_collections[coll]
         s.set_config(coll_dict)
+        # overwrite the date range with one that takes into account
+        # the limits of this collection
+        s.date_range = get_date_range_for_collection(config.date_range, coll_dict)
         # add modules to the sequence
         for module_name in config.modules_to_use[coll]:
             for n, c in inspect.getmembers(sys.modules[__name__]):
