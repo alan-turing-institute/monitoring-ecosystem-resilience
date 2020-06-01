@@ -37,7 +37,7 @@ def sanitize_container_name(orig_name):
            else:
                continue
         else:
-            sanitized_name += character
+            sanitized_name += character.lower()
             previous_character = character
     return sanitized_name
 
