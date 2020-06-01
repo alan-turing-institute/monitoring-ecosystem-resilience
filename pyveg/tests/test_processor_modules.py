@@ -77,7 +77,7 @@ def test_network_centrality_calculator():
     assert isinstance(nc_json, list)
     assert isinstance(nc_json[0], dict)
     # test float values
-    for key in ["latitude", "longitude", "offset50", "ndvi_veg"]:
+    for key in ["latitude", "longitude", "offset50", "ndvi", "ndvi_veg"]:
         assert key in nc_json[0].keys()
         assert isinstance(nc_json[0][key], float)
         assert nc_json[0][key] != 0.
