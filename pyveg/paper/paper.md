@@ -1,10 +1,10 @@
 ---
-title: 'pyveg: A Python package for monitoring the evoluation of patterned vegetation using Google Earth Engine'
+title: 'pyveg: A Python package for analysing the time evolution of patterned vegetation using Google Earth Engine'
 tags:
   - Python
-  - Remote sensing
   - Ecology
-  - Time Series analysis
+  - Remote sensing
+  - Time Series Analysis
   - Early warnings 
 authors:
   - name: Nick Barlow
@@ -18,12 +18,11 @@ affiliations:
    index: 1
  - name: University College London
    index: 2
-date: 13 August 2017
+date: 01 June 2020
 bibliography: paper.bib
 ---
 
 # Introduction
-
 
 
 # Downloading an image from Google Earth Engine
