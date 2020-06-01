@@ -1,3 +1,4 @@
+import time
 
 data_collections = {
     'Sentinel2' : {
@@ -8,6 +9,8 @@ data_collections = {
         'mask_cloud': True,
         'cloudy_pix_frac': 50,
         'cloudy_pix_flag': 'CLOUDY_PIXEL_PERCENTAGE',
+        'min_date': '2016-01-01',
+        'max_date': time.strftime("%Y-%m-%d"),
         'time_per_point': "1m"
     },
     'Landsat8' : {
@@ -16,6 +19,18 @@ data_collections = {
         'RGB_bands': ['B4','B3','B2'],
         'NIR_band': 'B5',
         'cloudy_pix_flag': 'CLOUD_COVER',
+        'min_date': '2013-04-01',
+        'max_date': time.strftime("%Y-%m-%d"),
+        'time_per_point': "3m"
+    },
+    'Landsat7' : {
+        'collection_name': 'LANDSAT/LE07/C01/T1_SR',
+        'data_type': 'vegetation',
+        'RGB_bands': ['B3','B2','B1'],
+        'NIR_band': 'B4',
+        'cloudy_pix_flag': 'CLOUD_COVER',
+        'min_date': '1999-01-01',
+        'max_date': time.strftime("%Y-%m-%d"),
         'time_per_point': "3m"
     },
     'Landsat5' : {
@@ -24,6 +39,8 @@ data_collections = {
         'RGB_bands': ['B3','B2','B1'],
         'NIR_band': 'B4',
         'cloudy_pix_flag': 'None',
+        'min_date': '1988-01-01',
+        'max_date': '2003-01-01',
         'time_per_point': "3m"
     },
     'Landsat4' : {
@@ -32,6 +49,8 @@ data_collections = {
         'RGB_bands': ['B3','B2','B1'],
         'NIR_band': 'B4',
         'cloudy_pix_flag': 'None',
+        'min_date': '1988-01-01',
+        'max_date': '2003-01-01',
         'time_per_point': "3m"
     },
     'ERA5' : {
@@ -39,6 +58,8 @@ data_collections = {
         'data_type': 'weather',
         'precipitation_band': ['total_precipitation'],
         'temperature_band': ['mean_2m_air_temperature'],
+        'min_date': '1979-01-01',
+        'max_date': time.strftime("%Y-%m-%d"),
         'time_per_point': "1m"
     }
 }
