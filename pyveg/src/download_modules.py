@@ -158,8 +158,8 @@ class BaseDownloader(BaseModule):
         bool, True if downloaded something, False otherwise
         """
         if len(download_urls) == 0:
-            print("{}: No URLs found for {} {}".format(self.name,
-                                                       self.coords))
+            print("{}: No URLs found for {}".format(self.name,
+                                                    self.coords))
             return False
 
         # download files and unzip to temporary directory
