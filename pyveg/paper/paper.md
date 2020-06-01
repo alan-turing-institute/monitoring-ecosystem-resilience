@@ -7,19 +7,19 @@ tags:
   - Time Series analysis
   - Early warnings 
 authors:
-  - name: Adrian M. Price-Whelan
-    orcid: 0000-0003-0872-7098
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
-  - name: Author Without ORCID
-    affiliation: 2
+  - name: Nick Barlow
+    affiliation: 1
+  - name: Camila Rangel Smith
+    affiliation: 1
+  - name: Samuel Van Stroud
+    affiliation: 1, 2
 affiliations:
- - name: Lyman Spitzer, Jr. Fellow, Princeton University
+ - name: The Alan Turing Institute
    index: 1
- - name: Institution 2
+ - name: University College London
    index: 2
 date: 13 August 2017
 bibliography: paper.bib
-
 ---
 
 # Introduction
