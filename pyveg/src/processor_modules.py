@@ -317,17 +317,23 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
 
     # open BWNDVI image
     sub_image = Image.open(os.path.join(input_dir, input_filename))
+    image_array = pillow_to_numpy(sub_image)
 
     # open NDVI image
     ndvi_sub_image = Image.open(os.path.join(input_dir, input_filename.replace('BWNDVI', 'NDVI')))
+    ndvi_image_array = pillow_to_numpy(ndvi_sub_image)
 
     # get average NDVI across the whole image (in case there is no patterned veg)
     ndvi_mean = round(pillow_to_numpy(ndvi_sub_image).mean(), 4)
 
     # use the BWDVI to mask the NDVI and calculate the average pixel value of veg pixels
-    image_array = pillow_to_numpy(sub_image)
+    
     veg_mask = (image_array == 0)
-    ndvi_veg_mean = round(image_array[veg_mask].mean(), 4) if len(image_array[veg_mask]) > 0 else np.NaN
+
+    if veg_mask.sum() > 0:
+        ndvi_veg_mean = ndvi_image_array[veg_mask].mean()
+    else:
+        ndvi_veg_mean = np.NaN
 
     # run network centrality 
     feature_vec, _ = subgraph_centrality(image_array)
@@ -353,7 +359,7 @@ def process_sub_image(i, input_filename, input_dir, output_dir):
     # save individual result for sub-image to tmp json, will combine later.
     save_json(nc_result, output_dir,
               f"network_centrality_sub{i}.json", verbose=False)
-              
+
     # count and print how many sub-images we have done.
     n_processed = len(os.listdir(output_dir))
     print(f'Processed {n_processed} sub-images...', end='\r')
