@@ -54,9 +54,9 @@ decline.
 In order to interact with the GEE API, the user must sign up to GEE 
 and obtain an API key. Upon running `pyveg` for the first time, the 
 user will be prompted to enter their API key. The `run_pyveg_pipeline`
-command allows the user to initiate a download job, which is configured
-using a configuration file. The command accepts an argument, `--config_file`, 
-which is the filename of the configuration file to use for the download.
+command initiates the downloading of time series data at a single
+coordinate location. The job is configured using a configuration file 
+specified by the `--config_file` argument.
 
 Within the configuration file, the user can specify the following:
 - Coordinates of the location.
@@ -67,15 +67,19 @@ Within the configuration file, the user can specify the following:
 
 `pyveg` will then form a series of date ranges, and query GEE for the relevant
 data in each date range. Colour (RGB) and Normalised Difference vegetation
-Index (NDVI) images are downloaded from vegetation collections. For precipitation
-and temperature information, `pyveg` defaults to using the ERA5 GEE collection.
+Index (NDVI) images are downloaded from vegetation collections. Cloud masking 
+logic is included to improve data quality. For precipitation and temperature 
+information, `pyveg` defaults to using the ERA5 collection.
 
 
 # Network centrality metrics
 
 After completetion of the download job, `pyveg` computes the network centrality 
-of the vegetation [@Mander:2017]. To do this, the downloaded NDVI image is thresholded,
-and subgraph connectivity is computed using the binarized image.
+of the vegetation [@Mander:2017]. To achieve this, the NDVI image is broken up 
+into smaller $50 \times 50$ pixel sub-images. Each sub-image is then thresholded
+using the NDVI pixel intensity, and subgraph connectivity is computed for each
+binarized sub-image. The resulting metrics are stored, along with mean NDVI pixel 
+intensities for each sub-image.
 
 
 # Time series analysis 
