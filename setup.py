@@ -5,7 +5,7 @@ with open("pyveg/requirements.txt", "r") as f:
 
 setup(
     name="pyveg",
-    version="0.0.1",
+    version="0.0.2",
     description="Vegetation patterns study.",
     url="https://github.com/alan-turing-institute/monitoring-ecosystem-resilience",
     author="Nick Barlow, Camila Rangel Smith and Samuel Van Stroud",
@@ -13,7 +13,8 @@ setup(
     include_package_data=True,
     packages=["pyveg",
               "pyveg.src",
-              "pyveg.scripts"],
+              "pyveg.scripts",
+              "pyveg.configs"],
     install_requires=REQUIRED_PACKAGES,
     entry_points={"console_scripts": [
         "pyveg_calc_EC=pyveg.scripts.calc_euler_characteristic:main",

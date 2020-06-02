@@ -23,8 +23,8 @@ def test_Sentinel2_image_processor():
     tmp_png_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "Sentinel2", "tmp_png")
 
     vip = VegetationImageProcessor()
-    vip.input_dir = dir_path
-    vip.output_dir = tmp_png_path
+    vip.input_location = dir_path
+    vip.output_location = tmp_png_path
     vip.coords = [11.58,27.95]
     vip.configure()
     vip.run()
@@ -44,18 +44,18 @@ def test_ERA5_image_to_json():
     tmp_json_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "ERA5", "tmp_json")
 
     wip = WeatherImageToJSON()
-    wip.input_dir = dir_path
-    wip.output_dir = tmp_json_path
+    wip.input_location = dir_path
+    wip.output_location = tmp_json_path
     wip.coords = [11.58,27.95]
     wip.configure()
     wip.run()
-    assert os.path.exists(os.path.join(tmp_json_path, "RESULTS", "weather_data.json"))
-    results = json.load(open(os.path.join(tmp_json_path, "RESULTS", "weather_data.json")))
-    assert "2016-01-16" in results.keys()
-    assert "mean_2m_air_temperature" in results["2016-01-16"].keys()
-    assert "total_precipitation" in results["2016-01-16"].keys()
-    assert isinstance(results["2016-01-16"]["mean_2m_air_temperature"], float)
-    assert isinstance(results["2016-01-16"]["total_precipitation"], float)
+    assert os.path.exists(os.path.join(tmp_json_path, "2016-01-16","JSON","WEATHER", "weather_data.json"))
+    results = json.load(open(os.path.join(tmp_json_path, "2016-01-16","JSON", "WEATHER", "weather_data.json")))
+#    assert "2016-01-16" in results.keys()
+    assert "mean_2m_air_temperature" in results.keys()
+    assert "total_precipitation" in results.keys()
+    assert isinstance(results["mean_2m_air_temperature"], float)
+    assert isinstance(results["total_precipitation"], float)
     shutil.rmtree(tmp_json_path)
 
 
@@ -68,16 +68,16 @@ def test_network_centrality_calculator():
     dir_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "Sentinel2", "test_png")
     tmp_json_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "Sentinel2", "tmp_json")
     ncc = NetworkCentralityCalculator()
-    ncc.input_dir = dir_path
-    ncc.output_dir = tmp_json_path
+    ncc.input_location = dir_path
+    ncc.output_location = tmp_json_path
     ncc.configure()
     ncc.run()
-    assert os.path.exists(os.path.join(tmp_json_path, "2018-03-01","network_centralities.json"))
-    nc_json = json.load(open(os.path.join(tmp_json_path, "2018-03-01","network_centralities.json")))
+    assert os.path.exists(os.path.join(tmp_json_path, "2018-03-01","JSON","NC","network_centralities.json"))
+    nc_json = json.load(open(os.path.join(tmp_json_path, "2018-03-01","JSON","NC","network_centralities.json")))
     assert isinstance(nc_json, list)
     assert isinstance(nc_json[0], dict)
     # test float values
-    for key in ["latitude", "longitude", "offset50", "ndvi_veg"]:
+    for key in ["latitude", "longitude", "offset50"]:
         assert key in nc_json[0].keys()
         assert isinstance(nc_json[0][key], float)
         assert nc_json[0][key] != 0.

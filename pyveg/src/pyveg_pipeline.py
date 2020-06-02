@@ -14,7 +14,14 @@ the results of the different SEQUENCES into one output file.
 """
 
 import os
+import json
+import subprocess
 
+from pyveg.src.file_utils import save_json
+try:
+    from pyveg.src import azure_utils
+except:
+    print("Azure utils could not be imported - is Azure SDK installed?")
 
 class Pipeline(object):
     """
@@ -28,7 +35,8 @@ class Pipeline(object):
         self.sequences = []
         self.coords = None
         self.date_range = None
-        self.output_dir = None
+        self.output_location = None
+        self.output_location_type = None
         self.is_configured = False
 
 
@@ -51,7 +59,8 @@ class Pipeline(object):
         output += "=======================\n"
         output += "coordinates: {}\n".format(self.coords)
         output += "date_range:  {}\n".format(self.date_range)
-        output += "output_dir:  {}\n".format(self.output_dir)
+        output += "output_location:  {}\n".format(self.output_location)
+        output += "output_location_type:  {}\n".format(self.output_location_type)
         output += "\n ------- Sequences ----------\n\n"
         for s in self.sequences:
             output += s.__repr__()
@@ -72,10 +81,15 @@ class Pipeline(object):
         """
         Configure all the sequences in this pipeline.
         """
-        for var in ["coords", "date_range", "output_dir"]:
+        for var in ["coords", "date_range", "output_location","output_location_type"]:
             if (not var in vars(self)) or ( not self.__getattribute__(var)):
                 raise RuntimeError("{}: need to set {} before calling configure()"\
                                    .format(self.name, var))
+        if self.output_location_type == "azure":
+            container_name = azure_utils.sanitize_container_name(self.output_location)
+            print("Create container {}".format(container_name))
+            azure_utils.create_container(container_name)
+            self.output_location = container_name
 
         for sequence in self.sequences:
             if not "coords" in vars(sequence):
@@ -83,6 +97,8 @@ class Pipeline(object):
             if not "date_range" in vars(sequence):
                 sequence.date_range = self.date_range
             sequence.configure()
+
+
         self.is_configured = True
 
 
@@ -109,7 +125,8 @@ class Sequence(object):
         self.modules = []
         self.depends_on = []
         self.parent = None
-        self.output_dir = None
+        self.output_location = None
+        self.output_location_type = None
         self.is_configured = False
 
 
@@ -129,14 +146,16 @@ class Sequence(object):
         return self
 
 
-    def set_output_dir(self):
+    def set_output_location(self):
         if self.parent:
-            self.output_dir = os.path.join(self.parent.output_dir,
+            self.output_location = os.path.join(self.parent.output_location,
                                            f'gee_{self.coords[0]}_{self.coords[1]}'\
                                            +"_"+self.name.replace('/', '-'))
+            self.output_location_type = self.parent.output_location_type
         else:
-            self.output_dir = f'gee_{self.coords[0]}_{self.coords[1]}'\
+            self.output_location = f'gee_{self.coords[0]}_{self.coords[1]}'\
                 +"_"+self.name.replace('/', '-')
+            self.output_location_type = "local"
 
 
     def set_config(self, config_dict):
@@ -145,19 +164,20 @@ class Sequence(object):
             self.__setattr__(k,v)
 
 
-
     def configure(self):
 
         if (not self.coords) or (not self.date_range):
             raise RuntimeError("{}: Need to set coords and date range before calling configure()"\
                                .format(self.name))
-        if not self.output_dir:
-            self.set_output_dir()
-
+        if not self.output_location:
+            self.set_output_location()
+        # set the input location for each module to be the output of the previous one.
         for i, module in enumerate(self.modules):
-            module.output_dir = self.output_dir
+            module.output_location = self.output_location
+            module.output_location_type = self.output_location_type
             if i>0:
-                module.input_dir = self.modules[i-1].output_dir
+                module.input_location = self.modules[i-1].output_location
+                module.input_location_type = self.modules[i-1].output_location_type
             module.coords = self.coords
             module.date_range = self.date_range
             module.configure()
@@ -196,14 +216,13 @@ class Sequence(object):
                 return module
 
 
-
 class BaseModule(object):
     """
     A "Module" is a building block of a sequence - takes some input, does something
     (e.g. Downloads from GEE, processes some images, ...) and produces some output.
     The working directory for all modules within a sequence will be given by the sequence -
     modules may write output to subdirectories of this (e.g. for different dates), but what
-    we call "output_dir" will be the base directory common to all modules, and will contain
+    we call "output_location" will be the base directory common to all modules, and will contain
     info about the image collection name, and the coordinates.
     """
     def __init__(self, name=None):
@@ -216,10 +235,16 @@ class BaseModule(object):
         self.is_configured = False
 
 
+    def set_parameters(self, config_dict):
+        for k, v in config_dict.items():
+            print("{}: setting {} to {}".format(self.name,k,v))
+            self.__setattr__(k, v)
+
+
     def configure(self, config_dict=None):
         """
-        Order of preference for configuring:
-        1) configuration dictionary
+        Order of preference for configuriation:
+        1) config_dict
         2) values held by the parent Sequence
         3) default values
         So we set them in reverse order here, so higher priorities will override.
@@ -231,9 +256,7 @@ class BaseModule(object):
                 if param in vars(self.parent):
                     self.__setattr__(param, self.parent.__getattribute__(param))
         if config_dict:
-            for k, v in config_dict.items():
-                print("{}: setting {} to {}".format(self.name,k,v))
-                self.__setattr__(k, v)
+            self.set_parameters(config_dict)
 
         self.check_config()
         self.is_configured = True
@@ -272,7 +295,6 @@ class BaseModule(object):
             raise RuntimeError("Module {} needs to be configured before running".format(self.name))
 
 
-
     def __repr__(self):
         if not self.is_configured:
             return"\n        Module not configured"
@@ -286,3 +308,103 @@ class BaseModule(object):
             output += "        {}: {}\n".format(k,v)
         output += "        =======================\n\n"
         return output
+
+
+    def copy_to_output_location(self, tmpdir, output_location, file_endings=[]):
+
+        if self.output_location_type == "local":
+            os.makedirs(output_location, exist_ok=True)
+            for root, dirs, files in os.walk(tmpdir):
+                for filename in files:
+                    if file_endings:
+                        for ending in file_endings:
+                            if filename.endswith(ending):
+                                subprocess.run(["cp","-r",os.path.join(root, filename),
+                                                os.path.join(output_location, filename)])
+                    else:
+                        subprocess.run(["cp","-r",os.path.join(root, filename),
+                                        os.path.join(output_location, filename)])
+        elif self.output_location_type == "azure":
+            # first part of self.output_location should be the container name
+            container_name = self.output_location.split("/")[0]
+            azure_utils.write_files_to_blob(tmpdir,
+                                            container_name,
+                                            output_location,
+                                            file_endings)
+
+
+    def list_directory(self, directory_path, location_type):
+        """
+        List contents of a directory, either on local file system
+        or Azure blob storage.
+        """
+        if location_type == "local":
+            return os.listdir(directory_path)
+        elif location_type == "azure":
+            # first part of self.output_location should be the container name
+            container_name = self.output_location.split("/")[0]
+            return azure_utils.list_directory(directory_path, container_name)
+        else:
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
+
+
+    def save_json(self, data, filename, location, location_type):
+        """
+        Save json to local filesystem or blob storage depending on location_type
+        """
+        if location_type == "local":
+            save_json( data, location, filename)
+        elif location_type == "azure":
+            # first part of self.output_location should be the container name
+            container_name = self.output_location.split("/")[0]
+            azure_utils.save_json(data, location, filename, container_name)
+        else:
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
+
+
+    def get_json(self, filepath, location_type):
+        """
+        Read a json file either local or blob storage.
+        """
+        if location_type == "local":
+            return json.load(open(filepath))
+        elif location_type == "azure":
+            # first part of filepath  should be the container name
+            container_name = filepath.split("/")[0]
+            return azure_utils.read_json(filepath, container_name)
+        else:
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
+
+
+    def get_file(self, filename, location_type):
+        """
+        Just return the filename if location _type is "local".
+        Otherwise return a tempfile with the contents of a blob if the location
+        is "azure".
+        """
+        if location_type == "local":
+            return filename
+        elif location_type == "azure":
+            # first part of self.output_location should be the container name
+            container_name = self.output_location.split("/")[0]
+            return azure_utils.get_blob_to_tempfile(filename, container_name)
+        else:
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
+
+
+    def check_for_existing_files(self, location, num_files_expected):
+        """
+        See if there are already num_files in the specified location
+        """
+        # if we haven't specified number of expected files per point it will be -1
+        if num_files_expected < 0:
+            return False
+
+        if self.output_location_type == "local":
+            os.makedirs(location, exist_ok=True)
+        existing_files = self.list_directory(location, self.output_location_type)
+        if len(existing_files) == num_files_expected:
+            print("{}: Already found {} files in {} - skipping"\
+                  .format(self.name, num_files_expected, location))
+            return True
+        return False
