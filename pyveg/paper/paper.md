@@ -42,9 +42,7 @@ The `pyveg` package implements functionality to download and process data
 from Google Earth Engine (GEE), and to subsequently perform a 
 resiliance analysis on the aquired data. The results can be used
 to search for typical early warning signals of an ecological collapse 
-[@Dakos:2008].
-
-Google Earth Engine Editor scripts are also provided to help 
+[@Dakos:2008]. Google Earth Engine Editor scripts are also provided to help
 researchers discover locations of ecosystems which may be in
 decline.
 
@@ -68,11 +66,8 @@ specified by the `--config_file` argument.
 Within the configuration file, the user can specify the following:
 
 - Coordinates of the location.
-
 - Start and end dates of the time series.
-
 - Frequency with which to sample.
-
 - GEE collections to download from (currently vegetation and precipitation collections are supported).
 
 `pyveg` will then form a series of date ranges, and query GEE for the relevant
