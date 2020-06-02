@@ -86,10 +86,27 @@ intensities for each sub-image.
 
 # Time series analysis 
 
+`pyveg` analysis functionality is exposed via a `pveg_gee_analysis` command.
+This commands accepts an argument, `input_dir`, which points to a directory 
+previously created by a download job. Data in this location is processed and 
+analysed. During data processing, which is also configurable, `pyveg` is able 
+to drop time series outliers and resample the time series to clean the data 
+and avoid gaps. A smoothed time series is constructed using LOESS smoothing, 
+and residuals between the raw and smoothed time series are calculated. 
+Additionally, a deseasonalised time series is constructed via the first 
+difference method.
+
+Time series plots are produced, along with auto- and cross-correlation plots.
+Early warning signals are also computed, including Lag-1 autocorrelation
+and standard deviation moving window plots. A sensitivity and significance
+analysis is also performed, in order to determine whether any declines 
+(quantified by Kendall tau values) are statistically significant.
+
 
 # Acknowledgements
 
-We acknowledge contributions and support from Tim Lenton, Chris Boulton, 
+We acknowledge support from Tim Lenton, Chris Boulton, 
 and Jessie Abrams during the course of this project.
+
 
 # References
