@@ -48,6 +48,13 @@ Google Earth Engine Editor scripts are also provided to help
 researchers discover locations of ecosystems which may be in
 decline.
 
+`pyveg` is being developed as part of a research project 
+looking for evidence of early warning signals of ecosystem
+collapse using remote sensing data. `pyveg` allows such 
+research to be carried out at scale, and hence can be an 
+important tool in understanding changing arid and semi-arid 
+ecosystem dynamics.
+
 
 # Downloading data from Google Earth Engine
 
