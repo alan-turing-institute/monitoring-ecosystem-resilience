@@ -18,6 +18,8 @@ LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 
 def split_filepath(path):
     allparts = []
+    if path.endswith("/") or path.endswith("\\"):
+        path = path[:-1]
     while True:
         parts = os.path.split(path)
         if parts[0] == path:  # sentinel for absolute paths
