@@ -20,6 +20,7 @@ from pyveg.src.data_analysis_utils import (
     write_to_json, 
     stl_decomposition,
     get_max_lagged_cor,
+    get_corrs_by_lag,
     get_datetime_xs
 )
 
@@ -219,16 +220,18 @@ def plot_time_series(df, output_dir, filename_suffix =''):
 
 
 def plot_ndvi_time_series(df, output_dir):
-    def make_plot(df, veg_prefix, output_dir):
-        veg_df = df.dropna(subset=[veg_prefix+'_ndvi_veg_mean'])
+    def make_plot(df, veg_prefix, col_name, utput_dir):
+
+        veg_df = df.dropna(subset=[col_name])
 
         # get vegetation x values to datetime objects
         veg_xs = get_datetime_xs(veg_df)
 
         # get vegetation y values
-        ndvi_means = veg_df[veg_prefix + '_ndvi_mean']
-        veg_means = veg_df[veg_prefix + '_ndvi_veg_mean']
-        veg_std = veg_df[veg_prefix + '_ndvi_veg_std']
+        veg_means = veg_df[col_name]
+        #veg_means = veg_df[veg_prefix + '_ndvi_veg_mean']
+        if any([col_name.replace('mean', 'std') == c for c in df.columns]):
+            veg_std = veg_df[col_name.replace('mean', 'std')]
 
         # create a figure
         fig, ax = plt.subplots(figsize=(15, 4.5))
@@ -238,17 +241,20 @@ def plot_ndvi_time_series(df, output_dir):
         color = 'tab:green'
         ax.set_ylabel(f'{veg_prefix} NDVI', color=color, fontsize=14)
         ax.tick_params(axis='y', labelcolor=color)
-        ax.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
+
+        if any([col_name.replace('mean', 'std') == c for c in df.columns]):
+            ax.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
 
         # plot ndvi
-        ax.plot(veg_xs, ndvi_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
+        #ax.plot(veg_xs, ndvi_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
 
         ax.plot(veg_xs, veg_means, marker='o', markersize=7, 
                 markeredgecolor=(0.9172, 0.9627, 0.9172), markeredgewidth=2,
                 label='Smoothed', linewidth=2, color='green')
 
-        ax.fill_between(veg_xs, veg_means - veg_std, veg_means + veg_std, 
-                        facecolor='green', alpha=0.1, label='Std Dev')
+        if any([col_name.replace('mean', 'std') == c for c in df.columns]):
+            ax.fill_between(veg_xs, veg_means - veg_std, veg_means + veg_std, 
+                            facecolor='green', alpha=0.1, label='Std Dev')
 
         # plot precipitation if availible
         if 'total_precipitation' in df.columns:
@@ -269,6 +275,12 @@ def plot_ndvi_time_series(df, output_dir):
             # plot precipitation
             ax2.plot(precip_xs, precip_ys, linewidth=2, color=color, alpha=0.75)
 
+            # add correlation information
+            correlations = get_corrs_by_lag(df[col_name], df['total_precipitation'])
+            max_corr = np.max(np.array(correlations))
+            max_corr_lag = np.array(np.argmax(correlations))
+            textstr = f'$r_{{t-{max_corr_lag}}}={max_corr:.2f}$ '
+            ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
 
         # layout
         sns.set_style('white')
@@ -285,10 +297,10 @@ def plot_ndvi_time_series(df, output_dir):
 
     # make plots for selected columns
     for column in df.columns:
-        if 'ndvi_veg_mean' in column:
+        if 'ndvi' in column and 'mean' in column:
             veg_prefix = column.split('_')[0]
             print(f'Plotting {veg_prefix} NDVI time series.')
-            make_plot(df, veg_prefix, output_dir)
+            make_plot(df, veg_prefix, column, output_dir)
 
     
 def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
@@ -594,7 +606,7 @@ def plot_stl_decomposition(df, period, output_dir):
             make_plot(df.dropna(), column, output_dir)
 
 
-def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
+def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
     """
     Given a moving window time series DataFrame, plot the time series 
     of AR1 and Variance.
@@ -730,6 +742,51 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=""):
             make_plot(df, column, output_dir, 'smooth_res')
 
 
+def plot_correlation_mwa(df, output_dir, filename_suffix=''):
+    """
+    Given a moving window time series DataFrame, plot the time series 
+    of veg-precip correlation.
+
+    Parameters
+    ----------
+    df : DataFrame
+        The time-series results for veg-precip correlation coeff and lag.
+    output_dir : str
+        Directory to save the plot in.
+    filename_suffix: str
+        Add suffix string to file name
+    """
+
+    def make_plot(df, column_name, output_dir, filename_suffix):
+
+        # get datetime x-values
+        xs = get_datetime_xs(df)
+        
+        # create a figure
+        fig, ax = plt.subplots(figsize=(15, 4.5))
+        plt.plot(xs, df[column_name])
+
+        # label axes
+        plt.xlabel('Time', fontsize=12)
+        plt.ylabel(column_name, fontsize=12)
+
+        # calculate Kendall taus and annotate plot
+        tau, p = get_kendell_tau(df[column_name].dropna())
+        textstr = f'Kendall $\\tau,~p = {tau:.3f}$, ${p:.4f}$'
+        ax.text(0.1, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
+
+        # save the plot
+        output_filename = f'{column_name}' + filename_suffix + '.png'
+        collection_prefix = column_name.split('_')[0]
+        print(f'Plotting {collection_prefix} correlation moving window analysis...')
+        plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+        plt.close(fig)
+
+    for column in df.columns:
+        if 'precip' in column and ('corr' in column or 'lag' in column):
+            make_plot(df, column, output_dir, filename_suffix)
+
+
 def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output_dir):
     """
     Make early warning signals resiliance plots using the output
@@ -859,8 +916,48 @@ def plot_sensitivity_heatmap(series_name, df, output_dir):
             plt.tight_layout()
             plt.xlabel('Rolling Window')
             plt.ylabel('Smoothing')
-
             output_filename = series_name.replace(' ', '-') + '-' + column + '-sensitivity.png'
             print(f'Plotting {series_name} {column} sensitivity plot...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
             plt.close(fig)
+
+
+
+def kendall_tau_histograms(series_name, df, output_dir):
+    """
+    Produce histograms with kendall tau distribution from surrogates for significance analysis
+
+    Parameters
+    ----------
+    series_name : str
+        String containing data collection and time series variable.
+    df: Dataframe
+          The output dataframe from the sensitivity analysis function.
+    output_dir:
+          Path to the directory to save the produced figures
+    """
+
+    for column in df.columns:
+
+        if column == "true_data":
+            continue
+
+        else:
+            data_df = df[df['true_data']==True][column]
+            surrogates_df = df[df['true_data'] != True][column]
+            fig, ax = plt.subplots(figsize=(5, 5))
+
+            ax.hist(surrogates_df)
+            plt.axvline(data_df.values, color='black', linestyle='solid', linewidth=2)
+            plt.text(data_df.values, ax.get_ylim()[0] + 8, 'Data',horizontalalignment='left',color='black')
+            plt.axvline(surrogates_df.quantile(.95), color='black', linestyle='dashed', linewidth=2)
+            plt.text(surrogates_df.quantile(.95), ax.get_ylim()[1] - 12, '0.95 \nquantile',horizontalalignment='left',color='black')
+            ax.set_title('Significance testing for '+ column)
+            plt.xlabel('Kendall tau')
+            plt.ylabel('Frequency')
+            output_filename = series_name.replace(' ', '-') + '-' + column + '-significance.png'
+
+            plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
+            plt.close(fig)
+
+

@@ -55,4 +55,4 @@ def test_moving_window_analysis():
     ar1_var_df = moving_window_analysis(time_series_dfs, os.path.dirname(path_to_dict), 0.5)
 
     keys_ar1 = list(ar1_var_df.keys())
-    assert (ar1_var_df.shape == (38, 7))
+    assert (ar1_var_df.shape == (38, 9))

@@ -400,7 +400,6 @@ class WeatherImageToJSON(ProcessorModule):
 
 
 #######################################################################
-
 def process_sub_image(i, input_filepath, output_location, date_string, coords_string):
     """
     Read file and run network centrality
@@ -408,12 +407,21 @@ def process_sub_image(i, input_filepath, output_location, date_string, coords_st
 
     # open BWNDVI image
     sub_image = Image.open(input_filepath)
-
     image_array = pillow_to_numpy(sub_image)
+
+    # run network centrality 
     feature_vec, _ = subgraph_centrality(image_array)
 
-    coords = [float(c) for c in coords_string.split("_")]
+    # coords should be part of the filename
+    coords_string = find_coords_string(input_filepath)
+    if not coords_string:
+        raise RuntimeError("Unable to find coordinates in {}"\
+                           .format(input_filepath))
+    
+    # format coords
+    coords = [round(float(c), 4) for c in coords_string.split("_")]
 
+    # store results in a dict
     nc_result = feature_vector_metrics(feature_vec)
     nc_result['feature_vec'] = list(feature_vec)
     nc_result['date'] = date_string
@@ -423,6 +431,7 @@ def process_sub_image(i, input_filepath, output_location, date_string, coords_st
     # save individual result for sub-image to tmp json, will combine later.
     save_json(nc_result, output_location,
               f"network_centrality_sub{i}.json", verbose=False)
+
     # count and print how many sub-images we have done.
     n_processed = len(os.listdir(output_location))
     print(f'Processed {n_processed} sub-images...', end='\r')
@@ -577,30 +586,42 @@ class NDVICalculator(ProcessorModule):
         Calculate mean and standard deviation of NDVI in a sub-image,
         both with and without masking out non-vegetation pixels.
         """
-        # open NDVI image
+
+        # open NDVI images
         ndvi_sub_image = self.get_image(ndvi_filepath)
+        ndvi_image_array = pillow_to_numpy(ndvi_sub_image)
         bwndvi_sub_image = self.get_image(ndvi_filepath.replace('NDVI', 'BWNDVI'))
+        bwndvi_image_array = pillow_to_numpy(bwndvi_sub_image)
+
         # get average NDVI across the whole image (in case there is no patterned veg)
-        ndvi_mean = round(pillow_to_numpy(ndvi_sub_image).mean(), 4)
-        ndvi_std = round(pillow_to_numpy(ndvi_sub_image).std(), 4)
+        ndvi_mean = round(ndvi_image_array.mean(), 4)
 
-        # use the BWDVI to mask the NDVI and calculate the average  pixel value of veg pixels
-        veg_mask = (pillow_to_numpy(bwndvi_sub_image) == 0)
-        ndvi_veg_mean = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].mean(), 4)
-        veg_ndvi_std = round(pillow_to_numpy(ndvi_sub_image)[veg_mask].std(), 4)
+        # use the BWDVI to mask the NDVI and calculate the average pixel value of veg pixels
+        veg_mask = (bwndvi_image_array == 0)
+        if veg_mask.sum() > 0:
+            ndvi_veg_mean = ndvi_image_array[veg_mask].mean()
+        else:
+            ndvi_veg_mean = np.NaN
 
-        coords = [float(c) for c in coords_string.split("_")]
+        # coords should be part of the filename
+        coords_string = find_coords_string(ndvi_filepath)        
+        if not coords_string:
+            raise RuntimeError("Unable to find coordinates in {}"\
+                            .format(ndvi_filepath))
+        
+        # format coords
+        coords = [round(float(c), 4) for c in coords_string.split("_")]
 
+        # store results in a dict
         ndvi_result = {}
         ndvi_result['date'] = date_string
         ndvi_result['latitude'] = coords[1]
         ndvi_result['longitude'] = coords[0]
         ndvi_result['ndvi'] = ndvi_mean
-        ndvi_result['ndvi_std'] = ndvi_std
         ndvi_result['ndvi_veg'] = ndvi_veg_mean
-        ndvi_result['veg_ndvi_std'] = veg_ndvi_std
-        return ndvi_result
 
+        return ndvi_result
+        
 
     def process_single_date(self, date_string):
         """
@@ -643,6 +664,7 @@ class NDVICalculator(ProcessorModule):
         self.save_json(ndvi_vals, "ndvi_values.json",
                        output_location,
                        self.output_location_type)
+                       
         return True
 
 
