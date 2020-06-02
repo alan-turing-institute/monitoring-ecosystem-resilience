@@ -40,18 +40,40 @@ techniques,  vegetation patterns in these regions can be studied,
 and an analysis of the resiliance of the ecosystem can be performed.
 
 This package implements functionality to download and process data
-from Google Earth Engine, in the context of performing such a resiliance
-analysis.
+from Google Earth Engine (GEE), in the context of performing such a 
+resiliance analysis.
 
 Google Earth Engine Editor scripts are also provided to help 
 researchers discover locations of ecosystems which may be in
 decline.
 
 
-# Downloading an image from Google Earth Engine
+# Downloading data from Google Earth Engine
+
+In order to interact with the GEE API, the user must sign up to GEE 
+and obtain an API key. Upon running `pyveg` for the first time, the 
+user will be prompted to enter their API key. The `run_pyveg_pipeline`
+command allows the user to initiate a download job, which is configured
+using a configuration file. The command accepts an argument, `--config_file`, 
+which is the filename of the configuration file to use for the download.
+
+Within the configuration file, the user can specify the following:
+- Coordinates of the location.
+- Start and end dates of the time series.
+- Frequency with which to sample.
+- GEE collections to download from (currently vegetation and precipitation
+  collections are supported).
+
+`pyveg` will then form a series of date ranges, and query GEE for the relevant
+data in each date range. Colour (RGB) and Normalised Difference vegetation
+Index (NDVI) images are downloaded from vegetation collections. For precipitation
+and temperature information, `pyveg` defaults to using the ERA5 GEE collection.
 
 
 # Network centrality metrics
+
+After completetion of the download job, `pyveg` computes the network centrality 
+of the vegetation. To do this, the downloaded NDVI image is thresholded.
 
 
 # Time series analysis 
