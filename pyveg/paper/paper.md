@@ -27,12 +27,10 @@ bibliography: paper.bib
 Periodic vegetation patterns (PVP) arise from the interplay between 
 forces that drive the growth and mortality of plants. Inter-plant 
 competetion for resources, in particular water, can lead to the 
-formation of PVP.
-
-Arid and semi-arid ecosystems may be under threat due to changing
-precipitation dynamics driven by macroscopic changes in climate. These
-regions disiplay some noteable examples of PVP, for example the "tiger
-bush" in West Africa.
+formation of PVP. Arid and semi-arid ecosystems may be under threat 
+due to changing precipitation dynamics driven by macroscopic changes 
+in climate. These regions disiplay some noteable examples of PVP, 
+for example the "tiger bush" patterns found in West Africa.
 
 The mophology of the periodic pattern has been suggested to be 
 linked to the resiliance of the ecosystem [@Mander:2017; @Trichon:2018]. 
@@ -40,9 +38,9 @@ Using remote sensing techniques,  vegetation patterns in these regions
 can be studied, and an analysis of the resiliance of the ecosystem can 
 be performed.
 
-This package implements functionality to download and process data
+The `pyveg` package implements functionality to download and process data
 from Google Earth Engine (GEE), and to subsequently perform a 
-resiliance analysis on the downloaded data. The results can be used
+resiliance analysis on the aquired data. The results can be used
 to search for typical early warning signals of an ecological collapse 
 [@Dakos:2008].
 
