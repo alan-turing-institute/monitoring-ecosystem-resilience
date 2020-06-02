@@ -115,17 +115,10 @@ def list_directory(path, container_name, bbs=None):
                                account_key=config["account_key"])
         pass
     output_names = []
-    blob_names = bbs.list_blob_names(container_name)
-    for blob_name in blob_names:
-        blob_path = os.path.join(container_name, blob_name)
-        if blob_path.startswith(path):
-            blob_path_parts = split_filepath(blob_path)
-            n_parts_in_path = len(split_filepath(path))
-            output_name = blob_path_parts[n_parts_in_path]
-            if output_name not in output_names:
-                output_names.append(output_name)
-    return output_names
+    prefix = remove_container_name_from_blob_path(path, container_name)
 
+    blob_names = bbs.list_blob_names(container_name, prefix=prefix)
+    return [os.path.basename(bn) for bn in blob_names]
 
 
 def remove_container_name_from_blob_path(blob_path, container_name):
