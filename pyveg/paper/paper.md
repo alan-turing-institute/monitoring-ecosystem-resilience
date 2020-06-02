@@ -35,7 +35,7 @@ regions disiplay some noteable examples of PVP, for example the "tiger
 bush" in West Africa.
 
 The mophology of the periodic pattern has been suggested to be 
-linked to the resiliance of the ecosystem [@Mander:2017, @Trichon:2018]. 
+linked to the resiliance of the ecosystem [@Mander:2017; @Trichon:2018]. 
 Using remote sensing techniques,  vegetation patterns in these regions 
 can be studied, and an analysis of the resiliance of the ecosystem can 
 be performed.
@@ -74,7 +74,8 @@ and temperature information, `pyveg` defaults to using the ERA5 GEE collection.
 # Network centrality metrics
 
 After completetion of the download job, `pyveg` computes the network centrality 
-of the vegetation [@Mander:2017]. To do this, the downloaded NDVI image is thresholded.
+of the vegetation [@Mander:2017]. To do this, the downloaded NDVI image is thresholded,
+and subgraph connectivity is computed using the binarized image.
 
 
 # Time series analysis 
