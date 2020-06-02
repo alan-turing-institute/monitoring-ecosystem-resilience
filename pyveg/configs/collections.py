@@ -9,7 +9,7 @@ data_collections = {
         'mask_cloud': True,
         'cloudy_pix_frac': 50,
         'cloudy_pix_flag': 'CLOUDY_PIXEL_PERCENTAGE',
-        'min_date': '2016-01-01',
+        'min_date': '2015-01-01',
         'max_date': time.strftime("%Y-%m-%d"),
         'time_per_point': "1m"
     },
@@ -19,9 +19,9 @@ data_collections = {
         'RGB_bands': ['B4','B3','B2'],
         'NIR_band': 'B5',
         'cloudy_pix_flag': 'CLOUD_COVER',
-        'min_date': '2013-04-01',
+        'min_date': '2013-01-01',
         'max_date': time.strftime("%Y-%m-%d"),
-        'time_per_point': "3m"
+        'time_per_point': "1m"
     },
     'Landsat7' : {
         'collection_name': 'LANDSAT/LE07/C01/T1_SR',
@@ -31,7 +31,7 @@ data_collections = {
         'cloudy_pix_flag': 'CLOUD_COVER',
         'min_date': '1999-01-01',
         'max_date': time.strftime("%Y-%m-%d"),
-        'time_per_point': "3m"
+        'time_per_point': "1m"
     },
     'Landsat5' : {
         'collection_name': 'LANDSAT/LT05/C01/T1_SR',
@@ -39,9 +39,9 @@ data_collections = {
         'RGB_bands': ['B3','B2','B1'],
         'NIR_band': 'B4',
         'cloudy_pix_flag': 'None',
-        'min_date': '1988-01-01',
-        'max_date': '2003-01-01',
-        'time_per_point': "3m"
+        'min_date': '1984-01-01',
+        'max_date': '2013-01-01',
+        'time_per_point': "1m"
     },
     'Landsat4' : {
         'collection_name': 'LANDSAT/LT04/C01/T1_SR',
@@ -49,9 +49,9 @@ data_collections = {
         'RGB_bands': ['B3','B2','B1'],
         'NIR_band': 'B4',
         'cloudy_pix_flag': 'None',
-        'min_date': '1988-01-01',
-        'max_date': '2003-01-01',
-        'time_per_point': "3m"
+        'min_date': '1982-01-01',
+        'max_date': '1994-01-01',
+        'time_per_point': "1m"
     },
     'ERA5' : {
         'collection_name': 'ECMWF/ERA5/MONTHLY',
