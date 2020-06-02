@@ -597,17 +597,17 @@ class NDVICalculator(ProcessorModule):
         ndvi_mean = round(ndvi_image_array.mean(), 4)
 
         # use the BWDVI to mask the NDVI and calculate the average pixel value of veg pixels
-        veg_mask = (image_array == 0)
+        veg_mask = (bwndvi_image_array == 0)
         if veg_mask.sum() > 0:
             ndvi_veg_mean = ndvi_image_array[veg_mask].mean()
         else:
             ndvi_veg_mean = np.NaN
 
         # coords should be part of the filename
-        coords_string = find_coords_string(input_filename)        
+        coords_string = find_coords_string(ndvi_filepath)        
         if not coords_string:
             raise RuntimeError("Unable to find coordinates in {}"\
-                            .format(input_filename))
+                            .format(ndvi_filepath))
         
         # format coords
         coords = [round(float(c), 4) for c in coords_string.split("_")]
@@ -664,6 +664,7 @@ class NDVICalculator(ProcessorModule):
         self.save_json(ndvi_vals, "ndvi_values.json",
                        output_location,
                        self.output_location_type)
+                       
         return True
 
 

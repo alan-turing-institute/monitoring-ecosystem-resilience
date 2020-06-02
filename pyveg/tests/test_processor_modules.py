@@ -10,6 +10,7 @@ import shutil
 from pyveg.src.processor_modules import (
     VegetationImageProcessor,
     NetworkCentralityCalculator,
+    NDVICalculator,
     WeatherImageToJSON
 )
 
@@ -97,8 +98,8 @@ def test_NDVICalculator():
     ndvic.output_location = tmp_json_path
     ndvic.configure()
     ndvic.run()
-    assert os.path.exists(os.path.join(tmp_json_path, "2018-03-01","JSON","NC","network_centralities.json"))
-    nc_json = json.load(open(os.path.join(tmp_json_path, "2018-03-01","JSON","NC","network_centralities.json")))
+    assert os.path.exists(os.path.join(tmp_json_path, "2018-03-01","JSON","NDVI","ndvi_values.json"))
+    nc_json = json.load(open(os.path.join(tmp_json_path, "2018-03-01","JSON","NDVI","ndvi_values.json")))
     assert isinstance(nc_json, list)
     assert isinstance(nc_json[0], dict)
     # test float values
