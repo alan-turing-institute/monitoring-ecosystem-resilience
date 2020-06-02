@@ -41,8 +41,10 @@ can be studied, and an analysis of the resiliance of the ecosystem can
 be performed.
 
 This package implements functionality to download and process data
-from Google Earth Engine (GEE), in the context of performing such a 
-resiliance analysis.
+from Google Earth Engine (GEE), and to subsequently perform a 
+resiliance analysis on the downloaded data. The results can be used
+to search for typical early warning signals of an ecological collapse 
+[@Dakos:2008].
 
 Google Earth Engine Editor scripts are also provided to help 
 researchers discover locations of ecosystems which may be in
