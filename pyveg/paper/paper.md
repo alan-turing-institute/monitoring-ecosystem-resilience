@@ -64,11 +64,10 @@ coordinate location. The job is configured using a configuration file
 specified by the `--config_file` argument.
 
 Within the configuration file, the user can specify the following:
-
-- Coordinates of the location.
-- Start and end dates of the time series.
-- Frequency with which to sample.
-- GEE collections to download from (currently vegetation and precipitation collections are supported).
+coordinates of the download location, start and end dates of the 
+time series, frequency with which to sample, choice of GEE collections 
+to download from (currently vegetation and precipitation collections are 
+supported).
 
 `pyveg` will then form a series of date ranges, and query GEE for the relevant
 data in each date range. Colour (RGB) and Normalised Difference vegetation
