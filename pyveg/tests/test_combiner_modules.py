@@ -19,9 +19,9 @@ def test_combine():
     input_weather_dir = os.path.join(os.path.dirname(__file__), "..", "testdata", "ERA5", "test_json")
     output_dir = os.path.join(os.path.dirname(__file__), "..", "testdata", "tmp_json")
     vwc = VegAndWeatherJsonCombiner()
-    vwc.input_veg_dir = input_veg_dir
-    vwc.input_weather_dir = input_weather_dir
-    vwc.output_dir = output_dir
+    vwc.input_veg_location = input_veg_dir
+    vwc.input_weather_location = input_weather_dir
+    vwc.output_location = output_dir
     vwc.veg_collection = "COPERNICUS/S2"
     vwc.weather_collection = "ECMWF/ERA5/MONTHLY"
     vwc.configure()

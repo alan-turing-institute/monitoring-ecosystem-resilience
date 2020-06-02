@@ -32,7 +32,7 @@ def test_configure_sequence():
     s.date_range = ["2001-01-01","2020-01-01"]
     s.configure()
     assert s.is_configured == True
-    assert s.output_dir == "gee_1.23_4.56_testseq"
+    assert s.output_location == "gee_1.23_4.56_testseq"
 
 
 def test_configure_sequence_from_dict():
@@ -71,7 +71,8 @@ def test_configure_pipeline():
     p = Pipeline("testpipe")
     p.coords = [1.23, 4.56]
     p.date_range = ["2001-01-01","2020-01-01"]
-    p.output_dir = "/tmp"
+    p.output_location = "/tmp"
+    p.output_location_type = "local"
     p += Sequence("testseq")
     p.testseq += BaseModule()
     p.configure()
