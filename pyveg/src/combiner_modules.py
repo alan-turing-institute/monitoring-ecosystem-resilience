@@ -9,7 +9,17 @@ from pyveg.src.file_utils import save_json
 
 from pyveg.src.pyveg_pipeline import BaseModule
 
-class VegAndWeatherJsonCombiner(BaseModule):
+
+class CombinerModule(BaseModule):
+    def __init__(self, name=None):
+        super().__init__(name)
+        self.params += [
+            ("output_location", [str]),
+            ("output_location_type", [str])
+        ]
+
+
+class VegAndWeatherJsonCombiner(CombinerModule):
     """
     Expect directory structures like:
     <something>/<input_veg_location>/<date>/network_centralities.json
@@ -19,10 +29,8 @@ class VegAndWeatherJsonCombiner(BaseModule):
     def __init__(self, name=None):
         super().__init__(name)
         self.params += [
-            ("output_location", [str]),
             ("input_veg_location", [str]),
             ("input_weather_location", [str]),
-            ("output_location_type", [str]),
             ("input_veg_location_type", [str]),
             ("input_weather_location_type", [str]),
             ("weather_collection", [str]),
