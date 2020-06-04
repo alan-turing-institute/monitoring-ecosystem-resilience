@@ -20,7 +20,7 @@ from pyveg.src.subgraph_centrality import (
     feature_vector_metrics,
 )
 from pyveg.src import azure_utils
-
+from pyveg.src import batch_utils
 from pyveg.src.pyveg_pipeline import BaseModule
 
 
@@ -35,7 +35,9 @@ class ProcessorModule(BaseModule):
             ("output_location", [str]),
             ("output_location_type", [str]),
             ("num_files_per_point", [int]),
-            ("dates_to_process", [list, tuple])
+            ("dates_to_process", [list, tuple]),
+            ("run_type", [str]), # batch or local
+            ("n_batch_tasks", [int])
         ]
 
 
@@ -55,6 +57,10 @@ class ProcessorModule(BaseModule):
             self.output_location_type = "local"
         if not "dates_to_process" in vars(self):
             self.dates_to_process = []
+        if not "run_type" in vars(self):
+            self.run_type = "local"
+        if not "n_batch_tasks" in vars(self):
+            self.n_batch_tasks = 100
 
 
     def get_image(self, image_location):
@@ -81,6 +87,22 @@ class ProcessorModule(BaseModule):
         else:
             raise RuntimeError("Unknown output location type {}"\
                                .format(self.output_location_type))
+
+
+    def run(self):
+        super().run()
+        if self.run_type == "local":
+            self.run_local()
+        elif self.run_type == "batch":
+            self.run_batch()
+        else:
+            raise RuntimeError("{}: Unknown run_type {} - must be 'local' or 'batch'"\
+                               .format(self.name, self.run_type))
+
+
+    def run_batch(self):
+        raise RuntimeError("{}: run_batch method not implemented".format(self.name))
+
 
 
 class VegetationImageProcessor(ProcessorModule):
@@ -319,12 +341,12 @@ class VegetationImageProcessor(ProcessorModule):
         return True
 
 
-    def run(self):
+    def run_local(self):
         """"
         Function to run the module.  Loop over all date-sub-ranges and
         call process_single_date() on each of them.
         """
-        super().run()
+
         date_subdirs = sorted(self.list_directory(self.input_location,
                                                   self.input_location_type))
         for date_subdir in date_subdirs:
@@ -396,8 +418,7 @@ class WeatherImageToJSON(ProcessorModule):
         return True
 
 
-    def run(self):
-        super().run()
+    def run_local(self):
         # sub-directories of our input directory should be dates.
         time_series_data = {}
         date_strings = self.list_directory(self.input_location, self.input_location_type)
@@ -452,8 +473,9 @@ class NetworkCentralityCalculator(ProcessorModule):
         super().__init__(name)
         self.params += [
             ("n_threads", [int]),
-            ("n_sub_images", [int])
+            ("n_sub_images", [int]),
         ]
+        self.num_files_per_point = 1
 
     def set_default_parameters(self):
         """
@@ -461,10 +483,10 @@ class NetworkCentralityCalculator(ProcessorModule):
         or by calling configure().
         """
         super().set_default_parameters()
-        self.n_threads = 4
+        if not "n_threads" in vars(self):
+            self.n_threads = 4
         if not "n_sub_images" in vars(self):
             self.n_sub_images = -1 # do all-sub-images
-
 
 
     def check_sub_image(self, ndvi_filename, input_path):
@@ -484,6 +506,7 @@ class NetworkCentralityCalculator(ProcessorModule):
         Each date will have a subdirectory called 'SPLIT' with ~400 BWNDVI
         sub-images.
         """
+        print("{}: processing {}".format(self.name, date_string))
         # if we are given a list of date strings to process, and this isn't
         # one of them, skip it.
         if self.dates_to_process and not date_string in self.dates_to_process:
@@ -493,12 +516,11 @@ class NetworkCentralityCalculator(ProcessorModule):
         # the output location - if so, skip
         output_location = os.path.join(self.output_location, date_string,"JSON","NC")
         if (not self.replace_existing_files) and \
-           self.check_for_existing_files(output_location, 1):
+           self.check_for_existing_files(output_location, self.num_files_per_point):
             return True
 
         input_path = os.path.join(self.input_location, date_string, "SPLIT")
         all_input_files = self.list_directory(input_path, self.input_location_type)
-        print("input path is {}".format(input_path))
 
         # list all the "BWNDVI" sub-images where RGB image passes quality check
         input_files = [filename for filename in all_input_files \
@@ -537,15 +559,42 @@ class NetworkCentralityCalculator(ProcessorModule):
         return True
 
 
-    def run(self):
-        super().run()
-        if "list_of_dates" in vars(self) and len(list_of_dates) > 0:
+    def run_local(self):
+        if "list_of_dates" in vars(self) and len(self.list_of_dates) > 0:
             date_strings = self.list_of_dates
         else:
             date_strings = sorted(self.list_directory(self.input_location,
                                                       self.input_location_type))
         for date_string in date_strings:
             self.process_single_date(date_string)
+
+
+
+
+    def run_batch(self):
+        """"
+        Divide up the dates, and write a config json file for each set.
+        """
+        print("{} running in batch!".format(self.name))
+        self.run_type = "local"
+        # divide up the dates
+        date_strings = sorted(self.list_directory(self.input_location,
+                                                  self.input_location_type))
+        # can't have < 1 date_string per task
+        n_batch_tasks = min(self.n_batch_tasks, len(date_strings))
+        # how many dates per task ?
+        num_dates_per_task = len(date_strings) // n_batch_tasks
+        list_of_configs = []
+        for i in range(n_batch_tasks):
+            date_list = date_strings[i*num_dates_per_task:(i+1)*num_dates_per_task]
+            config = self.get_config()
+            config["list_of_dates"] = date_list
+            # reset run_type so that the batch jobs won't try to generate more batch jobs!
+            config["run_type"] = "local"
+            list_of_configs.append(config)
+        batch_utils.submit_tasks(list_of_configs)
+        return list_of_configs
+
 
 
 
@@ -669,8 +718,7 @@ class NDVICalculator(ProcessorModule):
 
 
 
-    def run(self):
-        super().run()
+    def run_local(self):
         if "list_of_dates" in vars(self):
             date_strings = self.list_of_dates
         else:
