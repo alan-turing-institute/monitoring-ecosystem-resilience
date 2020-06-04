@@ -233,6 +233,7 @@ class BaseModule(object):
         self.params = []
         self.parent = None
         self.is_configured = False
+        self.is_finished = False
 
 
     def set_parameters(self, config_dict):
@@ -311,7 +312,16 @@ class BaseModule(object):
 
 
     def copy_to_output_location(self, tmpdir, output_location, file_endings=[]):
+        """
+        Copy contents of a temporary directory to a specified output location.
 
+        Parameters
+        ==========
+        tmpdir: str, location of temporary directory
+        output_location: str, either path to a local directory (if self.output_location_type is "local")
+                              or to Azure <container>/<blob_path> if self.output_location_type=="azure")
+        file_endings: list of str, optional.  If given, only files with those endings will be copied.
+        """
         if self.output_location_type == "local":
             os.makedirs(output_location, exist_ok=True)
             for root, dirs, files in os.walk(tmpdir):
@@ -408,3 +418,19 @@ class BaseModule(object):
                   .format(self.name, num_files_expected, location))
             return True
         return False
+
+
+    def save_config(self, config_location):
+        """
+        Write out the configuration of this module as a json file.
+        """
+        config_dict = {}
+        for param, _ in self.params:
+            config_dict[param] = self.__getattribute__(param)
+        output_config_dir = os.path.dirname(config_location)
+        if output_config_dir and not os.path.exists(output_config_dir):
+            os.makedirs(output_config_dir)
+
+        with open(config_location, "w") as output_json:
+            json.dump(config_dict, output_json)
+        print("{} wrote config to {}".format(self.name, config_location))
