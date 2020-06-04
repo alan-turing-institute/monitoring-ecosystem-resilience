@@ -116,8 +116,11 @@ def list_directory(path, container_name, bbs=None):
         pass
     output_names = []
     prefix = remove_container_name_from_blob_path(path, container_name)
+    if not prefix.endswith("/"):
+        prefix += "/"
 
-    blob_names = bbs.list_blob_names(container_name, prefix=prefix)
+    blob_names = bbs.list_blob_names(container_name, prefix=prefix, delimiter="/")
+    blob_names = [bn[:-1] if bn.endswith("/") else bn for bn in blob_names ]
     return [os.path.basename(bn) for bn in blob_names]
 
 
