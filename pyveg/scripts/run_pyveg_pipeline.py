@@ -31,7 +31,7 @@ def build_pipeline(config_file, from_cache=False):
     """
     Load json config and instantiate modules
     """
-    print("Configuring from cached config? {}".format(from_cache))
+
     current_time = time.strftime("%Y-%m-%d_%H-%M-%S")
 
     spec = importlib.util.spec_from_file_location("myconfig", config_file)
@@ -100,6 +100,7 @@ def build_pipeline(config_file, from_cache=False):
         # and add this combiner sequence to the pipeline.
         p += s
     return p
+
 
 
 def configure_and_run_pipeline(pipeline):
