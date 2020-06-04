@@ -22,5 +22,6 @@ setup(
         "pyveg_gee_download=pyveg.scripts.download_gee_data:main",
         "pyveg_gee_analysis=pyveg.scripts.analyse_gee_data:main",
         "pyveg_run_pipeline=pyveg.scripts.run_pyveg_pipeline:main"
+        "pyveg_run_module=pyveg.scripts.run_pyveg_module:main"
     ]},
 )
