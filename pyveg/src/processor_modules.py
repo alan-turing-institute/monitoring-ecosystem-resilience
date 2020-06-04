@@ -34,8 +34,27 @@ class ProcessorModule(BaseModule):
             ("input_location_type", [str]),
             ("output_location", [str]),
             ("output_location_type", [str]),
-            ("num_files_per_point", [int])
+            ("num_files_per_point", [int]),
+            ("dates_to_process", [list, tuple])
         ]
+
+
+    def set_default_parameters(self):
+        """
+        Set some basic defaults.  Note that these might get overriden
+        by a parent Sequence, or by calling configure() with a dict of values
+        """
+        super().set_default_parameters()
+        if not "replace_existing_files" in vars(self):
+            self.replace_existing_files = False
+        if not "num_files_per_point" in vars(self):
+            self.num_files_per_point = -1
+        if not "input_location_type" in vars(self):
+            self.input_location_type = "local"
+        if not "output_location_type" in vars(self):
+            self.output_location_type = "local"
+        if not "dates_to_process" in vars(self):
+            self.dates_to_process = []
 
 
     def get_image(self, image_location):
@@ -62,22 +81,6 @@ class ProcessorModule(BaseModule):
         else:
             raise RuntimeError("Unknown output location type {}"\
                                .format(self.output_location_type))
-
-
-    def set_default_parameters(self):
-        """
-        Set some basic defaults.  Note that these might get overriden
-        by a parent Sequence, or by calling configure() with a dict of values
-        """
-        super().set_default_parameters()
-        if not "replace_existing_files" in vars(self):
-            self.replace_existing_files = False
-        if not "num_files_per_point" in vars(self):
-            self.num_files_per_point = -1
-        if not "input_location_type" in vars(self):
-            self.input_location_type = "local"
-        if not "output_location_type" in vars(self):
-            self.output_location_type = "local"
 
 
 class VegetationImageProcessor(ProcessorModule):
@@ -245,6 +248,9 @@ class VegetationImageProcessor(ProcessorModule):
         if not coords_string and date_string:
             raise RuntimeError("{}: coords and date need to be defined, through file path or explicitly set")
 
+        if self.dates_to_process and not date_string in self.dates_to_process:
+            print("{} will not process date {}".format(self.name, date_string))
+            return True
         output_location = os.path.dirname(self.construct_image_savepath(date_string,
                                                                         coords_string))
         if (not self.replace_existing_files) and \
@@ -350,7 +356,7 @@ class WeatherImageToJSON(ProcessorModule):
         super().set_default_parameters()
 
 
-    def process_one_date(self, date_string):
+    def process_single_date(self, date_string):
         """
         Read the tif files downloaded from GEE and extract the values
         (should be the same for all pixels in the image, so just take mean())
@@ -365,6 +371,11 @@ class WeatherImageToJSON(ProcessorModule):
                            and values as floats.
         """
         metrics_dict = {}
+        # if we are given a list of date strings to process, and this isn't
+        # one of them, skip it.
+        if self.dates_to_process and not date_string in self.dates_to_process:
+            print("{} will not process date {}".format(self.name, date_string))
+            return True
         print("Processing date {}".format(date_string))
         input_location = os.path.join(self.input_location, date_string, "RAW")
         for filename in self.list_directory(input_location, self.input_location_type):
@@ -392,7 +403,7 @@ class WeatherImageToJSON(ProcessorModule):
         date_strings = self.list_directory(self.input_location, self.input_location_type)
         date_strings.sort()
         for date_string in date_strings:
-           processed_ok = self.process_one_date(date_string)
+           processed_ok = self.process_single_date(date_string)
            if not processed_ok:
                raise RuntimeError("{}: problem processing {}".format(self.name, date_string))
         return True
@@ -473,6 +484,11 @@ class NetworkCentralityCalculator(ProcessorModule):
         Each date will have a subdirectory called 'SPLIT' with ~400 BWNDVI
         sub-images.
         """
+        # if we are given a list of date strings to process, and this isn't
+        # one of them, skip it.
+        if self.dates_to_process and not date_string in self.dates_to_process:
+            print("{} will not process date {}".format(self.name, date_string))
+            return True
         # see if there is already a network_centralities.json file in
         # the output location - if so, skip
         output_location = os.path.join(self.output_location, date_string,"JSON","NC")
@@ -607,6 +623,12 @@ class NDVICalculator(ProcessorModule):
         Each date will have a subdirectory called 'SPLIT' with ~400 NDVI
         sub-images.
         """
+        # if we are given a list of date strings to process, and this isn't
+        # one of them, skip it.
+        if self.dates_to_process and not date_string in self.dates_to_process:
+            print("{} will not process date {}".format(self.name, date_string))
+            return True
+
         # see if there is already a ndvi.json file in
         # the output location - if so, skip
         output_location = os.path.join(self.output_location, date_string,"JSON","NDVI")
