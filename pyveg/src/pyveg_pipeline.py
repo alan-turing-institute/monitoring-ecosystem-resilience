@@ -420,13 +420,23 @@ class BaseModule(object):
         return False
 
 
-    def save_config(self, config_location):
+    def get_config(self):
         """
-        Write out the configuration of this module as a json file.
+        Get the configuration of this module as a dict.
         """
         config_dict = {}
         for param, _ in self.params:
             config_dict[param] = self.__getattribute__(param)
+        config_dict["class_name"] = self.__class__.__name__
+        return config_dict
+
+
+    def save_config(self, config_location):
+        """
+        Write out the configuration of this module as a json file.
+        """
+        config_dict = self.get_config()
+
         output_config_dir = os.path.dirname(config_location)
         if output_config_dir and not os.path.exists(output_config_dir):
             os.makedirs(output_config_dir)

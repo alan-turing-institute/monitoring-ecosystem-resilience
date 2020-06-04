@@ -31,15 +31,18 @@ from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
 
 
 
-def build_module(module_class, config_file):
+def build_module(config_file):
     """
     Load json config and instantiate modules
     """
+    config_dict = json.load(open(config_file))
+    if not "class_name" in config_dict.keys():
+        raise RuntimeError("Need to have class_name defined in the config.")
+    module_class = config_dict["class_name"]
     for n, c in inspect.getmembers(sys.modules[__name__]):
         if n == module_class:
             module = c()
 
-    config_dict = json.load(open(config_file))
     module.set_parameters(config_dict)
     return module
 
@@ -55,10 +58,9 @@ def configure_and_run_module(module):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", help="Path to config file", required=True)
-    parser.add_argument("--module_class", help="Class of module to instantiate", required=True)
 
     args = parser.parse_args()
-    module = build_module(args.module_class, args.config_file)
+    module = build_module(args.config_file)
     configure_and_run_module(module)
 
 
