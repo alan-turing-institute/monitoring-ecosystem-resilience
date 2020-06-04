@@ -539,7 +539,7 @@ class NetworkCentralityCalculator(ProcessorModule):
 
     def run(self):
         super().run()
-        if "list_of_dates" in vars(self):
+        if "list_of_dates" in vars(self) and len(list_of_dates) > 0:
             date_strings = self.list_of_dates
         else:
             date_strings = sorted(self.list_directory(self.input_location,
