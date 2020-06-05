@@ -21,35 +21,8 @@ import matplotlib
 matplotlib.use('PS')
 import matplotlib.pyplot as plt
 
-
-def save_json(out_dict, output_dir, output_filename):
-    """
-    Given a dictionary, save
-    to requested filename -
-    """
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, output_filename)
-
-    with open(output_path, 'w') as fp:
-        json.dump(out_dict, fp, indent=2)
-
-    #print("Saved json file '{}'".format(output_path))
-
-
-def save_image(image, output_dir, output_filename):
-    """
-    Given a PIL.Image (list of pixel values), save
-    to requested filename - note that the file extension
-    will determine the output file type, can be .png, .tif,
-    probably others...
-    """
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, output_filename)
-    image.save(output_path)
-    #print("Saved image '{}'".format(output_path))
-
+from .coordinate_utils import get_sub_image_coords
+from .file_utils import save_image
 
 def image_from_array(input_array, output_size=None, sel_val=200):
     """
@@ -100,47 +73,36 @@ def invert_binary_image(image):
     return new_img
 
 
-def combine_tif(input_filebase, bands=["B4", "B3", "B2"]):
+#def combine_tif(input_files, bands=["B4", "B3", "B2"]):
+def combine_tif(band_dict):
     """
-    Read tif files in "I" mode - one per specified band, and rescale and combine
+    Read tif files - one per specified band, and rescale and combine
     pixel values to r,g,b values betweek 0 and 255 in a combined output image.
-    Currently assumes that we have three bands.  Need to figure out how to
-    deal with more or fewer...
+
+    Parameters
+    ==========
+    band_dict: dict, format {'<r|g|b>': {'band': <band_name>, 'filename': <filename>}}
+
+    Returns
+    =======
+    new_img: PIL Image, 8-bit rgb image.
     """
-    band_dict = {}
-    if len(bands) >= 3:
-        band_dict = {"r": {"band": bands[0],
-                           "min_val": sys.maxsize,
-                           "max_val": -1*sys.maxsize,
-                           "pix_vals": []},
-                     "g": {"band": bands[1],
-                           "min_val": sys.maxsize,
-                           "max_val": -1*sys.maxsize,
-                           "pix_vals": []},
-                     "b": {"band": bands[2],
-                           "min_val": sys.maxsize,
-                           "max_val": -1*sys.maxsize,
-                           "pix_vals": []}
-                     }
-    else:
-        raise RuntimeError("Need three bands to combine into RGB image")
+    for v in band_dict.values():
+        v["min_val"] = sys.maxsize
+        v["max_val"] = -1*sys.maxsize
+        v["pix_vals"] = []
+
     for col in band_dict.keys():
-        im = Image.open(input_filebase+"."+band_dict[col]["band"]+".tif")
-        pix = im.load()
+        pix = cv.imread(band_dict[col]["filename"],cv.IMREAD_ANYDEPTH)
         # find the minimum and maximum pixel values in the original scale
-        #print("Found image of size {}".format(im.size))
-        for ix in range(im.size[0]):
-            for iy in range(im.size[1]):
+        for ix in range(pix.shape[0]):
+            for iy in range(pix.shape[1]):
                 if pix[ix, iy] > band_dict[col]["max_val"]:
                     band_dict[col]["max_val"] = pix[ix, iy]
                 elif pix[ix, iy] < band_dict[col]["min_val"]:
                     band_dict[col]["min_val"] = pix[ix, iy]
         band_dict[col]["pix_vals"] = pix
     # Take the overall max of the three bands to be the value to scale down with.
-    # print("Max values {} {} {}".format(band_dict["r"]["max_val"],
-    #                                   band_dict["g"]["max_val"],
-    #                                   band_dict["b"]["max_val"]))
-
     overall_max = max((band_dict[col]["max_val"] for col in ["r", "g", "b"]))
 
     # create a new image where we will fill RGB pixel values from 0 to 255
@@ -149,61 +111,75 @@ def combine_tif(input_filebase, bands=["B4", "B3", "B2"]):
                    #                   band_dict[col]["max_val"]
                    (overall_max+1)
                    ))
-    new_img = Image.new("RGB", im.size)
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
+    new_img = Image.new("RGB", pix.shape)
+    for ix in range(new_img.size[0]):
+        for iy in range(new_img.size[1]):
             new_img.putpixel((ix, iy), tuple(get_pix_val(ix, iy, col)
                                              for col in ["r", "g", "b"]))
     return new_img
 
 
-def scale_tif(input_filebase, band):
+def scale_tif(input_filename):
     """
     Given only a single band, scale to range 0,255 and apply this
     value to all of r,g,b
+
+    Parameters
+    ==========
+    input_filename: str, location of input image
+
+    Returns
+    =======
+    new_img: pillow Image.
     """
     max_val = -1*sys.maxsize
     min_val = sys.maxsize
     # load the single band file and extract pixel data
-    im = Image.open(input_filebase+"."+band+".tif")
-    pix = im.load()
+
+    pix = cv.imread(input_filename,cv.IMREAD_ANYDEPTH)
     # find the minimum and maximum pixel values in the original scale
     #print("Found image of size {}".format(im.size))
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
+    for ix in range(pix.shape[0]):
+        for iy in range(pix.shape[1]):
             if pix[ix, iy] > max_val:
                 max_val = pix[ix, iy]
             elif pix[ix, iy] < min_val:
                 min_val = pix[ix, iy]
 
     # create a new image where we will fill RGB pixel values from 0 to 255
+
+    # global linear transform from [-1, 1] -> [0, 255]
+    # tested in issue #224
     def get_pix_val(ix, iy): return \
-        max(0, int((pix[ix, iy]-min_val) * 255 /
-                   max((max_val - min_val),1))
-            )
-    new_img = Image.new("RGB", im.size)
-    for ix in range(im.size[0]):
-        for iy in range(im.size[1]):
+        int((pix[ix, iy] + 1 ) / 2 * 255)
+
+    new_img = Image.new("RGB", pix.shape)
+    for ix in range(new_img.size[0]):
+        for iy in range(new_img.size[1]):
             new_img.putpixel((ix, iy), tuple(get_pix_val(ix, iy)
                                              for col in ["r", "g", "b"]))
     return new_img
 
 
-def convert_to_rgb(input_filebase, bands):
+def convert_to_rgb(band_dict):
     """
     If we are given three or more bands, interpret the first as red,
     the second as green, the third as blue, and scale them to be between
     0 and 255 using the combine_tif function.
     If we are only given one band, use the scale_tif function to scale the
     range of input values to between 0 and 255 then apply this to all of r,g,b
+
+    Parameters
+    ==========
+    band_dict: dict, format {'<r|g|b|rgb>': {'band': <band_name>, 'filename': <filename>}}
     """
-    if len(bands) >= 3:
-        new_img = combine_tif(input_filebase, bands)
-    elif len(bands) == 1:
-        new_img = scale_tif(input_filebase, bands[0])
+    if len(band_dict.keys()) >= 3:
+        new_img = combine_tif(band_dict)
+    elif len(band_dict.keys()) == 1:
+        new_img = scale_tif(band_dict.values[0]['filename'])
     else:
         raise RuntimeError(
-            "Can't convert to RGB with {} bands".format(len(bands)))
+            "Can't convert to RGB with {} bands".format(band_dict.keys()))
     return new_img
 
 
@@ -240,18 +216,7 @@ def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
     y_parts = int(ysize // n_pix_y)
 
     # if we are given coords, calculate coords for all sub-regions
-    sub_image_coords = []
-    if coords and region_size:
-        left_start = coords[0] - region_size/2
-        top_start = coords[1] + region_size/2
-        sub_image_size_x = region_size / x_parts
-        sub_image_size_y = region_size / y_parts
-        for ix in range(x_parts):
-            for iy in range(y_parts):
-                sub_image_coords.append(
-                    (left_start + sub_image_size_x/2 + (ix*sub_image_size_x),
-                     top_start - sub_image_size_y/2 - (iy*sub_image_size_y))
-                )
+    sub_image_coords = get_sub_image_coords(coords, region_size, x_parts, y_parts)
 
     # now do the actual cropping
     sub_images = []
@@ -343,7 +308,8 @@ def create_gif_from_images(directory_path, output_name, string_in_filename=""):
 
     :param directory_path:  directory where all the files are.
     :param output_name: name to be given to the output gif
-    :param string_in_filename: select only files that containsa particular string, default is "" which implies all in directory files are selected
+    :param string_in_filename: select only files that containsa particular string,
+                  default is "" which implies all in directory files are selected
 
     :return:
     """
@@ -598,6 +564,11 @@ def check_image_ok(rgb_image, black_pix_threshold=0.05):
     if len(img_array.shape) < 3:
         return False
     black = [0,0,0]
+
+    # catch an error where array elements can be zero, rather than [r,g,b] values
+    if len(img_array.shape) < 3:
+        return False
+
     n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
 
     if n_black_pix / (img_array.shape[0]*img_array.shape[1]) >= black_pix_threshold:
