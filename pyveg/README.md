@@ -189,3 +189,7 @@ pyveg_calc_EC --input_txt ../binary_image.txt --do_EC
 >>> plt.plot(list(sel_pixels.keys()), feature_vec, "bo") # plot the feature vector vs pixel rank
 >>> plt.show()
 ```
+
+# Licence
+
+This project is licensed under the terms of the MIT license.
