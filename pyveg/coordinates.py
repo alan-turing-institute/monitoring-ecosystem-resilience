@@ -6,12 +6,12 @@ Store all coordaintes in one place.
 To chose a location for download, copy the location id into the relevant
 line in `config.py`
 
-In future think about:
+In future think about: 
  - keeping a record when we run a donwload with the date of download
    and a commit hash.
- - having an interface to the `config.py` file which allows the user
+ - having an interface to the `config.py` file which allows the user 
    to specify groups of coordinates to download in series/parallel.
-   e.g. user specifies that they want to download all "spots"
+   e.g. user specifies that they want to download all "spots" 
    locations in Africa.
 
 """
@@ -57,16 +57,5 @@ coordinate_store.loc['13'] = {'continent': 'America', 'country': 'USA', 'type': 
 coordinate_store.loc['14'] = {'continent': 'America', 'country': 'USA', 'type': 'labyrinths', 'latitude': 31.05, 'longitude': -103.09}
 # --------------------------------------------------------------------------------
 
-# declining locations in West Niger
-coordinate_store.loc['15'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.91471023966804, 'longitude': -0.6625226401049344}
-coordinate_store.loc['16'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.033103395382778, 'longitude': -0.8738672862288577}
-coordinate_store.loc['17'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.230632038531388, 'longitude': -0.9730542273470522}
-coordinate_store.loc['18'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.348139079852006, 'longitude': -1.1511569958854384}
-coordinate_store.loc['19'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.14817488163022, 'longitude': -1.165633636276826}
-coordinate_store.loc['20'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.855977889739282, 'longitude': -1.4382029638616056}
-coordinate_store.loc['21'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.975735734263175, 'longitude': -1.1271532347970603}
-coordinate_store.loc['22'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.149980582584208, 'longitude': -1.560087171792992}
-coordinate_store.loc['23'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.022536533381853, 'longitude': -1.351343943049319}
-
-# hardcode a check to make sure we don't overwrite any rows
-assert( len(coordinate_store) == 24 )
+# hardcode a check to make sure we don't overwrite any rows 
+assert( len(coordinate_store) == 15 )

@@ -1,10 +1,6 @@
 """
 Test the functions in data_analysis_utils.py
 """
-
-import os
-import shutil
-
 from pyveg.src.data_analysis_utils import *
 from pyveg.src.analysis_preprocessing import *
 
@@ -23,7 +19,6 @@ def test_coarse_dataframe():
 
 
 def test_create_lat_long_metric_figures():
-
     dir_path = os.path.join(os.path.dirname(__file__), "..", "testdata", "network_json_data/")
 
     test_df = read_json_to_dataframes(
@@ -34,16 +29,14 @@ def test_create_lat_long_metric_figures():
     for filename in os.listdir(dir_path):
         if filename.endswith('.png'):
             os.unlink(os.path.join(dir_path, filename))
-    tmp_png_path = os.path.join(dir_path, "tmp_png")
-    create_lat_long_metric_figures(data_df, 'offset50', tmp_png_path)
 
-    list_png_files = [f for f in os.listdir(tmp_png_path) if
-                      (os.path.isfile(os.path.join(tmp_png_path, f)) and f.endswith(".png"))]
+    create_lat_long_metric_figures(data_df, 'offset50', dir_path)
+
+    list_png_files = [f for f in os.listdir(dir_path) if
+                      (os.path.isfile(os.path.join(dir_path, f)) and f.endswith(".png"))]
     len_dates = len(np.unique(data_df['date']))
 
-    assert (len(list_png_files)==len_dates)
-    # now delete the test png files
-    shutil.rmtree(tmp_png_path, ignore_errors=True)
+    assert (len(list_png_files) == len_dates)
 
 
 def test_moving_window_analysis():
@@ -55,4 +48,4 @@ def test_moving_window_analysis():
     ar1_var_df = moving_window_analysis(time_series_dfs, os.path.dirname(path_to_dict), 0.5)
 
     keys_ar1 = list(ar1_var_df.keys())
-    assert (ar1_var_df.shape == (38, 9))
+    assert (ar1_var_df.shape == (38, 7))

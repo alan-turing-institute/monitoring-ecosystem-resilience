@@ -22,8 +22,8 @@ def test_analyse_gee_data():
     assert (os.path.exists(analysis_path) == True )
     assert (os.path.exists(os.path.join(analysis_path, 'spatial')) == True )
 
-    list_png_files = [f for f in os.listdir(os.path.join(input_dir, 'analysis', 'time-series')) if
-                      (os.path.isfile(os.path.join(os.path.join(input_dir, 'analysis', 'time-series'), f)) and f.endswith(".png"))]
+    list_png_files = [f for f in os.listdir(os.path.join(input_dir, 'analysis')) if
+                      (os.path.isfile(os.path.join(os.path.join(input_dir, 'analysis'), f)) and f.endswith(".png"))]
 
     assert (len(list_png_files) > 0 )
 
