@@ -409,15 +409,9 @@ def process_sub_image(i, input_filepath, output_location, date_string, coords_st
     sub_image = Image.open(input_filepath)
     image_array = pillow_to_numpy(sub_image)
 
-    # run network centrality 
+    # run network centrality
     feature_vec, _ = subgraph_centrality(image_array)
 
-    # coords should be part of the filename
-    coords_string = find_coords_string(input_filepath)
-    if not coords_string:
-        raise RuntimeError("Unable to find coordinates in {}"\
-                           .format(input_filepath))
-    
     # format coords
     coords = [round(float(c), 4) for c in coords_string.split("_")]
 
@@ -604,11 +598,11 @@ class NDVICalculator(ProcessorModule):
             ndvi_veg_mean = np.NaN
 
         # coords should be part of the filename
-        coords_string = find_coords_string(ndvi_filepath)        
+        coords_string = find_coords_string(ndvi_filepath)
         if not coords_string:
             raise RuntimeError("Unable to find coordinates in {}"\
                             .format(ndvi_filepath))
-        
+
         # format coords
         coords = [round(float(c), 4) for c in coords_string.split("_")]
 
@@ -621,7 +615,7 @@ class NDVICalculator(ProcessorModule):
         ndvi_result['ndvi_veg'] = ndvi_veg_mean
 
         return ndvi_result
-        
+
 
     def process_single_date(self, date_string):
         """
@@ -664,7 +658,7 @@ class NDVICalculator(ProcessorModule):
         self.save_json(ndvi_vals, "ndvi_values.json",
                        output_location,
                        self.output_location_type)
-                       
+
         return True
 
 
