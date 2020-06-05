@@ -4,16 +4,17 @@ This page contains an installation guide, and some usage examples for this packa
 
 ## Installation
 
-To install, start by fresh `conda` environment.
+`pyveg` requires Python 3.6 or greater. To install, start by creating a fresh `conda` environment.
 ```
-conda create -n veg python
+conda create -n veg python=3.7
 conda activate veg
 ```
 Get the source.
 ```
 git clone git@github.com:alan-turing-institute/monitoring-ecosystem-resilience.git
 ```
-Enter the repository and check out a relevant branch if necessary.
+Enter the repository and check out a relevant branch if necessary (the `develop` branch contains the most
+up to date stable version of the code).
 ```
 cd monitoring-ecosystem-resilience
 git checkout develop
@@ -24,11 +25,13 @@ pip install .
 ```
 If you plan on making changes to the source code, you can instead run `pip install -e .`.
 
-Before using the Google Earth Engine API, you need to authenticate. To do this, run
+Before using the Google Earth Engine API, you need to sign up with a Google account 
+[here](https://earthengine.google.com/new_signup/), and authenticate.  To authenticate, run
 ```
 earthengine authenticate
 ```
-A new browser window will open. Copy the token from this window to the terminal prompt to complete the authentication process.
+A new browser window will open. Copy the token from this window to the terminal prompt to 
+complete the authentication process.
 
 
 ## Google Earth Engine Related Tools
