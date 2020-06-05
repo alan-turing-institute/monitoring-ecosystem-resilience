@@ -151,5 +151,5 @@ def get_date_range_for_collection(date_range, coll_dict):
     collection_min =  dateparser.parse(coll_dict["min_date"])
     collection_max =  dateparser.parse(coll_dict["max_date"])
     date_min = datetime_range[0] if datetime_range[0] > collection_min else collection_min
-    date_max = datetime_range[1] if datetime_range[1] < collection_min else collection_max
+    date_max = datetime_range[1] if datetime_range[1] < collection_max else collection_max
     return (date_min.isoformat().split("T")[0], date_max.isoformat().split("T")[0])
