@@ -97,6 +97,7 @@ ipython_config.py
 # data
 output_dir/
 output/
+pyveg_output/
 
 # macos
 .DS_Store
