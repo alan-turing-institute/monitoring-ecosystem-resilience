@@ -567,8 +567,6 @@ class NDVICalculator(ProcessorModule):
         looks OK.
         """
         rgb_filename = re.sub("NDVI","RGB",ndvi_filename)
-#        rgb_img = Image.open(self.get_file(os.path.join(input_path, rgb_filename),
-#                                           self.input_location_type))
         rgb_img = self.get_image(os.path.join(input_path, rgb_filename))
 
         img_ok = check_image_ok(rgb_img, 0.05)
@@ -596,12 +594,6 @@ class NDVICalculator(ProcessorModule):
             ndvi_veg_mean = ndvi_image_array[veg_mask].mean()
         else:
             ndvi_veg_mean = np.NaN
-
-        # coords should be part of the filename
-        coords_string = find_coords_string(ndvi_filepath)
-        if not coords_string:
-            raise RuntimeError("Unable to find coordinates in {}"\
-                            .format(ndvi_filepath))
 
         # format coords
         coords = [round(float(c), 4) for c in coords_string.split("_")]
