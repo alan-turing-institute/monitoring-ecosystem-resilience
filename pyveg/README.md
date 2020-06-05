@@ -132,6 +132,7 @@ directory..
 - Deseasonalising (using first differencing), and detrending using STL.
 
 ### Plots
+
 In the `analysis/` subdirectory, `pyveg` creates the following plots:
 - Time series plots containing vegetation and precipitation time series 
   (seaonsal and deseasonalised). Plots are labelled with the AR1 of the 
