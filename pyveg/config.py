@@ -64,6 +64,7 @@ data_collections = {
         'cloudy_pix_flag': 'CLOUD_COVER',
         'do_network_centrality': do_network_centrality,
         'num_days_per_point': 30
+
     },
     'Landsat5' : {
         'collection_name': 'LANDSAT/LT05/C01/T1_SR',

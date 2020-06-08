@@ -783,7 +783,7 @@ def plot_correlation_mwa(df, output_dir, filename_suffix=''):
         plt.close(fig)
 
     for column in df.columns:
-        if 'veg_precip' in column:
+        if 'precip' in column and ('corr' in column or 'lag' in column):
             make_plot(df, column, output_dir, filename_suffix)
 
 

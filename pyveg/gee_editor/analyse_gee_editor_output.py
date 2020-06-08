@@ -87,8 +87,12 @@ def convert_gee_outputs(input_dir):
         # convert date column
         df[gee_default_date_colname] = convert_gee_date(df[gee_default_date_colname])
         df = df.rename(columns={gee_default_date_colname: 'date'})
-        df = df.rename(columns={'NDVI': 'L7_ndvi_mean', 'EVI': 'L7_ndvi_mean'})
 
+        if 'NDVI' in df.columns:
+            df['NDVI'] = df.copy()['NDVI'].str.replace(',', '').astype(float).values
+
+        df = df.rename(columns={'NDVI': 'ndvi_mean', 'EVI': 'ndvi_mean'})
+        
         # resample to monthly data
         df = resample_dataframe(df, [c for c in df.columns if 'date' not in c])
 

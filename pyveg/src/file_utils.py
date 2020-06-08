@@ -16,6 +16,23 @@ else:
 LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 
 
+def split_filepath(path):
+    allparts = []
+    while True:
+        parts = os.path.split(path)
+        if parts[0] == path:  # sentinel for absolute paths
+            allparts.insert(0, parts[0])
+            break
+        elif parts[1] == path: # sentinel for relative paths
+            allparts.insert(0, parts[1])
+            break
+        else:
+            path = parts[0]
+            allparts.insert(0, parts[1])
+    return allparts
+
+
+
 def download_and_unzip(url, output_tmpdir):
     """
     Given a URL from GEE, download it (will be a zipfile) to
@@ -119,7 +136,7 @@ def construct_image_savepath(output_dir, collection_name, coords, date_range, im
     return full_path
 
 
-def consolidate_json_to_list(json_dir, output_dir, output_filename):
+def consolidate_json_to_list(json_dir, output_dir=None, output_filename=None):
     """
     Load all the json files (e.g. from individual sub-images), and return
     a list of dictionaries, to be written out into one json file.
@@ -127,8 +144,14 @@ def consolidate_json_to_list(json_dir, output_dir, output_filename):
     Parameters
     ==========
     json_dir: str, full path to directory containing temporary json files
-    output_dir: str, full path to desired output directory
+    output_dir: str, full path to desired output directory.
+                     Can be None, in which case no output written to disk.
     output_filename: str, name of the output json file.
+                     Can be None, in which case no output written to disk.
+
+    Returns
+    =======
+    results: list of dicts.
     """
     results = []
 
@@ -139,5 +162,6 @@ def consolidate_json_to_list(json_dir, output_dir, output_filename):
 
     for filename in os.listdir(json_dir):
         results.append(json.load(open(os.path.join(json_dir,filename))))
-    save_json(results, output_dir, output_filename)
+    if output_dir and output_filename:
+        save_json(results, output_dir, output_filename)
     return results

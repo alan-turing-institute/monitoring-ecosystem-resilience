@@ -6,6 +6,8 @@ import os
 import requests
 from datetime import datetime, timedelta
 import dateparser
+import tempfile
+import subprocess
 
 from geetools import cloud_mask
 import cv2 as cv
@@ -44,7 +46,9 @@ class BaseDownloader(BaseModule):
                          ("date_range", [list, tuple]),
                          ("region_size", [float]),
                          ("scale", [int]),
-                         ("output_dir", [str])]
+                         ("output_location", [str]),
+                         ("output_location_type", [str]),
+                         ("replace_existing_files", [bool]) ]
         return
 
 
@@ -54,28 +58,42 @@ class BaseDownloader(BaseModule):
         Note that these can be overriden by either values held by a parent Sequence
         or by calling configure() with a configuration dictionary.
         """
+        super().set_default_parameters()
         if not "region_size" in vars(self):
             self.region_size = 0.08
         if not "scale" in vars(self):
             self.scale = 10
-        if not "output_dir" in vars(self):
-            self.set_output_dir()
+        if not "output_location" in vars(self):
+            self.set_output_location()
+        if not "output_location_type" in vars(self) or not self.output_location_type:
+            self.output_location_type = "local"
+        if not "replace_existing_files" in vars(self):
+            self.replace_existing_files = False
+
         return
 
 
-    def set_output_dir(self, output_dir=None):
+    def set_output_location(self, output_location=None):
         """
         If provided an output directory name, set it here,
         otherwise, construct one from coords and collection name.
+
+        Parameters
+        ==========
+        output_location: tuple of strings (location, location_type)
+
         """
-        if output_dir:
-            self.output_dir = output_dir
+        if output_location:
+            self.output_location = output_location[0]
+
         elif ("coords" in vars(self)) and ("collection_name" in vars(self)):
-            self.output_dir = f'gee_{self.coords[0]}_{self.coords[1]}'\
+            self.output_location = f'gee_{self.coords[0]}_{self.coords[1]}'\
                 +"_"+self.collection_name.replace('/', '-')
+
         else:
-            raise RuntimeError("{}: need to set collection_name and coords before calling set_output_dir()"\
-                               .format(self.name))
+            raise RuntimeError("""
+            {}: need to set collection_name and coords before calling set_output_location()
+            """.format(self.name))
 
 
     def prep_data(self, date_range):
@@ -125,31 +143,34 @@ class BaseDownloader(BaseModule):
         return url_list
 
 
-    def download_data(self, download_urls, date_range):
+
+    def download_data(self, download_urls, download_location):
         """
         Download zip file(s) from GEE to configured output location.
 
         Parameters
         ---------
         download_urls: list of strings (URLs) from gee_prep_data
-        date_range: list of strings 'YYYY-MM-DD' - note that this will
-                    generally be a sub range of the object's overall
-                    date_range.
+        download_location: str, this will generally be <base_dir>/<date>/RAW
+
+        Returns:
+        --------
+        bool, True if downloaded something, False otherwise
         """
         if len(download_urls) == 0:
-            return None, "{}: No URLs found for {} {}".format(self.name,
-                                                              self.coords,
-                                                              date_range)
-
-        mid_date = find_mid_period(date_range[0], date_range[1])
-        download_dir = os.path.join(self.output_dir, mid_date, "RAW")
+            print("{}: No URLs found for {}".format(self.name,
+                                                    self.coords))
+            return False
 
         # download files and unzip to temporary directory
+        tempdir = tempfile.TemporaryDirectory()
         for download_url in download_urls:
-            download_and_unzip(download_url, download_dir)
-
-        # return the path so downloaded files can be handled by caller
-        return download_dir
+            download_and_unzip(download_url,
+                               tempdir.name)
+        print("Wrote zipfiles to {}".format(tempdir.name))
+        print("download_location is {}".format(download_location))
+        self.copy_to_output_location(tempdir.name, download_location, [".tif"])
+        return True
 
 
     def run(self):
@@ -158,15 +179,21 @@ class BaseDownloader(BaseModule):
         date_ranges = slice_time_period(start_date,
                                         end_date,
                                         self.time_per_point)
-        download_dirs = []
+        download_locations = []
         for date_range in date_ranges:
+            mid_date = find_mid_period(date_range[0], date_range[1])
+            location = os.path.join(self.output_location, mid_date, "RAW")
+            if not self.replace_existing_files and \
+               self.check_for_existing_files(location, self.num_files_per_point):
+                continue
             urls = self.prep_data(date_range)
             print("{}: got URL {} for date range {}".format(self.name,
                                                             urls,
                                                             date_range))
-            download_dir = self.download_data(urls, date_range)
-            download_dirs.append(download_dir)
-        return download_dirs
+            downloaded_ok = self.download_data(urls, location)
+            if downloaded_ok:
+                download_locations.append(location)
+        return download_locations
 
 
 ##############################################################################
@@ -189,7 +216,8 @@ class VegetationDownloader(BaseDownloader):
                         ("cloudy_pix_frac", [int]),
                         ("RGB_bands", [list]),
                         ("NIR_band", [str]),
-                        ("time_per_point", [str])
+                        ("time_per_point", [str]),
+                        ("num_files_per_point", [int])
         ]
 
 
@@ -201,7 +229,7 @@ class VegetationDownloader(BaseDownloader):
         super().set_default_parameters()
         self.mask_cloud=True
         self.cloudy_pix_frac = 50
-
+        self.num_files_per_point = 4
 
     def prep_images(self, dataset):
         """
@@ -241,8 +269,18 @@ class WeatherDownloader(BaseDownloader):
         super().__init__(name)
         self.params += [("temperature_band", [list]),
                         ("precipitation_band", [list]),
-                        ("time_per_point", [str])
+                        ("time_per_point", [str]),
+                        ("num_files_per_point", [int])
         ]
+
+
+    def set_default_parameters(self):
+        """
+        Set some defaults.  Note that these can be overriden, either
+        by parent Sequence, or by calling configure() with a dict.
+        """
+        super().set_default_parameters()
+        self.num_files_per_point = 2
 
 
     def prep_images(self, dataset):

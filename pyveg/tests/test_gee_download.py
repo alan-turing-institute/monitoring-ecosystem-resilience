@@ -62,7 +62,8 @@ def test_get_vegetation():
     from pyveg.src.download_modules import VegetationDownloader
     s = Sequence("vegetation")
     s.set_config(data_collections["Copernicus"])
-    s.output_dir = test_out_dir
+    s.output_location = test_out_dir
+    s.output_location_type = "local"
     s.coords = coordinates
     s.date_range = date_range
     s.n_sub_images = 1
@@ -72,7 +73,7 @@ def test_get_vegetation():
     s += NetworkCentralityCalculator()
     s.configure()
     s.run()
-    assert(os.path.exists(os.path.join(test_out_dir, "2016-01-16","network_centralities.json")))
+    assert(os.path.exists(os.path.join(test_out_dir, "2016-01-16","JSON","NC","network_centralities.json")))
     shutil.rmtree(test_out_dir, ignore_errors=True)
 
 
@@ -83,7 +84,8 @@ def test_get_rainfall():
     from pyveg.src.download_modules import WeatherDownloader
     s = Sequence("weather")
     s.set_config(data_collections["ERA5"])
-    s.output_dir = test_out_dir
+    s.output_location = test_out_dir
+    s.output_location_type = "local"
     s.coords = coordinates
     s.date_range = date_range
     s.time_per_point = time_per_point
@@ -91,5 +93,5 @@ def test_get_rainfall():
     s += WeatherImageToJSON()
     s.configure()
     s.run()
-    assert(os.path.exists(os.path.join(test_out_dir, "RESULTS", "weather_data.json")))
+    assert(os.path.exists(os.path.join(test_out_dir, "2016-01-16","JSON","WEATHER", "weather_data.json")))
     shutil.rmtree(test_out_dir, ignore_errors=True)

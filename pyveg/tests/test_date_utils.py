@@ -71,3 +71,12 @@ def test_slice_time_period_by_years():
         assert datetime.fromisoformat(sub_periods[0][0]) == datetime.fromisoformat(start_date)
         assert datetime.fromisoformat(sub_periods[-1][1]) <= datetime.fromisoformat(end_date)
         assert len(sub_periods) == 5 // i
+
+
+def test_get_date_range_for_collection():
+    date_range = ("2010-01-01","2020-05-01")
+    coll_dict = {"min_date": "2015-01-01",
+                 "max_date": "2019-01-01"}
+    new_date_range = get_date_range_for_collection(date_range, coll_dict)
+    assert new_date_range[0] == "2015-01-01"
+    assert new_date_range[1] == "2019-01-01"
