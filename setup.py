@@ -16,6 +16,7 @@ setup(
               "pyveg.scripts",
               "pyveg.configs"],
     install_requires=REQUIRED_PACKAGES,
+    scripts=["pyveg/scripts/batch_commands.sh"],
     entry_points={"console_scripts": [
         "pyveg_calc_EC=pyveg.scripts.calc_euler_characteristic:main",
         "pyveg_gen_pattern=pyveg.scripts.generate_pattern:main",
