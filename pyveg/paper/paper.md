@@ -53,6 +53,8 @@ research to be carried out at scale, and hence can be an
 important tool in understanding changing arid and semi-arid 
 ecosystem dynamics.
 
+![`pyveg` program flow.\label{fig:pyveg_flow}](pveg_flow.png)
+
 
 # Downloading data from Google Earth Engine
 

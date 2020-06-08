@@ -190,6 +190,11 @@ pyveg_calc_EC --input_txt ../binary_image.txt --do_EC
 >>> plt.show()
 ```
 
+## `pyveg` flow
+
+![`pyveg` program flow.](paper/pveg_flow.png)
+
+
 # Licence
 
-This project is licensed under the terms of the MIT license.
+This project is licensed under the terms of the MIT software license.
