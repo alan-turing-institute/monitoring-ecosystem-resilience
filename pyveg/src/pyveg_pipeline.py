@@ -87,8 +87,9 @@ class Pipeline(object):
                                    .format(self.name, var))
         if self.output_location_type == "azure":
             container_name = azure_utils.sanitize_container_name(self.output_location)
-            print("Create container {}".format(container_name))
-            azure_utils.create_container(container_name)
+            if not azure_utils.check_container_exists(container_name):
+                print("Create container {}".format(container_name))
+                azure_utils.create_container(container_name)
             self.output_location = container_name
 
         for sequence in self.sequences:
@@ -260,6 +261,15 @@ class BaseModule(object):
             self.set_parameters(config_dict)
 
         self.check_config()
+
+        if self.output_location_type == "azure":
+            # if we're running this module standalone on azure, we might need to
+            # create the output container on the blob storage account"
+            output_location_base = self.output_location.split("/")[0]
+            container_name = azure_utils.sanitize_container_name(output_location_base)
+            if not azure_utils.check_container_exists(container_name):
+                print("Create container {}".format(container_name))
+                azure_utils.create_container(container_name)
         self.is_configured = True
 
 
