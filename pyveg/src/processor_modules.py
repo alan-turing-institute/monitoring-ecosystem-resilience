@@ -597,9 +597,9 @@ class NetworkCentralityCalculator(ProcessorModule):
             config["run_type"] = "local"
             list_of_configs.append(config)
         job_id = self.name +"_"+time.strftime("%Y-%m-%d_%H-%M-%S")
-        batch_utils.submit_tasks(list_of_configs)
+        batch_utils.submit_tasks(list_of_configs, job_id)
+        batch_utils.wait_for_tasks_to_complete(job_id)
         return list_of_configs
-
 
 
 

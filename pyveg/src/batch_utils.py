@@ -113,6 +113,42 @@ def add_task(task_id, job_name,
     batch_service_client.task.add(job_name, task)
 
 
+def wait_for_tasks_to_complete(job_id, timeout=60, batch_service_client=None):
+    """
+    Returns when all tasks in the specified job reach the Completed state.
+
+    :param batch_service_client: A Batch service client.
+    :type batch_service_client: `azure.batch.BatchServiceClient`
+    :param str job_id: The id of the job whose tasks should be to monitored.
+    :param timedelta timeout: The duration to wait for task completion. If all
+    tasks in the specified job do not reach Completed state within this time
+    period, an exception will be raised.
+    """
+    if not batch_service_client:
+        batch_service_client = create_batch_client()
+    timeout_expiration = datetime.datetime.now() + timeout
+
+    print("Monitoring all tasks for 'Completed' state, timeout in {}..."
+          .format(timeout), end='')
+
+    while datetime.datetime.now() < timeout_expiration:
+        print('.', end='')
+        sys.stdout.flush()
+        tasks = batch_service_client.task.list(job_id)
+
+        incomplete_tasks = [task for task in tasks if
+                            task.state != batchmodels.TaskState.completed]
+        if not incomplete_tasks:
+            print()
+            return True
+        else:
+            time.sleep(1)
+
+    print()
+    raise RuntimeError("ERROR: Tasks did not reach 'Completed' state within "
+                       "timeout period of " + str(timeout))
+
+
 def create_pool(pool_id, batch_service_client=None):
     """
     Creates a pool of compute nodes.
