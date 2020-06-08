@@ -3,6 +3,7 @@ Functions for submitting batch jobs.  Currently only support Azure Batch.
 Largely taken from https://github.com/Azure-Samples/batch-python-quickstart
 """
 import os
+import sys
 import json
 import tempfile
 import datetime
