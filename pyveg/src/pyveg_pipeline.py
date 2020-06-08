@@ -262,7 +262,7 @@ class BaseModule(object):
 
         self.check_config()
 
-        if self.output_location_type == "azure":
+        if "output_location_type" in vars(self) and self.output_location_type == "azure":
             # if we're running this module standalone on azure, we might need to
             # create the output container on the blob storage account"
             output_location_base = self.output_location.split("/")[0]
