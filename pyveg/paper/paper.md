@@ -77,8 +77,9 @@ supported).
 `pyveg` will then form a series of date ranges, and query GEE for the relevant
 data in each date range. Colour (RGB) and Normalised Difference vegetation
 Index (NDVI) images are downloaded from vegetation collections. Cloud masking 
-logic is included to improve data quality. For precipitation and temperature 
-information, `pyveg` defaults to using the ERA5 collection.
+logic is included to improve data quality using the `geetools` package [@geetools]. 
+For precipitation and temperature information, `pyveg` defaults to using the ERA5 
+collection.
 
 
 # Network centrality metrics
@@ -101,11 +102,11 @@ intensities for each sub-image.
 # Time series analysis 
 
 `pyveg` analysis functionality is exposed via a `pveg_gee_analysis` command.
-This commands accepts an argument, `input_dir`, which points to a directory 
-previously created by a download job. Data in this location is processed and 
-analysed. `pyveg` supports the analysis of the following kinds of time series:
-raw NDVI mean pixel intensity across the image, offset50 (a measure of the 
-slope of the network centrality feature vector), and precipitation.
+This commands accepts an argument, `--input_dir`, which points to a directory 
+previously created by a download job. `pyveg` supports the analysis of the 
+following time series: raw NDVI mean pixel intensity across the image, 
+offset50 (a measure of the slope of the network centrality feature vector), 
+and precipitation.
 
 During data processing, which is also configurable, `pyveg` is able 
 to drop time series outliers and resample the time series to clean the data 
@@ -115,10 +116,10 @@ Additionally, a deseasonalised time series is constructed via the first
 difference method.
 
 Time series plots are produced, along with auto- and cross-correlation plots.
-Early warning signals are also computed, including Lag-1 autocorrelation
-and standard deviation moving window plots. A sensitivity and significance
-analysis is also performed, in order to determine whether any declines 
-(quantified by Kendall tau values) are statistically significant.
+Early warning signals are also computed using the `ewstools` package [@ewstools], 
+including Lag-1 autocorrelation and standard deviation moving window plots. 
+A sensitivity and significance analysis is also performed, in order to determine 
+whether any declines (quantified by Kendall tau values) are statistically significant.
 
 
 # Acknowledgements
