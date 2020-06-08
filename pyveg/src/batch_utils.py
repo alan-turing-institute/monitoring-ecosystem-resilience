@@ -7,6 +7,7 @@ import sys
 import json
 import tempfile
 import datetime
+import time
 
 import azure.storage.blob as azureblob
 import azure.batch.batch_service_client as batch
