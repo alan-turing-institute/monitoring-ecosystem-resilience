@@ -40,7 +40,8 @@ be performed.
 
 The `pyveg` package implements functionality to download and process data
 from Google Earth Engine (GEE), and to subsequently perform a 
-resiliance analysis on the aquired data. The results can be used
+resiliance analysis on the aquired data. PVP images are quantified using
+network centrality metrics. The results of the analysis can be used
 to search for typical early warning signals of an ecological collapse 
 [@Dakos:2008]. Google Earth Engine Editor scripts are also provided to help
 researchers discover locations of ecosystems which may be in
@@ -80,6 +81,13 @@ information, `pyveg` defaults to using the ERA5 collection.
 
 # Network centrality metrics
 
+Network centrality methods are used to measure the connectedness of vegetation
+in images by treating the image as a network, with pixels containing significant 
+vegetation as nodes. Vegetation pixels are ordered according to their subgraph 
+centrality [@PhysRevE.71.056103], and from this, a feature vector is constructed
+by calculating the Euler Characteristic [@richeson2012euler] for different quantiles. 
+The slope of this feature vector gives a measure of how connected the vegetation is.
+
 After completetion of the download job, `pyveg` computes the network centrality 
 of the vegetation [@Mander:2017]. To achieve this, the NDVI image is broken up 
 into smaller $50 \times 50$ pixel sub-images. Each sub-image is then thresholded
@@ -93,7 +101,11 @@ intensities for each sub-image.
 `pyveg` analysis functionality is exposed via a `pveg_gee_analysis` command.
 This commands accepts an argument, `input_dir`, which points to a directory 
 previously created by a download job. Data in this location is processed and 
-analysed. During data processing, which is also configurable, `pyveg` is able 
+analysed. `pyveg` supports the analysis of the following kinds of time series:
+raw NDVI mean pixel intensity across the image, offset50 (a measure of the 
+slope of the network centrality feature vector), and precipitation.
+
+During data processing, which is also configurable, `pyveg` is able 
 to drop time series outliers and resample the time series to clean the data 
 and avoid gaps. A smoothed time series is constructed using LOESS smoothing, 
 and residuals between the raw and smoothed time series are calculated. 
