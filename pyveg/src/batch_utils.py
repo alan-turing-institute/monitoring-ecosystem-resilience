@@ -126,7 +126,7 @@ def wait_for_tasks_to_complete(job_id, timeout=60, batch_service_client=None):
     """
     if not batch_service_client:
         batch_service_client = create_batch_client()
-    timeout_expiration = datetime.datetime.now() + timeout
+    timeout_expiration = datetime.datetime.now() + datetime.timedelta(minutes=timeout)
 
     print("Monitoring all tasks for 'Completed' state, timeout in {}..."
           .format(timeout), end='')
