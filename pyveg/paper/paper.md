@@ -53,7 +53,8 @@ collapse using remote sensing data. `pyveg` allows such
 research to be carried out at scale, and hence can be an 
 important tool in understanding changing arid and semi-arid 
 ecosystem dynamics. A list of PVP locations, obtained through
-both literature and manual searches, is included in the package.
+both literature and manual searches, is included in the package at 
+`pyveg/coordaintes.py`.
 
 ![`pyveg` program flow.\label{fig:pyveg_flow}](pveg_flow.png)
 
