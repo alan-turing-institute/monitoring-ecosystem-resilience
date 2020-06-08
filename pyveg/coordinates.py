@@ -58,11 +58,11 @@ coordinate_store.loc['14'] = {'continent': 'America', 'country': 'USA', 'type': 
 # --------------------------------------------------------------------------------
 
 # declining locations in West Niger
-coordinate_store.loc['15'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.91 'longitude':  -0.66}
+coordinate_store.loc['15'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.91, 'longitude':  -0.66}
 coordinate_store.loc['16'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.03, 'longitude': -0.87}
 coordinate_store.loc['17'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.23, 'longitude': -0.97}
 coordinate_store.loc['18'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.34, 'longitude': -1.15}
-coordinate_store.loc['19'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.14 'longitude':  -1.16}
+coordinate_store.loc['19'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.14, 'longitude':  -1.16}
 coordinate_store.loc['20'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.85, 'longitude': -1.43}
 coordinate_store.loc['21'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.97, 'longitude': -1.12}
 coordinate_store.loc['22'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.14, 'longitude': -1.56}
