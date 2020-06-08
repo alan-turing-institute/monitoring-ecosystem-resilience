@@ -28,7 +28,7 @@ mv $2 monitoring-ecosystem-resilience/pyveg
 # change to working directory and checkout branch
 cd monitoring-ecosystem-resilience
 git checkout feature/298-azure-batch
-# install python code to local site-packages to
+# install python code to local site-packages
 python -m pip install .
 # run the pyveg_run_module entrypoint
 pyveg_run_module --config_file $1
