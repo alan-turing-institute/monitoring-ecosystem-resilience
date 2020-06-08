@@ -595,6 +595,7 @@ class NetworkCentralityCalculator(ProcessorModule):
             config["list_of_dates"] = date_list
             # reset run_type so that the batch jobs won't try to generate more batch jobs!
             config["run_type"] = "local"
+            config["input_location_type"]="azure"
             list_of_configs.append(config)
         job_id = self.name +"_"+time.strftime("%Y-%m-%d_%H-%M-%S")
         batch_utils.submit_tasks(list_of_configs, job_id)
