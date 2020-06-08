@@ -331,7 +331,7 @@ class VegetationImageProcessor(ProcessorModule):
                       .format(self.name, date_subdir))
                 continue
             date_path = os.path.join(self.input_location, date_subdir, "RAW")
-            if len(self.list_directory(date_path), self.input_location_type) == 0:
+            if len(self.list_directory(date_path, self.input_location_type)) == 0:
                 continue
             processed_ok = self.process_single_date(date_path)
             if not processed_ok:
