@@ -113,9 +113,6 @@ def add_task(task_id, job_name,
     batch_service_client.task.add(job_name, task)
 
 
-
-
-
 def create_pool(pool_id, batch_service_client=None):
     """
     Creates a pool of compute nodes.
@@ -138,9 +135,9 @@ def create_pool(pool_id, batch_service_client=None):
                 version="latest"
             ),
             node_agent_sku_id="batch.node.ubuntu 18.04"),
-        vm_size=config._POOL_VM_SIZE,
-        target_low_priority_nodes=config._POOL_NODE_COUNT
-#        target_dedicated_nodes=config._POOL_NODE_COUNT
+        vm_size=config["pool_vm_size"],
+        target_low_priority_nodes=config["pool_low_priority_node_count"],
+        target_dedicated_nodes=config["pool_dedicated_node_count"]
     )
     batch_service_client.pool.add(new_pool)
 
