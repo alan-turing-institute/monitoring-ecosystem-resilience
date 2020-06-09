@@ -372,7 +372,11 @@ class VegetationImageProcessor(ProcessorModule):
         if (not self.replace_existing_files) and \
            self.check_for_existing_files(output_location, self.num_files_per_point):
             return True
+
         print("Proceeding.")
+        print(input_filepath)
+        print(self.input_location_type)
+
         # If no files already there, proceed.
         input_filepath = os.path.join(self.input_location,
                                       date_string,
@@ -394,8 +398,8 @@ class VegetationImageProcessor(ProcessorModule):
                               "filename": filename
                               }
 
-        tif_filebase = os.path.join(input_filepath,
-                                    filenames[0].split('.')[0])
+        print(filenames)
+        tif_filebase = os.path.join(input_filepath, filenames[0].split('.')[0])
 
         # save the rgb image
         rgb_ok = self.save_rgb_image(band_dict,
