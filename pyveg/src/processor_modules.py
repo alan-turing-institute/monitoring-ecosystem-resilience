@@ -672,4 +672,7 @@ class NDVICalculator(ProcessorModule):
             date_strings = sorted(self.list_directory(self.input_location,
                                                       self.input_location_type))
         for date_string in date_strings:
+            date_path = os.path.join(self.input_location, date_string)
+            if "SPLIT" not in self.list_directory(date_path, self.input_location_type):
+                continue
             self.process_single_date(date_string)
