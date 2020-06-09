@@ -68,8 +68,20 @@ coordinate_store.loc['21'] = {'continent': 'Africa', 'country': 'Niger', 'type':
 coordinate_store.loc['22'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.14, 'longitude': -1.56}
 coordinate_store.loc['23'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.02, 'longitude': -1.35}
 
+# degraded locations in West Niger
+coordinate_store.loc['24'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 16.26, 'longitude': -1.83}
+coordinate_store.loc['25'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 16.19, 'longitude': -1.83}
+coordinate_store.loc['26'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 16.17, 'longitude': -2.03}
+coordinate_store.loc['27'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 16.48, 'longitude': -1.87}
+coordinate_store.loc['28'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 15.95, 'longitude': -1.52}
+coordinate_store.loc['29'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 15.86, 'longitude': -2.05}
+
+# healthy locations in West Niger
+coordinate_store.loc['30'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'healthy', 'latitude': 14.8, 'longitude': -3.38}
+coordinate_store.loc['31'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'healthy', 'latitude': 14.94, 'longitude': -3.56}
+
 # location with recent drought in Namibia (Issue #283)
-coordinate_store.loc['24'] = {'continent': 'Africa', 'country': 'Namibia', 'type': 'declining', 'latitude': 12.76, 'longitude': -18.05}
+coordinate_store.loc['32'] = {'continent': 'Africa', 'country': 'Namibia', 'type': 'declining', 'latitude': 12.76, 'longitude': -18.05}
 
 
 # hardcode a check to make sure we don't overwrite any rows
