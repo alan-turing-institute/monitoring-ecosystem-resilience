@@ -32,6 +32,8 @@ class ProcessorModule(BaseModule):
         self.params += [
             ("replace_existing_files", [bool]),
             ("input_location", [str]),
+            ("input_location_subdirs", [list, tuple]),
+            ("output_location_subdirs", [list, tuple]),
             ("input_location_type", [str]),
             ("output_location", [str]),
             ("output_location_type", [str]),
@@ -62,6 +64,56 @@ class ProcessorModule(BaseModule):
             self.run_type = "local"
         if not "n_batch_tasks" in vars(self):
             self.n_batch_tasks = 100
+
+
+    def check_input_data_exists(self, date_string):
+        """
+        Processor modules will look for inputs in
+        <input_location>/<date_string>/<input_location_subdirs>
+        Check that the subdirs exist and are not empty.
+
+        Parameters
+        ==========
+        date_string: str, format YYYY-MM-DD
+
+        Returns
+        =======
+        True if input directories exist and are not empty, False otherwise.
+        """
+        for i in range(len(self.input_location_subdirs)):
+            if not self.input_location_subdirs[i] in self.list_directory(
+                    os.path.join(self.input_location, date_string,
+                                 *(self.input_location_subdirs[:i])),
+                    self.input_location_type):
+                return False
+            if len(self.list_directory(
+                    os.path.join(self.input_location, date_string,
+                                 *(self.input_location_subdirs)),
+                    self.input_location_type)) == 0:
+                return False
+        return True
+
+
+    def check_output_data_exists(self, date_string):
+        """
+        Processor modules will write output to
+        <output_location>/<date_string>/<output_location_subdirs>
+        Check
+
+        Parameters
+        ==========
+        date_string: str, format YYYY-MM-DD
+
+        Returns
+        =======
+        True if expected number of output files are already in output location,
+             AND self.replace_existing_files is set to False
+        False otherwise
+        """
+        output_location = os.path.join(self.output_location,
+                                       date_string,
+                                       *(self.output_location_subdirs))
+        return self.check_for_existing_files(output_location, self.num_files_per_point)
 
 
     def get_image(self, image_location):
@@ -101,8 +153,57 @@ class ProcessorModule(BaseModule):
                                .format(self.name, self.run_type))
 
 
+    def run_local(self):
+        """
+        loop over dates and call process_single_date on all of them.
+        """
+        print("Running local")
+        if "dates_to_process" in vars(self) and len(self.dates_to_process) > 0:
+            date_strings = self.dates_to_process
+        else:
+            date_strings = sorted(self.list_directory(self.input_location,
+                                                      self.input_location_type))
+        for date_string in date_strings:
+            print("date string {} input exists {} output exists {}"\
+                  .format(date_string,
+                  self.check_input_data_exists(date_string),
+                  self.check_output_data_exists(date_string)))
+
+            if self.check_input_data_exists(date_string) and \
+               not self.check_output_data_exists(date_string):
+                self.process_single_date(date_string)
+
+
+
     def run_batch(self):
-        raise RuntimeError("{}: run_batch method not implemented".format(self.name))
+        """"
+        Divide up the dates, and write a config json file for each set.
+        """
+        print("{} running in batch!".format(self.name))
+        # divide up the dates
+        date_strings = sorted(self.list_directory(self.input_location,
+                                                  self.input_location_type))
+        date_strings = [ds for ds in date_strings if self.check_input_data_exists(ds) \
+                        and not self.check_output_data_exists(ds)]
+
+
+        # can't have < 1 date_string per task
+        n_batch_tasks = min(self.n_batch_tasks, len(date_strings))
+        # how many dates per task ?
+        num_dates_per_task = len(date_strings) // n_batch_tasks
+        list_of_configs = []
+        for i in range(n_batch_tasks):
+            date_list = date_strings[i*num_dates_per_task:(i+1)*num_dates_per_task]
+            config = self.get_config()
+            config["dates_to_process"] = date_list
+            # reset run_type so that the batch jobs won't try to generate more batch jobs!
+            config["run_type"] = "local"
+            config["input_location_type"]="azure"
+            list_of_configs.append(config)
+        job_id = self.name +"_"+time.strftime("%Y-%m-%d_%H-%M-%S")
+        batch_utils.submit_tasks(list_of_configs, job_id)
+        batch_utils.wait_for_tasks_to_complete(job_id)
+        return
 
 
 
@@ -142,6 +243,8 @@ class VegetationImageProcessor(ProcessorModule):
             self.split_RGB_images = True
         # in PROCESSED dir we expect RGB. NDVI, BWNDVI
         self.num_files_per_point = 3
+        self.input_location_subdirs = ["RAW"]
+        self.output_location_subdirs = ["PROCESSED"]
 
 
     def construct_image_savepath(self, date_string, coords_string, image_type="RGB"):
@@ -235,7 +338,7 @@ class VegetationImageProcessor(ProcessorModule):
         return True
 
 
-    def process_single_date(self, input_filepath):
+    def process_single_date(self, date_string):
         """
         For a single set of .tif files corresponding to a date range
         (normally a sub-range of the full date range for the pipeline),
@@ -246,9 +349,7 @@ class VegetationImageProcessor(ProcessorModule):
 
         Parameters
         ==========
-        input_filepath: str, full path to directory containing tif files
-                       downloaded from GEE.  This will normally be
-                       self.output_location/<mid-point-date>/RAW
+        date_string: str, format YYYY-MM-DD
 
         Returns
         =======
@@ -258,22 +359,14 @@ class VegetationImageProcessor(ProcessorModule):
         # (in which case we can skip this date)
 
         # normally the coordinates will be part of the file path
-        coords_string = find_coords_string(input_filepath)
+        coords_string = find_coords_string(self.input_location)
         # if not though, we might have coords set explicitly
         if (not coords_string) and "coords" in vars(self):
             coords_string = "{}_{}".format(self.coords[0],self.coords[1])
-        date_string = input_filepath.split("/")[-2]
-        if not re.search("[\d]{4}-[\d]{2}-[\d]{2}", date_string):
-            if date_range in vars(self):
-                date_string = fid_mid_period(self.date_range[0], self.date_range[1])
-            else:
-                date_String = None
+
         if not coords_string and date_string:
             raise RuntimeError("{}: coords and date need to be defined, through file path or explicitly set")
 
-        if self.dates_to_process and not date_string in self.dates_to_process:
-            print("{} will not process date {}".format(self.name, date_string))
-            return True
         output_location = os.path.dirname(self.construct_image_savepath(date_string,
                                                                         coords_string))
         if (not self.replace_existing_files) and \
@@ -281,9 +374,14 @@ class VegetationImageProcessor(ProcessorModule):
             return True
         print("Proceeding.")
         # If no files already there, proceed.
+        input_filepath = os.path.join(self.input_location,
+                                      date_string,
+                                      *(self.input_location_subdirs))
         filenames = [filename for filename in self.list_directory(input_filepath,
                                                                   self.input_location_type) \
                      if filename.endswith(".tif")]
+        if len(filenames) == 0:
+            return
 
         # extract this to feed into `convert_to_rgb()`
         band_dict = {}
@@ -342,24 +440,6 @@ class VegetationImageProcessor(ProcessorModule):
         return True
 
 
-    def run_local(self):
-        """"
-        Function to run the module.  Loop over all date-sub-ranges and
-        call process_single_date() on each of them.
-        """
-
-        date_subdirs = sorted(self.list_directory(self.input_location,
-                                                  self.input_location_type))
-        for date_subdir in date_subdirs:
-            if not re.search("^([\d]{4}-[\d]{2}-[\d]{2})", date_subdir):
-                print("{}: Directory name {} not in YYYY-MM-DD format"\
-                      .format(self.name, date_subdir))
-                continue
-            date_path = os.path.join(self.input_location, date_subdir, "RAW")
-            processed_ok = self.process_single_date(date_path)
-            if not processed_ok:
-                continue
-
 
 class WeatherImageToJSON(ProcessorModule):
     """
@@ -377,6 +457,8 @@ class WeatherImageToJSON(ProcessorModule):
         by a parent Sequence, or by calling configure() with a dict of values
         """
         super().set_default_parameters()
+        self.input_location_subdirs = ["RAW"]
+        self.output_location_subdirs = ["JSON","WEATHER"]
 
 
     def process_single_date(self, date_string):
@@ -388,10 +470,6 @@ class WeatherImageToJSON(ProcessorModule):
         ----------
         date_string: str, format "YYYY-MM-DD"
 
-        Returns:
-        --------
-        metrics_dict: dict, typically 2 keys, for precipitation and temp,
-                           and values as floats.
         """
         metrics_dict = {}
         # if we are given a list of date strings to process, and this isn't
@@ -400,7 +478,8 @@ class WeatherImageToJSON(ProcessorModule):
             print("{} will not process date {}".format(self.name, date_string))
             return True
         print("Processing date {}".format(date_string))
-        input_location = os.path.join(self.input_location, date_string, "RAW")
+        input_location = os.path.join(self.input_location, date_string,
+                                      *(self.input_location_subdirs))
         for filename in self.list_directory(input_location, self.input_location_type):
             if filename.endswith(".tif"):
                 name_variable = (filename.split('.'))[1]
@@ -414,25 +493,14 @@ class WeatherImageToJSON(ProcessorModule):
         self.save_json(metrics_dict, "weather_data.json",
                        os.path.join(self.output_location,
                                     date_string,
-                                    "JSON","WEATHER"),
+                                    *(self.output_location_subdirs)),
                        self.output_location_type)
-        return True
-
-
-    def run_local(self):
-        # sub-directories of our input directory should be dates.
-        time_series_data = {}
-        date_strings = self.list_directory(self.input_location, self.input_location_type)
-        date_strings.sort()
-        for date_string in date_strings:
-           processed_ok = self.process_single_date(date_string)
-           if not processed_ok:
-               raise RuntimeError("{}: problem processing {}".format(self.name, date_string))
         return True
 
 
 
 #######################################################################
+
 def process_sub_image(i, input_filepath, output_location, date_string, coords_string):
     """
     Read file and run network centrality
@@ -479,7 +547,7 @@ class NetworkCentralityCalculator(ProcessorModule):
             ("n_threads", [int]),
             ("n_sub_images", [int]),
         ]
-        self.num_files_per_point = 1
+
 
     def set_default_parameters(self):
         """
@@ -491,6 +559,9 @@ class NetworkCentralityCalculator(ProcessorModule):
             self.n_threads = 4
         if not "n_sub_images" in vars(self):
             self.n_sub_images = -1 # do all-sub-images
+        self.num_files_per_point = 1
+        self.input_location_subdirs = ["SPLIT"]
+        self.output_location_subdirs = ["JSON","NC"]
 
 
     def check_sub_image(self, ndvi_filename, input_path):
@@ -518,12 +589,15 @@ class NetworkCentralityCalculator(ProcessorModule):
             return True
         # see if there is already a network_centralities.json file in
         # the output location - if so, skip
-        output_location = os.path.join(self.output_location, date_string,"JSON","NC")
+        output_location = os.path.join(self.output_location, date_string,
+                                       *(self.output_location_subdirs))
         if (not self.replace_existing_files) and \
            self.check_for_existing_files(output_location, self.num_files_per_point):
             return True
 
-        input_path = os.path.join(self.input_location, date_string, "SPLIT")
+        input_path = os.path.join(self.input_location,
+                                  date_string,
+                                  *(self.input_location_subdirs))
         all_input_files = self.list_directory(input_path, self.input_location_type)
 
         # list all the "BWNDVI" sub-images where RGB image passes quality check
@@ -563,47 +637,6 @@ class NetworkCentralityCalculator(ProcessorModule):
         return True
 
 
-    def run_local(self):
-        if "list_of_dates" in vars(self) and len(self.list_of_dates) > 0:
-            date_strings = self.list_of_dates
-        else:
-            date_strings = sorted(self.list_directory(self.input_location,
-                                                      self.input_location_type))
-        for date_string in date_strings:
-            self.process_single_date(date_string)
-
-
-
-
-    def run_batch(self):
-        """"
-        Divide up the dates, and write a config json file for each set.
-        """
-        print("{} running in batch!".format(self.name))
-        self.run_type = "local"
-        # divide up the dates
-        date_strings = sorted(self.list_directory(self.input_location,
-                                                  self.input_location_type))
-        # can't have < 1 date_string per task
-        n_batch_tasks = min(self.n_batch_tasks, len(date_strings))
-        # how many dates per task ?
-        num_dates_per_task = len(date_strings) // n_batch_tasks
-        list_of_configs = []
-        for i in range(n_batch_tasks):
-            date_list = date_strings[i*num_dates_per_task:(i+1)*num_dates_per_task]
-            config = self.get_config()
-            config["list_of_dates"] = date_list
-            # reset run_type so that the batch jobs won't try to generate more batch jobs!
-            config["run_type"] = "local"
-            config["input_location_type"]="azure"
-            list_of_configs.append(config)
-        job_id = self.name +"_"+time.strftime("%Y-%m-%d_%H-%M-%S")
-        batch_utils.submit_tasks(list_of_configs, job_id)
-        batch_utils.wait_for_tasks_to_complete(job_id)
-        return list_of_configs
-
-
-
 class NDVICalculator(ProcessorModule):
     """
     Class to look at NDVI on sub-images
@@ -627,6 +660,9 @@ class NDVICalculator(ProcessorModule):
         super().set_default_parameters()
         if not "n_sub_images" in vars(self):
             self.n_sub_images = -1 # do all-sub-images
+        self.num_files_per_point = 1
+        self.input_location_subdirs = ["SPLIT"]
+        self.output_location_subdirs = ["JSON","NDVI"]
 
 
     def check_sub_image(self, ndvi_filename, input_path):
@@ -690,12 +726,14 @@ class NDVICalculator(ProcessorModule):
 
         # see if there is already a ndvi.json file in
         # the output location - if so, skip
-        output_location = os.path.join(self.output_location, date_string,"JSON","NDVI")
+        output_location = os.path.join(self.output_location, date_string,
+                                       *(self.output_location_subdirs))
         if (not self.replace_existing_files) and \
-           self.check_for_existing_files(output_location, 1):
+           self.check_for_existing_files(output_location, self.num_files_per_point):
             return True
 
-        input_path = os.path.join(self.input_location, date_string, "SPLIT")
+        input_path = os.path.join(self.input_location, date_string,
+                                  *(self.input_location_subdirs))
         all_input_files = self.list_directory(input_path, self.input_location_type)
         print("input path is {}".format(input_path))
 
@@ -726,14 +764,3 @@ class NDVICalculator(ProcessorModule):
                        self.output_location_type)
 
         return True
-
-
-
-    def run_local(self):
-        if "list_of_dates" in vars(self):
-            date_strings = self.list_of_dates
-        else:
-            date_strings = sorted(self.list_directory(self.input_location,
-                                                      self.input_location_type))
-        for date_string in date_strings:
-            self.process_single_date(date_string)
