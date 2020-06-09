@@ -85,4 +85,4 @@ coordinate_store.loc['32'] = {'continent': 'Africa', 'country': 'Namibia', 'type
 
 
 # hardcode a check to make sure we don't overwrite any rows
-assert( len(coordinate_store) == 25 )
+assert( len(coordinate_store) == 33 )
