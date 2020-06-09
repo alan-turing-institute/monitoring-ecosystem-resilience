@@ -157,7 +157,7 @@ class ProcessorModule(BaseModule):
         """
         loop over dates and call process_single_date on all of them.
         """
-        print("Running local")
+        print("{}: Running local".format(self.name))
         if "dates_to_process" in vars(self) and len(self.dates_to_process) > 0:
             date_strings = self.dates_to_process
         else:
@@ -183,12 +183,17 @@ class ProcessorModule(BaseModule):
         # divide up the dates
         date_strings = sorted(self.list_directory(self.input_location,
                                                   self.input_location_type))
-        date_strings = [ds for ds in date_strings if self.check_input_data_exists(ds) \
-                        and not self.check_output_data_exists(ds)]
-
+        print("number of date strings in input location {}".format(len(date_strings)))
+        date_strings = [ds for ds in date_strings if self.check_input_data_exists(ds)]
+        print("number of date strings with input data {}".format(len(date_strings)))
+        date_strings = [ds for ds in date_strings if not self.check_output_data_exists(ds)]
+        print("number of date strings without output data {}".format(len(date_strings)))
 
         # can't have < 1 date_string per task
         n_batch_tasks = min(self.n_batch_tasks, len(date_strings))
+        if n_batch_tasks == 0:
+            print("No dates to do - returning")
+            return
         # how many dates per task ?
         num_dates_per_task = len(date_strings) // n_batch_tasks
         list_of_configs = []
@@ -373,14 +378,11 @@ class VegetationImageProcessor(ProcessorModule):
            self.check_for_existing_files(output_location, self.num_files_per_point):
             return True
 
-        print("Proceeding.")
-        print(input_filepath)
-        print(self.input_location_type)
-
         # If no files already there, proceed.
         input_filepath = os.path.join(self.input_location,
                                       date_string,
                                       *(self.input_location_subdirs))
+        print("{} processing files in {}".format(self.name, input_filepath))
         filenames = [filename for filename in self.list_directory(input_filepath,
                                                                   self.input_location_type) \
                      if filename.endswith(".tif")]
