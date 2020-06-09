@@ -670,8 +670,8 @@ def detrend_df(df, period='MS'):
 
     # need to keep this info for smoothing later
     try:
-        df_out['latitude'] = df['latitude']
-        df_out['longitude'] = df['longitude']
+        df_out['latitude'] = df['latitude'].iloc[0]
+        df_out['longitude'] = df['longitude'].iloc[0]
     except:
         pass
 
@@ -710,7 +710,7 @@ def detrend_data(dfs, period='MS'):
 
             # group by (lat, long)
             d = {}
-            for name, group in df.groupby(['latitude', 'longitude']):
+            for name, group in df.groupby(['latitude', 'longitude'], as_index=False):
                 d[name] = group
             
             # for each sub-image
