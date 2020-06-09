@@ -414,14 +414,16 @@ class BaseModule(object):
 
     def check_for_existing_files(self, location, num_files_expected):
         """
-        See if there are already num_files in the specified location
+        See if there are already num_files in the specified location.
+        If "replace_existing_files" is set to True, always return False
         """
+        if self.output_location_type == "local":
+            os.makedirs(location, exist_ok=True)
         # if we haven't specified number of expected files per point it will be -1
         if num_files_expected < 0:
             return False
-
-        if self.output_location_type == "local":
-            os.makedirs(location, exist_ok=True)
+        if self.replace_existing_files:
+            return False
         existing_files = self.list_directory(location, self.output_location_type)
         if len(existing_files) == num_files_expected:
             print("{}: Already found {} files in {} - skipping"\
