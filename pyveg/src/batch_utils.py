@@ -133,6 +133,7 @@ def wait_for_tasks_to_complete(job_id, timeout=60, batch_service_client=None):
     print("Monitoring all tasks for 'Completed' state, timeout in {}..."
           .format(timeout), end='')
 
+    num_success, num_failed, num_incomplete = 0,0,0
     while datetime.datetime.now() < timeout_expiration:
         print('.', end='')
         sys.stdout.flush()
@@ -140,15 +141,27 @@ def wait_for_tasks_to_complete(job_id, timeout=60, batch_service_client=None):
 
         incomplete_tasks = [task for task in tasks if
                             task.state != batchmodels.TaskState.completed]
+        num_incomplete = len(incomplete_tasks)
+
+        task_success = [int(task.execution_info.exit_code == 0) for task in tasks if
+                           task.state != batchmodels.TaskState.completed ]
+        num_success = sum(task_success)
+        num_failed = len(task_success) - num_success
         if not incomplete_tasks:
             print()
-            return True
+            return {"Succeeded": num_success,
+                    "Failed": num_failed,
+                    "Incomplete": num_incomplete}
         else:
             time.sleep(1)
 
     print()
-    raise RuntimeError("ERROR: Tasks did not reach 'Completed' state within "
-                       "timeout period of " + str(timeout))
+    print("WARNING: {} Tasks did not reach 'Completed' state within "
+                       "timeout period of {}".format(num_incomplete,timeout))
+    return {"Succeeded": num_success,
+            "Failed": num_failed,
+            "Incomplete": num_incomplete}
+
 
 
 def create_pool(pool_id, batch_service_client=None):

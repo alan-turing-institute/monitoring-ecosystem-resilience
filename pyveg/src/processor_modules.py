@@ -16,6 +16,7 @@ from multiprocessing import Pool
 from pyveg.src.image_utils import *
 from pyveg.src.file_utils import *
 from pyveg.src.coordinate_utils import *
+from pyveg.src.date_utils import *
 from pyveg.src.subgraph_centrality import (
     subgraph_centrality,
     feature_vector_metrics,
@@ -144,13 +145,15 @@ class ProcessorModule(BaseModule):
 
     def run(self):
         super().run()
+        job_status={}
         if self.run_type == "local":
-            self.run_local()
+            job_status = self.run_local()
         elif self.run_type == "batch":
-            self.run_batch()
+            job_status = self.run_batch()
         else:
             raise RuntimeError("{}: Unknown run_type {} - must be 'local' or 'batch'"\
                                .format(self.name, self.run_type))
+        return job_status
 
 
     def run_local(self):
@@ -163,6 +166,8 @@ class ProcessorModule(BaseModule):
         else:
             date_strings = sorted(self.list_directory(self.input_location,
                                                       self.input_location_type))
+        num_succeeded = 0
+        num_failed = 0
         for date_string in date_strings:
             print("date string {} input exists {} output exists {}"\
                   .format(date_string,
@@ -171,8 +176,15 @@ class ProcessorModule(BaseModule):
 
             if self.check_input_data_exists(date_string) and \
                not self.check_output_data_exists(date_string):
-                self.process_single_date(date_string)
-
+                succeeded = self.process_single_date(date_string)
+                if succeeded:
+                    num_succeeded += 1
+                else:
+                    num_failed += 1
+        return {
+            "Succeeded": num_succeeded,
+            "Failed": num_failed
+        }
 
 
     def run_batch(self):
@@ -188,27 +200,22 @@ class ProcessorModule(BaseModule):
         print("number of date strings with input data {}".format(len(date_strings)))
         date_strings = [ds for ds in date_strings if not self.check_output_data_exists(ds)]
         print("number of date strings without output data {}".format(len(date_strings)))
-
-        # can't have < 1 date_string per task
-        n_batch_tasks = min(self.n_batch_tasks, len(date_strings))
-        if n_batch_tasks == 0:
-            print("No dates to do - returning")
-            return
-        # how many dates per task ?
-        num_dates_per_task = len(date_strings) // n_batch_tasks
+        # split these dates up over the batch tasks
+        dates_per_task = assign_dates_to_tasks(date_strings, self.n_batch_tasks)
+        # create a config dict for each task - will correspond to configuration for an
+        # instance of this Module.
         list_of_configs = []
-        for i in range(n_batch_tasks):
-            date_list = date_strings[i*num_dates_per_task:(i+1)*num_dates_per_task]
+        for i in range(len(dates_per_task)):
             config = self.get_config()
-            config["dates_to_process"] = date_list
+            config["dates_to_process"] = dates_per_task[i]
             # reset run_type so that the batch jobs won't try to generate more batch jobs!
             config["run_type"] = "local"
             config["input_location_type"]="azure"
             list_of_configs.append(config)
         job_id = self.name +"_"+time.strftime("%Y-%m-%d_%H-%M-%S")
         batch_utils.submit_tasks(list_of_configs, job_id)
-        batch_utils.wait_for_tasks_to_complete(job_id)
-        return
+        job_status = batch_utils.wait_for_tasks_to_complete(job_id)
+        return job_status
 
 
 
