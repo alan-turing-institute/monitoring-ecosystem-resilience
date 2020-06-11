@@ -192,6 +192,8 @@ pyveg_calc_EC --input_txt ../binary_image.txt --do_EC
 
 ## `pyveg` flow
 
+The digram below represents the high level flow of the `pyveg` package.
+
 ![`pyveg` program flow.](paper/pveg_flow.png)
 
 
