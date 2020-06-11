@@ -80,3 +80,26 @@ def test_get_date_range_for_collection():
     new_date_range = get_date_range_for_collection(date_range, coll_dict)
     assert new_date_range[0] == "2015-01-01"
     assert new_date_range[1] == "2019-01-01"
+
+
+
+def test_assign_dates_to_tasks_more_dates_than_tasks():
+    start_date = "2015-01-01"
+    end_date = "2020-01-01"
+    dates = slice_time_period(start_date, end_date, "1m")
+    n_tasks = 20
+    date_lists = assign_dates_to_tasks(dates, n_tasks)
+    assert len(date_lists)==n_tasks
+    for dl in date_lists:
+        assert len(dl) == 3
+
+
+def test_assign_dates_to_tasks_more_tasks_than_dates():
+    start_date = "2015-01-01"
+    end_date = "2020-01-01"
+    dates = slice_time_period(start_date, end_date, "1m")
+    n_tasks = 100
+    date_lists = assign_dates_to_tasks(dates, n_tasks)
+    assert len(date_lists)== len(dates)
+    for dl in date_lists:
+        assert len(dl) == 1
