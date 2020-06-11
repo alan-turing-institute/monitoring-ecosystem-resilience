@@ -54,7 +54,9 @@ research to be carried out at scale, and hence can be an
 important tool in understanding changing arid and semi-arid 
 ecosystem dynamics. A list of PVP locations, obtained through
 both literature and manual searches, is included in the package at 
-`pyveg/coordaintes.py`.
+`pyveg/coordaintes.py`. The structure of the package is outlined in
+\autoref{fig:pyveg_flow}, and is discussed in more detail in the 
+following sections.
 
 ![`pyveg` program flow.\label{fig:pyveg_flow}](pveg_flow.png)
 
