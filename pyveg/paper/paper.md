@@ -64,8 +64,9 @@ following sections.
 # Downloading data from Google Earth Engine
 
 In order to interact with the GEE API, the user must sign up to GEE 
-and obtain an API key. Upon running `pyveg` for the first time, the 
-user will be prompted to enter their API key. The `run_pyveg_pipeline`
+and obtain an API key, which is linked to a Google account. Upon downloading
+data using `pyveg` for the first time, the 
+user will be prompted to enter their API key to authenticate GEE. The `run_pyveg_pipeline`
 command initiates the downloading of time series data at a single
 coordinate location. The job is configured using a configuration file 
 specified by the `--config_file` argument.
@@ -110,7 +111,7 @@ following time series: raw NDVI mean pixel intensity across the image,
 offset50 (a measure of the slope of the network centrality feature vector), 
 and precipitation.
 
-During data processing, which is also configurable, `pyveg` is able 
+During data processing, `pyveg` is able 
 to drop time series outliers and resample the time series to clean the data 
 and avoid gaps. A smoothed time series is constructed using LOESS smoothing, 
 and residuals between the raw and smoothed time series are calculated. 
