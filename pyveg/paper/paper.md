@@ -29,10 +29,10 @@ forces that drive the growth and mortality of plants. Inter-plant
 competition for resources, in particular water, can lead to the 
 formation of PVP. Arid and semi-arid ecosystems may be under threat 
 due to changing precipitation dynamics driven by macroscopic changes 
-in climate. These regions disiplay some noteable examples of PVP, 
+in climate. These regions display some noteable examples of PVP, 
 for example the "tiger bush" patterns found in West Africa.
 
-The mophology of the periodic pattern has been suggested to be 
+The morphology of the periodic pattern has been suggested to be 
 linked to the resilience of the ecosystem [@Mander:2017; @Trichon:2018]. 
 Using remote sensing techniques,  vegetation patterns in these regions 
 can be studied, and an analysis of the resilience of the ecosystem can 
@@ -105,7 +105,7 @@ intensities for each sub-image.
 # Time series analysis 
 
 `pyveg` analysis functionality is exposed via a `pveg_gee_analysis` command.
-This commands accepts an argument, `--input_dir`, which points to a directory 
+The command accepts an argument, `--input_dir`, which points to a directory 
 previously created by a download job. `pyveg` supports the analysis of the 
 following time series: raw NDVI mean pixel intensity across the image, 
 offset50 (a measure of the slope of the network centrality feature vector), 
