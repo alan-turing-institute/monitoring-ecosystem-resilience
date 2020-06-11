@@ -26,21 +26,21 @@ bibliography: paper.bib
 
 Periodic vegetation patterns (PVP) arise from the interplay between 
 forces that drive the growth and mortality of plants. Inter-plant 
-competetion for resources, in particular water, can lead to the 
+competition for resources, in particular water, can lead to the 
 formation of PVP. Arid and semi-arid ecosystems may be under threat 
 due to changing precipitation dynamics driven by macroscopic changes 
 in climate. These regions disiplay some noteable examples of PVP, 
 for example the "tiger bush" patterns found in West Africa.
 
 The mophology of the periodic pattern has been suggested to be 
-linked to the resiliance of the ecosystem [@Mander:2017; @Trichon:2018]. 
+linked to the resilience of the ecosystem [@Mander:2017; @Trichon:2018]. 
 Using remote sensing techniques,  vegetation patterns in these regions 
-can be studied, and an analysis of the resiliance of the ecosystem can 
+can be studied, and an analysis of the resilience of the ecosystem can 
 be performed.
 
 The `pyveg` package implements functionality to download and process data
 from Google Earth Engine (GEE), and to subsequently perform a 
-resiliance analysis on the aquired data. PVP images are quantified using
+resilience analysis on the aquired data. PVP images are quantified using
 network centrality metrics. The results of the analysis can be used
 to search for typical early warning signals of an ecological collapse 
 [@Dakos:2008]. Google Earth Engine Editor scripts are also provided to help
@@ -54,7 +54,7 @@ research to be carried out at scale, and hence can be an
 important tool in understanding changing arid and semi-arid 
 ecosystem dynamics. A list of PVP locations, obtained through
 both literature and manual searches, is included in the package at 
-`pyveg/coordaintes.py`. The structure of the package is outlined in
+`pyveg/coordinates.py`. The structure of the package is outlined in
 \autoref{fig:pyveg_flow}, and is discussed in more detail in the 
 following sections.
 
