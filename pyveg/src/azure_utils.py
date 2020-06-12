@@ -116,7 +116,7 @@ def list_directory(path, container_name, bbs=None):
         pass
     output_names = []
     prefix = remove_container_name_from_blob_path(path, container_name)
-    if not prefix.endswith("/"):
+    if prefix and not prefix.endswith("/"):
         prefix += "/"
 
     blob_names = bbs.list_blob_names(container_name, prefix=prefix, delimiter="/")
@@ -141,7 +141,7 @@ def remove_container_name_from_blob_path(blob_path, container_name):
         if path_part == container_name:
             container_name_found = True
     if len(blob_name_parts) == 0:
-        return None
+        return ""
     return os.path.join(*blob_name_parts)
 
 
