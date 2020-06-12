@@ -98,7 +98,7 @@ ipython_config.py
 output_dir/
 output/
 pyveg_output/
-
+pyveg/configs/cached_config
 # macos
 .DS_Store
 .vscode/
