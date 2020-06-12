@@ -58,15 +58,31 @@ coordinate_store.loc['14'] = {'continent': 'America', 'country': 'USA', 'type': 
 # --------------------------------------------------------------------------------
 
 # declining locations in West Niger
-coordinate_store.loc['15'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.91471023966804, 'longitude': -0.6625226401049344}
-coordinate_store.loc['16'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.033103395382778, 'longitude': -0.8738672862288577}
-coordinate_store.loc['17'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.230632038531388, 'longitude': -0.9730542273470522}
-coordinate_store.loc['18'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.348139079852006, 'longitude': -1.1511569958854384}
-coordinate_store.loc['19'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.14817488163022, 'longitude': -1.165633636276826}
-coordinate_store.loc['20'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.855977889739282, 'longitude': -1.4382029638616056}
-coordinate_store.loc['21'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.975735734263175, 'longitude': -1.1271532347970603}
-coordinate_store.loc['22'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.149980582584208, 'longitude': -1.560087171792992}
-coordinate_store.loc['23'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.022536533381853, 'longitude': -1.351343943049319}
+coordinate_store.loc['15'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.91, 'longitude':  -0.66}
+coordinate_store.loc['16'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.03, 'longitude': -0.87}
+coordinate_store.loc['17'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.23, 'longitude': -0.97}
+coordinate_store.loc['18'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.34, 'longitude': -1.15}
+coordinate_store.loc['19'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.14, 'longitude':  -1.16}
+coordinate_store.loc['20'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.85, 'longitude': -1.43}
+coordinate_store.loc['21'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 14.97, 'longitude': -1.12}
+coordinate_store.loc['22'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.14, 'longitude': -1.56}
+coordinate_store.loc['23'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'declining', 'latitude': 15.02, 'longitude': -1.35}
+
+# degraded locations in West Niger
+coordinate_store.loc['24'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 16.26, 'longitude': -1.83}
+coordinate_store.loc['25'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 16.19, 'longitude': -1.83}
+coordinate_store.loc['26'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 16.17, 'longitude': -2.03}
+coordinate_store.loc['27'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 16.48, 'longitude': -1.87}
+coordinate_store.loc['28'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 15.95, 'longitude': -1.52}
+coordinate_store.loc['29'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'degraded', 'latitude': 15.86, 'longitude': -2.05}
+
+# healthy locations in West Niger
+coordinate_store.loc['30'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'healthy', 'latitude': 14.8, 'longitude': -3.38}
+coordinate_store.loc['31'] = {'continent': 'Africa', 'country': 'Niger', 'type': 'healthy', 'latitude': 14.94, 'longitude': -3.56}
+
+# location with recent drought in Namibia (Issue #283)
+coordinate_store.loc['32'] = {'continent': 'Africa', 'country': 'Namibia', 'type': 'declining', 'latitude': 12.76, 'longitude': -18.05}
+
 
 # hardcode a check to make sure we don't overwrite any rows
-assert( len(coordinate_store) == 24 )
+assert( len(coordinate_store) == 33 )
