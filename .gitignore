@@ -97,6 +97,7 @@ ipython_config.py
 # data
 output_dir/
 output/
+pyveg_output/
 
 # macos
 .DS_Store
@@ -105,3 +106,6 @@ output/
 # R stuff
 .RData
 .Rhistory
+
+# azure secrets
+pyveg/azure_config.py
