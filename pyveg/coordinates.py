@@ -83,6 +83,8 @@ coordinate_store.loc['31'] = {'continent': 'Africa', 'country': 'Niger', 'type':
 # location with recent drought in Namibia (Issue #283)
 coordinate_store.loc['32'] = {'continent': 'Africa', 'country': 'Namibia', 'type': 'declining', 'latitude': 12.76, 'longitude': -18.05}
 
+# Baja
+coordinate_store.loc['33'] = {'continent' : 'America', 'country': 'Mexico', 'type': 'labyrinths', 'latitude': 26.77, 'longitude': -112.92}
 
 # hardcode a check to make sure we don't overwrite any rows
-assert( len(coordinate_store) == 33 )
+assert( len(coordinate_store) == 34 )
