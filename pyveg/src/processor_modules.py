@@ -40,7 +40,7 @@ class ProcessorModule(BaseModule):
             ("output_location_type", [str]),
             ("num_files_per_point", [int]),
             ("dates_to_process", [list, tuple]),
-            ("run_type", [str]), # batch or local
+            ("run_mode", [str]), # batch or local
             ("n_batch_tasks", [int])
         ]
 
@@ -61,10 +61,12 @@ class ProcessorModule(BaseModule):
             self.output_location_type = "local"
         if not "dates_to_process" in vars(self):
             self.dates_to_process = []
-        if not "run_type" in vars(self):
-            self.run_type = "local"
+        if not "run_mode" in vars(self):
+            self.run_mode = "local"
         if not "n_batch_tasks" in vars(self):
             self.n_batch_tasks = 100
+        if not "batch_task_dict" in vars(self):
+            self.batch_task_dict = {}
 
 
     def check_input_data_exists(self, date_string):
@@ -146,13 +148,13 @@ class ProcessorModule(BaseModule):
     def run(self):
         super().run()
         job_status={}
-        if self.run_type == "local":
+        if self.run_mode == "local":
             job_status = self.run_local()
-        elif self.run_type == "batch":
+        elif self.run_mode == "batch":
             job_status = self.run_batch()
         else:
-            raise RuntimeError("{}: Unknown run_type {} - must be 'local' or 'batch'"\
-                               .format(self.name, self.run_type))
+            raise RuntimeError("{}: Unknown run_mode {} - must be 'local' or 'batch'"\
+                               .format(self.name, self.run_mode))
         return job_status
 
 
@@ -181,42 +183,120 @@ class ProcessorModule(BaseModule):
                     num_succeeded += 1
                 else:
                     num_failed += 1
+        self.is_finished = True
         return {
             "Succeeded": num_succeeded,
             "Failed": num_failed
         }
 
 
+    def get_dependent_batch_tasks(self):
+        """
+        When running in batch, we are likely to depend on tasks submitted by
+        the previous Module in the Sequence.  This Module should be in the
+        "depends_on" attribute of this one.
+
+        Task dependencies will be a dict of format
+        {"task_id": <task_id>, "date_range": [<dates>]}
+        """
+        ready_to_submit = True
+        task_dependencies = {}
+        if len(self.depends_on) > 0:
+            for dependency in self.depends_on:
+                if not (self.parent and self.parent.get(dependency)):
+                    print("{} couldn't retrieve dependency {}".format(self.name. dependency))
+                    continue
+                dependency_module = self.parent.get(dependency)
+                if (not "run_mode" in vars(dependency_module)) or \
+                   dependency_module.run_mode == "local":
+                    continue
+                while not dependency_module.all_tasks_submitted:
+                    print("{}: waiting for {} to submit all batch tasks".format(self.name, dependency_module.name))
+                    print('.', end='')
+                    sys.stdout.flush()
+                    time.sleep(1)
+                task_dependencies.update(dependency_module.batch_task_dict)
+        return task_dependencies
+
+
+    def create_task_dict(self, task_id, date_list, dependencies=[]):
+        config = self.get_config()
+        config["dates_to_process"] = date_list
+        # reset run_mode so that the batch jobs won't try to generate more batch jobs!
+        config["run_mode"] = "local"
+        config["input_location_type"]="azure"
+        task_dict = {"depends_on": dependencies,
+                     "task_id": task_id,
+                     "config": config
+        }
+        return task_dict
+
+
     def run_batch(self):
         """"
-        Divide up the dates, and write a config json file for each set.
-        """
-        print("{} running in batch!".format(self.name))
-        # divide up the dates
-        date_strings = sorted(self.list_directory(self.input_location,
-                                                  self.input_location_type))
-        print("number of date strings in input location {}".format(len(date_strings)))
-        date_strings = [ds for ds in date_strings if self.check_input_data_exists(ds)]
-        print("number of date strings with input data {}".format(len(date_strings)))
-        date_strings = [ds for ds in date_strings if not self.check_output_data_exists(ds)]
-        print("number of date strings without output data {}".format(len(date_strings)))
-        # split these dates up over the batch tasks
-        dates_per_task = assign_dates_to_tasks(date_strings, self.n_batch_tasks)
-        # create a config dict for each task - will correspond to configuration for an
-        # instance of this Module.
-        list_of_configs = []
-        for i in range(len(dates_per_task)):
-            config = self.get_config()
-            config["dates_to_process"] = dates_per_task[i]
-            # reset run_type so that the batch jobs won't try to generate more batch jobs!
-            config["run_type"] = "local"
-            config["input_location_type"]="azure"
-            list_of_configs.append(config)
-        job_id = self.name +"_"+time.strftime("%Y-%m-%d_%H-%M-%S")
-        batch_utils.submit_tasks(list_of_configs, job_id)
-        job_status = batch_utils.wait_for_tasks_to_complete(job_id)
-        return job_status
+        Write a config json file for each set of dates.
+        If this module depends on another module running in batch, we first
+        get the tasks on which this modules tasks will depend on.
+        If not, we look at the input dates subdirectories and divide them up
+        amongst the number of batch nodes.
 
+        We want to create a list of dictionaries
+        [{"task_id": <task_id>, "config": <config_dict>, "depends_on": [<task_ids>]}]
+        to pass to the batch_utils.submit_tasks function.
+        """
+
+        print("{} running in batch!".format(self.name))
+        self.all_tasks_submitted = False
+
+        task_dicts = []
+        task_dependencies = self.get_dependent_batch_tasks()
+
+
+        if len(task_dependencies) == 0:
+            # divide up the dates
+            date_strings = sorted(self.list_directory(self.input_location,
+                                                      self.input_location_type))
+            print("number of date strings in input location {}".format(len(date_strings)))
+            date_strings = [ds for ds in date_strings if self.check_input_data_exists(ds)]
+            print("number of date strings with input data {}".format(len(date_strings)))
+            date_strings = [ds for ds in date_strings if not self.check_output_data_exists(ds)]
+            print("number of date strings without output data {}".format(len(date_strings)))
+            # split these dates up over the batch tasks
+            dates_per_task = assign_dates_to_tasks(date_strings, self.n_batch_tasks)
+            # create a config dict for each task - will correspond to configuration for an
+            # instance of this Module.
+
+            for i in range(len(dates_per_task)):
+                task_dict = self.create_task_dict("{}_{}".format(self.name, i), dates_per_task[i])
+                task_dicts.append(task_dict)
+        else:
+            # we have a bunch of tasks from the previous Module in the Sequence
+            for i, (k, v) in enumerate(task_dependencies.items()):
+                # key k will be the task_id of the old task.  v will be the list of dates.
+                task_dict = self.create_task_dict("{}_{}".format(self.name, i), v, [k])
+                task_dicts.append(task_dict)
+        # Take the job_id from the parent Sequence if there is one
+        if self.parent and self.parent.batch_job_id:
+            job_id = self.parent.batch_job_id
+        else:
+            # otherwise create a new job_id just for this module
+            job_id = self.name +"_"+time.strftime("%Y-%m-%d_%H-%M-%S")
+        submitted_ok = batch_utils.submit_tasks(task_dicts, job_id)
+        if submitted_ok:
+            # store the task dict so any dependent modules can query it
+            self.task_dict = {td["task_id"]: td["config"]["dates_to_process"] for td in task_dicts}
+            self.all_tasks_submitted = True
+        return submitted_ok
+
+
+    def check_if_finished(self):
+        if self.run_mode == "local":
+            return self.is_finished
+        elif self.parent and self.parent.batch_job_id:
+            job_id = self.parent.batch_job_id
+            num_incomplete, num_success, num_failed = batch_utils.check_tasks_status(job_id)
+            self.is_finished =  (num_incomplete == 0)
+        return self.is_finished
 
 
 class VegetationImageProcessor(ProcessorModule):

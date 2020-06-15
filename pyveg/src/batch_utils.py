@@ -25,24 +25,30 @@ except:
     """)
 
 
-def submit_tasks(list_of_configs, job_name):
+def prepare_for_task_submission(job_name, config_container_name,
+                                batch_service_client, blob_client):
     """
-    Submit batch jobs to Azure batch.
+    Create pool and job if not already existing, and upload the azure config file
+    and the bash script used to run the batch job.
 
-    Parameter
-    =========
-    list_of_configs: list of dict, as proveded by BaseModule.get_config()
-    job_name: str, should identify the module generating the jobs
+    Parameters
+    ==========
+    job_name: str, ID of the job
+    batch_service_client: BatchServiceClient to interact with Azure batch.
+
+    Returns
+    =======
+    input_azure_config, input_script: ResourceFiles corresponding to the azure_config.py
+                     and batch_commands.sh scripts, uploaded to blob storage.
+
     """
+
     # check we have the azure config file
     azure_config_filename = os.path.join(os.path.dirname(__file__),"..","azure_config.py")
     if not os.path.exists(azure_config_filename):
         raise RuntimeError("azure_config.py not found - will not be able to run batch jobs.")
-    # create the batch service client to perform batch operations
-    batch_service_client = create_batch_client()
-    # create block blob service to upload config files
-    blob_client = BlockBlobService(account_name=config["storage_account_name"],
-                                   account_key=config["storage_account_key"])
+
+
     # create a pool of worker nodes if it doesn't already exist
     try:
         create_pool(config["batch_pool_id"], batch_service_client)
@@ -55,8 +61,7 @@ def submit_tasks(list_of_configs, job_name):
     except:
         print("job already exists")
         pass
-    # create a container on the storage account for uploading config to
-    config_container_name = 'input'
+
     blob_client.create_container(config_container_name, fail_on_exist=False)
     # upload the azure config to this, as the batch job will need it.
     input_azure_config = upload_file_to_container(blob_client,
@@ -67,34 +72,75 @@ def submit_tasks(list_of_configs, job_name):
     input_script = upload_file_to_container(blob_client,
                                             config_container_name,
                                             script_filename)
+    return input_azure_config, input_script
+
+
+def submit_tasks(task_dicts, job_name):
+    """
+    Submit batch jobs to Azure batch.
+
+    Parameter
+    =========
+    task_dicts: list of dicts, [ {
+                       "task_id": <task_id>,
+                       "config": <config_dict>,
+                       "depends_on": [<task_ids>]
+                                } ]
+    job_name: str, should identify the sequence generating the jobs
+    """
+    # create the batch service client to perform batch operations
+    batch_service_client = create_batch_client()
+    # create block blob service to upload config files
+    blob_client = BlockBlobService(account_name=config["storage_account_name"],
+                                   account_key=config["storage_account_key"])
+    # create a container on the storage account for uploading config to
+    config_container_name = 'input'
+    input_azure_config, input_script = prepare_for_task_submission(job_name,
+                                                                   config_container_name,
+                                                                   batch_service_client,
+                                                                   blob_client)
     # temporary dir to store json files before uploading to storage account
     tmp_json_dir = tempfile.mkdtemp()
-    task_ids = []
-    for i, c in enumerate(list_of_configs):
+
+    for i, task_dict in enumerate(task_dicts):
+
+
         config_filename = os.path.join(tmp_json_dir, "config_{}_{}.json".format(job_name, i))
         with open(config_filename,"w") as outfile:
-            json.dump(c, outfile)
+            json.dump(task_dict["config"], outfile)
         input_config = upload_file_to_container(blob_client,
                                                 config_container_name,
                                                 config_filename)
-        task_id = "task_{}".format(i)
+        task_id = task_dict["task_id"]
+        task_dependencies = task_dict["depends_on"]
         add_task(task_id,
                  job_name,
                  input_script,
                  input_config,
                  input_azure_config,
+                 task_dependencies,
                  batch_service_client)
-        task_ids.append(task_id)
-    return task_ids
+    return True
 
 
 def add_task(task_id, job_name,
              input_script,
              input_config,
              input_azure_config,
+             task_dependencies,
              batch_service_client=None):
     """
     add the batch task to the job.
+
+    Parameters
+    ==========
+    task_id: str, unique ID within this job for the task
+    job_name: str, name for the job - usually Sequence name + timestamp
+    input_script: ResourceFile corresponding to bash script uploaded to blob storage
+    input_config: ResourceFile corresponding to json config for this task uploaded to blob storage
+    input_azure_config: ResourceFile corresponding to azure config, uploaded to blob storage
+    task_dependencies: list of str, task_ids of any tasks that this one depends on
+    batch_service_client: BatchServiceClient
     """
     if not batch_service_client:
         batch_service_client = create_batch_client()
@@ -107,12 +153,21 @@ def add_task(task_id, job_name,
         auto_user=batch.models.AutoUserSpecification(
             elevation_level=batch.models.ElevationLevel.admin,
             scope=batch.models.AutoUserScope.task))
-    task = batch.models.TaskAddParameter(
-        id=task_id,
-        command_line=command,
-        user_identity=user,
-        resource_files=[input_script, input_config, input_azure_config])
+    if len(task_dependencies) > 0:
+        task = batch.models.TaskAddParameter(
+            id=task_id,
+            command_line=command,
+            user_identity=user,
+            resource_files=[input_script, input_config, input_azure_config],
+            depends_on=batch.models.TaskDependencies(task_ids=task_dependencies))
+    else:
+        task = batch.models.TaskAddParameter(
+            id=task_id,
+            command_line=command,
+            user_identity=user,
+            resource_files=[input_script, input_config, input_azure_config])
     batch_service_client.task.add(job_name, task)
+    return True
 
 
 def wait_for_tasks_to_complete(job_id, timeout=60, batch_service_client=None):
@@ -137,17 +192,8 @@ def wait_for_tasks_to_complete(job_id, timeout=60, batch_service_client=None):
     while datetime.datetime.now() < timeout_expiration:
         print('.', end='')
         sys.stdout.flush()
-        tasks = batch_service_client.task.list(job_id)
-
-        incomplete_tasks = [task for task in tasks if
-                            task.state != batchmodels.TaskState.completed]
-        num_incomplete = len(incomplete_tasks)
-
-        task_success = [int(task.execution_info.exit_code == 0) for task in tasks if
-                           task.state != batchmodels.TaskState.completed ]
-        num_success = sum(task_success)
-        num_failed = len(task_success) - num_success
-        if not incomplete_tasks:
+        num_incomplete, num_success, num_failed = check_tasks_status(job_id, batch_service_client)
+        if num_incomplete == 0:
             print()
             return {"Succeeded": num_success,
                     "Failed": num_failed,
@@ -162,6 +208,22 @@ def wait_for_tasks_to_complete(job_id, timeout=60, batch_service_client=None):
             "Failed": num_failed,
             "Incomplete": num_incomplete}
 
+
+
+def check_tasks_status(job_id, batch_service_client=None):
+    if not batch_service_client:
+        batch_service_client = create_batch_client()
+    tasks = batch_service_client.task.list(job_id)
+
+    incomplete_tasks = [task for task in tasks if
+                        task.state != batchmodels.TaskState.completed]
+    num_incomplete = len(incomplete_tasks)
+
+    task_success = [int(task.execution_info.exit_code == 0) for task in tasks if
+                    task.state != batchmodels.TaskState.completed ]
+    num_success = sum(task_success)
+    num_failed = len(task_success) - num_success
+    return num_incomplete, num_success, num_failed
 
 
 def create_pool(pool_id, batch_service_client=None):
@@ -193,21 +255,30 @@ def create_pool(pool_id, batch_service_client=None):
     batch_service_client.pool.add(new_pool)
 
 
-def create_job(job_id, pool_id, batch_service_client=None):
+def create_job(job_id, pool_id=None, batch_service_client=None):
     """
     Creates a job with the specified ID, associated with the specified pool.
 
-    :param batch_service_client: A Batch service client.
-    :type batch_service_client: `azure.batch.BatchServiceClient`
-    :param str job_id: The ID for the job.
-    :param str pool_id: The ID for the pool.
+    Parameters
+    ==========
+    job_id: str, ID for the job - will typically be module or sequence name +timestamp
+    pool_id: str, ID for the pool.  If not provided, use the one from azure_config.py
+    batch_service_client: BatchServiceClient instance.  Create one if not provided.
     """
     print('Creating job [{}]...'.format(job_id))
     if not batch_service_client:
         batch_service_client = create_batch_client()
+    if not pool_id:
+        pool_id = config["batch_pool_id"]
+    try:
+        create_pool(pool_id, batch_service_client)
+    except:
+        print("pool {}  already exists".format(pool_id))
     job = batch.models.JobAddParameter(
         id=job_id,
-        pool_info=batch.models.PoolInformation(pool_id=pool_id))
+        pool_info=batch.models.PoolInformation(pool_id=pool_id),
+        uses_task_dependencies=True
+    )
 
     batch_service_client.job.add(job)
 

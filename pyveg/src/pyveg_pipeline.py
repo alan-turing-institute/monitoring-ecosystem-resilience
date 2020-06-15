@@ -16,10 +16,13 @@ the results of the different SEQUENCES into one output file.
 import os
 import json
 import subprocess
+import time
+
 
 from pyveg.src.file_utils import save_json
 try:
     from pyveg.src import azure_utils
+    from pyveg.src import batch_utils
 except:
     print("Azure utils could not be imported - is Azure SDK installed?")
 
@@ -129,6 +132,7 @@ class Sequence(object):
         self.output_location = None
         self.output_location_type = None
         self.is_configured = False
+        self.is_finished = False
 
 
     def __iadd__(self, module):
@@ -179,6 +183,8 @@ class Sequence(object):
             if i>0:
                 module.input_location = self.modules[i-1].output_location
                 module.input_location_type = self.modules[i-1].output_location_type
+                # modules will depend on the previous module in the sequence
+                module.depends_on.append(self.modules[i-1].name)
             module.coords = self.coords
             module.date_range = self.date_range
             module.configure()
@@ -186,8 +192,10 @@ class Sequence(object):
 
 
     def run(self):
+        self.create_batch_job_if_needed()
         for module in self.modules:
             module.run()
+        self.finalize()
 
 
     def __repr__(self):
@@ -210,11 +218,48 @@ class Sequence(object):
 
     def get(self, mod_name):
         """
-        Return a module object when asked for by name.
+        Return a module object when asked for by name, or by class name
         """
         for module in self.modules:
             if module.name == mod_name:
                 return module
+            elif module.__class__.__name__ == mod_name:
+                return module
+
+
+    def create_batch_job_if_needed(self):
+        """
+        If any modules in this sequence are to be run in batch mode,
+        create a batch job for them.
+        """
+        has_batch_job = False
+        for module in self.modules:
+            if "run_mode" in vars(module) and module.run_mode == "batch":
+                has_batch_job = True
+                break
+        if has_batch_job:
+            self.batch_job_id = self.name +"_"+time.strftime("%Y-%m-%d_%H-%M-%S")
+            batch_utils.create_job(self.batch_job_id)
+            print("Sequence {}: Creating batch job {}".format(self.name,
+                                                              self.batch_job_id))
+
+    def finalize(self):
+        """
+        Only relevant when one or more modules are running in batch mode,
+        wait for all modules to finish.
+        """
+        num_modules_finished = 0
+        while num_modules_finished < len(self.modules):
+            num_modules_finished = 0
+            for module in self.modules:
+                print("{}: checking status of {}".format(self.name, module.name))
+                if module.check_if_finished():
+                    print("{}   ... finished".format(module.name))
+                    num_modules_finished += 1
+            print("{} / {} modules finished".format(num_modules_finished, len(self.modules)))
+            time.sleep(10)
+        self.is_finished = True
+        return
 
 
 class BaseModule(object):
@@ -233,6 +278,7 @@ class BaseModule(object):
             self.name = self.__class__.__name__
         self.params = []
         self.parent = None
+        self.depends_on = []
         self.is_configured = False
         self.is_finished = False
 
@@ -304,6 +350,10 @@ class BaseModule(object):
     def run(self):
         if not self.is_configured:
             raise RuntimeError("Module {} needs to be configured before running".format(self.name))
+
+
+    def check_if_finished(self):
+        return self.is_finished
 
 
     def __repr__(self):

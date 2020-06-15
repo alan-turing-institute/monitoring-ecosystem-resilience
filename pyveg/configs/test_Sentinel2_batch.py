@@ -44,7 +44,7 @@ modules_to_use = {
 
 # The following demonstrates how parameters can be set for individual Modules:
 special_config = {
-    "VegetationImageProcessor": {"run_type": "batch"},
-    "NetworkCentralityCalculator": {"n_sub_images": 10, 'n_threads': 1, "run_type": "batch"},
-    "NDVICalculator": {"run_type": "batch"}
+    "VegetationImageProcessor": {"run_mode": "batch"},
+    "NetworkCentralityCalculator": {"n_sub_images": 10, 'n_threads': 1, "run_mode": "batch"},
+    "NDVICalculator": {"run_mode": "batch"}
 }

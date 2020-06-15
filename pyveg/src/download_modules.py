@@ -193,6 +193,7 @@ class DownloaderModule(BaseModule):
             downloaded_ok = self.download_data(urls, location)
             if downloaded_ok:
                 download_locations.append(location)
+        self.is_finished = True
         return download_locations
 
 

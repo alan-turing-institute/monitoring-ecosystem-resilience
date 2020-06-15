@@ -96,7 +96,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
         veg_time_series = {}
         for date_string in date_strings:
             if "JSON" not in self.list_directory(os.path.join(self.input_veg_location, date_string), self.input_veg_location_type):
-                continue     
+                continue
             subdirs = self.list_directory(os.path.join(self.input_veg_location, date_string,"JSON"),
                                                        self.input_veg_location_type)
             veg_lists = []
@@ -118,11 +118,11 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                                                    filename),
                                       self.input_veg_location_type)
                     veg_lists.append(j)
-            
+
             date_path = os.path.join(self.input_veg_location, date_string)
             if "SPLIT" not in self.list_directory(date_path, self.input_veg_location_type):
                 continue
-            
+
             veg_time_point = self.combine_json_lists(veg_lists)
 
             veg_time_series[date_string] = veg_time_point
@@ -156,3 +156,4 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                                             "time-series-data": veg_time_series}
         self.save_json(output_dict, "results_summary.json", self.output_location,
                        self.output_location_type)
+        self.is_finished = True
