@@ -199,7 +199,6 @@ class ProcessorModule(BaseModule):
         Task dependencies will be a dict of format
         {"task_id": <task_id>, "date_range": [<dates>]}
         """
-        ready_to_submit = True
         task_dependencies = {}
         if len(self.depends_on) > 0:
             for dependency in self.depends_on:
@@ -207,15 +206,20 @@ class ProcessorModule(BaseModule):
                     print("{} couldn't retrieve dependency {}".format(self.name. dependency))
                     continue
                 dependency_module = self.parent.get(dependency)
+                print("{}: has dependency on {}".format(self.name, dependency_module.name))
                 if (not "run_mode" in vars(dependency_module)) or \
                    dependency_module.run_mode == "local":
+                    print("{}: dependency module {} is in local run mode".format(self.name, dependency_module.name))
                     continue
+                print("has {} submitted all tasks? {}".format(dependency_module.name,
+                                                              dependency_module.all_tasks_submitted))
                 while not dependency_module.all_tasks_submitted:
                     print("{}: waiting for {} to submit all batch tasks".format(self.name, dependency_module.name))
                     print('.', end='')
                     sys.stdout.flush()
                     time.sleep(1)
                 task_dependencies.update(dependency_module.batch_task_dict)
+        print("{} return task_dependencies {}".format(self.name, task_dependencies))
         return task_dependencies
 
 
@@ -268,12 +272,14 @@ class ProcessorModule(BaseModule):
 
             for i in range(len(dates_per_task)):
                 task_dict = self.create_task_dict("{}_{}".format(self.name, i), dates_per_task[i])
+                print("{} adding task_dict {} to list".format(self.name, task_dict))
                 task_dicts.append(task_dict)
         else:
             # we have a bunch of tasks from the previous Module in the Sequence
             for i, (k, v) in enumerate(task_dependencies.items()):
                 # key k will be the task_id of the old task.  v will be the list of dates.
                 task_dict = self.create_task_dict("{}_{}".format(self.name, i), v, [k])
+                print("{} adding task_dict with dependency {} to list".format(self.name, task_dict))
                 task_dicts.append(task_dict)
         # Take the job_id from the parent Sequence if there is one
         if self.parent and self.parent.batch_job_id:
@@ -281,11 +287,13 @@ class ProcessorModule(BaseModule):
         else:
             # otherwise create a new job_id just for this module
             job_id = self.name +"_"+time.strftime("%Y-%m-%d_%H-%M-%S")
+        print("{} about to submit tasks for job {}".format(self.name, job_id))
         submitted_ok = batch_utils.submit_tasks(task_dicts, job_id)
         if submitted_ok:
             # store the task dict so any dependent modules can query it
-            self.task_dict = {td["task_id"]: td["config"]["dates_to_process"] for td in task_dicts}
+            self.batch_task_dict = {td["task_id"]: td["config"]["dates_to_process"] for td in task_dicts}
             self.all_tasks_submitted = True
+            print("{} submitted all tasks ok, my task_dict is now {}".format(self.name, self.batch_task_dict))
         return submitted_ok
 
 
@@ -295,6 +303,7 @@ class ProcessorModule(BaseModule):
         elif self.parent and self.parent.batch_job_id:
             job_id = self.parent.batch_job_id
             num_incomplete, num_success, num_failed = batch_utils.check_tasks_status(job_id)
+            print("{} job status: incomplete {} success {} failed {}".format(self.name, num_incomplete, num_success, num_failed))
             self.is_finished =  (num_incomplete == 0)
         return self.is_finished
 

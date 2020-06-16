@@ -192,10 +192,29 @@ class Sequence(object):
 
 
     def run(self):
+        """
+        Before we run the Modules in this Sequence, check if there are any other Sequences
+        on which we depend, and if so, wait for them to finish.
+        """
+        if len(self.depends_on) > 0:
+            print("{} will check if all Sequences I depend on have finished".format(self.name))
+            dependencies_finished = False
+            while not dependencies_finished:
+                num_seq_finished = 0
+                for seq_name in self.depends_on:
+                    seq = self.parent.get(seq_name)
+                    print("{}: checking status of {}".format(self.name, seq.name))
+                    if seq.check_if_finished():
+                        print("{}   ... finished".format(seq.name))
+                        num_seq_finished += 1
+                    dependencies_finished = num_seq_finished == len(self.depends_on)
+                    print("{} / {} dependencies finished".format(num_seq_finished, len(self.depends_on)))
+                time.sleep(10)
+
+
         self.create_batch_job_if_needed()
         for module in self.modules:
             module.run()
-        self.finalize()
 
 
     def __repr__(self):
@@ -243,23 +262,23 @@ class Sequence(object):
             print("Sequence {}: Creating batch job {}".format(self.name,
                                                               self.batch_job_id))
 
-    def finalize(self):
+    def check_if_finished(self):
         """
         Only relevant when one or more modules are running in batch mode,
-        wait for all modules to finish.
+        Sequences that depend on this Sequence will call this function
+        while they wait for all Modules to finish.
         """
         num_modules_finished = 0
-        while num_modules_finished < len(self.modules):
-            num_modules_finished = 0
-            for module in self.modules:
-                print("{}: checking status of {}".format(self.name, module.name))
-                if module.check_if_finished():
-                    print("{}   ... finished".format(module.name))
-                    num_modules_finished += 1
-            print("{} / {} modules finished".format(num_modules_finished, len(self.modules)))
-            time.sleep(10)
-        self.is_finished = True
-        return
+
+        for module in self.modules:
+            print("{}: checking status of {}".format(self.name, module.name))
+            if module.check_if_finished():
+                print("{}   ... finished".format(module.name))
+                num_modules_finished += 1
+        print("{} / {} modules finished".format(num_modules_finished, len(self.modules)))
+
+        self.is_finished = num_modules_finished == len(self.modules)
+        return self.is_finished
 
 
 class BaseModule(object):

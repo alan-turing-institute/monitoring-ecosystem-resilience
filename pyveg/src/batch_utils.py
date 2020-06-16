@@ -142,6 +142,8 @@ def add_task(task_id, job_name,
     task_dependencies: list of str, task_ids of any tasks that this one depends on
     batch_service_client: BatchServiceClient
     """
+    print("Adding task {} with dependency on {}".format(task_id, task_dependencies))
+
     if not batch_service_client:
         batch_service_client = create_batch_client()
     command = "/bin/bash {} {} {}".format(
