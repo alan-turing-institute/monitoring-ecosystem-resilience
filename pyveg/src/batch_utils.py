@@ -103,9 +103,8 @@ def submit_tasks(task_dicts, job_name):
     tmp_json_dir = tempfile.mkdtemp()
 
     for i, task_dict in enumerate(task_dicts):
-
-
-        config_filename = os.path.join(tmp_json_dir, "config_{}_{}.json".format(job_name, i))
+        module_class = task_dict["config"]["class_name"]
+        config_filename = os.path.join(tmp_json_dir, "config_{}_{}.json".format(module_class, i))
         with open(config_filename,"w") as outfile:
             json.dump(task_dict["config"], outfile)
         input_config = upload_file_to_container(blob_client,
@@ -121,6 +120,7 @@ def submit_tasks(task_dicts, job_name):
                  task_dependencies,
                  batch_service_client)
     return True
+
 
 
 def add_task(task_id, job_name,
