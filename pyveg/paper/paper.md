@@ -134,7 +134,7 @@ whether any trends (quantified by Kendall tau values) are statistically signific
 The `pyveg` package was developed by researchers from the Alan Turing Institute,
 University College London, and the University of Exeter.  Funding was provided by
 the Alan Turing Institute, the Science and Technology Facilities Council, and the
-Leverhulme Trust.
+Leverhulme Trust (grant number RPG-2018-046).
 We would like to acknowledge support from Tim Lenton and Jesse Abrams during the course of
 this project.
 
