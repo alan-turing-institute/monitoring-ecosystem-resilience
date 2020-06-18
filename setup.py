@@ -5,7 +5,7 @@ with open("pyveg/requirements.txt", "r") as f:
 
 setup(
     name="pyveg",
-    version="0.0.2",
+    version="1.0.0",
     description="Vegetation patterns study.",
     url="https://github.com/alan-turing-institute/monitoring-ecosystem-resilience",
     author="Nick Barlow, Camila Rangel Smith and Samuel Van Stroud",
