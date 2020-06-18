@@ -9,16 +9,20 @@ tags:
 authors:
   - name: Nick Barlow
     affiliation: 1
+  - name: Chris Boulton
+    affiliation: 2
   - name: Camila Rangel Smith
     affiliation: 1
   - name: Samuel Van Stroud
-    affiliation: 1, 2
+    affiliation: 1, 3
 affiliations:
  - name: The Alan Turing Institute
    index: 1
- - name: University College London
+ - name: University of Exeter
    index: 2
-date: 01 June 2020
+ - name: University College London
+   index: 3
+date: 19 June 2020
 bibliography: paper.bib
 ---
 
@@ -121,14 +125,14 @@ difference method.
 Time series plots are produced, along with auto- and cross-correlation plots.
 Early warning signals are also computed using the `ewstools` package [@ewstools], 
 including Lag-1 autocorrelation and standard deviation moving window plots. 
-A sensitivity and significance analysis is also performed, in order to determine 
-whether any declines (quantified by Kendall tau values) are statistically significant.
+A sensitivity and significance analysis is also performed in order to determine 
+whether any trends (quantified by Kendall tau values) are statistically significant.
 
 
 # Acknowledgements
 
-We acknowledge support from Tim Lenton, Chris Boulton, 
-and Jessie Abrams during the course of this project.
+We acknowledge support from Tim Lenton and Jessie Abrams during the course of 
+this project.
 
 
 # References
