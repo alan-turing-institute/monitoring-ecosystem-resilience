@@ -212,17 +212,19 @@ def wait_for_tasks_to_complete(job_id, timeout=60, batch_service_client=None):
 
 
 
-def check_tasks_status(job_id, batch_service_client=None):
+def check_tasks_status(job_id, task_name_prefix="", batch_service_client=None):
     if not batch_service_client:
         batch_service_client = create_batch_client()
     tasks = batch_service_client.task.list(job_id)
-
+    # Filter by name if provided.  Most tasks will be named after the Module they run.
+    if task_name_prefix:
+        tasks = [task for task in tasks if task.id.startswith(task_name_prefix)]
     incomplete_tasks = [task for task in tasks if
                         task.state != batchmodels.TaskState.completed]
     num_incomplete = len(incomplete_tasks)
 
     task_success = [int(task.execution_info.exit_code == 0) for task in tasks if
-                    task.state != batchmodels.TaskState.completed ]
+                    task.state == batchmodels.TaskState.completed ]
     num_success = sum(task_success)
     num_failed = len(task_success) - num_success
     return num_incomplete, num_success, num_failed
