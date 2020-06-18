@@ -13,9 +13,15 @@ from shutil import copyfile
 import re
 import datetime
 
+import ee
+
 from pyveg.src.date_utils import get_date_range_for_collection
 from pyveg.src.pyveg_pipeline import Pipeline, Sequence
-from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
+try:
+    from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
+except(ee.ee_exception.EEException):
+    print("Earth Engine not initialized - will not be able to download from GEE")
+    pass
 from pyveg.src.processor_modules import (
     VegetationImageProcessor,
     NetworkCentralityCalculator,
@@ -31,7 +37,7 @@ def build_pipeline(config_file, from_cache=False):
     """
     Load json config and instantiate modules
     """
-    print("Configuring from cached config? {}".format(from_cache))
+
     current_time = time.strftime("%Y-%m-%d_%H-%M-%S")
 
     spec = importlib.util.spec_from_file_location("myconfig", config_file)
@@ -100,6 +106,7 @@ def build_pipeline(config_file, from_cache=False):
         # and add this combiner sequence to the pipeline.
         p += s
     return p
+
 
 
 def configure_and_run_pipeline(pipeline):

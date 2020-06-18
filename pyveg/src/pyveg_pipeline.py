@@ -16,10 +16,13 @@ the results of the different SEQUENCES into one output file.
 import os
 import json
 import subprocess
+import time
+
 
 from pyveg.src.file_utils import save_json
 try:
     from pyveg.src import azure_utils
+    from pyveg.src import batch_utils
 except:
     print("Azure utils could not be imported - is Azure SDK installed?")
 
@@ -87,8 +90,9 @@ class Pipeline(object):
                                    .format(self.name, var))
         if self.output_location_type == "azure":
             container_name = azure_utils.sanitize_container_name(self.output_location)
-            print("Create container {}".format(container_name))
-            azure_utils.create_container(container_name)
+            if not azure_utils.check_container_exists(container_name):
+                print("Create container {}".format(container_name))
+                azure_utils.create_container(container_name)
             self.output_location = container_name
 
         for sequence in self.sequences:
@@ -128,6 +132,7 @@ class Sequence(object):
         self.output_location = None
         self.output_location_type = None
         self.is_configured = False
+        self.is_finished = False
 
 
     def __iadd__(self, module):
@@ -178,6 +183,8 @@ class Sequence(object):
             if i>0:
                 module.input_location = self.modules[i-1].output_location
                 module.input_location_type = self.modules[i-1].output_location_type
+                # modules will depend on the previous module in the sequence
+                module.depends_on.append(self.modules[i-1].name)
             module.coords = self.coords
             module.date_range = self.date_range
             module.configure()
@@ -185,6 +192,27 @@ class Sequence(object):
 
 
     def run(self):
+        """
+        Before we run the Modules in this Sequence, check if there are any other Sequences
+        on which we depend, and if so, wait for them to finish.
+        """
+        if len(self.depends_on) > 0:
+            print("{} will check if all Sequences I depend on have finished".format(self.name))
+            dependencies_finished = False
+            while not dependencies_finished:
+                num_seq_finished = 0
+                for seq_name in self.depends_on:
+                    seq = self.parent.get(seq_name)
+                    print("{}: checking status of {}".format(self.name, seq.name))
+                    if seq.check_if_finished():
+                        print("{}   ... finished".format(seq.name))
+                        num_seq_finished += 1
+                    dependencies_finished = num_seq_finished == len(self.depends_on)
+                    print("{} / {} dependencies finished".format(num_seq_finished, len(self.depends_on)))
+                time.sleep(10)
+
+
+        self.create_batch_job_if_needed()
         for module in self.modules:
             module.run()
 
@@ -209,11 +237,48 @@ class Sequence(object):
 
     def get(self, mod_name):
         """
-        Return a module object when asked for by name.
+        Return a module object when asked for by name, or by class name
         """
         for module in self.modules:
             if module.name == mod_name:
                 return module
+            elif module.__class__.__name__ == mod_name:
+                return module
+
+
+    def create_batch_job_if_needed(self):
+        """
+        If any modules in this sequence are to be run in batch mode,
+        create a batch job for them.
+        """
+        has_batch_job = False
+        for module in self.modules:
+            if "run_mode" in vars(module) and module.run_mode == "batch":
+                has_batch_job = True
+                break
+        if has_batch_job:
+            self.batch_job_id = self.name +"_"+time.strftime("%Y-%m-%d_%H-%M-%S")
+            batch_utils.create_job(self.batch_job_id)
+            print("Sequence {}: Creating batch job {}".format(self.name,
+                                                              self.batch_job_id))
+
+    def check_if_finished(self):
+        """
+        Only relevant when one or more modules are running in batch mode,
+        Sequences that depend on this Sequence will call this function
+        while they wait for all Modules to finish.
+        """
+        num_modules_finished = 0
+
+        for module in self.modules:
+            print("{}: checking status of {}".format(self.name, module.name))
+            if module.check_if_finished():
+                print("{}   ... finished".format(module.name))
+                num_modules_finished += 1
+        print("{} / {} modules finished".format(num_modules_finished, len(self.modules)))
+
+        self.is_finished = num_modules_finished == len(self.modules)
+        return self.is_finished
 
 
 class BaseModule(object):
@@ -232,7 +297,9 @@ class BaseModule(object):
             self.name = self.__class__.__name__
         self.params = []
         self.parent = None
+        self.depends_on = []
         self.is_configured = False
+        self.is_finished = False
 
 
     def set_parameters(self, config_dict):
@@ -259,6 +326,15 @@ class BaseModule(object):
             self.set_parameters(config_dict)
 
         self.check_config()
+
+        if "output_location_type" in vars(self) and self.output_location_type == "azure":
+            # if we're running this module standalone on azure, we might need to
+            # create the output container on the blob storage account"
+            output_location_base = self.output_location.split("/")[0]
+            container_name = azure_utils.sanitize_container_name(output_location_base)
+            if not azure_utils.check_container_exists(container_name):
+                print("Create container {}".format(container_name))
+                azure_utils.create_container(container_name)
         self.is_configured = True
 
 
@@ -295,6 +371,10 @@ class BaseModule(object):
             raise RuntimeError("Module {} needs to be configured before running".format(self.name))
 
 
+    def check_if_finished(self):
+        return self.is_finished
+
+
     def __repr__(self):
         if not self.is_configured:
             return"\n        Module not configured"
@@ -311,7 +391,16 @@ class BaseModule(object):
 
 
     def copy_to_output_location(self, tmpdir, output_location, file_endings=[]):
+        """
+        Copy contents of a temporary directory to a specified output location.
 
+        Parameters
+        ==========
+        tmpdir: str, location of temporary directory
+        output_location: str, either path to a local directory (if self.output_location_type is "local")
+                              or to Azure <container>/<blob_path> if self.output_location_type=="azure")
+        file_endings: list of str, optional.  If given, only files with those endings will be copied.
+        """
         if self.output_location_type == "local":
             os.makedirs(output_location, exist_ok=True)
             for root, dirs, files in os.walk(tmpdir):
@@ -394,17 +483,45 @@ class BaseModule(object):
 
     def check_for_existing_files(self, location, num_files_expected):
         """
-        See if there are already num_files in the specified location
+        See if there are already num_files in the specified location.
+        If "replace_existing_files" is set to True, always return False
         """
+        if self.output_location_type == "local":
+            os.makedirs(location, exist_ok=True)
         # if we haven't specified number of expected files per point it will be -1
         if num_files_expected < 0:
             return False
-
-        if self.output_location_type == "local":
-            os.makedirs(location, exist_ok=True)
+        if self.replace_existing_files:
+            return False
         existing_files = self.list_directory(location, self.output_location_type)
         if len(existing_files) == num_files_expected:
             print("{}: Already found {} files in {} - skipping"\
                   .format(self.name, num_files_expected, location))
             return True
         return False
+
+
+    def get_config(self):
+        """
+        Get the configuration of this module as a dict.
+        """
+        config_dict = {}
+        for param, _ in self.params:
+            config_dict[param] = self.__getattribute__(param)
+        config_dict["class_name"] = self.__class__.__name__
+        return config_dict
+
+
+    def save_config(self, config_location):
+        """
+        Write out the configuration of this module as a json file.
+        """
+        config_dict = self.get_config()
+
+        output_config_dir = os.path.dirname(config_location)
+        if output_config_dir and not os.path.exists(output_config_dir):
+            os.makedirs(output_config_dir)
+
+        with open(config_location, "w") as output_json:
+            json.dump(config_dict, output_json)
+        print("{} wrote config to {}".format(self.name, config_location))

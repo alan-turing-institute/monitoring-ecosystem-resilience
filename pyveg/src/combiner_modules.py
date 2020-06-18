@@ -9,7 +9,17 @@ from pyveg.src.file_utils import save_json
 
 from pyveg.src.pyveg_pipeline import BaseModule
 
-class VegAndWeatherJsonCombiner(BaseModule):
+
+class CombinerModule(BaseModule):
+    def __init__(self, name=None):
+        super().__init__(name)
+        self.params += [
+            ("output_location", [str]),
+            ("output_location_type", [str])
+        ]
+
+
+class VegAndWeatherJsonCombiner(CombinerModule):
     """
     Expect directory structures like:
     <something>/<input_veg_location>/<date>/network_centralities.json
@@ -19,10 +29,8 @@ class VegAndWeatherJsonCombiner(BaseModule):
     def __init__(self, name=None):
         super().__init__(name)
         self.params += [
-            ("output_location", [str]),
             ("input_veg_location", [str]),
             ("input_weather_location", [str]),
-            ("output_location_type", [str]),
             ("input_veg_location_type", [str]),
             ("input_weather_location_type", [str]),
             ("weather_collection", [str]),
@@ -88,7 +96,7 @@ class VegAndWeatherJsonCombiner(BaseModule):
         veg_time_series = {}
         for date_string in date_strings:
             if "JSON" not in self.list_directory(os.path.join(self.input_veg_location, date_string), self.input_veg_location_type):
-                continue     
+                continue
             subdirs = self.list_directory(os.path.join(self.input_veg_location, date_string,"JSON"),
                                                        self.input_veg_location_type)
             veg_lists = []
@@ -110,11 +118,11 @@ class VegAndWeatherJsonCombiner(BaseModule):
                                                    filename),
                                       self.input_veg_location_type)
                     veg_lists.append(j)
-            
+
             date_path = os.path.join(self.input_veg_location, date_string)
             if "SPLIT" not in self.list_directory(date_path, self.input_veg_location_type):
                 continue
-            
+
             veg_time_point = self.combine_json_lists(veg_lists)
 
             veg_time_series[date_string] = veg_time_point
@@ -148,3 +156,4 @@ class VegAndWeatherJsonCombiner(BaseModule):
                                             "time-series-data": veg_time_series}
         self.save_json(output_dict, "results_summary.json", self.output_location,
                        self.output_location_type)
+        self.is_finished = True

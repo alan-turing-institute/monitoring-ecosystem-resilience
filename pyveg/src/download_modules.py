@@ -32,7 +32,7 @@ import logging
 logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
 
 
-class BaseDownloader(BaseModule):
+class DownloaderModule(BaseModule):
     """
     Most of the code needed to download images from GEE is common to all
     types of data, so we put it in this base class, and have data-type-specific
@@ -193,6 +193,7 @@ class BaseDownloader(BaseModule):
             downloaded_ok = self.download_data(urls, location)
             if downloaded_ok:
                 download_locations.append(location)
+        self.is_finished = True
         return download_locations
 
 
@@ -202,9 +203,9 @@ class BaseDownloader(BaseModule):
 ##############################################################################
 
 
-class VegetationDownloader(BaseDownloader):
+class VegetationDownloader(DownloaderModule):
     """
-    Specialization of the BaseDownloader class, to deal with
+    Specialization of the DownloaderModule class, to deal with
     imagery from Sentinel 2 or Landsat 5-8 satellites, and
     get NDVI band from combining red and near-infra-red.
     """
@@ -260,7 +261,7 @@ class VegetationDownloader(BaseDownloader):
         return [image]
 
 
-class WeatherDownloader(BaseDownloader):
+class WeatherDownloader(DownloaderModule):
     """
     Download precipitation and temperature data.
     """

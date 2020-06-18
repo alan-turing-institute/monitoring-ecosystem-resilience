@@ -153,3 +153,20 @@ def get_date_range_for_collection(date_range, coll_dict):
     date_min = datetime_range[0] if datetime_range[0] > collection_min else collection_min
     date_max = datetime_range[1] if datetime_range[1] < collection_max else collection_max
     return (date_min.isoformat().split("T")[0], date_max.isoformat().split("T")[0])
+
+
+def assign_dates_to_tasks(date_list, n_tasks):
+    """
+    For batch jobs, will want to split dates as evenly as possible over some
+    number of tasks.
+
+    """
+    output_lists = [[] for _ in range(min(n_tasks, len(date_list)))]
+    j=0
+    while j < len(date_list):
+        for i in range(n_tasks):
+            output_lists[i].append(date_list[j])
+            j += 1
+            if j == len(date_list):
+                break
+    return output_lists
