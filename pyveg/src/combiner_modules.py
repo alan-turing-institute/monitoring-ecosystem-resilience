@@ -6,7 +6,7 @@ import os
 import json
 
 from pyveg.src.file_utils import save_json
-
+from pyveg.src.date_utils import get_date_strings_for_time_period
 from pyveg.src.pyveg_pipeline import BaseModule
 
 
@@ -29,6 +29,8 @@ class VegAndWeatherJsonCombiner(CombinerModule):
     def __init__(self, name=None):
         super().__init__(name)
         self.params += [
+            ("input_veg_sequence", [str]),
+            ("input_weather_sequence", [str]),
             ("input_veg_location", [str]),
             ("input_weather_location", [str]),
             ("input_veg_location_type", [str]),
@@ -39,31 +41,52 @@ class VegAndWeatherJsonCombiner(CombinerModule):
 
 
     def set_default_parameters(self):
-        # see if we can set our input directories from the output directories
-        # of previous series in the pipeline.
-        # The pipeline (if there is one) will be a grandparent, i.e. self.parent.parent
+        """
+        See if we can set our input directories from the output directories
+        of previous Sequences in the pipeline.
+        The pipeline (if there is one) will be a grandparent,
+        i.e. self.parent.parent
+        and the names of the Sequences we will want to combine should be
+        in the variable self.depends_on.
+        """
         super().set_default_parameters()
-        if self.parent and self.parent.parent and self.parent.depends_on:
-            for sequence_name in self.parent.depends_on:
-                sequence = self.parent.parent.get(sequence_name)
-                if sequence.data_type == "vegetation":
-                    self.input_veg_location = sequence.output_location
-                    self.input_veg_location_type = sequence.output_location_type
+        # get the parent Sequence and Pipeline
+        if self.parent and self.parent.parent:
+            # we're running in a Pipeline
+            for seq_name in self.parent.depends_on:
+                seq = self.parent.parent.get(seq_name)
+                if seq.data_type == "vegetation":
+                    self.input_veg_sequence = seq_name
+                elif seq.data_type == "weather":
+                    self.input_weather_sequence = seq_name
+            if not ("input_veg_sequence" in vars(self) \
+                    and "input_weather_sequence" in vars(self)):
+                raise RuntimeError("{}: Unable to find vegetation and weather sequences in depends_on".format(self.name, self.depends_on))
+            # now get other details from the input sequences
+            veg_sequence = self.parent.parent.get(self.input_veg_sequence)
+            self.input_veg_location = veg_sequence.output_location
+            self.input_veg_location_type = veg_sequence.output_location_type
+            self.veg_collection = veg_sequence.collection_name
 
-                    self.veg_collection = sequence.collection_name
-                elif sequence.data_type == "weather":
-                    self.input_weather_location = sequence.output_location
-                    self.input_weather_location_type = sequence.output_location_type
-                    self.weather_collection = sequence.collection_name
+            weather_sequence = self.parent.parent.get(self.input_weather_sequence)
+            self.input_weather_location = weather_sequence.output_location
+            self.input_weather_location_type = weather_sequence.output_location_type
+            self.weather_collection = weather_sequence.collection_name
         else:
+            # No parent Sequence or Pipeline - perhaps running standalone
             self.weather_collection = "ECMWF/ERA5/MONTHLY"
             self.veg_collection = "COPERNICUS/S2"
             self.input_veg_location_type = "local"
             self.input_weather_location_type = "local"
             self.output_location_type = "local"
 
+
     def combine_json_lists(self, json_lists):
-        print("Will combine {} json lists".format(len(json_lists)))
+        """
+        If for example we have json files from the NetworkCentrality
+        and NDVI calculators, all containing lists of dicts for sub-images,
+        combine them here by matching by coordinate.
+        """
         if len(json_lists) == 1:
             return json_lists[0]
         ## any way to do this without a huge nested loop?
@@ -90,25 +113,57 @@ class VegAndWeatherJsonCombiner(CombinerModule):
 
 
     def get_veg_time_series(self):
-        date_strings = self.list_directory(self.input_veg_location,
-                                           self.input_veg_location_type)
+        """
+        Combine contents of JSON files written by the NetworkCentrality
+        and NDVI calculator Modules.
+        If we are running in a Pipeline, get the expected set of date strings
+        from the vegetation sequence we depend on, and if there is no data
+        for a particular date, make a null entry in the output.
+        """
+
+        dates_with_data =self.list_directory(self.input_veg_location,
+                                             self.input_veg_location_type)
+
+        if self.parent and self.parent.parent:
+            veg_sequence = self.parent.parent.get(self.input_veg_sequence)
+            start_date, end_date = veg_sequence.date_range
+            time_per_point = veg_sequence.time_per_point
+            date_strings = get_date_strings_for_time_period(start_date,
+                                                            end_date,
+                                                            time_per_point)
+        else:
+            date_strings = dates_with_data
         date_strings.sort()
         veg_time_series = {}
         for date_string in date_strings:
-            if "JSON" not in self.list_directory(os.path.join(self.input_veg_location, date_string), self.input_veg_location_type):
+            if not date_string in dates_with_data:
+                veg_time_series[date_string] = None
+            # if there is no JSON directory for this date, add a null entry
+            if "JSON" not in self.list_directory(
+                    os.path.join(self.input_veg_location,
+                                 date_string),
+                    self.input_veg_location_type):
+                veg_time_series[date_string] = None
                 continue
-            subdirs = self.list_directory(os.path.join(self.input_veg_location, date_string,"JSON"),
-                                                       self.input_veg_location_type)
+            # find the subdirs of the JSON directory
+            subdirs = self.list_directory(
+                os.path.join(self.input_veg_location,
+                             date_string,"JSON"),
+                self.input_veg_location_type)
             veg_lists = []
             for subdir in subdirs:
-                print("looking at {}".format(os.path.join(self.input_veg_location,
-                                                          date_string,"JSON",
-                                                   subdir)))
+                print("{}: getting vegetation time series for {}"\
+                      .format(
+                          self.name, os.path.join(self.input_veg_location,
+                                                  date_string,"JSON",
+                                                  subdir)
+                      )
+                )
+                # list the JSON subdirectories and find any .json files in them
                 dir_contents = self.list_directory(
                     os.path.join(
                         self.input_veg_location, date_string, "JSON", subdir),
                     self.input_veg_location_type)
-                print("Dir contents are {}".format(dir_contents))
                 json_files = [filename for filename in dir_contents if filename.endswith(".json")]
                 for filename in json_files:
                     j = self.get_json(os.path.join(self.input_veg_location,
@@ -118,13 +173,9 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                                                    filename),
                                       self.input_veg_location_type)
                     veg_lists.append(j)
-
-            date_path = os.path.join(self.input_veg_location, date_string)
-            if "SPLIT" not in self.list_directory(date_path, self.input_veg_location_type):
-                continue
-
+            # combine the lists from the different subdirectories
             veg_time_point = self.combine_json_lists(veg_lists)
-
+            # update the final veg_time_series dictionary
             veg_time_series[date_string] = veg_time_point
         return veg_time_series
 
