@@ -29,8 +29,6 @@ class VegAndWeatherJsonCombiner(CombinerModule):
     def __init__(self, name=None):
         super().__init__(name)
         self.params += [
-            ("input_veg_sequence", [str]),
-            ("input_weather_sequence", [str]),
             ("input_veg_location", [str]),
             ("input_weather_location", [str]),
             ("input_veg_location_type", [str]),
@@ -124,7 +122,8 @@ class VegAndWeatherJsonCombiner(CombinerModule):
         dates_with_data =self.list_directory(self.input_veg_location,
                                              self.input_veg_location_type)
 
-        if self.parent and self.parent.parent:
+        if self.parent and self.parent.parent \
+           and "input_veg_sequence" in vars(self):
             veg_sequence = self.parent.parent.get(self.input_veg_sequence)
             start_date, end_date = veg_sequence.date_range
             time_per_point = veg_sequence.time_per_point
