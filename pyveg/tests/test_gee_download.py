@@ -9,57 +9,59 @@ from pyveg.src.pyveg_pipeline import Sequence
 from pyveg.src.processor_modules import (
     VegetationImageProcessor,
     NetworkCentralityCalculator,
-    WeatherImageToJSON
+    WeatherImageToJSON,
 )
 
-coordinates = (27.99,11.29)
+coordinates = (27.99, 11.29)
 
 # get one data point for the test
-date_range = ['2016-01-01', '2016-01-31']
+date_range = ["2016-01-01", "2016-01-31"]
 time_per_point = "30d"
 
 do_network_centrality = True
 
 data_collections = {
-    'Copernicus' : {
-        'collection_name': 'COPERNICUS/S2',
-        'type': 'vegetation',
-        'RGB_bands': ['B4','B3','B2'],
-        'NIR_band': 'B8',
-        'cloudy_pix_flag': 'CLOUDY_PIXEL_PERCENTAGE',
-        'do_network_centrality': do_network_centrality
+    "Copernicus": {
+        "collection_name": "COPERNICUS/S2",
+        "type": "vegetation",
+        "RGB_bands": ["B4", "B3", "B2"],
+        "NIR_band": "B8",
+        "cloudy_pix_flag": "CLOUDY_PIXEL_PERCENTAGE",
+        "do_network_centrality": do_network_centrality,
     },
-    'Landsat' : {
-        'collection_name': 'LANDSAT/LC08/C01/T1_SR',
-        'type': 'vegetation',
-        'RGB_bands': ('B4','B3','B2'),
-        'NIR_band': 'B5',
-        'cloudy_pix_flag': 'CLOUD_COVER',
-        'do_network_centrality': do_network_centrality
+    "Landsat": {
+        "collection_name": "LANDSAT/LC08/C01/T1_SR",
+        "type": "vegetation",
+        "RGB_bands": ("B4", "B3", "B2"),
+        "NIR_band": "B5",
+        "cloudy_pix_flag": "CLOUD_COVER",
+        "do_network_centrality": do_network_centrality,
     },
-    'NOAA' : {
-        'collection_name': 'NOAA/PERSIANN-CDR',
-        'type': 'weather',
-        'precipitation_band': ['precipitation']
+    "NOAA": {
+        "collection_name": "NOAA/PERSIANN-CDR",
+        "type": "weather",
+        "precipitation_band": ["precipitation"],
     },
-    'NASA' : {
-        'collection_name': 'NASA/GPM_L3/IMERG_V06',
-        'type': 'weather',
-        'precipitation_band': ['precipitationCal'],
+    "NASA": {
+        "collection_name": "NASA/GPM_L3/IMERG_V06",
+        "type": "weather",
+        "precipitation_band": ["precipitationCal"],
     },
-    'ERA5' : {
-        'collection_name': "ECMWF/ERA5/DAILY",
-        'type': 'weather',
-        'precipitation_band': ['total_precipitation'],
-        'temperature_band': ['mean_2m_air_temperature']
-    }
+    "ERA5": {
+        "collection_name": "ECMWF/ERA5/DAILY",
+        "type": "weather",
+        "precipitation_band": ["total_precipitation"],
+        "temperature_band": ["mean_2m_air_temperature"],
+    },
 }
 
-test_out_dir = 'test_out'
+test_out_dir = "test_out"
 
-@unittest.skipIf(os.environ.get('TRAVIS') == 'true','Skipping this test on Travis CI.')
+
+@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
 def test_get_vegetation():
     from pyveg.src.download_modules import VegetationDownloader
+
     s = Sequence("vegetation")
     s.set_config(data_collections["Copernicus"])
     s.output_location = test_out_dir
@@ -73,15 +75,18 @@ def test_get_vegetation():
     s += NetworkCentralityCalculator()
     s.configure()
     s.run()
-    assert(os.path.exists(os.path.join(test_out_dir, "2016-01-16","JSON","NC","network_centralities.json")))
+    assert os.path.exists(
+        os.path.join(
+            test_out_dir, "2016-01-16", "JSON", "NC", "network_centralities.json"
+        )
+    )
     shutil.rmtree(test_out_dir, ignore_errors=True)
 
 
-
-
-@unittest.skipIf(os.environ.get('TRAVIS') == 'true','Skipping this test on Travis CI.')
+@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
 def test_get_rainfall():
     from pyveg.src.download_modules import WeatherDownloader
+
     s = Sequence("weather")
     s.set_config(data_collections["ERA5"])
     s.output_location = test_out_dir
@@ -93,5 +98,7 @@ def test_get_rainfall():
     s += WeatherImageToJSON()
     s.configure()
     s.run()
-    assert(os.path.exists(os.path.join(test_out_dir, "2016-01-16","JSON","WEATHER", "weather_data.json")))
+    assert os.path.exists(
+        os.path.join(test_out_dir, "2016-01-16", "JSON", "WEATHER", "weather_data.json")
+    )
     shutil.rmtree(test_out_dir, ignore_errors=True)

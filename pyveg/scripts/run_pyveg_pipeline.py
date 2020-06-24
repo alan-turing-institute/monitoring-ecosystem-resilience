@@ -17,20 +17,20 @@ import ee
 
 from pyveg.src.date_utils import get_date_range_for_collection
 from pyveg.src.pyveg_pipeline import Pipeline, Sequence
+
 try:
     from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
-except(ee.ee_exception.EEException):
+except (ee.ee_exception.EEException):
     print("Earth Engine not initialized - will not be able to download from GEE")
     pass
 from pyveg.src.processor_modules import (
     VegetationImageProcessor,
     NetworkCentralityCalculator,
     NDVICalculator,
-    WeatherImageToJSON
+    WeatherImageToJSON,
 )
 
 from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
-
 
 
 def build_pipeline(config_file, from_cache=False):
@@ -48,25 +48,30 @@ def build_pipeline(config_file, from_cache=False):
     p = Pipeline(config.name)
     p.output_location = config.output_location
     if not from_cache:
-        p.output_location += '__' + current_time
+        p.output_location += "__" + current_time
     else:
         # use the time from the filename
-        time_match = re.search("([\d]{4}-[\d]{2}-[\d]{2}_[\d]{2}-[\d]{2}-[\d]{2})",
-                               os.path.basename(config_file))
+        time_match = re.search(
+            "([\d]{4}-[\d]{2}-[\d]{2}_[\d]{2}-[\d]{2}-[\d]{2})",
+            os.path.basename(config_file),
+        )
         if time_match:
-            p.output_location += '__' + time_match.groups()[0]
+            p.output_location += "__" + time_match.groups()[0]
         else:
-            print("Wasn't able to infer timestamp from config filename.",
-                  "Will use original output_location from {}.".format(config_file))
+            print(
+                "Wasn't able to infer timestamp from config filename.",
+                "Will use original output_location from {}.".format(config_file),
+            )
     p.output_location_type = config.output_location_type
     p.coords = config.coordinates
     p.date_range = config.date_range
     if not from_cache:
         # before we run anything, save the current config to the configs dir
-        config_cache_dir = os.path.join(os.path.dirname(config_file),"cached_config")
+        config_cache_dir = os.path.join(os.path.dirname(config_file), "cached_config")
         os.makedirs(config_cache_dir, exist_ok=True)
-        cached_config_file = os.path.basename(config_file)[:-3] + \
-            '__' + current_time + ".py"
+        cached_config_file = (
+            os.path.basename(config_file)[:-3] + "__" + current_time + ".py"
+        )
 
         copyfile(config_file, os.path.join(config_cache_dir, cached_config_file))
 
@@ -106,7 +111,6 @@ def build_pipeline(config_file, from_cache=False):
     return p
 
 
-
 def configure_and_run_pipeline(pipeline):
     """
     Call configure() run() on all sequences in the pipeline.
@@ -118,8 +122,11 @@ def configure_and_run_pipeline(pipeline):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", help="Path to config file", required=True)
-    parser.add_argument("--from_cache", help="Are we using a cached config file to resume an unfinished job?",
-                        action='store_true')
+    parser.add_argument(
+        "--from_cache",
+        help="Are we using a cached config file to resume an unfinished job?",
+        action="store_true",
+    )
 
     args = parser.parse_args()
     pipeline = build_pipeline(args.config_file, args.from_cache)

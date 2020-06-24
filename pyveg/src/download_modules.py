@@ -13,14 +13,15 @@ from geetools import cloud_mask
 import cv2 as cv
 
 import ee
+
 ee.Initialize()
 
 from pyveg.src.date_utils import (
     find_mid_period,
     get_num_n_day_slices,
     slice_time_period_into_n,
-    slice_time_period
-    )
+    slice_time_period,
+)
 from pyveg.src.file_utils import download_and_unzip
 from pyveg.src.coordinate_utils import get_region_string
 from pyveg.src.gee_interface import apply_mask_cloud, add_NDVI
@@ -29,7 +30,8 @@ from pyveg.src.pyveg_pipeline import BaseModule
 
 # silence google API WARNING
 import logging
-logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
+
+logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 
 
 class DownloaderModule(BaseModule):
@@ -38,19 +40,21 @@ class DownloaderModule(BaseModule):
     types of data, so we put it in this base class, and have data-type-specific
     code in subclasses.
     """
+
     def __init__(self, name):
         super().__init__(name)
         # some parameters that are common to all Downloaders
-        self.params +=  [("collection_name", [str]),
-                         ("coords", [list, tuple]),
-                         ("date_range", [list, tuple]),
-                         ("region_size", [float]),
-                         ("scale", [int]),
-                         ("output_location", [str]),
-                         ("output_location_type", [str]),
-                         ("replace_existing_files", [bool]) ]
+        self.params += [
+            ("collection_name", [str]),
+            ("coords", [list, tuple]),
+            ("date_range", [list, tuple]),
+            ("region_size", [float]),
+            ("scale", [int]),
+            ("output_location", [str]),
+            ("output_location_type", [str]),
+            ("replace_existing_files", [bool]),
+        ]
         return
-
 
     def set_default_parameters(self):
         """
@@ -72,7 +76,6 @@ class DownloaderModule(BaseModule):
 
         return
 
-
     def set_output_location(self, output_location=None):
         """
         If provided an output directory name, set it here,
@@ -87,14 +90,20 @@ class DownloaderModule(BaseModule):
             self.output_location = output_location[0]
 
         elif ("coords" in vars(self)) and ("collection_name" in vars(self)):
-            self.output_location = f'gee_{self.coords[0]}_{self.coords[1]}'\
-                +"_"+self.collection_name.replace('/', '-')
+            self.output_location = (
+                f"gee_{self.coords[0]}_{self.coords[1]}"
+                + "_"
+                + self.collection_name.replace("/", "-")
+            )
 
         else:
-            raise RuntimeError("""
+            raise RuntimeError(
+                """
             {}: need to set collection_name and coords before calling set_output_location()
-            """.format(self.name))
-
+            """.format(
+                    self.name
+                )
+            )
 
     def prep_data(self, date_range):
         """
@@ -112,37 +121,34 @@ class DownloaderModule(BaseModule):
         -------
         url_list:  a list of URLs from which zipfiles can be downloaded from GEE.
         """
-        region  = get_region_string(self.coords, self.region_size)
+        region = get_region_string(self.coords, self.region_size)
         start_date, end_date = date_range
 
         image_coll = ee.ImageCollection(self.collection_name)
         geom = ee.Geometry.Point(self.coords)
 
-        dataset = image_coll.filterBounds(geom).filterDate(start_date,end_date)
+        dataset = image_coll.filterBounds(geom).filterDate(start_date, end_date)
         dataset_size = dataset.size().getInfo()
 
         if dataset_size == 0:
-            print('No images found in this date rage, skipping.')
-            log_msg = 'WARN >>> No data found.'
+            print("No images found in this date rage, skipping.")
+            log_msg = "WARN >>> No data found."
             return []
         # concrete class will do more filtering, and prepare Images for download
         image_list = self.prep_images(dataset)
-        url_list =[]
+        url_list = []
         for image in image_list:
             # get a URL from which we can download the resulting data
             try:
-                url = image.getDownloadURL(
-                    {'region': region,
-                     'scale': self.scale}
-                )
+                url = image.getDownloadURL({"region": region, "scale": self.scale})
                 url_list.append(url)
             except Exception as e:
                 print("Unable to get URL: {}".format(e))
 
-            logging.info(f'OK   >>> Found {dataset.size().getInfo()}/{dataset_size} valid images after cloud filtering.')
+            logging.info(
+                f"OK   >>> Found {dataset.size().getInfo()}/{dataset_size} valid images after cloud filtering."
+            )
         return url_list
-
-
 
     def download_data(self, download_urls, download_location):
         """
@@ -158,38 +164,34 @@ class DownloaderModule(BaseModule):
         bool, True if downloaded something, False otherwise
         """
         if len(download_urls) == 0:
-            print("{}: No URLs found for {}".format(self.name,
-                                                    self.coords))
+            print("{}: No URLs found for {}".format(self.name, self.coords))
             return False
 
         # download files and unzip to temporary directory
         tempdir = tempfile.TemporaryDirectory()
         for download_url in download_urls:
-            download_and_unzip(download_url,
-                               tempdir.name)
+            download_and_unzip(download_url, tempdir.name)
         print("Wrote zipfiles to {}".format(tempdir.name))
         print("download_location is {}".format(download_location))
         self.copy_to_output_location(tempdir.name, download_location, [".tif"])
         return True
 
-
     def run(self):
         super().run()
         start_date, end_date = self.date_range
-        date_ranges = slice_time_period(start_date,
-                                        end_date,
-                                        self.time_per_point)
+        date_ranges = slice_time_period(start_date, end_date, self.time_per_point)
         download_locations = []
         for date_range in date_ranges:
             mid_date = find_mid_period(date_range[0], date_range[1])
             location = os.path.join(self.output_location, mid_date, "RAW")
-            if not self.replace_existing_files and \
-               self.check_for_existing_files(location, self.num_files_per_point):
+            if not self.replace_existing_files and self.check_for_existing_files(
+                location, self.num_files_per_point
+            ):
                 continue
             urls = self.prep_data(date_range)
-            print("{}: got URL {} for date range {}".format(self.name,
-                                                            urls,
-                                                            date_range))
+            print(
+                "{}: got URL {} for date range {}".format(self.name, urls, date_range)
+            )
             downloaded_ok = self.download_data(urls, location)
             if downloaded_ok:
                 download_locations.append(location)
@@ -212,15 +214,15 @@ class VegetationDownloader(DownloaderModule):
 
     def __init__(self, name=None):
         super().__init__(name)
-        self.params += [("mask_cloud", [bool]),
-                        ("cloudy_pix_flag", [str]),
-                        ("cloudy_pix_frac", [int]),
-                        ("RGB_bands", [list]),
-                        ("NIR_band", [str]),
-                        ("time_per_point", [str]),
-                        ("num_files_per_point", [int])
+        self.params += [
+            ("mask_cloud", [bool]),
+            ("cloudy_pix_flag", [str]),
+            ("cloudy_pix_frac", [int]),
+            ("RGB_bands", [list]),
+            ("NIR_band", [str]),
+            ("time_per_point", [str]),
+            ("num_files_per_point", [int]),
         ]
-
 
     def set_default_parameters(self):
         """
@@ -228,7 +230,7 @@ class VegetationDownloader(DownloaderModule):
         by parent Sequence, or by calling configure() with a dict.
         """
         super().set_default_parameters()
-        self.mask_cloud=True
+        self.mask_cloud = True
         self.cloudy_pix_frac = 50
         self.num_files_per_point = 4
 
@@ -248,15 +250,13 @@ class VegetationDownloader(DownloaderModule):
             List of Images to be downloaded
         """
         # Apply cloud mask
-        dataset = apply_mask_cloud(dataset,
-                                   self.collection_name,
-                                   self.cloudy_pix_flag)
+        dataset = apply_mask_cloud(dataset, self.collection_name, self.cloudy_pix_flag)
         # Take median
         image = dataset.median()
         # Calculate NDVI
         image = add_NDVI(image, self.RGB_bands[0], self.NIR_band)
         # select only RGB + NDVI bands to download
-        bands_to_select = self.RGB_bands + ['NDVI']
+        bands_to_select = self.RGB_bands + ["NDVI"]
         image = image.select(bands_to_select)
         return [image]
 
@@ -266,14 +266,14 @@ class WeatherDownloader(DownloaderModule):
     Download precipitation and temperature data.
     """
 
-    def __init__(self,name=None):
+    def __init__(self, name=None):
         super().__init__(name)
-        self.params += [("temperature_band", [list]),
-                        ("precipitation_band", [list]),
-                        ("time_per_point", [str]),
-                        ("num_files_per_point", [int])
+        self.params += [
+            ("temperature_band", [list]),
+            ("precipitation_band", [list]),
+            ("time_per_point", [str]),
+            ("num_files_per_point", [int]),
         ]
-
 
     def set_default_parameters(self):
         """
@@ -282,7 +282,6 @@ class WeatherDownloader(DownloaderModule):
         """
         super().set_default_parameters()
         self.num_files_per_point = 2
-
 
     def prep_images(self, dataset):
         """
