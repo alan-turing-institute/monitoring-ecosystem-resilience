@@ -70,8 +70,6 @@ def build_pipeline(config_file, from_cache=False):
 
         copyfile(config_file, os.path.join(config_cache_dir, cached_config_file))
 
-    if config.output_location_type=="local" and not os.path.exists(p.output_location):
-        os.makedirs(p.output_location, exist_ok=True)
     # add sequences to the pipeline to deal with different data types
     for coll in config.collections_to_use:
         s = Sequence(coll)

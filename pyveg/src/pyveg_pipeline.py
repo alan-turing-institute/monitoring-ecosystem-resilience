@@ -117,7 +117,7 @@ class Pipeline(object):
 
 class Sequence(object):
     """
-    A Sequence is a collection of modules where the output of one module is
+    A Sequence is a collection of Modules where the output of one module is
     typically the input to the next one.
     It will typically correspond to a particular data collection, e.g. for
     vegetation imagery, we might have one module to download the images,
@@ -327,14 +327,7 @@ class BaseModule(object):
 
         self.check_config()
 
-        if "output_location_type" in vars(self) and self.output_location_type == "azure":
-            # if we're running this module standalone on azure, we might need to
-            # create the output container on the blob storage account"
-            output_location_base = self.output_location.split("/")[0]
-            container_name = azure_utils.sanitize_container_name(output_location_base)
-            if not azure_utils.check_container_exists(container_name):
-                print("Create container {}".format(container_name))
-                azure_utils.create_container(container_name)
+
         self.is_configured = True
 
 
@@ -369,7 +362,16 @@ class BaseModule(object):
     def run(self):
         if not self.is_configured:
             raise RuntimeError("Module {} needs to be configured before running".format(self.name))
-
+        if  self.output_location_type == "azure":
+            # if we're running this module standalone on azure, we might need to
+            # create the output container on the blob storage account"
+            output_location_base = self.output_location.split("/")[0]
+            container_name = azure_utils.sanitize_container_name(output_location_base)
+            if not azure_utils.check_container_exists(container_name):
+                print("Create container {}".format(container_name))
+                azure_utils.create_container(container_name)
+        elif self.output_location_type=="local" and not os.path.exists(self.output_location):
+            os.makedirs(self.output_location, exist_ok=True)
 
     def check_if_finished(self):
         return self.is_finished
@@ -524,4 +526,4 @@ class BaseModule(object):
 
         with open(config_location, "w") as output_json:
             json.dump(config_dict, output_json)
-        print("{} wrote config to {}".format(self.name, config_location))
+        print("{}: wrote config to {}".format(self.name, config_location))
