@@ -73,7 +73,8 @@ def slice_time_period(start_date, end_date, period_length):
 
     Returns
     =======
-    periods: list of strings in format YYYY-MM-DD
+    periods: list of lists of strings in format YYYY-MM-DD,
+            each of which is the start and end of a sub-period
     """
     periods = []
     start_datetime = datetime.fromisoformat(start_date)
@@ -107,7 +108,7 @@ def slice_time_period(start_date, end_date, period_length):
     return periods
 
 
-def find_mid_period(start_time, end_time):
+def find_mid_period(start_date, end_date):
     """
     Given two strings in the format YYYY-MM-DD return a
     string in the same format representing the middle (to
@@ -115,20 +116,42 @@ def find_mid_period(start_time, end_time):
 
     Parameters
     ==========
-    start_time: str, date in format YYYY-MM-DD
-    end_time: str, date in format YYYY-MM-DD
+    start_date: str, date in format YYYY-MM-DD
+    end_date: str, date in format YYYY-MM-DD
 
     Returns
     =======
     mid_date: str, mid point of those dates, format YYYY-MM-DD
     """
-    t0 = dateparser.parse(start_time)
-    t1 = dateparser.parse(end_time)
+    t0 = dateparser.parse(start_date)
+    t1 = dateparser.parse(end_date)
     td = (t1 - t0).days
     mid = (t0 + timedelta(days=(td//2))).isoformat()
     mid_date = mid.split("T")[0]
     return mid_date
 
+
+def get_date_strings_for_time_period(start_date, end_date, period_length):
+    """
+    Use the two functions above to slice a time period into sub-periods,
+    then find the mid-date of each of these.
+
+    Parameters
+    ==========
+    start_date: str, format YYYY-MM-DD
+    end_date: str, format YYYY-MM-DD
+    period_length: str, format '<integer><d|w|m|y>', e.g. 30d
+
+    Returns
+    =======
+    periods: list of strings in format YYYY-MM-DD,
+            each of which is the mid-point of a sub-period
+
+    """
+
+    sub_periods = slice_time_period(start_date, end_date, period_length)
+    date_strings = [find_mid_period(p[0],p[1]) for p in sub_periods]
+    return date_strings
 
 
 def get_date_range_for_collection(date_range, coll_dict):
