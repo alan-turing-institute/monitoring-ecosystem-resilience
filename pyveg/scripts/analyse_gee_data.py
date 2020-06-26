@@ -159,7 +159,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
                                     smooth='Gaussian',
                                     lag_times=[1, 2],
                                     ews=ews,
-                                    band_width=0.2)
+                                    band_width=6)
 
         # make plots
         series_name = column_name.replace('_', ' ')
@@ -170,13 +170,12 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
         plot_sensitivity_heatmap(series_name, sensitivity, mwa_subdir)
 
         # significance tests
-
         significance = early_warnings_null_hypothesis(ts_df[column_name].dropna(),
                                     roll_window=0.5,
                                     smooth='Gaussian',
                                     lag_times=[1, 2],
                                     indicators=ews,
-                                    band_width=0.2)
+                                    band_width=6)
 
         kendall_tau_histograms(series_name, significance,mwa_subdir)
 
