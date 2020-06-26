@@ -86,5 +86,9 @@ coordinate_store.loc['32'] = {'continent': 'Africa', 'country': 'Namibia', 'type
 # Baja
 coordinate_store.loc['33'] = {'continent' : 'America', 'country': 'Mexico', 'type': 'labyrinths', 'latitude': 26.77, 'longitude': -112.92}
 
+# Australia
+coordinate_store.loc['34'] = {'continent' : 'Australia', 'country': 'Australia', 'type': 'labyrinths', 'latitude': -23.35, 'longitude': 133.36} # featured in June tech talk results
+coordinate_store.loc['35'] = {'continent' : 'Australia', 'country': 'Australia', 'type': 'labyrinths', 'latitude': -22.98, 'longitude': 119.89}
+
 # hardcode a check to make sure we don't overwrite any rows
-assert( len(coordinate_store) == 34 )
+assert( len(coordinate_store) == 36 )
