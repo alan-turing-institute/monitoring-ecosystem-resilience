@@ -302,7 +302,7 @@ class ProcessorModule(BaseModule):
             return self.is_finished
         elif self.parent and self.parent.batch_job_id:
             job_id = self.parent.batch_job_id
-            num_incomplete, num_success, num_failed = batch_utils.check_tasks_status(job_id)
+            num_incomplete, num_success, num_failed = batch_utils.check_tasks_status(job_id, self.name)
             print("{} job status: incomplete {} success {} failed {}".format(self.name, num_incomplete, num_success, num_failed))
             self.is_finished =  (num_incomplete == 0)
         return self.is_finished
@@ -579,7 +579,7 @@ class WeatherImageToJSON(ProcessorModule):
         if self.dates_to_process and not date_string in self.dates_to_process:
             print("{} will not process date {}".format(self.name, date_string))
             return True
-        print("Processing date {}".format(date_string))
+        print("{}: Processing date {}".format(self.name, date_string))
         input_location = os.path.join(self.input_location, date_string,
                                       *(self.input_location_subdirs))
         for filename in self.list_directory(input_location, self.input_location_type):
