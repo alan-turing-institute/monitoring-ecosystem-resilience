@@ -7,16 +7,36 @@ import os
 import re
 import shutil
 import tempfile
+import datetime
 import time
 
+import numpy as np
+
+from PIL import Image
 import cv2 as cv
 
 from multiprocessing import Pool
 
-from pyveg.src.image_utils import *
-from pyveg.src.file_utils import *
-from pyveg.src.coordinate_utils import *
-from pyveg.src.date_utils import *
+from pyveg.src.image_utils import (
+    convert_to_rgb,
+    check_image_ok,
+    crop_image_npix,
+    scale_tif,
+    process_and_threshold,
+    pillow_to_numpy
+)
+from pyveg.src.file_utils import (
+    save_image,
+    save_json,
+    consolidate_json_to_list
+)
+from pyveg.src.coordinate_utils import (
+    find_coords_string
+)
+from pyveg.src.date_utils import (
+    assign_dates_to_tasks
+)
+
 from pyveg.src.subgraph_centrality import (
     subgraph_centrality,
     feature_vector_metrics,
@@ -41,6 +61,7 @@ class ProcessorModule(BaseModule):
             ("dates_to_process", [list, tuple]),
             ("run_mode", [str]),  # batch or local
             ("n_batch_tasks", [int]),
+            ("timeout", [int]) # timeout in mins for waiting for batch jobs
         ]
 
     def set_default_parameters(self):
@@ -65,6 +86,8 @@ class ProcessorModule(BaseModule):
             self.n_batch_tasks = 100
         if not "batch_task_dict" in vars(self):
             self.batch_task_dict = {}
+        if not "timeout" in vars(self):
+            self.timeout = 600 # 10 hours
 
     def check_input_data_exists(self, date_string):
         """
@@ -153,7 +176,7 @@ class ProcessorModule(BaseModule):
             )
 
     def run(self):
-        super().run()
+        self.prepare_for_run()
         job_status = {}
         if self.run_mode == "local":
             job_status = self.run_local()
@@ -178,8 +201,7 @@ class ProcessorModule(BaseModule):
             date_strings = sorted(
                 self.list_directory(self.input_location, self.input_location_type)
             )
-        num_succeeded = 0
-        num_failed = 0
+
         for date_string in date_strings:
             print(
                 "date string {} input exists {} output exists {}".format(
@@ -194,11 +216,11 @@ class ProcessorModule(BaseModule):
             ) and not self.check_output_data_exists(date_string):
                 succeeded = self.process_single_date(date_string)
                 if succeeded:
-                    num_succeeded += 1
+                    self.run_status["succeeded"] += 1
                 else:
-                    num_failed += 1
+                    self.run_status["failed"] += 1
         self.is_finished = True
-        return {"Succeeded": num_succeeded, "Failed": num_failed}
+        return self.run_status
 
     def get_dependent_batch_tasks(self):
         """
@@ -272,9 +294,9 @@ class ProcessorModule(BaseModule):
         to pass to the batch_utils.submit_tasks function.
         """
 
-        print("{} running in batch!".format(self.name))
+        print("{} running in batch".format(self.name))
         self.all_tasks_submitted = False
-
+        self.start_time = datetime.datetime.now()
         task_dicts = []
         task_dependencies = self.get_dependent_batch_tasks()
 
@@ -354,7 +376,19 @@ class ProcessorModule(BaseModule):
                     self.name, num_incomplete, num_success, num_failed
                 )
             )
-            self.is_finished = num_incomplete == 0
+            self.run_status["succeeded"] = num_success
+            self.run_status["failed"] = num_failed
+            self.run_status["incomplete"] = num_incomplete
+            self.is_finished = (num_incomplete == 0)
+        # if we have exceeded timeout, say that we are finished.
+        time_now = datetime.datetime.now()
+        if time_now > self.start_time + datetime.timedelta(minutes=self.timeout):
+            print(
+                "{}: reached timeout of {} minutes. Aborting".format(
+                    self.name, self.timeout
+                )
+            )
+            self.is_finished = True
         return self.is_finished
 
 
@@ -540,7 +574,7 @@ class VegetationImageProcessor(ProcessorModule):
             if filename.endswith(".tif")
         ]
         if len(filenames) == 0:
-            return
+            return True
 
         # extract this to feed into `convert_to_rgb()`
         band_dict = {}

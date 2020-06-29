@@ -185,6 +185,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             veg_time_point = self.combine_json_lists(veg_lists)
             # update the final veg_time_series dictionary
             veg_time_series[date_string] = veg_time_point
+
         return veg_time_series
 
     def get_weather_time_series(self):
@@ -208,6 +209,18 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             weather_time_series[date_string] = weather_json
         return weather_time_series
 
+    def check_output_dict(self, output_dict):
+        """
+        For all the keys  (i.e. dates) in the vegetation time-series,
+        count how many have data for both veg and weather
+        """
+        dates = output_dict[self.veg_collection]["time-series-data"].keys()
+        for date in dates:
+            if output_dict[self.veg_collection]["time-series-data"][date] \
+               and output_dict[self.weather_collection]["time-series-data"][date]:
+                self.run_status["succeeded"] += 1
+        return
+
     def run(self):
         self.check_config()
         output_dict = {}
@@ -222,6 +235,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             "type": "vegetation",
             "time-series-data": veg_time_series,
         }
+        self.check_output_dict(output_dict)
         self.save_json(
             output_dict,
             "results_summary.json",

@@ -150,6 +150,7 @@ class DownloaderModule(BaseModule):
             )
         return url_list
 
+
     def download_data(self, download_urls, download_location):
         """
         Download zip file(s) from GEE to configured output location.
@@ -170,20 +171,25 @@ class DownloaderModule(BaseModule):
         # download files and unzip to temporary directory
         tempdir = tempfile.TemporaryDirectory()
         for download_url in download_urls:
-            download_and_unzip(download_url, tempdir.name)
+            try:
+                download_and_unzip(download_url, tempdir.name)
+            except RuntimeError as e:
+                return False
         print("Wrote zipfiles to {}".format(tempdir.name))
         print("download_location is {}".format(download_location))
         self.copy_to_output_location(tempdir.name, download_location, [".tif"])
         return True
 
     def run(self):
-        super().run()
+        self.prepare_for_run()
+
         start_date, end_date = self.date_range
         date_ranges = slice_time_period(start_date, end_date, self.time_per_point)
         download_locations = []
         for date_range in date_ranges:
             mid_date = find_mid_period(date_range[0], date_range[1])
             location = os.path.join(self.output_location, mid_date, "RAW")
+            print("{} Will check for existing files in {}".format(self.name, location))
             if not self.replace_existing_files and self.check_for_existing_files(
                 location, self.num_files_per_point
             ):
@@ -194,9 +200,12 @@ class DownloaderModule(BaseModule):
             )
             downloaded_ok = self.download_data(urls, location)
             if downloaded_ok:
+                self.run_status["succeeded"] += 1
                 download_locations.append(location)
+            else:
+                self.run_status["failed"] += 1
         self.is_finished = True
-        return download_locations
+        return self.run_status
 
 
 ##############################################################################

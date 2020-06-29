@@ -90,10 +90,8 @@ class Pipeline(object):
                     )
                 )
         if self.output_location_type == "azure":
+            # ensure that the output location conforms to azure container-name requirements
             container_name = azure_utils.sanitize_container_name(self.output_location)
-            if not azure_utils.check_container_exists(container_name):
-                print("Create container {}".format(container_name))
-                azure_utils.create_container(container_name)
             self.output_location = container_name
 
         for sequence in self.sequences:
@@ -111,6 +109,11 @@ class Pipeline(object):
         """
         for sequence in self.sequences:
             sequence.run()
+        self.print_run_status()
+
+    def print_run_status(self):
+        for sequence in self.sequences:
+            sequence.print_run_status()
 
 
 class Sequence(object):
@@ -131,6 +134,7 @@ class Sequence(object):
         self.output_location_type = None
         self.is_configured = False
         self.is_finished = False
+        self.run_status = {}
 
     def __iadd__(self, module):
         """
@@ -223,7 +227,7 @@ class Sequence(object):
 
         self.create_batch_job_if_needed()
         for module in self.modules:
-            module.run()
+            self.run_status[module.name] =  module.run()
 
     def __repr__(self):
         if not self.is_configured:
@@ -246,6 +250,17 @@ class Sequence(object):
             output += m.__repr__()
         output += "    =======================\n\n"
         return output
+
+    def print_run_status(self):
+        """
+        For all modules in the sequence, print out how many jobs
+        succeeded or failed.
+        """
+        print("\nSequence {}".format(self.name))
+        print("-----------------\n")
+        for module in self.modules:
+            module.print_run_status()
+        print("\n")
 
     def get(self, mod_name):
         """
@@ -317,6 +332,7 @@ class BaseModule(object):
         self.depends_on = []
         self.is_configured = False
         self.is_finished = False
+        self.run_status = {"succeeded": 0, "failed": 0, "incomplete": 0}
 
     def set_parameters(self, config_dict):
         for k, v in config_dict.items():
@@ -371,7 +387,7 @@ class BaseModule(object):
     def set_default_parameters(self):
         pass
 
-    def run(self):
+    def prepare_for_run(self):
         if not self.is_configured:
             raise RuntimeError(
                 "Module {} needs to be configured before running".format(self.name)
@@ -548,3 +564,17 @@ class BaseModule(object):
         with open(config_location, "w") as output_json:
             json.dump(config_dict, output_json)
         print("{}: wrote config to {}".format(self.name, config_location))
+
+
+    def print_run_status(self):
+        """
+        Print out how many jobs succeeded or failed
+        """
+        print(
+            "{}: Succeeded: {}  Failed: {}   Incomplete: {}".format(
+                self.name,
+                self.run_status["succeeded"],
+                self.run_status["failed"],
+                self.run_status["incomplete"]
+                )
+            )

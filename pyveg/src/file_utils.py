@@ -51,11 +51,11 @@ def download_and_unzip(url, output_tmpdir):
     tif_filenames: list of strings, the full paths to unpacked tif files.
     """
 
-    # print("Will download {} to {}".format(url, output_tmpdir))
     # GET the URL
     r = requests.get(url)
     if not r.status_code == 200:
-        raise RuntimeError(" HTTP Error getting download link {}".format(url))
+        raise RuntimeError(" HTTP Error {} getting download link {}".format(r.status_code,
+                                                                            url))
     os.makedirs(output_tmpdir, exist_ok=True)
     output_zipfile = os.path.join(output_tmpdir, "gee.zip")
     with open(output_zipfile, "wb") as outfile:
