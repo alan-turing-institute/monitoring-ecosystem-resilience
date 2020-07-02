@@ -239,26 +239,87 @@ def wait_for_tasks_to_complete(job_id, timeout=60, batch_service_client=None):
     }
 
 
+def check_task_failed_dependencies(task, batch_service_client=None):
+    """
+    If a task depends on other task(s), and those have failed, the job
+    will not be able to run.
+
+    Parameters
+    ==========
+    task: azure.batch.models.CloudTask, the task we will look at dependencies for
+    batch_service_client: BatchServiceClient - will create if not provided.
+
+    Returns
+    =======
+    True if the job depends on other tasks that have failed.
+    False otherwise
+    """
+    if not batch_service_client:
+        batch_service_client = create_batch_client()
+    if task.state != batchmodels.TaskState.active:
+        return False
+    dependencies = task.depends_on.task_ids
+    if len(dependencies) == 0:
+        return False
+    for dependency in dependencies:
+        dep_task = batch_service_client.task.get(job_id, dependency)
+        if dep_task.state == batchmodels.TaskState.completed and \
+           dep_task.execution_info.exit_code != 0:
+            # return True if any of the dependencies failed
+            return True
+    return False
+
+
 def check_tasks_status(job_id, task_name_prefix="", batch_service_client=None):
+    """
+    For a given job, query the status of all the tasks.
+
+    Returns
+    =======
+    task_status: dict, containing the following keys/values:
+     num_success: int, successfully completed
+     num_failed: int, completed but with non-zero exit code
+     num_running: int, currently running
+     num_waiting: int, in "active" state
+     num_cannot_run: int, in "active" state, but with dependent tasks that failed.
+    """
     if not batch_service_client:
         batch_service_client = create_batch_client()
     tasks = batch_service_client.task.list(job_id)
     # Filter by name if provided.  Most tasks will be named after the Module they run.
     if task_name_prefix:
         tasks = [task for task in tasks if task.id.startswith(task_name_prefix)]
+
+    running_tasks = [
+        task for task in tasks if (task.state == batchmodels.TaskState.running \
+        or task.state == batchmodels.TaskState.preparing)
+    ]
+    num_running = len(running_tasks)
+
     incomplete_tasks = [
         task for task in tasks if task.state != batchmodels.TaskState.completed
     ]
-    num_incomplete = len(incomplete_tasks)
-
+    # create a list of 0s or 1s depending on whether tasks have failed dependencies
+    cannot_run = [
+        int(check_task_failed_dependencies(task, batch_service_client))
+        for task in incomplete_tasks
+        if task.state == batchmodels.TaskState.active
+    ]
+    num_cannot_run = sum(cannot_run)
+    num_waiting = len(cannot_run) - num_cannot_run
+    # create a list of 0s or 1s depending on whether tasks had status_code==0.
     task_success = [
         int(task.execution_info.exit_code == 0)
         for task in tasks
         if task.state == batchmodels.TaskState.completed
     ]
-    num_success = sum(task_success)
-    num_failed = len(task_success) - num_success
-    return num_incomplete, num_success, num_failed
+    return {
+        "num_success": sum(task_success),
+        "num_failed": len(task_success) - num_success,
+        "num_running": num_running,
+        "num_waiting": num_waiting,
+        "num_cannot_run": num_cannot_run
+    }
 
 
 def create_pool(pool_id, batch_service_client=None):

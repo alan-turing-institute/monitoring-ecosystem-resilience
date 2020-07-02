@@ -368,18 +368,26 @@ class ProcessorModule(BaseModule):
             return self.is_finished
         elif self.parent and self.parent.batch_job_id:
             job_id = self.parent.batch_job_id
-            num_incomplete, num_success, num_failed = batch_utils.check_tasks_status(
+            task_status = batch_utils.check_tasks_status(
                 job_id, self.name
             )
+
             print(
-                "{} job status: incomplete {} success {} failed {}".format(
-                    self.name, num_incomplete, num_success, num_failed
+                "{} job status: success: {} failed: {} running: {} waiting: {} cannot_run: {}".format(
+                    self.name,
+                    task_status["num_success"],
+                    task_status["num_failed"],
+                    task_status["num_running"],
+                    task_status["num_waiting"],
+                    task_status["cannot_run"]
                 )
             )
-            self.run_status["succeeded"] = num_success
-            self.run_status["failed"] = num_failed
+            self.run_status["succeeded"] = task_status["num_success"]
+            self.run_status["failed"] = task_status["num_failed"] + task_status["cannot_run"]
+            num_incomplete = task_status["num_running"] + task_status["num_waiting"]
             self.run_status["incomplete"] = num_incomplete
             self.is_finished = (num_incomplete == 0)
+
         # if we have exceeded timeout, say that we are finished.
         time_now = datetime.datetime.now()
         if time_now > self.start_time + datetime.timedelta(minutes=self.timeout):
