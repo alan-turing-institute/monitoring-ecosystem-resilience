@@ -155,14 +155,13 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
     for column_name in column_names:
 
         # run resilience analysis on vegetation data
-        ews_dic_veg = ewstools.core.ews_compute(
-            ts_df[column_name].dropna(),
-            roll_window=0.5,
-            smooth="Gaussian",
-            lag_times=[1, 2],
-            ews=ews,
-            band_width=0.2,
-        )
+
+        ews_dic_veg = ewstools.core.ews_compute(ts_df[column_name].dropna(),
+                                    roll_window=0.5,
+                                    smooth='Gaussian',
+                                    lag_times=[1, 2],
+                                    ews=ews,
+                                    band_width=6)
 
         # make plots
         series_name = column_name.replace("_", " ")
@@ -182,14 +181,12 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
         # significance tests
 
-        significance = early_warnings_null_hypothesis(
-            ts_df[column_name].dropna(),
-            roll_window=0.5,
-            smooth="Gaussian",
-            lag_times=[1, 2],
-            indicators=ews,
-            band_width=0.2,
-        )
+        significance = early_warnings_null_hypothesis(ts_df[column_name].dropna(),
+                                    roll_window=0.5,
+                                    smooth='Gaussian',
+                                    lag_times=[1, 2],
+                                    indicators=ews,
+                                    band_width=6)
 
         kendall_tau_histograms(series_name, significance, mwa_subdir)
 
