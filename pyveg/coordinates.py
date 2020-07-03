@@ -308,6 +308,18 @@ coordinate_store.loc['35'] = {
   'longitude': 119.89
 }
 
+
+# Burkina Faso
+coordinate_store.loc["33"] = {
+    "continent": "Africa",
+    "country": "Burkina Faso",
+    "type": "tiger bush",
+    "latitude": -0.68,
+    "longitude": 14.92,
+}
+
+
+
 # hardcode a check to make sure we don't overwrite any rows
 
 assert( len(coordinate_store) == 36 )
