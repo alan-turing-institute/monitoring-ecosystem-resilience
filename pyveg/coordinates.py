@@ -310,7 +310,7 @@ coordinate_store.loc['35'] = {
 
 
 # Burkina Faso
-coordinate_store.loc["33"] = {
+coordinate_store.loc["36"] = {
     "continent": "Africa",
     "country": "Burkina Faso",
     "type": "tiger bush",
