@@ -9,6 +9,7 @@ from geetools import cloud_mask
 import cv2 as cv
 
 import ee
+
 ee.Initialize()
 
 from .file_utils import download_and_unzip
@@ -19,7 +20,6 @@ else:
     TMPDIR = "%TMP%"
 
 LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
-
 
 
 def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
@@ -49,24 +49,29 @@ def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
     """
 
     # construct cloud mask if availible
-    if collection_name == 'COPERNICUS/S2':
+    if collection_name == "COPERNICUS/S2":
         mask_func = cloud_mask.sentinel2()
-    elif collection_name == 'LANDSAT/LC08/C01/T1_SR':
+    elif collection_name == "LANDSAT/LC08/C01/T1_SR":
         mask_func = cloud_mask.landsat8SRPixelQA()
-    elif ( collection_name == 'LANDSAT/LE07/C01/T1_SR' or
-           collection_name == 'LANDSAT/LT05/C01/T1_SR' or
-           collection_name == 'LANDSAT/LT04/C01/T1_SR' ):
+    elif (
+        collection_name == "LANDSAT/LE07/C01/T1_SR"
+        or collection_name == "LANDSAT/LT05/C01/T1_SR"
+        or collection_name == "LANDSAT/LT04/C01/T1_SR"
+    ):
         mask_func = cloud_mask.landsat457SRPixelQA()
     else:
-        print("No cloud mask logic defined for input collection {}"\
-              .format(collection_name))
+        print(
+            "No cloud mask logic defined for input collection {}".format(
+                collection_name
+            )
+        )
         return image_coll
 
     # images with more than this percent of cloud pixels are removed
     cloud_pix_frac = 50
 
     # remove images that have more than `cloud_pix_frac`% cloudy pixels
-    if cloudy_pix_flag != 'None':
+    if cloudy_pix_flag != "None":
         image_coll = image_coll.filter(ee.Filter.lt(cloudy_pix_flag, cloud_pix_frac))
 
     # apply per pixel cloud mask
@@ -77,20 +82,18 @@ def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
 
 def add_NDVI(image, red_band, near_infrared_band):
     try:
-        image_ndvi = image.normalizedDifference([near_infrared_band, red_band]).rename('NDVI')
+        image_ndvi = image.normalizedDifference([near_infrared_band, red_band]).rename(
+            "NDVI"
+        )
         return ee.Image(image).addBands(image_ndvi)
     except:
-        print ("Something went wrong in the NDVI variable construction")
+        print("Something went wrong in the NDVI variable construction")
         return image
 
 
-
-def ee_prep_data(collection_dict,
-                 coords,
-                 date_range,
-                 region_size=0.1,
-                 scale=10,
-                 mask_cloud=True):
+def ee_prep_data(
+    collection_dict, coords, date_range, region_size=0.1, scale=10, mask_cloud=True
+):
     """
     Use the Earth Engine API to prepare data for download.
 
@@ -129,78 +132,85 @@ def ee_prep_data(collection_dict,
     # unpack the date range
     start_date, end_date = date_range
 
-    collection_name = collection_dict['collection_name']
+    collection_name = collection_dict["collection_name"]
 
     image_coll = ee.ImageCollection(collection_name)
     geom = ee.Geometry.Point(coords)
 
-    # gather relevant images
+    #  gather relevant images
     dataset = image_coll.filterBounds(geom).filterDate(start_date, end_date)
     dataset_size = dataset.size().getInfo()
 
     # check we have enough images to work with
     if dataset.size().getInfo() == 0:
-        print('No images found in this date rage, skipping.')
-        log_msg = 'WARN >>> No data found.'
+        print("No images found in this date rage, skipping.")
+        log_msg = "WARN >>> No data found."
         return [], log_msg
 
     # store the type of data we are working with
-    data_type = collection_dict['type']
+    data_type = collection_dict["type"]
 
     # mask clouds in images
-    if mask_cloud and data_type == 'vegetation':
-        dataset = apply_mask_cloud(dataset, collection_name, collection_dict['cloudy_pix_flag'])
+    if mask_cloud and data_type == "vegetation":
+        dataset = apply_mask_cloud(
+            dataset, collection_name, collection_dict["cloudy_pix_flag"]
+        )
 
     # check we have enough images to work with after cloud masking
     if dataset.size().getInfo() == 0:
-        print('No valid images found in this date rage, skipping.')
-        log_msg = f'WARN >>> Found 0/{dataset_size} valid images after cloud filtering.'
+        print("No valid images found in this date rage, skipping.")
+        log_msg = f"WARN >>> Found 0/{dataset_size} valid images after cloud filtering."
         return [], log_msg
     else:
-        print(f'Found {dataset.size().getInfo()} valid images of {dataset_size} total images in this date range.')
+        print(
+            f"Found {dataset.size().getInfo()} valid images of {dataset_size} total images in this date range."
+        )
 
     image_list = []
 
-    # if we are looking at vegetation
-    if data_type == 'vegetation':
+    #  if we are looking at vegetation
+    if data_type == "vegetation":
 
         # take the median across time of every pixel in the image
         image = dataset.median()
 
         # construct NDVI band from the red and near infrared bands
-        image = add_NDVI(image, collection_dict['RGB_bands'][0], collection_dict['NIR_band'])
+        image = add_NDVI(
+            image, collection_dict["RGB_bands"][0], collection_dict["NIR_band"]
+        )
 
         # select only RGB + NDVI bands to download
-        bands_to_select = list(collection_dict['RGB_bands']) + ['NDVI']
-        #renamed_bands = [collection_dict['collection_name'].split('/')[0] + '-' + band for band in bands_to_select]
+        bands_to_select = list(collection_dict["RGB_bands"]) + ["NDVI"]
+        # renamed_bands = [collection_dict['collection_name'].split('/')[0] + '-' + band for band in bands_to_select]
         image = image.select(bands_to_select)
 
         image_list.append(image)
 
     # for weather data
-    if data_type == 'weather':
+    if data_type == "weather":
 
-        if 'precipitation_band' in collection_dict.keys():
+        if "precipitation_band" in collection_dict.keys():
             # sum the precipitation across all dates
-            image_weather = dataset.select(list(collection_dict['precipitation_band'])).sum()
+            image_weather = dataset.select(
+                list(collection_dict["precipitation_band"])
+            ).sum()
             image_list.append(image_weather)
 
-        if 'temperature_band' in collection_dict.keys():
+        if "temperature_band" in collection_dict.keys():
             # average the temperature across all dates, may want to include
             # temperature range, min and max, in future
-            image_temp = dataset.select(list(collection_dict['temperature_band'])).mean()
+            image_temp = dataset.select(
+                list(collection_dict["temperature_band"])
+            ).mean()
             image_list.append(image_temp)
 
-    url_list =[]
+    url_list = []
     for image in image_list:
         # get a URL from which we can download the resulting data
-        url = image.getDownloadURL(
-            {'region': region,
-            'scale': scale}
-         )
+        url = image.getDownloadURL({"region": region, "scale": scale})
         url_list.append(url)
 
-    log_msg = f'OK   >>> Found {dataset.size().getInfo()}/{dataset_size} valid images after cloud filtering.'
+    log_msg = f"OK   >>> Found {dataset.size().getInfo()}/{dataset_size} valid images after cloud filtering."
     return url_list, log_msg
 
 
@@ -221,15 +231,17 @@ def get_region_string(point, size=0.1):
         A string with coordinates for each corner of the box. Can be passed to Earth
         Engine.
     """
-    left = point[0] - size/2
-    right = point[0] + size/2
-    top = point[1] + size/2
-    bottom = point[1] - size/2
-    coords =  str([[left,top],[right,top],[right,bottom],[left,bottom]])
+    left = point[0] - size / 2
+    right = point[0] + size / 2
+    top = point[1] + size / 2
+    bottom = point[1] - size / 2
+    coords = str([[left, top], [right, top], [right, bottom], [left, bottom]])
     return coords
 
 
-def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10):
+def ee_download(
+    output_dir, collection_dict, coords, date_range, region_size=0.1, scale=10
+):
     """
     General function to download various kinds of data from Google Earth Engine. We can get
     vegetation and weather data through this function. Cloud masking logic is performed for
@@ -260,18 +272,20 @@ def ee_download(output_dir, collection_dict, coords, date_range, region_size=0.1
     """
 
     # get download URL for all images at these coords
-    download_urls, log_msg = ee_prep_data(collection_dict,
-                                 coords,
-                                 date_range,
-                                 region_size,
-                                 scale)
+    download_urls, log_msg = ee_prep_data(
+        collection_dict, coords, date_range, region_size, scale
+    )
 
     # didn't find any valid images in this date range
     if len(download_urls) == 0:
         return None, log_msg
 
     # path to temporary directory to download data
-    sub_dir = f'gee_{coords[0]}_{coords[1]}'+"_"+collection_dict['collection_name'].replace('/', '-')
+    sub_dir = (
+        f"gee_{coords[0]}_{coords[1]}"
+        + "_"
+        + collection_dict["collection_name"].replace("/", "-")
+    )
     download_dir = os.path.join(output_dir, sub_dir, date_range[0])
 
     # download files and unzip to temporary directory

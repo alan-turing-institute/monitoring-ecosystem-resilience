@@ -14,12 +14,9 @@ import argparse
 import matplotlib.pyplot as plt
 from generate_patterns import generate_pattern
 
-from subgraph_centrality import (
-    subgraph_centrality,
-    generate_sc_images
-)
+from subgraph_centrality import subgraph_centrality, generate_sc_images
 
-LABELS=['bo','ro','go', 'b^', 'r^', 'g^']
+LABELS = ["bo", "ro", "go", "b^", "r^", "g^"]
 
 
 def generate_feature_vec_plot(rainfall):
@@ -49,7 +46,7 @@ def display_plots(xvals, yvals):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="plot feature vector")
-    parser.add_argument("--rainfall_vals",help="comma-separated list of rainfall vals")
+    parser.add_argument("--rainfall_vals", help="comma-separated list of rainfall vals")
     args = parser.parse_args()
     rainfall_vals = args.rainfall_vals.split(",")
     images = {}
@@ -57,5 +54,7 @@ if __name__ == "__main__":
     yvals = {}
     for rain in rainfall_vals:
         label = "{}mm".format(rain)
-        xvals[label], yvals[label], images[label] = generate_feature_vec_plot(float(rain))
+        xvals[label], yvals[label], images[label] = generate_feature_vec_plot(
+            float(rain)
+        )
     display_plots(xvals, yvals)

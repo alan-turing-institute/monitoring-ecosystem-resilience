@@ -4,6 +4,7 @@ Tests of the core functionality of pipelines, sequences, and modules.
 
 from pyveg.src.pyveg_pipeline import Pipeline, Sequence, BaseModule
 
+
 def test_instantiate_pipeline():
     p = Pipeline("testpipe")
     assert isinstance(p, Pipeline)
@@ -19,7 +20,7 @@ def test_instantiate_sequence():
 def test_add_sequence_to_pipeline():
     p = Pipeline("testpipe")
     p += Sequence("testseq")
-    assert len(p.sequences)==1
+    assert len(p.sequences) == 1
     assert p.testseq
     assert p.testseq.name == "testseq"
     assert p.testseq.parent is p
@@ -29,7 +30,7 @@ def test_configure_sequence():
     s = Sequence("testseq")
     assert s.is_configured == False
     s.coords = [1.23, 4.56]
-    s.date_range = ["2001-01-01","2020-01-01"]
+    s.date_range = ["2001-01-01", "2020-01-01"]
     s.configure()
     assert s.is_configured == True
     assert s.output_location == "gee_1.23_4.56_testseq"
@@ -37,11 +38,9 @@ def test_configure_sequence():
 
 def test_configure_sequence_from_dict():
     s = Sequence("testseq")
-    s.set_config({"collection_name": "TESTCOLL",
-                  "some_param": "TESTVAL"})
+    s.set_config({"collection_name": "TESTCOLL", "some_param": "TESTVAL"})
     assert s.collection_name == "TESTCOLL"
     assert s.some_param == "TESTVAL"
-
 
 
 def test_instantiate_module():
@@ -70,7 +69,7 @@ def test_add_module_to_sequence():
 def test_configure_pipeline():
     p = Pipeline("testpipe")
     p.coords = [1.23, 4.56]
-    p.date_range = ["2001-01-01","2020-01-01"]
+    p.date_range = ["2001-01-01", "2020-01-01"]
     p.output_location = "/tmp"
     p.output_location_type = "local"
     p += Sequence("testseq")

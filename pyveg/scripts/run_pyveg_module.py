@@ -15,20 +15,20 @@ import ee
 
 from pyveg.src.date_utils import get_date_range_for_collection
 from pyveg.src.pyveg_pipeline import Pipeline, Sequence
+
 try:
     from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
-except(ee.ee_exception.EEException):
+except (ee.ee_exception.EEException):
     print("Earth Engine not initialized - will not be able to download from GEE")
     pass
 from pyveg.src.processor_modules import (
     VegetationImageProcessor,
     NetworkCentralityCalculator,
     NDVICalculator,
-    WeatherImageToJSON
+    WeatherImageToJSON,
 )
 
 from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
-
 
 
 def build_module(config_file):
