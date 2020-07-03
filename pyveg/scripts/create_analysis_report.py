@@ -6,19 +6,34 @@ from pathlib import Path
 import pypandoc
 
 
-def create_markdown_pdf_report(path, collection ='Sentinel2'):
+def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
 
     # getting the right suffix from the satelite to analyse
-    if collection == 'Sentinel2':
-        satellite = 'S2'
-    elif collection == 'Landsat7':
-        satellite = 'L7'
+    if collection_name == 'COPERNICUS/S2':
+        collection = 'Sentinel2'
+        satellite_suffix = 'S2'
+
+    elif collection_name == 'LANDSAT8':
+        collection = 'Landsat8'
+        satellite_suffix = 'L8'
+
+    elif collection_name == 'LANDSAT7':
+        collection = 'Landsat7'
+        satellite_suffix = 'L7'
+
+    elif collection_name == 'LANDSAT5':
+        collection = 'Landsat5'
+        satellite_suffix = 'L5'
+
+    elif collection_name == 'LANDSAT4':
+        collection = 'Landsat4'
+        satellite_suffix = 'L4'
 
     current_path = Path(path)
     current_dirs_parent = str(current_path.parent)
     coords =  str(current_path.name).split("_")
 
-    output_path = os.path.join(path,'analysis_report_'+coords[1]+'_'+coords[2])
+    output_path = os.path.join(path,'analysis_report_'+coords[1]+'_'+coords[2]+'_'+collection)
 
 
     mdFile = MdUtils(file_name=output_path, title='Results for ' + collection+' and coordinates: '+coords[1]+' (longitude) and '+coords[2]+' (latitude)')
@@ -40,11 +55,11 @@ def create_markdown_pdf_report(path, collection ='Sentinel2'):
     ts_path = os.path.join(path,'analysis','time-series')
 
     count = count +1
-    mdFile.new_line(mdFile.new_inline_image(text='Time series Offset50', path=os.path.join(ts_path,satellite+'-time-series_smooth.png')))
+    mdFile.new_line(mdFile.new_inline_image(text='Time series Offset50', path=os.path.join(ts_path,satellite_suffix+'-time-series_smooth.png')))
     #mdFile.new_paragraph('Figure '+str(count)+': '+'Time series Offset50')
 
     count = count +1
-    mdFile.new_line(mdFile.new_inline_image(text='Time series NDVI', path=os.path.join(ts_path,satellite+'-ndvi-time-series.png')))
+    mdFile.new_line(mdFile.new_inline_image(text='Time series NDVI', path=os.path.join(ts_path,satellite_suffix+'-ndvi-time-series.png')))
     #mdFile.new_paragraph('Figure '+str(count)+': '+'Time series NDVI')
     mdFile.new_line('')
 
@@ -53,11 +68,11 @@ def create_markdown_pdf_report(path, collection ='Sentinel2'):
     stl_path = os.path.join(path, 'analysis', 'detrended','STL')
 
     count = count +1
-    mdFile.new_line(mdFile.new_inline_image(text='STL Offset50', path=os.path.join(stl_path, satellite+'_offset50_mean_STL_decomposition.png')))
+    mdFile.new_line(mdFile.new_inline_image(text='STL Offset50', path=os.path.join(stl_path, satellite_suffix+'_offset50_mean_STL_decomposition.png')))
     #mdFile.new_paragraph('Figure '+str(count)+': '+'STL Offset50')
 
     count = count +1
-    mdFile.new_line(mdFile.new_inline_image(text='STL NDVI', path=os.path.join(stl_path, satellite+'_ndvi_mean_STL_decomposition.png')))
+    mdFile.new_line(mdFile.new_inline_image(text='STL NDVI', path=os.path.join(stl_path, satellite_suffix+'_ndvi_mean_STL_decomposition.png')))
     #mdFile.new_paragraph('Figure '+str(count)+': '+'STL NDVI')
     mdFile.new_line('')
 
@@ -66,12 +81,12 @@ def create_markdown_pdf_report(path, collection ='Sentinel2'):
     ews_path = os.path.join(path, 'analysis', 'resiliance','deseasonalised','ewstools')
 
     count = count +1
-    mdFile.new_line(mdFile.new_inline_image(text='EWS Offset50', path=os.path.join(ews_path, satellite+'-offset50-mean-ews.png')))
+    mdFile.new_line(mdFile.new_inline_image(text='EWS Offset50', path=os.path.join(ews_path, satellite_suffix+'-offset50-mean-ews.png')))
     #mdFile.new_paragraph('Figure '+str(count)+': '+'EWS Offset50')
 
     count = count +1
     mdFile.new_line(
-    mdFile.new_inline_image(text='EWS NDVI', path=os.path.join(ews_path, satellite+'-ndvi-mean-ews.png')))
+    mdFile.new_inline_image(text='EWS NDVI', path=os.path.join(ews_path, satellite_suffix+'-ndvi-mean-ews.png')))
     #mdFile.new_paragraph('Figure '+str(count)+': '+'EWS NDVI')
 
     # Create a table of contents and save file
@@ -88,7 +103,7 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Collect all figures from analysis and get them into report")
     parser.add_argument("--input_dir", help="results directory from `download_gee_data` script, containing `results_summary.json` and `analysis` directory")
-    parser.add_argument("--collection", help="Satellite to be used in the report ",default='Sentinel2')
+    parser.add_argument("--collection", help="Satellite to be used in the report ",default='COPERNICUS/S2')
 
     print('-' * 35)
     print('Running create_analysis_report.py')
