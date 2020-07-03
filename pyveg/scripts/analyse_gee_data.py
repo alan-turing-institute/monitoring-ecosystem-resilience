@@ -267,7 +267,10 @@ def analyse_gee_data(input_dir, spatial):
     for collection_name, df in dfs.items():
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
 
-            create_markdown_pdf_report(input_dir,collection_name)
+            try:
+                create_markdown_pdf_report(input_dir,collection_name)
+            except:
+                raise RuntimeError("Missing figures needed for the report.")
 
     # ------------------------------------------------
 
