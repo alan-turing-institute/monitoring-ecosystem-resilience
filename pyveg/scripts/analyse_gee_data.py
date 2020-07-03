@@ -289,7 +289,8 @@ def analyse_gee_data(input_dir, spatial):
             try:
                 create_markdown_pdf_report(input_dir,collection_name)
             except:
-                raise RuntimeError("Missing figures needed for the report.")
+                raise Warning("A problem was found, the report was not created. There might be missing figures needed "
+                              "for the report or a problem with the pandoc installation.")
 
     # ------------------------------------------------
 
