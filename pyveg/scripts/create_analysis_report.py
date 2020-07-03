@@ -31,17 +31,26 @@ def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
 
     current_path = Path(path)
     current_dirs_parent = str(current_path.parent)
-    coords =  str(current_path.name).split("_")
 
-    output_path = os.path.join(path,'analysis_report_'+coords[1]+'_'+coords[2]+'_'+collection)
+    try:
+        coords =  str(current_path.name).split("_")
+        output_path = os.path.join(path,'analysis_report_'+coords[1]+'_'+coords[2]+'_'+collection)
+        mdFile = MdUtils(file_name=output_path,
+                         title='Results for ' + collection + ' and coordinates: ' + coords[1] + ' (longitude) and ' +
+                               coords[2] + ' (latitude)')
 
+    except:
+        # in case the directory does not have the right name with coordinates
+        output_path = os.path.join(path,'analysis_report_'+collection)
+        mdFile = MdUtils(file_name=output_path,
+                         title='Results for ' + collection)
 
-    mdFile = MdUtils(file_name=output_path, title='Results for ' + collection+' and coordinates: '+coords[1]+' (longitude) and '+coords[2]+' (latitude)')
     mdFile.new_header(level=1, title='RGB images through time')  # style is set 'atx' format by default.
 
     # find the RGB images, sort them and print them
     rgb_path = current_dirs_parent+'/gee_*_'+collection+'/*/PROCESSED/*RGB.png'
 
+    count = 0
     for count, rgb_figure in enumerate(sorted(glob.glob(rgb_path)), start=1):
 
         rgb_figure_name = str(Path(rgb_figure).name)
@@ -49,12 +58,17 @@ def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
         mdFile.new_line('Figure '+str(count)+': '+rgb_figure_name)
         mdFile.new_line('')
 
+    if count == 0:
+        mdFile.new_line("No RGB figures available in the given path.")
+        mdFile.new_line('')
+
+
 
     # Time series figures
     mdFile.new_header(level=1, title='Time series')
     ts_path = os.path.join(path,'analysis','time-series')
 
-    count = count +1
+    count = count + 1
     mdFile.new_line(mdFile.new_inline_image(text='Time series Offset50', path=os.path.join(ts_path,satellite_suffix+'-time-series_smooth.png')))
     #mdFile.new_paragraph('Figure '+str(count)+': '+'Time series Offset50')
 
