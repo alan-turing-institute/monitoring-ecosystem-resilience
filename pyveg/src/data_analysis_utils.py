@@ -38,9 +38,9 @@ def convert_to_geopandas(df):
     ----------
     geopandas DataFrame
     """
-    df['geometry'] = [Point(xy) for xy in zip(df.latitude, df.longitude)]
-    crs = {'init': 'epsg:4326'}
-    df = gpd.GeoDataFrame(df, crs=crs, geometry=df['geometry'])
+    df["geometry"] = [Point(xy) for xy in zip(df.latitude, df.longitude)]
+    crs = {"init": "epsg:4326"}
+    df = gpd.GeoDataFrame(df, crs=crs, geometry=df["geometry"])
 
     return df
 
@@ -98,12 +98,12 @@ def get_confidence_intervals(df, column, ci_level=0.99):
 
     # group all the data at each date
     d = {}
-    for name, group in df.groupby(['date']):
+    for name, group in df.groupby(["date"]):
         d[name] = group
 
     # for each timepoint, calculate the CI
     for df in d.values():
-        df['ci'] = calculate_ci(df[column], ci_level=ci_level)
+        df["ci"] = calculate_ci(df[column], ci_level=ci_level)
 
     # merge results
     df = list(d.values())[0]
@@ -131,7 +131,7 @@ def create_lat_long_metric_figures(geodf, metric, output_dir):
 
     """
 
-    if {'date', metric}.issubset(geodf.columns):
+    if {"date", metric}.issubset(geodf.columns):
 
         # get min and max values observed in the data to create a range
 
@@ -139,15 +139,22 @@ def create_lat_long_metric_figures(geodf, metric, output_dir):
         vmax = max(geodf[metric])
 
         # get all dates available
-        list_of_dates = np.unique(geodf['date'])
+        list_of_dates = np.unique(geodf["date"])
 
         for date in list_of_dates:
 
-            if geodf[geodf['date'] == date][metric].isnull().values.any():
-                print('Problem with date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d') + ' nan entries found.')
+            if geodf[geodf["date"] == date][metric].isnull().values.any():
+                print(
+                    "Problem with date "
+                    + pd.to_datetime(str(date)).strftime("%Y-%m-%d")
+                    + " nan entries found."
+                )
                 continue
             else:
-                print('Saving network figure for date ' + pd.to_datetime(str(date)).strftime('%Y-%m-%d'))
+                print(
+                    "Saving network figure for date "
+                    + pd.to_datetime(str(date)).strftime("%Y-%m-%d")
+                )
                 network_figure(geodf, date, metric, vmin, vmax, output_dir)
 
     else:
@@ -176,12 +183,12 @@ def coarse_dataframe(geodf, side_square):
 
     # initialise the categories
 
-    geodf['category'] = -1
+    geodf["category"] = -1
 
     # do calculations on the first date, then extrapolate to the rest
-    data_df = geodf[geodf['date'] == np.unique(geodf['date'])[0]]
+    data_df = geodf[geodf["date"] == np.unique(geodf["date"])[0]]
 
-    data_df = data_df.sort_values(by=['longitude', 'latitude'])
+    data_df = data_df.sort_values(by=["longitude", "latitude"])
 
     n_grids = int(math.sqrt(data_df.shape[0]))
 
@@ -190,41 +197,44 @@ def coarse_dataframe(geodf, side_square):
     for n in range(data_df.shape[0]):
 
         # only process lat,long point that do not have a category
-        if data_df['category'].iloc[n] == -1:
+        if data_df["category"].iloc[n] == -1:
 
             # get the side_square^2 nearest indexes to the point.
             indexes = []
             for i in range(side_square):
                 for j in range(side_square):
 
-                    if n + n_grids * i + j < n_grids * n_grids and data_df['category'].iloc[n + n_grids * i + j] == -1:
+                    if (
+                        n + n_grids * i + j < n_grids * n_grids
+                        and data_df["category"].iloc[n + n_grids * i + j] == -1
+                    ):
                         indexes.append(n + n_grids * i + j)
 
             # assing them all to the same categorty
-            data_df['category'].iloc[indexes] = str(category)
+            data_df["category"].iloc[indexes] = str(category)
 
             # get the geometry points of that catery
-            cat_geometry = data_df[data_df['category'] == str(category)]['geometry']
+            cat_geometry = data_df[data_df["category"] == str(category)]["geometry"]
 
             # get indexes of each point belonging to the category
             indexes_all = []
             for point in cat_geometry:
-                indexes_all.append(geodf[geodf['geometry'] == point].index.tolist())
+                indexes_all.append(geodf[geodf["geometry"] == point].index.tolist())
 
             indexes_all_flat = [item for sublist in indexes_all for item in sublist]
 
-            geodf['category'].iloc[indexes_all_flat] = str(category)
+            geodf["category"].iloc[indexes_all_flat] = str(category)
 
             category = category + 1
 
-    geodf['category'] = (geodf['category'].astype(str)).str.cat(geodf['date'], sep="_")
+    geodf["category"] = (geodf["category"].astype(str)).str.cat(geodf["date"], sep="_")
 
-    geodf = geodf.dissolve(by=['category', 'date'], aggfunc='mean')
+    geodf = geodf.dissolve(by=["category", "date"], aggfunc="mean")
 
     # re-assing the date because we are losing it
-    geodf['date'] = [i[1] for i in geodf.index]
+    geodf["date"] = [i[1] for i in geodf.index]
 
-    geodf['category'] = [i[0] for i in geodf.index]
+    geodf["category"] = [i[0] for i in geodf.index]
 
     return geodf
 
@@ -255,18 +265,32 @@ def network_figure(df, date, metric, vmin, vmax, output_dir):
 
     fig, ax = plt.subplots(1, figsize=(6, 6))
 
-    cmap = plt.cm.get_cmap('coolwarm')
+    cmap = plt.cm.get_cmap("coolwarm")
 
-    df[df['date'] == date].plot(marker='s', ax=ax, alpha=.5, markersize=100, column=metric,
-                                figsize=(10, 10), linewidth=0.8, edgecolor='0.8', cmap=cmap)
+    df[df["date"] == date].plot(
+        marker="s",
+        ax=ax,
+        alpha=0.5,
+        markersize=100,
+        column=metric,
+        figsize=(10, 10),
+        linewidth=0.8,
+        edgecolor="0.8",
+        cmap=cmap,
+    )
 
     # from datetime type to a string
-    date_str = pd.to_datetime(str(date)).strftime('%Y-%m-%d')
+    date_str = pd.to_datetime(str(date)).strftime("%Y-%m-%d")
 
     # create a date annotation on the figure
-    ax.annotate(date_str, xy=(0.15, 0.08), xycoords='figure fraction',
-                horizontalalignment='left', verticalalignment='top',
-                fontsize=25)
+    ax.annotate(
+        date_str,
+        xy=(0.15, 0.08),
+        xycoords="figure fraction",
+        horizontalalignment="left",
+        verticalalignment="top",
+        fontsize=25,
+    )
 
     # Create colorbar as a legend
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
@@ -280,7 +304,9 @@ def network_figure(df, date, metric, vmin, vmax, output_dir):
     metric_output_name = metric.replace("/", "_")
 
     # this saves the figure as a high-res png in the output path.
-    filepath = os.path.join(output_dir, metric_output_name + '_network_2D_grid_' + date_str + '.png')
+    filepath = os.path.join(
+        output_dir, metric_output_name + "_network_2D_grid_" + date_str + ".png"
+    )
     fig.savefig(filepath, dpi=200)
 
     plt.close(fig)
@@ -307,22 +333,31 @@ def fft_series(time_series):
     T = 1.0
     fourier = fft(ts)
     # x-axis values
-    xvals = np.linspace(0., 1.0 / (20 * T), N // 20)
-    yvals = 2.0 / N * np.abs(fourier[0:N // 20])
+    xvals = np.linspace(0.0, 1.0 / (20 * T), N // 20)
+    yvals = 2.0 / N * np.abs(fourier[0 : N // 20])
     return xvals, yvals
 
 
-def write_slimmed_csv(dfs, output_dir, filename_suffix=''):
+def write_slimmed_csv(dfs, output_dir, filename_suffix=""):
     for collection_name, veg_df in dfs.items():
-        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
-            df_summary = dfs['ECMWF/ERA5/DAILY']
-            df_summary.loc[veg_df.index, 'offset50_mean'] = veg_df['offset50_mean']
-            df_summary.loc[veg_df.index, 'offset50_std'] = veg_df['offset50_std']
-            df_summary.loc[veg_df.index, 'offset50_smooth_mean'] = veg_df['offset50_smooth_mean']
-            df_summary.loc[veg_df.index, 'offset50_smooth_std'] = veg_df['offset50_smooth_std']
+        if collection_name == "COPERNICUS/S2" or "LANDSAT" in collection_name:
+            df_summary = dfs["ECMWF/ERA5/DAILY"]
+            df_summary.loc[veg_df.index, "offset50_mean"] = veg_df["offset50_mean"]
+            df_summary.loc[veg_df.index, "offset50_std"] = veg_df["offset50_std"]
+            df_summary.loc[veg_df.index, "offset50_smooth_mean"] = veg_df[
+                "offset50_smooth_mean"
+            ]
+            df_summary.loc[veg_df.index, "offset50_smooth_std"] = veg_df[
+                "offset50_smooth_std"
+            ]
 
-            summary_csv_filename = os.path.join(output_dir, collection_name.replace('/',
-                                                                                    '-') + '_time_series' + filename_suffix + '.csv')
+            summary_csv_filename = os.path.join(
+                output_dir,
+                collection_name.replace("/", "-")
+                + "_time_series"
+                + filename_suffix
+                + ".csv",
+            )
 
             print(f"\nWriting '{summary_csv_filename}'...")
             df_summary.to_csv(summary_csv_filename)
@@ -349,7 +384,7 @@ def get_AR1_parameter_estimate(ys):
     ys = ys.dropna()
 
     if len(ys) < 4:
-        print('Time series too short to reliably calculate AR1')
+        print("Time series too short to reliably calculate AR1")
         return np.NaN, np.NaN
 
     from statsmodels.tsa.ar_model import AutoReg
@@ -362,10 +397,10 @@ def get_AR1_parameter_estimate(ys):
     if pd.infer_freq(ys.index) is not None:
         # explicitly add frequency to index to prevent warnings
         ys.index = pd.DatetimeIndex(ys.index, freq=pd.infer_freq(ys.index))
-        model = AutoReg(ys, lags=1, missing='drop').fit() # currently warning
+        model = AutoReg(ys, lags=1, missing="drop").fit()  # currently warning
     else:
         # remove index
-        model = AutoReg(ys.values, lags=1, missing='drop').fit() # currently warning
+        model = AutoReg(ys.values, lags=1, missing="drop").fit()  # currently warning
 
     # get the single parameter value
     parameter = model.params[1]
@@ -426,22 +461,22 @@ def write_to_json(filename, out_dict):
             os.makedirs(output_dir, exist_ok=True)
 
         #  write new json file
-        with open(filename, 'w') as json_file:
+        with open(filename, "w") as json_file:
             json.dump(out_dict, json_file, indent=2)
 
     # file exists
     else:
         # json read
         data = None
-        with open(filename, 'r') as json_file:
+        with open(filename, "r") as json_file:
             data = json.load(json_file)
 
-        # update dict   
+        # update dict
         for k, v in out_dict.items():
             data[k] = v
 
         # json write
-        with open(filename, 'w') as json_file:
+        with open(filename, "w") as json_file:
             json.dump(data, json_file, indent=2)
 
 
@@ -482,11 +517,11 @@ def get_max_lagged_cor(dirname, veg_prefix):
         Max correlation, and lag, for smoothed and unsmoothed vegetation time
         series.
     """
-    
+
     # construct path to lagged correlations file
-    filename = os.path.join(dirname, 'correlations', 'lagged_correlations.json')
-    
-     # check file exists
+    filename = os.path.join(dirname, "correlations", "lagged_correlations.json")
+
+    # check file exists
     if not os.path.exists(filename):
         raise FileNotFoundError(f'Could not find file "{os.path.abspath(filename)}".')
 
@@ -498,12 +533,16 @@ def get_max_lagged_cor(dirname, veg_prefix):
     lagged_cor = {k: np.array(v[:5]) for k, v in lagged_cor.items() if veg_prefix in k}
     lagged_cor = {k: (np.max(v), np.argmax(v)) for k, v in lagged_cor.items()}
 
-    if veg_prefix + '_offset50_mean_lagged_correlation' in lagged_cor.keys():
-        max_corr_unsmoothed = lagged_cor[veg_prefix + '_offset50_mean_lagged_correlation']
+    if veg_prefix + "_offset50_mean_lagged_correlation" in lagged_cor.keys():
+        max_corr_unsmoothed = lagged_cor[
+            veg_prefix + "_offset50_mean_lagged_correlation"
+        ]
     else:
         max_corr_unsmoothed = (np.NaN, np.NaN)
-    if veg_prefix + '_offset50_smooth_mean_lagged_correlation' in lagged_cor.keys():
-        max_corr_smooth = lagged_cor[veg_prefix + '_offset50_smooth_mean_lagged_correlation']
+    if veg_prefix + "_offset50_smooth_mean_lagged_correlation" in lagged_cor.keys():
+        max_corr_smooth = lagged_cor[
+            veg_prefix + "_offset50_smooth_mean_lagged_correlation"
+        ]
     else:
         max_corr_smooth = (np.NaN, np.NaN)
 
@@ -526,13 +565,13 @@ def variance_moving_average_time_series(series, length):
     pandas Series: 
         pandas Series with datetime index, and one column, one row per date.
     """
-    
+
     # just in case the index isn't already datetime type
     series.index = pd.to_datetime(series.index)
 
     variance = series.rolling(length).var()
 
-    variance.name = series.name+"_var"
+    variance.name = series.name + "_var"
 
     return variance
 
@@ -561,15 +600,15 @@ def ar1_moving_average_time_series(series, length=1):
     ar1_se = []
     index = []
 
-    for i in range(len(series) - length ):
-        #print(series[i:(length  + i)])
-        param, se = get_AR1_parameter_estimate(series[i:(length  + i)])
+    for i in range(len(series) - length):
+        # print(series[i:(length  + i)])
+        param, se = get_AR1_parameter_estimate(series[i : (length + i)])
         ar1.append(param)
         ar1_se.append(se)
-        index.append(series.index[length  + i])
+        index.append(series.index[length + i])
 
-    ar1_name = series.name+"_ar1"
-    ar1_se_name = series.name+"_ar1_se"
+    ar1_name = series.name + "_ar1"
+    ar1_se_name = series.name + "_ar1_se"
 
     ar1_df = pd.DataFrame()
     ar1_df[ar1_name] = pd.Series(ar1)
@@ -617,18 +656,18 @@ def get_ar1_var_timeseries_df(series, window_size=0.5):
 def get_corrs_by_lag(series_A, series_B):
 
     # set up
-    max_lag = 6 # assuming monthly sampling we shouldn't need to go past this
+    max_lag = 6  # assuming monthly sampling we shouldn't need to go past this
     correlations = []
 
     # loop through offsets
     for lag in range(0, max_lag):
 
         # shift vegetation time series back
-        lagged_data = series_A.shift(-lag) 
+        lagged_data = series_A.shift(-lag)
 
         # correlate with series_B
         corr = series_B.corr(lagged_data)
-        correlations.append(round(corr,4))
+        correlations.append(round(corr, 4))
 
     return correlations
 
@@ -680,11 +719,11 @@ def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
     for i in range(len(series_A) - length):
 
         # get the slices of the timeseries
-        frame_A = series_A[i:(length + i)]
-        frame_A_lagged = series_A_lagged[i:(length + i)]
-        frame_B = series_B[i:(length + i)]
+        frame_A = series_A[i : (length + i)]
+        frame_A_lagged = series_A_lagged[i : (length + i)]
+        frame_B = series_B[i : (length + i)]
 
-        # compute the lagged correlation using the lag 
+        # compute the lagged correlation using the lag
         # which maximises the global correlation
         frame_corr = frame_B.corr(frame_A_lagged)
 
@@ -697,9 +736,11 @@ def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
         mag_max_cors_mw.append(frame_lag_max_cor)
         index.append(series_A_lagged.index[length + i])
 
-    s = 'ndvi' if 'ndvi' in series_A else 'offest50'
-    correlations_mva_series_name = series_A.name.split('_')[0] + '_' + s + '_precip_corr'
-    mag_max_cors_mw_series_name = series_A.name.split('_')[0] + '_' + s + '_precip_lag'
+    s = "ndvi" if "ndvi" in series_A else "offest50"
+    correlations_mva_series_name = (
+        series_A.name.split("_")[0] + "_" + s + "_precip_corr"
+    )
+    mag_max_cors_mw_series_name = series_A.name.split("_")[0] + "_" + s + "_precip_lag"
 
     out_df = pd.DataFrame()
     out_df[correlations_mva_series_name] = pd.Series(correlations_mw)
@@ -734,31 +775,44 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
 
     # loop through columns
     for column in df.columns:
-        
+
         # run moving window analysis veg and precip columns
-        if ( ('offset50' in column or 'ndvi' in column) and 'mean' in column or 
-             'total_precipitation' in column ):
-            
+        if (
+            ("offset50" in column or "ndvi" in column)
+            and "mean" in column
+            or "total_precipitation" in column
+        ):
+
             # reindex time series using data
-            time_series = df.set_index('date')[column]
+            time_series = df.set_index("date")[column]
 
             # compute AR1 and variance time series
             df_ = get_ar1_var_timeseries_df(time_series, window_size)
-            mwa_df = mwa_df.join(df_, how='outer')
+            mwa_df = mwa_df.join(df_, how="outer")
 
         # for the precipitation column, look at correlations to veg
-        if 'total_precipitation' in column:
+        if "total_precipitation" in column:
             for column_veg in df.columns:
-                if (('offset50' in column_veg or 'ndvi' in column_veg) and 
-                     'mean' in column_veg and 'smooth' not in column_veg):
-                    mwa_df = mwa_df.merge(get_correlation_lag_ts(df.set_index('date')[column_veg],
-                                                                df.set_index('date')[column],
-                                                                window_size=window_size), how='outer',left_index=True, right_index=True)
+                if (
+                    ("offset50" in column_veg or "ndvi" in column_veg)
+                    and "mean" in column_veg
+                    and "smooth" not in column_veg
+                ):
+                    mwa_df = mwa_df.merge(
+                        get_correlation_lag_ts(
+                            df.set_index("date")[column_veg],
+                            df.set_index("date")[column],
+                            window_size=window_size,
+                        ),
+                        how="outer",
+                        left_index=True,
+                        right_index=True,
+                    )
 
     # use date as a column, and reset index
-    mwa_df.index.name = 'date'
+    mwa_df.index.name = "date"
     mwa_df = mwa_df.reset_index()
-    
+
     return mwa_df
 
 
@@ -768,28 +822,32 @@ def get_datetime_xs(df):
     """
 
     # check the column exists
-    if 'date' not in df.columns:
+    if "date" not in df.columns:
         raise RuntimeError("Couldn't find column 'date' in input df")
 
     # safely read date column and convert to datetime objects
     try:
-        xs = [datetime.datetime.strptime(d, '%Y-%m-%d').date() for d in df.date]
+        xs = [datetime.datetime.strptime(d, "%Y-%m-%d").date() for d in df.date]
     except:
         # if the time series has been resampled the index is a TimeStamp object
-        xs = [datetime.datetime.strptime(d._date_repr, '%Y-%m-%d').date() for d in df.date]
+        xs = [
+            datetime.datetime.strptime(d._date_repr, "%Y-%m-%d").date() for d in df.date
+        ]
 
     return xs
 
 
-def early_warnings_sensitivity_analysis(series,
-                                        indicators=['var','ac'],
-                                        winsizerange = [0.10, 0.8],
-                                        incrwinsize = 0.10,
-                                        smooth = "Gaussian",
-                                        bandwidthrange = [0.05, 1.],
-                                        spanrange = [0.05, 1.1],
-                                        incrbandwidth = 0.2,
-                                        incrspanrange = 0.1):
+def early_warnings_sensitivity_analysis(
+    series,
+    indicators=["var", "ac"],
+    winsizerange=[0.10, 0.8],
+    incrwinsize=0.10,
+    smooth="Gaussian",
+    bandwidthrange=[0.05, 1.0],
+    spanrange=[0.05, 1.1],
+    incrbandwidth=0.2,
+    incrspanrange=0.1,
+):
 
     """
     Function to estimate the sensitivity of the early warnings analysis to 
@@ -831,57 +889,64 @@ def early_warnings_sensitivity_analysis(series,
     """
 
     results_kendal_tau = []
-    for winsize in np.arange(winsizerange[0],winsizerange[1]+0.01,incrwinsize):
+    for winsize in np.arange(winsizerange[0], winsizerange[1] + 0.01, incrwinsize):
 
-        winsize = round(winsize,3)
+        winsize = round(winsize, 3)
         if smooth == "Gaussian":
 
-            for bw in np.arange(bandwidthrange[0], bandwidthrange[1]+0.01, incrbandwidth):
+            for bw in np.arange(
+                bandwidthrange[0], bandwidthrange[1] + 0.01, incrbandwidth
+            ):
 
                 bw = round(bw, 3)
-                ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
-                                                        roll_window=winsize,
-                                                        smooth=smooth,
-                                                        lag_times=[1, 2],
-                                                        ews=indicators,
-                                                        band_width=bw)
+                ews_dic_veg = ewstools.core.ews_compute(
+                    series.dropna(),
+                    roll_window=winsize,
+                    smooth=smooth,
+                    lag_times=[1, 2],
+                    ews=indicators,
+                    band_width=bw,
+                )
 
-                result = ews_dic_veg['Kendall tau']
-                result['smooth'] = bw
-                result['winsize'] = winsize
+                result = ews_dic_veg["Kendall tau"]
+                result["smooth"] = bw
+                result["winsize"] = winsize
 
                 results_kendal_tau.append(result)
 
+        elif smooth == "Lowess":
 
-        elif smooth =="Lowess":
+            for span in np.arange(spanrange[0], spanrange[1] + 0.01, incrspanrange):
 
-            for span in np.arange(spanrange[0], spanrange[1]+0.01, incrspanrange):
+                span = round(span, 2)
+                ews_dic_veg = ewstools.core.ews_compute(
+                    series.dropna(),
+                    roll_window=winsize,
+                    smooth=smooth,
+                    lag_times=[1, 2],
+                    ews=indicators,
+                    span=span,
+                )
 
-                span = round(span,2)
-                ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
-                                                        roll_window=winsize,
-                                                        smooth=smooth,
-                                                        lag_times=[1, 2],
-                                                        ews=indicators,
-                                                        span=span)
-
-                result = ews_dic_veg['Kendall tau']
-                result['smooth'] = bw
-                result['winsize'] = winsize
+                result = ews_dic_veg["Kendall tau"]
+                result["smooth"] = bw
+                result["winsize"] = winsize
 
                 results_kendal_tau.append(result)
 
         else:
 
-            ews_dic_veg = ewstools.core.ews_compute(series.dropna(),
-                                                    roll_window=winsize,
-                                                    smooth='None',
-                                                    lag_times=[1, 2],
-                                                    ews=indicators)
+            ews_dic_veg = ewstools.core.ews_compute(
+                series.dropna(),
+                roll_window=winsize,
+                smooth="None",
+                lag_times=[1, 2],
+                ews=indicators,
+            )
 
-            result = ews_dic_veg['Kendall tau']
-            result['smooth'] = 0
-            result['winsize'] = winsize
+            result = ews_dic_veg["Kendall tau"]
+            result["smooth"] = 0
+            result["winsize"] = winsize
 
             results_kendal_tau.append(result)
 
@@ -890,14 +955,16 @@ def early_warnings_sensitivity_analysis(series,
     return sensitivity_df
 
 
-def early_warnings_null_hypothesis(series,
-                                   indicators=['var', 'ac'],
-                                   roll_window=0.4,
-                                   smooth='Lowess',
-                                   span=0.1,
-                                   band_width=0.2,
-                                   lag_times=[1],
-                                   n_simulations=1000):
+def early_warnings_null_hypothesis(
+    series,
+    indicators=["var", "ac"],
+    roll_window=0.4,
+    smooth="Lowess",
+    span=0.1,
+    band_width=0.2,
+    lag_times=[1],
+    n_simulations=1000,
+):
     """
     Function to estimate the significance of the early warnings analysis 
     by performing a null hypothesis test. The function estimate distributions 
@@ -940,19 +1007,21 @@ def early_warnings_null_hypothesis(series,
 
     """
 
-    ews_dic = ewstools.core.ews_compute(series,
-                                        roll_window=roll_window,
-                                        smooth=smooth,
-                                        span=span,
-                                        band_width=band_width,
-                                        ews=indicators,
-                                        lag_times=lag_times)
+    ews_dic = ewstools.core.ews_compute(
+        series,
+        roll_window=roll_window,
+        smooth=smooth,
+        span=span,
+        band_width=band_width,
+        ews=indicators,
+        lag_times=lag_times,
+    )
 
     from statsmodels.tsa.arima_model import ARIMA
     from statsmodels.tsa.arima_process import ArmaProcess
 
     # Use the short_series EWS if smooth='None'. Otherwise use reiduals.
-    eval_series = ews_dic['EWS metrics']['Residuals']
+    eval_series = ews_dic["EWS metrics"]["Residuals"]
 
     # Fit ARMA model based on AIC
     aic_max = 10000
@@ -984,69 +1053,81 @@ def early_warnings_null_hypothesis(series,
         # ------------ Compute temporal EWS---------------#
 
         # Compute standard deviation as a Series and add to the DataFrame
-        if 'sd' in indicators:
+        if "sd" in indicators:
             roll_sd = series.rolling(window=rw_size).std()
-            df_ews['Standard deviation'] = roll_sd
+            df_ews["Standard deviation"] = roll_sd
 
         # Compute variance as a Series and add to the DataFrame
-        if 'var' in indicators:
+        if "var" in indicators:
             roll_var = series.rolling(window=rw_size).var()
-            df_ews['Variance'] = roll_var
+            df_ews["Variance"] = roll_var
 
         # Compute autocorrelation for each lag in lag_times and add to the DataFrame
-        if 'ac' in indicators:
+        if "ac" in indicators:
             for i in range(len(lag_times)):
                 roll_ac = series.rolling(window=rw_size).apply(
-                    func=lambda x: pd.Series(x).autocorr(lag=lag_times[i]),
-                    raw=True)
-                df_ews['Lag-' + str(lag_times[i]) + ' AC'] = roll_ac
+                    func=lambda x: pd.Series(x).autocorr(lag=lag_times[i]), raw=True
+                )
+                df_ews["Lag-" + str(lag_times[i]) + " AC"] = roll_ac
 
         # Compute Coefficient of Variation (C.V) and add to the DataFrame
-        if 'cv' in indicators:
+        if "cv" in indicators:
             # mean of raw_series
             roll_mean = series.rolling(window=rw_size).mean()
             # standard deviation of residuals
             roll_std = series.rolling(window=rw_size).std()
             # coefficient of variation
             roll_cv = roll_std.divide(roll_mean)
-            df_ews['Coefficient of variation'] = roll_cv
+            df_ews["Coefficient of variation"] = roll_cv
 
         # Compute skewness and add to the DataFrame
-        if 'skew' in indicators:
+        if "skew" in indicators:
             roll_skew = series.rolling(window=rw_size).skew()
-            df_ews['Skewness'] = roll_skew
+            df_ews["Skewness"] = roll_skew
 
         # Compute Kurtosis and add to DataFrame
-        if 'kurt' in indicators:
+        if "kurt" in indicators:
             roll_kurt = series.rolling(window=rw_size).kurt()
-            df_ews['Kurtosis'] = roll_kurt
+            df_ews["Kurtosis"] = roll_kurt
 
         # ------------Compute Kendall tau coefficients----------------#
 
-        ''' In this section we compute the kendall correlation coefficients for each EWS
+        """ In this section we compute the kendall correlation coefficients for each EWS
             with respect to time. Values close to one indicate high correlation (i.e. EWS
             increasing with time), values close to zero indicate no significant correlation,
             and values close to negative one indicate high negative correlation (i.e. EWS
-            decreasing with time).'''
+            decreasing with time)."""
 
         # Put time values as their own series for correlation computation
         time_vals = pd.Series(df_ews.index, index=df_ews.index)
 
         # List of EWS that can be used for Kendall tau computation
-        ktau_metrics = ['Variance', 'Standard deviation', 'Skewness', 'Kurtosis', 'Coefficient of variation', 'Smax',
-                        'Smax/Var', 'Smax/Mean'] + ['Lag-' + str(i) + ' AC' for i in lag_times]
+        ktau_metrics = [
+            "Variance",
+            "Standard deviation",
+            "Skewness",
+            "Kurtosis",
+            "Coefficient of variation",
+            "Smax",
+            "Smax/Var",
+            "Smax/Mean",
+        ] + ["Lag-" + str(i) + " AC" for i in lag_times]
         # Find intersection with this list and EWS computed
         ews_list = df_ews.columns.values.tolist()
         ktau_metrics = list(set(ews_list) & set(ktau_metrics))
 
         # Find Kendall tau for each EWS and store in a DataFrame
-        dic_ktau = {x: df_ews[x].corr(time_vals, method='kendall') for x in ktau_metrics}  # temporary dictionary
-        df_ktau = pd.DataFrame(dic_ktau, index=[0])  # DataFrame (easier for concatenation purposes)
+        dic_ktau = {
+            x: df_ews[x].corr(time_vals, method="kendall") for x in ktau_metrics
+        }  # temporary dictionary
+        df_ktau = pd.DataFrame(
+            dic_ktau, index=[0]
+        )  # DataFrame (easier for concatenation purposes)
 
         # -------------Organise final output and return--------------#
 
         # Ouptut a dictionary containing EWS DataFrame, power spectra DataFrame, and Kendall tau values
-        output_dic = {'EWS metrics': df_ews, 'Kendall tau': df_ktau}
+        output_dic = {"EWS metrics": df_ews, "Kendall tau": df_ktau}
 
         return output_dic
 
@@ -1057,16 +1138,16 @@ def early_warnings_null_hypothesis(series,
     for i in range(n_simulations):
         ts = process.generate_sample(len(eval_series))
 
-        kendall_tau.append(compute_indicators(pd.Series(ts))['Kendall tau'])
+        kendall_tau.append(compute_indicators(pd.Series(ts))["Kendall tau"])
 
     surrogates_kendall_tau_df = pd.concat(kendall_tau)
-    surrogates_kendall_tau_df['true_data'] = False
+    surrogates_kendall_tau_df["true_data"] = False
 
     # get results for true data
-    data_kendall_tau_df = compute_indicators(eval_series)['Kendall tau']
-    data_kendall_tau_df['true_data'] = True
+    data_kendall_tau_df = compute_indicators(eval_series)["Kendall tau"]
+    data_kendall_tau_df["true_data"] = True
 
     # return dataframe with both surrogates and true data
-    kendall_tau_df = pd.concat([data_kendall_tau_df,surrogates_kendall_tau_df])
+    kendall_tau_df = pd.concat([data_kendall_tau_df, surrogates_kendall_tau_df])
 
     return kendall_tau_df

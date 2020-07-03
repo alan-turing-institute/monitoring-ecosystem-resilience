@@ -18,11 +18,13 @@ from PIL import Image
 import imageio
 
 import matplotlib
-matplotlib.use('PS')
+
+matplotlib.use("PS")
 import matplotlib.pyplot as plt
 
 from .coordinate_utils import get_sub_image_coords
 from .file_utils import save_image
+
 
 def image_from_array(input_array, output_size=None, sel_val=200):
     """
@@ -73,7 +75,7 @@ def invert_binary_image(image):
     return new_img
 
 
-#def combine_tif(input_files, bands=["B4", "B3", "B2"]):
+# def combine_tif(input_files, bands=["B4", "B3", "B2"]):
 def combine_tif(band_dict):
     """
     Read tif files - one per specified band, and rescale and combine
@@ -89,11 +91,11 @@ def combine_tif(band_dict):
     """
     for v in band_dict.values():
         v["min_val"] = sys.maxsize
-        v["max_val"] = -1*sys.maxsize
+        v["max_val"] = -1 * sys.maxsize
         v["pix_vals"] = []
 
     for col in band_dict.keys():
-        pix = cv.imread(band_dict[col]["filename"],cv.IMREAD_ANYDEPTH)
+        pix = cv.imread(band_dict[col]["filename"], cv.IMREAD_ANYDEPTH)
         # find the minimum and maximum pixel values in the original scale
         for ix in range(pix.shape[0]):
             for iy in range(pix.shape[1]):
@@ -106,16 +108,22 @@ def combine_tif(band_dict):
     overall_max = max((band_dict[col]["max_val"] for col in ["r", "g", "b"]))
 
     # create a new image where we will fill RGB pixel values from 0 to 255
-    def get_pix_val(ix, iy, col): return \
-        max(0, int(band_dict[col]["pix_vals"][ix, iy] * 255 / \
-                   #                   band_dict[col]["max_val"]
-                   (overall_max+1)
-                   ))
+    def get_pix_val(ix, iy, col):
+        return max(
+            0,
+            int(
+                band_dict[col]["pix_vals"][ix, iy]
+                * 255
+                / (overall_max + 1)  #                   band_dict[col]["max_val"]
+            ),
+        )
+
     new_img = Image.new("RGB", pix.shape)
     for ix in range(new_img.size[0]):
         for iy in range(new_img.size[1]):
-            new_img.putpixel((ix, iy), tuple(get_pix_val(ix, iy, col)
-                                             for col in ["r", "g", "b"]))
+            new_img.putpixel(
+                (ix, iy), tuple(get_pix_val(ix, iy, col) for col in ["r", "g", "b"])
+            )
     return new_img
 
 
@@ -132,13 +140,13 @@ def scale_tif(input_filename):
     =======
     new_img: pillow Image.
     """
-    max_val = -1*sys.maxsize
+    max_val = -1 * sys.maxsize
     min_val = sys.maxsize
     # load the single band file and extract pixel data
 
-    pix = cv.imread(input_filename,cv.IMREAD_ANYDEPTH)
+    pix = cv.imread(input_filename, cv.IMREAD_ANYDEPTH)
     # find the minimum and maximum pixel values in the original scale
-    #print("Found image of size {}".format(im.size))
+    # print("Found image of size {}".format(im.size))
     for ix in range(pix.shape[0]):
         for iy in range(pix.shape[1]):
             if pix[ix, iy] > max_val:
@@ -150,14 +158,15 @@ def scale_tif(input_filename):
 
     # global linear transform from [-1, 1] -> [0, 255]
     # tested in issue #224
-    def get_pix_val(ix, iy): return \
-        int((pix[ix, iy] + 1 ) / 2 * 255)
+    def get_pix_val(ix, iy):
+        return int((pix[ix, iy] + 1) / 2 * 255)
 
     new_img = Image.new("RGB", pix.shape)
     for ix in range(new_img.size[0]):
         for iy in range(new_img.size[1]):
-            new_img.putpixel((ix, iy), tuple(get_pix_val(ix, iy)
-                                             for col in ["r", "g", "b"]))
+            new_img.putpixel(
+                (ix, iy), tuple(get_pix_val(ix, iy) for col in ["r", "g", "b"])
+            )
     return new_img
 
 
@@ -176,10 +185,11 @@ def convert_to_rgb(band_dict):
     if len(band_dict.keys()) >= 3:
         new_img = combine_tif(band_dict)
     elif len(band_dict.keys()) == 1:
-        new_img = scale_tif(band_dict.values[0]['filename'])
+        new_img = scale_tif(band_dict.values[0]["filename"])
     else:
         raise RuntimeError(
-            "Can't convert to RGB with {} bands".format(band_dict.keys()))
+            "Can't convert to RGB with {} bands".format(band_dict.keys())
+        )
     return new_img
 
 
@@ -189,19 +199,18 @@ def plot_band_values(input_filebase, bands=["B4", "B3", "B2"]):
     """
     num_subplots = len(bands)
     for i, band in enumerate(bands):
-        im = Image.open(input_filebase+"."+band+".tif")
+        im = Image.open(input_filebase + "." + band + ".tif")
         pix = im.load()
         vals = []
         for ix in range(im.size[0]):
             for iy in range(im.size[1]):
                 vals.append(pix[ix, iy])
-        plt.subplot(1, num_subplots, i+1)
+        plt.subplot(1, num_subplots, i + 1)
         plt.hist(vals)
     plt.show()
 
 
-def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
-                    region_size=None, coords=None):
+def crop_image_npix(input_image, n_pix_x, n_pix_y=None, region_size=None, coords=None):
     """
     Divide an image into smaller sub-images with fixed pixel size.
     If region_size and coordinates are provided, we want to return the
@@ -222,12 +231,12 @@ def crop_image_npix(input_image, n_pix_x, n_pix_y=None,
     sub_images = []
     for ix in range(x_parts):
         for iy in range(y_parts):
-            box = (ix*n_pix_x, iy*n_pix_y, (ix+1)*n_pix_x, (iy+1)*n_pix_y)
+            box = (ix * n_pix_x, iy * n_pix_y, (ix + 1) * n_pix_x, (iy + 1) * n_pix_y)
             region = input_image.crop(box)
             # depending on whether we have been given coordinates,
             # return a list of images, or a list of (image,coords) tuples.
             if sub_image_coords:
-                sub_images.append((region, sub_image_coords[ix*x_parts+iy]))
+                sub_images.append((region, sub_image_coords[ix * x_parts + iy]))
             else:
                 sub_images.append(region)
 
@@ -249,7 +258,7 @@ def crop_image_nparts(input_image, n_parts_x, n_parts_y=None):
     sub_images = []
     for ix in range(n_parts_x):
         for iy in range(n_parts_y):
-            box = (ix*x_sub, iy*y_sub, (ix+1)*x_sub, (iy+1)*y_sub)
+            box = (ix * x_sub, iy * y_sub, (ix + 1) * x_sub, (iy + 1) * y_sub)
             region = input_image.crop(box)
             sub_images.append(region)
 
@@ -272,15 +281,18 @@ def convert_to_bw(input_image, threshold, invert=False):
                     total += col
             except:
                 total = p
-            if (invert and (total > threshold)) or \
-               ((not invert) and (total < threshold)):
+            if (invert and (total > threshold)) or (
+                (not invert) and (total < threshold)
+            ):
                 new_img.putpixel((ix, iy), (255, 255, 255))
             else:
                 new_img.putpixel((ix, iy), (0, 0, 0))
     return new_img
 
 
-def crop_and_convert_to_bw(input_filename, output_dir, threshold=470, num_x=50, num_y=50):
+def crop_and_convert_to_bw(
+    input_filename, output_dir, threshold=470, num_x=50, num_y=50
+):
     """
     Open an image file, convert to monochrome, and crop into sub-images.
     """
@@ -295,9 +307,7 @@ def crop_and_convert_to_bw(input_filename, output_dir, threshold=470, num_x=50, 
         new_filename_base += el
 
     for i, sub_image in enumerate(sub_images):
-        new_filename = "{}_{}.{}".format(new_filename_base,
-                                         i,
-                                         file_ext)
+        new_filename = "{}_{}.{}".format(new_filename_base, i, file_ext)
         save_image(sub_image, output_dir, new_filename)
 
 
@@ -314,9 +324,11 @@ def create_gif_from_images(directory_path, output_name, string_in_filename=""):
     :return:
     """
 
-
-    file_names = [f for f in os.listdir(directory_path) if (
-        os.path.isfile(os.path.join(directory_path, f)) and f.endswith(".png"))]
+    file_names = [
+        f
+        for f in os.listdir(directory_path)
+        if (os.path.isfile(os.path.join(directory_path, f)) and f.endswith(".png"))
+    ]
 
     images = []
     date = []
@@ -326,28 +338,33 @@ def create_gif_from_images(directory_path, output_name, string_in_filename=""):
         # only use images with certain name (optional)
         if string_in_filename in filename:
 
-            images.append(imageio.imread(
-                os.path.join(directory_path, filename)))
+            images.append(imageio.imread(os.path.join(directory_path, filename)))
 
             # the name of each file should end with the date of the image
             # (this is true in the gee images)
             date.append(filename[-14:-4])
 
     if len(images) == 0:
-        raise RuntimeError('No images found')
+        raise RuntimeError("No images found")
     else:
         image_dates_df = pd.DataFrame()
-        image_dates_df['date'] = date
-        image_dates_df['images'] = images
+        image_dates_df["date"] = date
+        image_dates_df["images"] = images
 
-        image_dates_df.sort_values(by=['date'], inplace=True, ascending=True)
-        imageio.mimsave(os.path.join(directory_path, output_name +
-                                     '.gif'), image_dates_df['images'], duration=0.5)
+        image_dates_df.sort_values(by=["date"], inplace=True, ascending=True)
+        imageio.mimsave(
+            os.path.join(directory_path, output_name + ".gif"),
+            image_dates_df["images"],
+            duration=0.5,
+        )
 
-    print("Saved gif file containing '{}' images in directory '{}'".format(image_dates_df.shape[0],directory_path))
+    print(
+        "Saved gif file containing '{}' images in directory '{}'".format(
+            image_dates_df.shape[0], directory_path
+        )
+    )
 
-    return os.path.join(directory_path, output_name +'.gif')
-
+    return os.path.join(directory_path, output_name + ".gif")
 
 
 def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=50, num_y=50):
@@ -360,8 +377,7 @@ def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=50, num_y=5
             continue
         print("Processing {}".format(filename))
         input_filename = os.path.join(input_dir, filename)
-        crop_and_convert_to_bw(input_filename, output_dir,
-                               threshold, num_x, num_y)
+        crop_and_convert_to_bw(input_filename, output_dir, threshold, num_x, num_y)
 
 
 def image_file_all_same_colour(image_filename, colour=(255, 255, 255), threshold=0.99):
@@ -385,7 +401,7 @@ def image_all_same_colour(image, colour=(255, 255, 255), threshold=0.99):
         for iy in range(image.size[1]):
             if pix[ix, iy] != colour:
                 num_different += 1
-                if 1.0 - float(num_different/num_total) < threshold:
+                if 1.0 - float(num_different / num_total) < threshold:
                     return False
     return True
 
@@ -407,7 +423,7 @@ def compare_binary_images(image1, image2):
     Return the fraction of pixels that are the same in the two images.
     """
     if not image1.size == image2.size:
-        return 0.
+        return 0.0
     pix1 = image1.load()
     pix2 = image2.load()
     num_same = 0
@@ -430,7 +446,7 @@ def pillow_to_numpy(pil_image):
     @return 2D or 3D numpy array (depending on input image)
     """
     if issubclass(type(pil_image), type(Image.Image)):
-        raise TypeError('Input should be a PIL Image object')
+        raise TypeError("Input should be a PIL Image object")
 
     numpy_image = np.array(pil_image)
 
@@ -442,9 +458,9 @@ def pillow_to_numpy(pil_image):
     r, g, b = numpy_image[:, :, 0], numpy_image[:, :, 1], numpy_image[:, :, 2]
 
     if (b == g).all() and (b == r).all() and not (b == 0).all():
-        return numpy_image[:, :, 0] # return with 3rd index removed
+        return numpy_image[:, :, 0]  # return with 3rd index removed
     else:
-        return numpy_image # return colour image
+        return numpy_image  # return colour image
 
 
 def numpy_to_pillow(numpy_image):
@@ -455,10 +471,10 @@ def numpy_to_pillow(numpy_image):
     @return PIL Image object
     """
     if not isinstance(numpy_image, np.ndarray):
-        raise TypeError('Input should be a NumPy array')
+        raise TypeError("Input should be a NumPy array")
 
     if numpy_image.ndim != 2:
-        raise ValueError('Input should be a grayscale image')
+        raise ValueError("Input should be a grayscale image")
 
     return Image.fromarray(numpy_image)
 
@@ -473,8 +489,10 @@ def hist_eq(img, clip_limit=2):
     @return 2D numpy array representing the equalised image
     """
     if img.ndim != 2:
-        raise ValueError("The input image should be a 2D numpy array \
-                          repersenting a grayscale image")
+        raise ValueError(
+            "The input image should be a 2D numpy array \
+                          repersenting a grayscale image"
+        )
 
     clahe = cv.createCLAHE(clipLimit=clip_limit, tileGridSize=(11, 11))
     return clahe.apply(img)
@@ -489,8 +507,10 @@ def median_filter(img, r=3):
     @return 2D numpy array representing the smoothed image
     """
     if img.ndim != 2:
-        raise ValueError("The input image should be a 2D numpy array \
-                          repersenting a grayscale image")
+        raise ValueError(
+            "The input image should be a 2D numpy array \
+                          repersenting a grayscale image"
+        )
 
     return cv.medianBlur(img, r)
 
@@ -506,18 +526,22 @@ def adaptive_threshold(img):
     @return thresholded image
     """
     if img.ndim != 2:
-        raise ValueError("The input image should be a 2D numpy array \
-                          repersenting a grayscale image")
+        raise ValueError(
+            "The input image should be a 2D numpy array \
+                          repersenting a grayscale image"
+        )
 
     local_area_size = 51  # must be odd
     offset = -5  # threshold = mean + offset
 
-    img_thresh = cv.adaptiveThreshold(img,
-                                      255,  # max value
-                                      cv.ADAPTIVE_THRESH_MEAN_C,
-                                      cv.THRESH_BINARY_INV,  # can perform inverted threholding here
-                                      local_area_size,
-                                      offset)
+    img_thresh = cv.adaptiveThreshold(
+        img,
+        255,  # max value
+        cv.ADAPTIVE_THRESH_MEAN_C,
+        cv.THRESH_BINARY_INV,  # can perform inverted threholding here
+        local_area_size,
+        offset,
+    )
 
     return img_thresh
 
@@ -538,6 +562,8 @@ def process_and_threshold(img, r=3):
     img = median_filter(img, r)
 
     return numpy_to_pillow(img)
+
+
 # ---------------------------------------------------------------------
 
 
@@ -563,7 +589,7 @@ def check_image_ok(rgb_image, black_pix_threshold=0.05):
 
     if len(img_array.shape) < 3:
         return False
-    black = [0,0,0]
+    black = [0, 0, 0]
 
     # catch an error where array elements can be zero, rather than [r,g,b] values
     if len(img_array.shape) < 3:
@@ -571,7 +597,7 @@ def check_image_ok(rgb_image, black_pix_threshold=0.05):
 
     n_black_pix = np.count_nonzero(np.all(img_array == black, axis=2))
 
-    if n_black_pix / (img_array.shape[0]*img_array.shape[1]) >= black_pix_threshold:
+    if n_black_pix / (img_array.shape[0] * img_array.shape[1]) >= black_pix_threshold:
         return False
     else:
         return True
