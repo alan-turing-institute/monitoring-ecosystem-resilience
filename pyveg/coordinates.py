@@ -135,7 +135,7 @@ coordinate_store.loc["12"] = {
 # usa
 coordinate_store.loc["13"] = {
     "continent": "America",
-    "country": "USA",
+    "country": "Mexico",
     "type": "tiger bush",
     "latitude": 26.82,
     "longitude": -112.86,
