@@ -53,7 +53,7 @@ coordinate_store.loc['11'] = {'continent': 'Africa', 'country': 'Somalia', 'type
 coordinate_store.loc['12'] = {'continent': 'Australia', 'country': 'Australia', 'type': 'gaps', 'latitude': -15.71, 'longitude': 133.10}
 
 # usa
-coordinate_store.loc['13'] = {'continent': 'America', 'country': 'USA', 'type': 'tiger bush', 'latitude': 26.82, 'longitude': -112.86}
+coordinate_store.loc['13'] = {'continent': 'America', 'country': 'Mexico', 'type': 'tiger bush', 'latitude': 26.82, 'longitude': -112.86}
 coordinate_store.loc['14'] = {'continent': 'America', 'country': 'USA', 'type': 'labyrinths', 'latitude': 31.05, 'longitude': -103.09}
 # --------------------------------------------------------------------------------
 
