@@ -56,7 +56,7 @@ looking for evidence of early warning signals of ecosystem
 collapse using remote sensing data. `pyveg` allows such
 research to be carried out at scale, and hence can be an
 important tool in understanding changing arid and semi-arid
-ecosystem dynamics. A list of PVP locations, obtained through
+ecosystem dynamics. An evolving list of PVP locations, obtained through
 both literature and manual searches, is included in the package at
 `pyveg/coordinates.py`. The structure of the package is outlined in
 \autoref{fig:pyveg_flow}, and is discussed in more detail in the
@@ -83,10 +83,12 @@ supported).
 
 `pyveg` will then form a series of date ranges, and query GEE for the relevant
 data in each date range. Colour (RGB) and Normalised Difference vegetation
-Index (NDVI) images are downloaded from vegetation collections. Cloud masking
+Index (NDVI) images are downloaded from vegetation collections. Supported 
+vegetation collections include Landsat [@landsat] and Sentinel-2 [@sentinel2] GEE
+collections. Cloud masking
 logic is included to improve data quality using the `geetools` package [@geetools].
 For precipitation and temperature information, `pyveg` defaults to using the ERA5
-collection.
+collection [@era5].
 
 
 # Network centrality metrics
