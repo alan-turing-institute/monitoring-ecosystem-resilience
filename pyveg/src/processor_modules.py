@@ -43,7 +43,7 @@ from pyveg.src.subgraph_centrality import (
 )
 from pyveg.src import azure_utils
 from pyveg.src import batch_utils
-from pyveg.src.pyveg_pipeline import BaseModule
+from pyveg.src.pyveg_pipeline import BaseModule, logger
 
 
 class ProcessorModule(BaseModule):
@@ -194,7 +194,7 @@ class ProcessorModule(BaseModule):
         """
         loop over dates and call process_single_date on all of them.
         """
-        print("{}: Running local".format(self.name))
+        logger.info("{}: Running local".format(self.name))
         if "dates_to_process" in vars(self) and len(self.dates_to_process) > 0:
             date_strings = self.dates_to_process
         else:
@@ -203,7 +203,7 @@ class ProcessorModule(BaseModule):
             )
 
         for date_string in date_strings:
-            print(
+            logger.info(
                 "date string {} input exists {} output exists {}".format(
                     date_string,
                     self.check_input_data_exists(date_string),
@@ -235,41 +235,41 @@ class ProcessorModule(BaseModule):
         if len(self.depends_on) > 0:
             for dependency in self.depends_on:
                 if not (self.parent and self.parent.get(dependency)):
-                    print(
+                    logger.info(
                         "{} couldn't retrieve dependency {}".format(
                             self.name.dependency
                         )
                     )
                     continue
                 dependency_module = self.parent.get(dependency)
-                print(
+                logger.info(
                     "{}: has dependency on {}".format(self.name, dependency_module.name)
                 )
                 if (
                     not "run_mode" in vars(dependency_module)
                 ) or dependency_module.run_mode == "local":
-                    print(
+                    logger.info(
                         "{}: dependency module {} is in local run mode".format(
                             self.name, dependency_module.name
                         )
                     )
                     continue
-                print(
+                logger.info(
                     "has {} submitted all tasks? {}".format(
                         dependency_module.name, dependency_module.all_tasks_submitted
                     )
                 )
                 while not dependency_module.all_tasks_submitted:
-                    print(
+                    logger.info(
                         "{}: waiting for {} to submit all batch tasks".format(
                             self.name, dependency_module.name
                         )
                     )
-                    print(".", end="")
+                    logger.info(".", end="")
                     sys.stdout.flush()
                     time.sleep(1)
                 task_dependencies.update(dependency_module.batch_task_dict)
-        print("{} return task_dependencies {}".format(self.name, task_dependencies))
+        logger.info("{} return task_dependencies {}".format(self.name, task_dependencies))
         return task_dependencies
 
     def create_task_dict(self, task_id, date_list, dependencies=[]):
@@ -294,7 +294,7 @@ class ProcessorModule(BaseModule):
         to pass to the batch_utils.submit_tasks function.
         """
 
-        print("{} running in batch".format(self.name))
+        logger.info("{} running in batch".format(self.name))
         self.all_tasks_submitted = False
         self.start_time = datetime.datetime.now()
         task_dicts = []
@@ -305,17 +305,17 @@ class ProcessorModule(BaseModule):
             date_strings = sorted(
                 self.list_directory(self.input_location, self.input_location_type)
             )
-            print(
+            logger.info(
                 "number of date strings in input location {}".format(len(date_strings))
             )
             date_strings = [
                 ds for ds in date_strings if self.check_input_data_exists(ds)
             ]
-            print("number of date strings with input data {}".format(len(date_strings)))
+            logger.info("number of date strings with input data {}".format(len(date_strings)))
             date_strings = [
                 ds for ds in date_strings if not self.check_output_data_exists(ds)
             ]
-            print(
+            logger.info(
                 "number of date strings without output data {}".format(
                     len(date_strings)
                 )
@@ -329,14 +329,14 @@ class ProcessorModule(BaseModule):
                 task_dict = self.create_task_dict(
                     "{}_{}".format(self.name, i), dates_per_task[i]
                 )
-                print("{} adding task_dict {} to list".format(self.name, task_dict))
+                logger.info("{} adding task_dict {} to list".format(self.name, task_dict))
                 task_dicts.append(task_dict)
         else:
             # we have a bunch of tasks from the previous Module in the Sequence
             for i, (k, v) in enumerate(task_dependencies.items()):
                 # key k will be the task_id of the old task.  v will be the list of dates.
                 task_dict = self.create_task_dict("{}_{}".format(self.name, i), v, [k])
-                print(
+                logger.info(
                     "{} adding task_dict with dependency {} to list".format(
                         self.name, task_dict
                     )
@@ -348,7 +348,7 @@ class ProcessorModule(BaseModule):
         else:
             # otherwise create a new job_id just for this module
             job_id = self.name + "_" + time.strftime("%Y-%m-%d_%H-%M-%S")
-        print("{} about to submit tasks for job {}".format(self.name, job_id))
+        logger.info("{} about to submit tasks for job {}".format(self.name, job_id))
         submitted_ok = batch_utils.submit_tasks(task_dicts, job_id)
         if submitted_ok:
             # store the task dict so any dependent modules can query it
@@ -356,7 +356,7 @@ class ProcessorModule(BaseModule):
                 td["task_id"]: td["config"]["dates_to_process"] for td in task_dicts
             }
             self.all_tasks_submitted = True
-            print(
+            logger.info(
                 "{} submitted all tasks ok, my task_dict is now {}".format(
                     self.name, self.batch_task_dict
                 )
@@ -372,7 +372,7 @@ class ProcessorModule(BaseModule):
                 job_id, self.name
             )
 
-            print(
+            logger.info(
                 "{} job status: success: {} failed: {} running: {} waiting: {} cannot_run: {}".format(
                     self.name,
                     task_status["num_success"],
@@ -391,7 +391,7 @@ class ProcessorModule(BaseModule):
         # if we have exceeded timeout, say that we are finished.
         time_now = datetime.datetime.now()
         if time_now > self.start_time + datetime.timedelta(minutes=self.timeout):
-            print(
+            logger.info(
                 "{}: reached timeout of {} minutes. Aborting".format(
                     self.name, self.timeout
                 )
@@ -467,7 +467,7 @@ class VegetationImageProcessor(ProcessorModule):
         Merge the seperate tif files for the R,G,B bands into
         one image, and save it.
         """
-        print(
+        logger.info(
             "{}: Saving RGB image for {} {}".format(
                 self.name, date_string, coords_string
             )
@@ -476,10 +476,10 @@ class VegetationImageProcessor(ProcessorModule):
 
         # check image quality on the colour image
         if not check_image_ok(rgb_image, 1.0):
-            print("Detected a low quality image, skipping to next date.")
+            logger.info("Detected a low quality image, skipping to next date.")
             return False
         rgb_filepath = self.construct_image_savepath(date_string, coords_string, "RGB")
-        print(
+        logger.info(
             "Will save image to {} / {}".format(
                 os.path.dirname(rgb_filepath), os.path.basename(rgb_filepath)
             )
@@ -573,7 +573,7 @@ class VegetationImageProcessor(ProcessorModule):
         input_filepath = os.path.join(
             self.input_location, date_string, *(self.input_location_subdirs)
         )
-        print("{} processing files in {}".format(self.name, input_filepath))
+        logger.info("{} processing files in {}".format(self.name, input_filepath))
         filenames = [
             filename
             for filename in self.list_directory(
@@ -594,13 +594,13 @@ class VegetationImageProcessor(ProcessorModule):
             )
             band_dict[col] = {"band": band, "filename": filename}
 
-        print(filenames)
+        logger.info(filenames)
         tif_filebase = os.path.join(input_filepath, filenames[0].split(".")[0])
 
         # save the rgb image
         rgb_ok = self.save_rgb_image(band_dict, date_string, coords_string)
         if not rgb_ok:
-            print("Problem with the rgb image?")
+            logger.info("Problem with the rgb image?")
             return False
 
         # save the NDVI image
@@ -668,9 +668,9 @@ class WeatherImageToJSON(ProcessorModule):
         # if we are given a list of date strings to process, and this isn't
         # one of them, skip it.
         if self.dates_to_process and not date_string in self.dates_to_process:
-            print("{} will not process date {}".format(self.name, date_string))
+            logger.info("{} will not process date {}".format(self.name, date_string))
             return True
-        print("{}: Processing date {}".format(self.name, date_string))
+        logger.info("{}: Processing date {}".format(self.name, date_string))
         input_location = os.path.join(
             self.input_location, date_string, *(self.input_location_subdirs)
         )
@@ -780,11 +780,11 @@ class NetworkCentralityCalculator(ProcessorModule):
         Each date will have a subdirectory called 'SPLIT' with ~400 BWNDVI
         sub-images.
         """
-        print("{}: processing {}".format(self.name, date_string))
+        logger.info("{}: processing {}".format(self.name, date_string))
         # if we are given a list of date strings to process, and this isn't
         # one of them, skip it.
         if self.dates_to_process and not date_string in self.dates_to_process:
-            print("{} will not process date {}".format(self.name, date_string))
+            logger.info("{} will not process date {}".format(self.name, date_string))
             return True
         # see if there is already a network_centralities.json file in
         # the output location - if so, skip
@@ -808,10 +808,10 @@ class NetworkCentralityCalculator(ProcessorModule):
             if "BWNDVI" in filename and self.check_sub_image(filename, input_path)
         ]
         if len(input_files) == 0:
-            print("{}: No sub-images for date {}".format(self.name, date_string))
+            logger.info("{}: No sub-images for date {}".format(self.name, date_string))
             return
         else:
-            print("{} found {} sub-images".format(self.name, len(input_files)))
+            logger.info("{} found {} sub-images".format(self.name, len(input_files)))
         tmp_json_dir = tempfile.mkdtemp()
 
         # if we only want a subset of sub-images, truncate the list here
@@ -835,7 +835,7 @@ class NetworkCentralityCalculator(ProcessorModule):
             ]
             pool.starmap(process_sub_image, arguments)
         # put all the output json files for subimages together into one for this date
-        print("\n Consolidating json from all subimages")
+        logger.info("\n Consolidating json from all subimages")
         all_subimages = consolidate_json_to_list(tmp_json_dir)
         self.save_json(
             all_subimages,
@@ -925,7 +925,7 @@ class NDVICalculator(ProcessorModule):
         # if we are given a list of date strings to process, and this isn't
         # one of them, skip it.
         if self.dates_to_process and not date_string in self.dates_to_process:
-            print("{} will not process date {}".format(self.name, date_string))
+            logger.info("{} will not process date {}".format(self.name, date_string))
             return True
 
         # see if there is already a ndvi.json file in
@@ -942,7 +942,7 @@ class NDVICalculator(ProcessorModule):
             self.input_location, date_string, *(self.input_location_subdirs)
         )
         all_input_files = self.list_directory(input_path, self.input_location_type)
-        print("input path is {}".format(input_path))
+        logger.info("input path is {}".format(input_path))
 
         # list all the "NDVI" sub-images where RGB image passes quality check
         input_files = [
@@ -952,10 +952,10 @@ class NDVICalculator(ProcessorModule):
         ]
 
         if len(input_files) == 0:
-            print("{}: No sub-images for date {}".format(self.name, date_string))
+            logger.info("{}: No sub-images for date {}".format(self.name, date_string))
             return
         else:
-            print("{} found {} sub-images".format(self.name, len(input_files)))
+            logger.info("{}: found {} sub-images".format(self.name, len(input_files)))
         # if we only want a subset of sub-images, truncate the list here
         if self.n_sub_images > 0:
             input_files = input_files[: self.n_sub_images]
