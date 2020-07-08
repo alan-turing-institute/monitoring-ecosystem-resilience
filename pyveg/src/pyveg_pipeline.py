@@ -110,10 +110,19 @@ class Pipeline(object):
         for sequence in self.sequences:
             sequence.run()
         self.print_run_status()
+        self.cleanup()
 
     def print_run_status(self):
         for sequence in self.sequences:
             sequence.print_run_status()
+
+    def cleanup(self):
+        """
+        Call cleanup() for all our sequences
+        """
+        for sequence in self.sequences:
+            sequence.cleanup()
+
 
 
 class Sequence(object):
@@ -310,6 +319,15 @@ class Sequence(object):
 
         self.is_finished = num_modules_finished == len(self.modules)
         return self.is_finished
+
+    def cleanup(self):
+        """
+        If we have batch resources (job/pool), remove them to avoid charges
+        """
+        if self.run_mode == "batch":
+            if "batch_job_id" in vars(self):
+                batch_utils.delete_job(self.batch_job_id)
+            batch_utils.delete_pool()
 
 
 class BaseModule(object):
