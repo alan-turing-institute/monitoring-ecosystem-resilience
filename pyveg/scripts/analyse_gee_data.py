@@ -289,7 +289,7 @@ def analyse_gee_data(input_dir, spatial):
             try:
                 create_markdown_pdf_report(input_dir,collection_name)
             except Exception as e:
-                print ("Warning: A problem was found, the report was not created. There might be missing figures needed "\
+                print ("Warning: A problem was found, the report was not created. There might be missing figures needed "
                               "for the report or a problem with the pandoc installation.")
 
     # ------------------------------------------------
