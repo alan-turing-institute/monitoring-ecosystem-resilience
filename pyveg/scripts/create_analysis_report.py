@@ -45,29 +45,11 @@ def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
         mdFile = MdUtils(file_name=output_path,
                          title='Results for ' + collection)
 
-    mdFile.new_header(level=1, title='RGB images through time')  # style is set 'atx' format by default.
-
-    # find the RGB images, sort them and print them
-    rgb_path = current_dirs_parent+'/gee_*_'+collection+'/*/PROCESSED/*RGB.png'
-
-    count = 0
-    for count, rgb_figure in enumerate(sorted(glob.glob(rgb_path)), start=1):
-
-        rgb_figure_name = str(Path(rgb_figure).name)
-        mdFile.new_line(mdFile.new_inline_image(text=rgb_figure, path=os.path.join(rgb_path,rgb_figure)))
-        mdFile.new_line('Figure '+str(count)+': '+rgb_figure_name)
-        mdFile.new_line('')
-
-    if count == 0:
-        mdFile.new_line("No RGB figures available in the given path.")
-        mdFile.new_line('')
-
-
 
     # Time series figures
     mdFile.new_header(level=1, title='Time series')
     ts_path = os.path.join(path,'analysis','time-series')
-
+    count = 0
     count = count + 1
     mdFile.new_line(mdFile.new_inline_image(text='Time series Offset50', path=os.path.join(ts_path,satellite_suffix+'-time-series_smooth.png')))
     #mdFile.new_paragraph('Figure '+str(count)+': '+'Time series Offset50')
@@ -97,11 +79,32 @@ def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
     count = count +1
     mdFile.new_line(mdFile.new_inline_image(text='EWS Offset50', path=os.path.join(ews_path, satellite_suffix+'-offset50-mean-ews.png')))
     #mdFile.new_paragraph('Figure '+str(count)+': '+'EWS Offset50')
+    mdFile.new_line()
+
 
     count = count +1
     mdFile.new_line(
     mdFile.new_inline_image(text='EWS NDVI', path=os.path.join(ews_path, satellite_suffix+'-ndvi-mean-ews.png')))
-    #mdFile.new_paragraph('Figure '+str(count)+': '+'EWS NDVI')
+    mdFile.new_line('')
+
+    mdFile.new_header(level=1, title='RGB images through time')  # style is set 'atx' format by default.
+
+    # find the RGB images, sort them and print them
+    rgb_path = current_dirs_parent+'/gee_*_'+collection+'/*/PROCESSED/*RGB.png'
+
+    count_rgb = 0
+    for count_rgb, rgb_figure in enumerate(sorted(glob.glob(rgb_path)), start=1):
+
+        rgb_figure_name = str(Path(rgb_figure).name)
+        mdFile.new_line(mdFile.new_inline_image(text=rgb_figure, path=os.path.join(rgb_path,rgb_figure)))
+        mdFile.new_line('Figure '+str(count+count_rgb)+': '+rgb_figure_name)
+        mdFile.new_line('')
+
+    if count_rgb == 0:
+        mdFile.new_line("No RGB figures available in the given path.")
+        mdFile.new_line('')
+
+
 
     # Create a table of contents and save file
     mdFile.new_table_of_contents(table_title='Contents', depth=2)
