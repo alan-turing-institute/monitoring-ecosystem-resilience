@@ -389,6 +389,17 @@ def delete_job(job_id, batch_service_client=None):
     batch_service_client.job.delete(job_id)
 
 
+def delete_pool(pool_id=None, batch_service_client=None):
+    """
+    Removes a pool of batch nodes
+    """
+    if not pool_id:
+        pool_id = config["batch_pool_id"]
+    if not batch_service_client:
+        batch_service_client = create_batch_client()
+    batch_service_client.pool.delete(pool_id)
+
+
 def create_batch_client():
     credentials = batch_auth.SharedKeyCredentials(
         config["batch_account_name"], config["batch_account_key"]
