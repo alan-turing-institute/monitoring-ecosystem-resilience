@@ -147,6 +147,7 @@ coordinate_store.loc["14"] = {
     "latitude": 31.05,
     "longitude": -103.09,
 }
+
 # --------------------------------------------------------------------------------
 
 # declining locations in West Niger
