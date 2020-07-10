@@ -38,6 +38,7 @@ from pyveg.src.plotting import (
     kendall_tau_histograms,
 )
 
+from pyveg.scripts.create_analysis_report import create_markdown_pdf_report
 
 def run_time_series_analysis(filename, output_dir, detrended=False):
     """
@@ -276,6 +277,21 @@ def analyse_gee_data(input_dir, spatial):
                 create_lat_long_metric_figures(
                     data_df_geo_coarse, "offset50", spatial_subdir
                 )
+    # ------------------------------------------------
+    # reporting
+    print('\nAnalysis complete.\n')
+
+    print('\nCreating report.\n')
+
+    for collection_name, df in dfs.items():
+        if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
+
+            try:
+                create_markdown_pdf_report(input_dir,collection_name)
+            except Exception as e:
+                print ("Warning: A problem was found, the report was not created. There might be missing figures needed "
+                              "for the report or a problem with the pandoc installation.")
+
     # ------------------------------------------------
 
     print("\nAnalysis complete.\n")

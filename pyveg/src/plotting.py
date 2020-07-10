@@ -1061,7 +1061,8 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
         )
 
     dates = get_datetime_xs(pd.DataFrame(dates).dropna())
-    fig, _ = plt.subplots(figsize=(4, 8), sharex="col")
+    fig, _ = plt.subplots(figsize=(8,10), sharex='col')
+
 
     ax1 = plt.subplot(611)
     ys = EWSmetrics_df["State variable"]
