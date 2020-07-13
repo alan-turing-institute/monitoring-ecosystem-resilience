@@ -147,6 +147,7 @@ coordinate_store.loc["14"] = {
     "latitude": 31.05,
     "longitude": -103.09,
 }
+
 # --------------------------------------------------------------------------------
 
 # declining locations in West Niger
@@ -294,21 +295,20 @@ coordinate_store.loc["33"] = {
 
 # Australia
 coordinate_store.loc['34'] = {
-  'continent' : 'Australia', 
-  'country': 'Australia', 
-  'type': 'labyrinths', 
-  'latitude': -23.35, 
+  'continent' : 'Australia',
+  'country': 'Australia',
+  'type': 'labyrinths',
+  'latitude': -23.35,
   'longitude': 133.36 # featured in June tech talk results
 }
 coordinate_store.loc['35'] = {
-  'continent' : 'Australia', 
-  'country': 'Australia', 
-  'type': 'labyrinths', 
-  'latitude': -22.98, 
+  'continent' : 'Australia',
+  'country': 'Australia',
+  'type': 'labyrinths',
+  'latitude': -22.98,
   'longitude': 119.89
 }
 
 # hardcode a check to make sure we don't overwrite any rows
 
 assert( len(coordinate_store) == 36 )
-

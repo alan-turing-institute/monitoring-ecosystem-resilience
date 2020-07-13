@@ -89,7 +89,9 @@ class VegAndWeatherJsonCombiner(CombinerModule):
         and NDVI calculators, all containing lists of dicts for sub-images,
         combine them here by matching by coordinate.
         """
-        if len(json_lists) == 1:
+        if len(json_lists) == 0:
+            return None
+        elif len(json_lists) == 1:
             return json_lists[0]
         ## any way to do this without a huge nested loop?
 
