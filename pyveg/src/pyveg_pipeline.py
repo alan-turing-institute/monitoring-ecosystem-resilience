@@ -18,8 +18,30 @@ import json
 import subprocess
 import time
 
+import logging
+from logging.handlers import RotatingFileHandler
+
+logger = logging.getLogger("pyveg_logger")
+formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+logger.setLevel(logging.INFO)
+
+c_handler = logging.StreamHandler()
+c_handler.setFormatter(formatter)
+f_handler = RotatingFileHandler(
+    "pyveg_{}.log".format(time.strftime("%Y-%m-%d_%H-%M-%S")),
+    maxBytes=5 * 1024 * 1024, backupCount=10
+)
+f_handler.setFormatter(formatter)
+
+logger.addHandler(f_handler)
+logger.addHandler(c_handler)
+
+
+
 
 from pyveg.src.file_utils import save_json
+
+from shutil import copyfile
 
 try:
     from pyveg.src import azure_utils
@@ -179,7 +201,7 @@ class Sequence(object):
 
     def set_config(self, config_dict):
         for k, v in config_dict.items():
-            print("{}: setting {} to {}".format(self.name, k, v))
+            logger.info("{}: setting {} to {}".format(self.name, k, v))
             self.__setattr__(k, v)
 
     def configure(self):
@@ -212,8 +234,8 @@ class Sequence(object):
         on which we depend, and if so, wait for them to finish.
         """
         if len(self.depends_on) > 0:
-            print(
-                "{} will check if all Sequences I depend on have finished".format(
+            logger.info(
+                "{} Checking if all dependency Sequences have finished".format(
                     self.name
                 )
             )
@@ -222,13 +244,14 @@ class Sequence(object):
                 num_seq_finished = 0
                 for seq_name in self.depends_on:
                     seq = self.parent.get(seq_name)
-                    print("{}: checking status of {}".format(self.name, seq.name))
+                    logger.info("{}: checking status of {}".format(self.name, seq.name))
                     if seq.check_if_finished():
-                        print("{}   ... finished".format(seq.name))
+                        logger.info("     {}   ... finished".format(seq.name))
                         num_seq_finished += 1
                     dependencies_finished = num_seq_finished == len(self.depends_on)
-                    print(
-                        "{} / {} dependencies finished".format(
+                    logger.info(
+                        "{}: {} / {} dependencies finished".format(
+                            self.name,
                             num_seq_finished, len(self.depends_on)
                         )
                     )
@@ -265,11 +288,11 @@ class Sequence(object):
         For all modules in the sequence, print out how many jobs
         succeeded or failed.
         """
-        print("\nSequence {}".format(self.name))
-        print("-----------------\n")
+        logger.info("\nSequence {}".format(self.name))
+        logger.info("-----------------\n")
         for module in self.modules:
             module.print_run_status()
-        print("\n")
+        logger.info("\n")
 
     def get(self, mod_name):
         """
@@ -299,7 +322,7 @@ class Sequence(object):
         if self.has_batch_job():
             self.batch_job_id = self.name + "_" + time.strftime("%Y-%m-%d_%H-%M-%S")
             batch_utils.create_job(self.batch_job_id)
-            print(
+            logger.info(
                 "Sequence {}: Creating batch job {}".format(
                     self.name, self.batch_job_id
                 )
@@ -314,11 +337,11 @@ class Sequence(object):
         num_modules_finished = 0
 
         for module in self.modules:
-            print("{}: checking status of {}".format(self.name, module.name))
+            logger.info("{}: checking status of {}".format(self.name, module.name))
             if module.check_if_finished():
-                print("{}   ... finished".format(module.name))
+                logger.info("{}   ... finished".format(module.name))
                 num_modules_finished += 1
-        print(
+        logger.info(
             "{} / {} modules finished".format(num_modules_finished, len(self.modules))
         )
 
@@ -359,7 +382,7 @@ class BaseModule(object):
 
     def set_parameters(self, config_dict):
         for k, v in config_dict.items():
-            print("{}: setting {} to {}".format(self.name, k, v))
+            logger.info("{}: setting {} to {}".format(self.name, k, v))
             self.__setattr__(k, v)
 
     def configure(self, config_dict=None):
@@ -421,7 +444,7 @@ class BaseModule(object):
             output_location_base = self.output_location.split("/")[0]
             container_name = azure_utils.sanitize_container_name(output_location_base)
             if not azure_utils.check_container_exists(container_name):
-                print("Create container {}".format(container_name))
+                logger.info("Create container {}".format(container_name))
                 azure_utils.create_container(container_name)
         elif self.output_location_type == "local" and not os.path.exists(
             self.output_location
@@ -463,14 +486,15 @@ class BaseModule(object):
                     if file_endings:
                         for ending in file_endings:
                             if filename.endswith(ending):
-                                subprocess.run(
-                                    [
-                                        "cp",
-                                        "-r",
-                                        os.path.join(root, filename),
-                                        os.path.join(output_location, filename),
-                                    ]
-                                )
+                                copyfile(os.path.join(root,filename),os.path.join(output_location,filename))
+                                #subprocess.run(
+                                 #   [
+                                        #"-r"
+                                #        "cp",
+                                #        os.path.join(root, filename),
+                                #        os.path.join(output_location, filename),
+                                #    ]
+                                #)
                     else:
                         subprocess.run(
                             [
@@ -559,7 +583,7 @@ class BaseModule(object):
             return False
         existing_files = self.list_directory(location, self.output_location_type)
         if len(existing_files) == num_files_expected:
-            print(
+            logger.info(
                 "{}: Already found {} files in {} - skipping".format(
                     self.name, num_files_expected, location
                 )
@@ -589,14 +613,14 @@ class BaseModule(object):
 
         with open(config_location, "w") as output_json:
             json.dump(config_dict, output_json)
-        print("{}: wrote config to {}".format(self.name, config_location))
+        logger.info("{}: wrote config to {}".format(self.name, config_location))
 
 
     def print_run_status(self):
         """
         Print out how many jobs succeeded or failed
         """
-        print(
+        logger.info(
             "{}: Succeeded: {}  Failed: {}   Incomplete: {}".format(
                 self.name,
                 self.run_status["succeeded"],

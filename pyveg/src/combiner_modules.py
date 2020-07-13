@@ -7,7 +7,7 @@ import json
 
 from pyveg.src.file_utils import save_json
 from pyveg.src.date_utils import get_date_strings_for_time_period
-from pyveg.src.pyveg_pipeline import BaseModule
+from pyveg.src.pyveg_pipeline import BaseModule, logger
 
 
 class CombinerModule(BaseModule):
@@ -32,6 +32,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             ("input_weather_location_type", [str]),
             ("weather_collection", [str]),
             ("veg_collection", [str]),
+            ("output_filename", [str]),
         ]
 
     def set_default_parameters(self):
@@ -79,6 +80,8 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             self.input_veg_location_type = "local"
             self.input_weather_location_type = "local"
             self.output_location_type = "local"
+        if not "output_filename" in vars(self):
+            self.output_filename = "results_summary.json"
 
     def combine_json_lists(self, json_lists):
         """
@@ -155,7 +158,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             )
             veg_lists = []
             for subdir in subdirs:
-                print(
+                logger.debug(
                     "{}: getting vegetation time series for {}".format(
                         self.name,
                         os.path.join(
@@ -226,22 +229,29 @@ class VegAndWeatherJsonCombiner(CombinerModule):
     def run(self):
         self.check_config()
         output_dict = {}
-
+        logger.info("{}: getting weather time series".format(self.name))
         weather_time_series = self.get_weather_time_series()
         output_dict[self.weather_collection] = {
             "type": "weather",
             "time-series-data": weather_time_series,
         }
+        logger.info("{}: getting vegetation time series".format(self.name))
         veg_time_series = self.get_veg_time_series()
         output_dict[self.veg_collection] = {
             "type": "vegetation",
             "time-series-data": veg_time_series,
         }
+        logger.info("{}: checking combined JSON".format(self.name))
         self.check_output_dict(output_dict)
         self.save_json(
             output_dict,
-            "results_summary.json",
+            self.output_filename,
             self.output_location,
             self.output_location_type,
+        )
+        logger.info("{}: Wrote output to {}".format(
+            self.name,
+            os.path.join(self.output_location, self.output_filename)
+        )
         )
         self.is_finished = True

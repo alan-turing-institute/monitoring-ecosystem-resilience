@@ -20,3 +20,6 @@ imageio
 opencv-python
 statsmodels
 ewstools
+pypandoc
+mdutils
+pandoc

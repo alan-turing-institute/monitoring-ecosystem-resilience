@@ -26,7 +26,7 @@ from pyveg.src.file_utils import download_and_unzip
 from pyveg.src.coordinate_utils import get_region_string
 from pyveg.src.gee_interface import apply_mask_cloud, add_NDVI
 
-from pyveg.src.pyveg_pipeline import BaseModule
+from pyveg.src.pyveg_pipeline import BaseModule, logger
 
 # silence google API WARNING
 import logging
@@ -131,7 +131,7 @@ class DownloaderModule(BaseModule):
         dataset_size = dataset.size().getInfo()
 
         if dataset_size == 0:
-            print("No images found in this date rage, skipping.")
+            logger.info("No images found in this date rage, skipping.")
             log_msg = "WARN >>> No data found."
             return []
         # concrete class will do more filtering, and prepare Images for download
@@ -143,7 +143,7 @@ class DownloaderModule(BaseModule):
                 url = image.getDownloadURL({"region": region, "scale": self.scale})
                 url_list.append(url)
             except Exception as e:
-                print("Unable to get URL: {}".format(e))
+                logger.info("Unable to get URL: {}".format(e))
 
             logging.info(
                 f"OK   >>> Found {dataset.size().getInfo()}/{dataset_size} valid images after cloud filtering."
@@ -165,7 +165,7 @@ class DownloaderModule(BaseModule):
         bool, True if downloaded something, False otherwise
         """
         if len(download_urls) == 0:
-            print("{}: No URLs found for {}".format(self.name, self.coords))
+            logger.info("{}: No URLs found for {}".format(self.name, self.coords))
             return False
 
         # download files and unzip to temporary directory
@@ -175,8 +175,8 @@ class DownloaderModule(BaseModule):
                 download_and_unzip(download_url, tempdir.name)
             except RuntimeError as e:
                 return False
-        print("Wrote zipfiles to {}".format(tempdir.name))
-        print("download_location is {}".format(download_location))
+        logger.info("Wrote zipfiles to {}".format(tempdir.name))
+        logger.info("download_location is {}".format(download_location))
         self.copy_to_output_location(tempdir.name, download_location, [".tif"])
         return True
 
@@ -189,13 +189,13 @@ class DownloaderModule(BaseModule):
         for date_range in date_ranges:
             mid_date = find_mid_period(date_range[0], date_range[1])
             location = os.path.join(self.output_location, mid_date, "RAW")
-            print("{} Will check for existing files in {}".format(self.name, location))
+            logger.info("{} Will check for existing files in {}".format(self.name, location))
             if not self.replace_existing_files and self.check_for_existing_files(
                 location, self.num_files_per_point
             ):
                 continue
             urls = self.prep_data(date_range)
-            print(
+            logger.info(
                 "{}: got URL {} for date range {}".format(self.name, urls, date_range)
             )
             downloaded_ok = self.download_data(urls, location)
