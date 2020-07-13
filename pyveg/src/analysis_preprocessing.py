@@ -564,6 +564,9 @@ def fill_veg_gaps(dfs, missing):
                 # construct missing rows
                 missing_rows = [pd.Series({"date": date}) for date in missing[col_name]]
 
+                if len(missing_rows) == 0:
+                    continue
+
                 # add back in missing values if necessary
                 df_ = df_.append(missing_rows, ignore_index=True).sort_values(by="date")
 
