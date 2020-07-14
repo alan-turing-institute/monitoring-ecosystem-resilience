@@ -279,8 +279,8 @@ coordinate_store.loc["32"] = {
     "continent": "Africa",
     "country": "Namibia",
     "type": "declining",
-    "latitude": 12.76,
-    "longitude": -18.05,
+    "latitude": -18.05,
+    "longitude": 12.76
 }
 
 # Baja
@@ -311,13 +311,13 @@ coordinate_store.loc['35'] = {
 
 ## Sites added by Josh:
 
-#Burkina Faso
+#Australia
 coordinate_store.loc['36'] = {
-  'continent' : 'Africa', 
-  'country': 'Burkina Faso', 
+  'continent' : 'Australia', 
+  'country': 'Australia', 
   'type': 'Tiger Bush', 
-  'latitude': -0.55, 
-  'longitude': 14.79
+  'latitude': -25, 
+  'longitude': 119.99
 }
 
 #Somalia
@@ -401,18 +401,10 @@ coordinate_store.loc['45'] = {
   'longitude': -103.92
 }
 
-#Australia
-coordinate_store.loc['46'] = {
-  'continent' : 'Australia', 
-  'country': 'Australia', 
-  'type': 'Tiger Bush', 
-  'latitude': -25, 
-  'longitude': 119.99
-}
 
 
 
 # hardcode a check to make sure we don't overwrite any rows
 
-assert( len(coordinate_store) == 47 )
+assert( len(coordinate_store) == 46 )
 
