@@ -280,8 +280,8 @@ coordinate_store.loc["32"] = {
     "continent": "Africa",
     "country": "Namibia",
     "type": "declining",
-    "latitude": 12.76,
-    "longitude": -18.05,
+    "latitude": -18.05,
+    "longitude": 12.76
 }
 
 # Baja
@@ -309,6 +309,102 @@ coordinate_store.loc['35'] = {
   'longitude': 119.89
 }
 
+
+## Sites added by Josh:
+
+#Australia
+coordinate_store.loc['36'] = {
+  'continent' : 'Australia', 
+  'country': 'Australia', 
+  'type': 'Tiger Bush', 
+  'latitude': -25, 
+  'longitude': 119.99
+}
+
+#Somalia
+coordinate_store.loc['37'] = {
+  'continent' : 'Africa', 
+  'country': 'Somalia', 
+  'type': 'Tiger Bush', 
+  'latitude': 9.34, 
+  'longitude': 48.64
+}
+
+coordinate_store.loc['38'] = {
+  'continent' : 'Africa', 
+  'country': 'Somalia', 
+  'type': 'Tiger Bush', 
+  'latitude': 9.63, 
+  'longitude': 47.93
+}
+
+
+coordinate_store.loc['39'] = {
+  'continent' : 'Africa', 
+  'country': 'Somalia', 
+  'type': 'Tiger Bush', 
+  'latitude': 9.98, 
+  'longitude': 48.44
+}
+
+
+coordinate_store.loc['40'] = {
+  'continent' : 'Africa', 
+  'country': 'Somalia', 
+  'type': 'Tiger Bush', 
+  'latitude': 4.64, 
+  'longitude': 43.26
+}
+
+
+#Ethiopia
+coordinate_store.loc['41'] = {
+  'continent' : 'Africa', 
+  'country': 'Ethiopia', 
+  'type': 'Gaps', 
+  'latitude': 4.69, 
+  'longitude': 43.21
+}
+
+
+coordinate_store.loc['42'] = {
+  'continent' : 'Africa', 
+  'country': 'Ethiopia', 
+  'type': 'Tiger Bush', 
+  'latitude': 7.43, 
+  'longitude': 42.9
+}
+
+#Kenya
+coordinate_store.loc['43'] = {
+  'continent' : 'Africa', 
+  'country': 'Kenya', 
+  'type': 'Gaps', 
+  'latitude': 0.96, 
+  'longitude': 40.37
+}
+
+#Mali
+coordinate_store.loc['44'] = {
+  'continent' : 'Africa', 
+  'country': 'Mali', 
+  'type': 'Tiger Bush', 
+  'latitude': 14.80, 
+  'longitude': -3.38
+}
+
+#Mexico
+coordinate_store.loc['45'] = {
+  'continent' : 'America', 
+  'country': 'Mexico', 
+  'type': 'Tiger Bush', 
+  'latitude': 27.19, 
+  'longitude': -103.92
+}
+
+
+
+
 # hardcode a check to make sure we don't overwrite any rows
 
-assert( len(coordinate_store) == 36 )
+assert( len(coordinate_store) == 46 )
