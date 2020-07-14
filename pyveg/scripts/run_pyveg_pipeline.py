@@ -37,6 +37,8 @@ def build_pipeline(config_file, from_cache=False):
     """
     Load json config and instantiate modules
     """
+    if not os.path.exists(config_file):
+        raise FileNotFoundError("Unable to find config file {}".format(config_file))
 
     current_time = time.strftime("%Y-%m-%d_%H-%M-%S")
 
