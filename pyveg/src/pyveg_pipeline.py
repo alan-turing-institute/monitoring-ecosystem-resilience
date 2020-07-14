@@ -304,17 +304,22 @@ class Sequence(object):
             elif module.__class__.__name__ == mod_name:
                 return module
 
+    def has_batch_job(self):
+        """
+        Do any of the Modules in this sequence have run_mode == 'batch'?
+        """
+        for module in self.modules:
+            if "run_mode" in vars(module) and module.run_mode == "batch":
+                return True
+        return False
+
     def create_batch_job_if_needed(self):
         """
         If any modules in this sequence are to be run in batch mode,
         create a batch job for them.
         """
-        has_batch_job = False
-        for module in self.modules:
-            if "run_mode" in vars(module) and module.run_mode == "batch":
-                has_batch_job = True
-                break
-        if has_batch_job:
+
+        if self.has_batch_job():
             self.batch_job_id = self.name + "_" + time.strftime("%Y-%m-%d_%H-%M-%S")
             batch_utils.create_job(self.batch_job_id)
             logger.info(
@@ -347,7 +352,7 @@ class Sequence(object):
         """
         If we have batch resources (job/pool), remove them to avoid charges
         """
-        if self.run_mode == "batch":
+        if self.has_batch_job():
             if "batch_job_id" in vars(self):
                 batch_utils.delete_job(self.batch_job_id)
             batch_utils.delete_pool()
@@ -538,7 +543,10 @@ class BaseModule(object):
         Read a json file either local or blob storage.
         """
         if location_type == "local":
-            return json.load(open(filepath))
+            if os.path.exists(filepath):
+                return json.load(open(filepath))
+            else:
+                return None
         elif location_type == "azure":
             # first part of filepath  should be the container name
             container_name = filepath.split("/")[0]
