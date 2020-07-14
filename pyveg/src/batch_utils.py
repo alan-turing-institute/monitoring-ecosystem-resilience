@@ -258,6 +258,8 @@ def check_task_failed_dependencies(task, batch_service_client=None):
         batch_service_client = create_batch_client()
     if task.state != batchmodels.TaskState.active:
         return False
+    if not task.depends_on:
+        return False
     dependencies = task.depends_on.task_ids
     if len(dependencies) == 0:
         return False
