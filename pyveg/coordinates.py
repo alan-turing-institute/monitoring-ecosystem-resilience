@@ -388,8 +388,8 @@ coordinate_store.loc['44'] = {
   'continent' : 'Africa', 
   'country': 'Mali', 
   'type': 'Tiger Bush', 
-  'latitude': -3.38, 
-  'longitude': 14.80
+  'latitude': 14.80, 
+  'longitude': -3.38
 }
 
 #Mexico
