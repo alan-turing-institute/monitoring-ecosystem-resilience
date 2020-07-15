@@ -203,8 +203,13 @@ class ProcessorModule(BaseModule):
             )
 
         for date_string in date_strings:
-            logger.info(
-                "date string {} input exists {} output exists {}".format(
+            date_regex = "[\d]{4}-[\d]{2}-[\d]{2}"
+            if not re.search(date_regex, date_string):
+                logger.info("{}: {} not a date string".format(self.name, date_string))
+                continue
+            logger.debug(
+                "{}: date string {} input exists {} output exists {}".format(
+                    self.name,
                     date_string,
                     self.check_input_data_exists(date_string),
                     self.check_output_data_exists(date_string),
@@ -254,7 +259,7 @@ class ProcessorModule(BaseModule):
                         )
                     )
                     continue
-                logger.info(
+                logger.debug(
                     "has {} submitted all tasks? {}".format(
                         dependency_module.name, dependency_module.all_tasks_submitted
                     )
@@ -329,14 +334,14 @@ class ProcessorModule(BaseModule):
                 task_dict = self.create_task_dict(
                     "{}_{}".format(self.name, i), dates_per_task[i]
                 )
-                logger.info("{} adding task_dict {} to list".format(self.name, task_dict))
+                logger.debug("{} adding task_dict {} to list".format(self.name, task_dict))
                 task_dicts.append(task_dict)
         else:
             # we have a bunch of tasks from the previous Module in the Sequence
             for i, (k, v) in enumerate(task_dependencies.items()):
                 # key k will be the task_id of the old task.  v will be the list of dates.
                 task_dict = self.create_task_dict("{}_{}".format(self.name, i), v, [k])
-                logger.info(
+                logger.debug(
                     "{} adding task_dict with dependency {} to list".format(
                         self.name, task_dict
                     )
@@ -348,7 +353,7 @@ class ProcessorModule(BaseModule):
         else:
             # otherwise create a new job_id just for this module
             job_id = self.name + "_" + time.strftime("%Y-%m-%d_%H-%M-%S")
-        logger.info("{} about to submit tasks for job {}".format(self.name, job_id))
+        logger.info("{}: about to submit tasks for job {}".format(self.name, job_id))
         submitted_ok = batch_utils.submit_tasks(task_dicts, job_id)
         if submitted_ok:
             # store the task dict so any dependent modules can query it
@@ -356,7 +361,7 @@ class ProcessorModule(BaseModule):
                 td["task_id"]: td["config"]["dates_to_process"] for td in task_dicts
             }
             self.all_tasks_submitted = True
-            logger.info(
+            logger.debug(
                 "{} submitted all tasks ok, my task_dict is now {}".format(
                     self.name, self.batch_task_dict
                 )
