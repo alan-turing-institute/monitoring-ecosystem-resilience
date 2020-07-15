@@ -379,11 +379,11 @@ class ProcessorModule(BaseModule):
                     task_status["num_failed"],
                     task_status["num_running"],
                     task_status["num_waiting"],
-                    task_status["cannot_run"]
+                    task_status["num_cannot_run"]
                 )
             )
             self.run_status["succeeded"] = task_status["num_success"]
-            self.run_status["failed"] = task_status["num_failed"] + task_status["cannot_run"]
+            self.run_status["failed"] = task_status["num_failed"] + task_status["num_cannot_run"]
             num_incomplete = task_status["num_running"] + task_status["num_waiting"]
             self.run_status["incomplete"] = num_incomplete
             self.is_finished = (num_incomplete == 0)
