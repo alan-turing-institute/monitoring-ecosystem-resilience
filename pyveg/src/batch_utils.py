@@ -315,8 +315,9 @@ def check_tasks_status(job_id, task_name_prefix="", batch_service_client=None):
         for task in tasks
         if task.state == batchmodels.TaskState.completed
     ]
+    num_success = sum(task_success)
     return {
-        "num_success": sum(task_success),
+        "num_success": num_success,
         "num_failed": len(task_success) - num_success,
         "num_running": num_running,
         "num_waiting": num_waiting,

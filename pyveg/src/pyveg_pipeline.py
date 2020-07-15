@@ -517,6 +517,8 @@ class BaseModule(object):
         or Azure blob storage.
         """
         if location_type == "local":
+            if not os.path.isdir(directory_path):
+                return []
             return os.listdir(directory_path)
         elif location_type == "azure":
             # first part of self.output_location should be the container name
