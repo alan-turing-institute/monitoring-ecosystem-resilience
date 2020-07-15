@@ -239,7 +239,7 @@ def wait_for_tasks_to_complete(job_id, timeout=60, batch_service_client=None):
     }
 
 
-def check_task_failed_dependencies(task, batch_service_client=None):
+def check_task_failed_dependencies(task, job_id, batch_service_client=None):
     """
     If a task depends on other task(s), and those have failed, the job
     will not be able to run.
@@ -247,6 +247,7 @@ def check_task_failed_dependencies(task, batch_service_client=None):
     Parameters
     ==========
     task: azure.batch.models.CloudTask, the task we will look at dependencies for
+    job_id: str, the unique ID of the Job.
     batch_service_client: BatchServiceClient - will create if not provided.
 
     Returns
@@ -303,7 +304,7 @@ def check_tasks_status(job_id, task_name_prefix="", batch_service_client=None):
     ]
     # create a list of 0s or 1s depending on whether tasks have failed dependencies
     cannot_run = [
-        int(check_task_failed_dependencies(task, batch_service_client))
+        int(check_task_failed_dependencies(task, job_id, batch_service_client))
         for task in incomplete_tasks
         if task.state == batchmodels.TaskState.active
     ]
