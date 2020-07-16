@@ -175,8 +175,8 @@ class DownloaderModule(BaseModule):
                 download_and_unzip(download_url, tempdir.name)
             except RuntimeError as e:
                 return False
-        logger.info("Wrote zipfiles to {}".format(tempdir.name))
-        logger.info("download_location is {}".format(download_location))
+        logger.debug("{}: Wrote zipfiles to {}".format(self.name, tempdir.name))
+        logger.info("{}: Will download to {}".format(self.name, download_location))
         self.copy_to_output_location(tempdir.name, download_location, [".tif"])
         return True
 
@@ -189,21 +189,23 @@ class DownloaderModule(BaseModule):
         for date_range in date_ranges:
             mid_date = find_mid_period(date_range[0], date_range[1])
             location = os.path.join(self.output_location, mid_date, "RAW")
-            logger.info("{} Will check for existing files in {}".format(self.name, location))
+            logger.debug("{} Will check for existing files in {}".format(self.name, location))
             if not self.replace_existing_files and self.check_for_existing_files(
                 location, self.num_files_per_point
             ):
                 continue
             urls = self.prep_data(date_range)
-            logger.info(
+            logger.debug(
                 "{}: got URL {} for date range {}".format(self.name, urls, date_range)
             )
             downloaded_ok = self.download_data(urls, location)
             if downloaded_ok:
                 self.run_status["succeeded"] += 1
+                logger.info("{}: download succeeded for date range {}".format(self.name, date_range))
                 download_locations.append(location)
             else:
                 self.run_status["failed"] += 1
+                logger.error("{}: download succeeded for date range {}".format(self.name, date_range))
         self.is_finished = True
         return self.run_status
 
