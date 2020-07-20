@@ -309,6 +309,14 @@ def main():
         help="results directory from `download_gee_data` script, containing `results_summary.json`",
     )
     parser.add_argument(
+        "--input_blob",
+        help="results location on blob storage from `download_gee_data` script, containing `results_summary.json`",
+    )
+    parser.add_argument(
+        "--output_dir",
+        help="location where analysis plots will be put.  If not specified, will use input_dir",
+    )
+    parser.add_argument(
         "--spatial", action="store_true", default=False
     )  # off by deafult as this takes a non-negligable amount of time
 
