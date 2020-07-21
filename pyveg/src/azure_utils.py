@@ -21,7 +21,11 @@ except:
     """
     )
 
-from azure.storage.blob import BlockBlobService, PublicAccess, ContainerPermissions
+from azure.storage.blob import (
+    BlockBlobService,
+    PublicAccess,
+    ContainerPermissions
+)
 from azure.common import AzureMissingResourceHttpError
 
 
