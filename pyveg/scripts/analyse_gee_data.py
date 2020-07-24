@@ -9,7 +9,7 @@ Plots are produced from the processed data.
 
 import os
 import argparse
-
+import re
 
 import pandas as pd
 import ewstools
@@ -39,6 +39,8 @@ from pyveg.src.plotting import (
 )
 
 from pyveg.scripts.create_analysis_report import create_markdown_pdf_report
+from pyveg.scripts.upload_to_zenodo import upload_results
+
 
 def run_time_series_analysis(filename, output_dir, detrended=False):
     """
@@ -294,6 +296,31 @@ def analyse_gee_data(input_dir, spatial):
 
     # ------------------------------------------------
 
+    # ------------------------------------------------
+    # uploading
+
+    print('\nUploading results to Zenodo.\n')
+    coll_search = re.search("([Ss]entinel[-]?[\d])|([Ll]andsat[-]?[\d])", input_dir)
+    if coll_search:
+        collection = coll_search.groups()[0] if coll_search.groups()[0] \
+            else coll_search.groups()[1]
+        uploaded = upload_results(collection,
+                                  input_dir,
+                                  "local",
+                                  input_dir,
+                                  "local",
+                                  True)
+        if uploaded:
+            print("Uploaded results_summary.json and time series outputs to Zenodo.")
+        else:
+            print("Error uploading to Zenodo")
+    else:
+        print("Unable to ascertain collection from directory path {}.  Skipping Zenodo upload"\
+              .format(input_dir))
+
+
+    # ------------------------------------------------
+
     print("\nAnalysis complete.\n")
 
 
@@ -311,6 +338,14 @@ def main():
     parser.add_argument(
         "--spatial", action="store_true", default=False
     )  # off by deafult as this takes a non-negligable amount of time
+
+    parser.add_argument(
+        "--upload_to_zenodo", action="store_true", default=False
+    )  # off by deafult
+
+    parser.add_argument(
+        "--upload_to_zenodo_test", action="store_true", default=False
+    )  # off by deafult
 
     print("-" * 35)
     print("Running analyse_gee_data.py")
