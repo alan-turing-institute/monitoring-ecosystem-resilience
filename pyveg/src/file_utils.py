@@ -22,16 +22,43 @@ def split_filepath(path):
         path = path[:-1]
     while True:
         parts = os.path.split(path)
-        if parts[0] == path:  # sentinel for absolute paths
+        if parts[0] == path:  # for absolute paths
             allparts.insert(0, parts[0])
             break
-        elif parts[1] == path:  # sentinel for relative paths
+        elif parts[1] == path:  # for relative paths
             allparts.insert(0, parts[1])
             break
         else:
             path = parts[0]
             allparts.insert(0, parts[1])
     return allparts
+
+
+def get_filepath_after_directory(path, dirname, include_dirname=False):
+    """
+    Return part of a filepath from a certain point onwards.
+    e.g. if we have path /a/b/c/d/e/f  and we say dirname=c,
+    then this will return d/e/f if include_dirname==False,
+    or c/d/e/f if it is True.
+
+    Parameters
+    ==========
+    path: str, full filepath
+    dirname: str, delimeter, from where we will take the remaining filepath
+    include_dirname: bool, if True, the returned path will have dirname as its root.
+    """
+    path_parts = split_filepath(path)
+    output_parts = []
+    dirname_found = False
+    for part in path_parts:
+        if part == dirname:
+            dirname_found=True
+            if include_dirname:
+                output_parts.append(part)
+        else:
+            if dirname_found:
+                output_parts.append(part)
+    return os.path.join(*output_parts)
 
 
 def download_and_unzip(url, output_tmpdir):

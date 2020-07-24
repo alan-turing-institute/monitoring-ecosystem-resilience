@@ -30,6 +30,33 @@ def get_region_string(coords, region_size):
     return region_string
 
 
+def coords_list_to_coords_string(coords):
+    """
+    Given a list or tuple of [long, lat], return a string,
+    rounding to 2 decimal places.
+    """
+    coords_string = "{:.2f}_{:.2f}".format(coords[0], coords[1])
+    return coords_string
+
+
+def coords_dict_to_coords_string(coords):
+    """
+    Given a dict of long/lat values, return a string,
+    rounding to 2 decimal places.
+    """
+    longitude, latitude = None, None
+    for k,v in coords.items():
+        if "at" in k:
+            latitude = v
+        if "ong" in k:
+            longitude = v
+    if not longitude and latitude:
+        print("Unable to identify longitude and latitude keys")
+        return ""
+    coords_string = "{:.2f}_{:.2f}".format(longitude, latitude)
+    return coords_string
+
+
 def find_coords_string(file_path):
     """
     Parse a file path using a regular expresion to find a substring
