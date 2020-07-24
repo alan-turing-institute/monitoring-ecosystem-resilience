@@ -9,7 +9,7 @@ Plots are produced from the processed data.
 
 import os
 import argparse
-
+import re
 
 import pandas as pd
 import ewstools
@@ -39,6 +39,8 @@ from pyveg.src.plotting import (
 )
 
 from pyveg.scripts.create_analysis_report import create_markdown_pdf_report
+from pyveg.scripts.upload_to_zenodo import upload_results
+
 
 def run_time_series_analysis(filename, output_dir, detrended=False):
     """
@@ -201,7 +203,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
             )
 
 
-def analyse_gee_data(input_dir, spatial):
+def analyse_gee_data(input_dir, spatial=False, upload_to_zenodo=False, upload_to_zenodo_test=False):
     """
     Run analysis on dowloaded gee data
 
@@ -294,6 +296,31 @@ def analyse_gee_data(input_dir, spatial):
 
     # ------------------------------------------------
 
+    # ------------------------------------------------
+    # uploading
+    if upload_to_zenodo or upload_to_zenodo_test:
+        print('\nUploading results to Zenodo.\n')
+        coll_search = re.search("([Ss]entinel[-]?[\d])|([Ll]andsat[-]?[\d])", input_dir)
+        if coll_search:
+            collection = coll_search.groups()[0] if coll_search.groups()[0] \
+                else coll_search.groups()[1]
+
+            uploaded = upload_results(collection,
+                                      input_dir,
+                                      "local",
+                                      input_dir,
+                                      "local",
+                                      upload_to_zenodo_test)
+            if uploaded:
+                print("Uploaded results_summary.json and time series outputs to Zenodo.")
+            else:
+                print("Error uploading to Zenodo")
+        else:
+            print("Unable to ascertain collection from directory path {}.  Skipping Zenodo upload"\
+                  .format(input_dir))
+
+    # ------------------------------------------------
+
     print("\nAnalysis complete.\n")
 
 
@@ -312,6 +339,14 @@ def main():
         "--spatial", action="store_true", default=False
     )  # off by deafult as this takes a non-negligable amount of time
 
+    parser.add_argument(
+        "--upload_to_zenodo", action="store_true", default=False
+    )  # off by deafult
+
+    parser.add_argument(
+        "--upload_to_zenodo_test", action="store_true", default=False
+    )  # off by deafult
+
     print("-" * 35)
     print("Running analyse_gee_data.py")
     print("-" * 35)
@@ -320,9 +355,10 @@ def main():
     args = parser.parse_args()
     input_dir = args.input_dir
     spatial = args.spatial
-
+    upload_to_zenodo = args.upload_to_zenodo
+    upload_to_zenodo_test = args.upload_to_zenodo_test
     # run analysis code
-    analyse_gee_data(input_dir, spatial)
+    analyse_gee_data(input_dir, spatial, upload_to_zenodo, upload_to_zenodo_test)
 
 
 if __name__ == "__main__":
