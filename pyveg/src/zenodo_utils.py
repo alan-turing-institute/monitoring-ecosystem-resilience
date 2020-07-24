@@ -347,8 +347,13 @@ def prepare_results_zipfile(collection_name,
     base_json_location: str, directory containing "results_summary.json.
                         If not specified, assume same as base_png_location
     json_location_type: str, either "local" or "azure"
+
+    Returns
+    =======
+    zip_filename: str, location of the produced zipfile
     """
-    zip_filename = "results_"
+    tmpdir = tempfile.mkdtemp()
+    zip_filename = os.path.join(tmpdir,"results_")
     if find_coords_string(png_location):
         zip_filename += find_coords_string(png_location) + "_"
     zip_filename += collection_name + ".zip"
@@ -373,7 +378,7 @@ def prepare_results_zipfile(collection_name,
                 short_filepath = get_filepath_after_directory(full_filepath, "analysis")
                 zf.write(full_filepath, arcname=short_filepath)
         zf.close()
-
+    return zip_filename
 
 def get_results_summary_json(coords_string, collection, deposition_id, test=False):
     """

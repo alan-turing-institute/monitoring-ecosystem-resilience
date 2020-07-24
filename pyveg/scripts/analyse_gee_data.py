@@ -203,7 +203,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
             )
 
 
-def analyse_gee_data(input_dir, spatial):
+def analyse_gee_data(input_dir, spatial=False, upload_to_zenodo=False, upload_to_zenodo_test=False):
     """
     Run analysis on dowloaded gee data
 
@@ -298,26 +298,26 @@ def analyse_gee_data(input_dir, spatial):
 
     # ------------------------------------------------
     # uploading
+    if upload_to_zenodo or upload_to_zenodo_test:
+        print('\nUploading results to Zenodo.\n')
+        coll_search = re.search("([Ss]entinel[-]?[\d])|([Ll]andsat[-]?[\d])", input_dir)
+        if coll_search:
+            collection = coll_search.groups()[0] if coll_search.groups()[0] \
+                else coll_search.groups()[1]
 
-    print('\nUploading results to Zenodo.\n')
-    coll_search = re.search("([Ss]entinel[-]?[\d])|([Ll]andsat[-]?[\d])", input_dir)
-    if coll_search:
-        collection = coll_search.groups()[0] if coll_search.groups()[0] \
-            else coll_search.groups()[1]
-        uploaded = upload_results(collection,
-                                  input_dir,
-                                  "local",
-                                  input_dir,
-                                  "local",
-                                  True)
-        if uploaded:
-            print("Uploaded results_summary.json and time series outputs to Zenodo.")
+            uploaded = upload_results(collection,
+                                      input_dir,
+                                      "local",
+                                      input_dir,
+                                      "local",
+                                      upload_to_zenodo_test)
+            if uploaded:
+                print("Uploaded results_summary.json and time series outputs to Zenodo.")
+            else:
+                print("Error uploading to Zenodo")
         else:
-            print("Error uploading to Zenodo")
-    else:
-        print("Unable to ascertain collection from directory path {}.  Skipping Zenodo upload"\
-              .format(input_dir))
-
+            print("Unable to ascertain collection from directory path {}.  Skipping Zenodo upload"\
+                  .format(input_dir))
 
     # ------------------------------------------------
 
@@ -355,9 +355,10 @@ def main():
     args = parser.parse_args()
     input_dir = args.input_dir
     spatial = args.spatial
-
+    upload_to_zenodo = args.upload_to_zenodo
+    upload_to_zenodo_test = args.upload_to_zenodo_test
     # run analysis code
-    analyse_gee_data(input_dir, spatial)
+    analyse_gee_data(input_dir, spatial, upload_to_zenodo, upload_to_zenodo_test)
 
 
 if __name__ == "__main__":
