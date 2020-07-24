@@ -168,18 +168,19 @@ def upload_file(filename, deposition_id, test=False):
 
     Returns
     =======
-    r: dict, response from the API with details about the newly uploaded file
+    uploaded_ok: bool, True if we get status code 200 from the API
     """
     base_url, api_token = get_base_url_and_token(test)
     bucket_url = get_bucket_url(deposition_id, test)
+
     with open(filename, "rb") as f:
         r = requests.put("{}/{}".format(bucket_url, os.path.basename(filename)),
                          data=f,
                          params = {'access_token': api_token})
         if r.status_code != 200:
             print("Error uploading file", r.content)
-            return {}
-        return r.json()
+            return False
+        return True
 
 
 def list_files(deposition_id, test=False):
