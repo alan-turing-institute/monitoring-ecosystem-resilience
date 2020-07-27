@@ -9,10 +9,12 @@ Plots are produced from the processed data.
 
 import os
 import argparse
+import json
 import re
 
 import pandas as pd
 import ewstools
+
 from pyveg.src.analysis_preprocessing import preprocess_data
 
 from pyveg.src.data_analysis_utils import (
@@ -209,8 +211,8 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
 
 def analyse_gee_data(input_location,
-                     input_location_type,
-                     output_dir,
+                     input_location_type="local",
+                     output_dir=None,
                      do_time_series=True,
                      do_spatial=False,
                      upload_to_zenodo=False,
@@ -225,7 +227,7 @@ def analyse_gee_data(input_location,
     input_location_type: str
         Can be 'local' or 'azure'.
     output_dir: str,
-        Location for outputs of the analysis
+        Location for outputs of the analysis. If None, use input_location
     do_time_series: bool
         Option to run time-series analysis and do plots
     do_spatial: bool
@@ -236,6 +238,8 @@ def analyse_gee_data(input_location,
         Upload results to the sandbox Zenodo repo
     """
 
+    if not output_dir:
+        output_dir = input_location
     # read the results_summary.json
     input_json = read_results_summary(input_location, input_location_type)
 
