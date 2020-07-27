@@ -17,14 +17,13 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 from pyveg.src.data_analysis_utils import write_to_json
 
 
-def read_json_to_dataframes(filename):
+def read_json_to_dataframes(data):
     """
-    Read a json file and convert the result to a dict of DataFrame.
+    convert json data to a dict of DataFrame.
 
     Parameters
     ----------
-    filename : str
-        Full path to input json file.
+    data : dict, json data output from run_pyveg_pipeline
 
     Returns
     ----------
@@ -33,14 +32,6 @@ def read_json_to_dataframes(filename):
         names of collections and the values are DataFrame of results
         for that collection.
     """
-
-    # check file exists
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f'Could not find file "{os.path.abspath(filename)}".')
-
-    # json read
-    json_file = open(filename)
-    data = json.load(json_file)
 
     # start with empty output dataframes
     dfs = {}
@@ -750,14 +741,15 @@ def detrend_data(dfs, period="MS"):
 
 
 def preprocess_data(
-    input_dir,
-    drop_outliers=True,
-    fill_missing=True,
-    resample=True,
-    smoothing=True,
-    detrend=True,
-    n_smooth=4,
-    period="MS",
+        input_json,
+        output_basedir,
+        drop_outliers=True,
+        fill_missing=True,
+        resample=True,
+        smoothing=True,
+        detrend=True,
+        n_smooth=4,
+        period="MS",
 ):
     """
     This function reads and process data downloaded by GEE. Processing
@@ -766,8 +758,10 @@ def preprocess_data(
 
     Parameters
     ----------
-    input_dir : str
-        Path to the directory created during a GEE download job.
+    input_json : dict
+       JSON data created during a GEE download job.
+    output_basedir : str,
+       Directory where time-series csv will be put.
     drop_outliers : bool, optional
         Remove outliers in sub-image time series.
     fill_missing : bool, optional
@@ -790,24 +784,15 @@ def preprocess_data(
     """
 
     # put output plots in the results dir
-    output_dir = os.path.join(input_dir, "processed_data")
+    output_dir = os.path.join(output_basedir, "processed_data")
 
-    # check input file exists
-    json_summary_path = os.path.join(input_dir, "results_summary.json")
-    if not os.path.exists(json_summary_path):
-        raise FileNotFoundError(
-            f'Could not find file "{os.path.abspath(json_summary_path)}".'
-        )
 
     # make output subdir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    # read all json files in the directory and produce a dataframe
-    print(f'Reading results from "{os.path.abspath(json_summary_path)}"...')
-
     # read json file to dataframes
-    dfs = read_json_to_dataframes(json_summary_path)
+    dfs = read_json_to_dataframes(input_json)
 
     # keep track of time points where data is missing (by default pandas
     # groupby operations, which is used haveily in this module, drop NaNs)

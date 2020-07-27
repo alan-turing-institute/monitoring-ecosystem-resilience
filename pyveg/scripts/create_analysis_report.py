@@ -6,7 +6,7 @@ from pathlib import Path
 import pypandoc
 
 
-def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
+def create_markdown_pdf_report(path, collection_name):
 
     # getting the right suffix from the satelite to analyse
     if collection_name == 'COPERNICUS/S2':
@@ -29,6 +29,9 @@ def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
         collection = 'Landsat4'
         satellite_suffix = 'L4'
 
+    else:
+        raise RuntimeError("Unknown collection_name {}".format(collection_name))
+
     current_path = Path(path)
     current_dirs_parent = str(current_path.parent)
 
@@ -41,9 +44,9 @@ def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
 
     except:
         # in case the directory does not have the right name with coordinates
-        output_path = os.path.join(path,'analysis_report_'+collection_name)
+        output_path = os.path.join(path,'analysis_report_'+collection)
         mdFile = MdUtils(file_name=output_path,
-                         title='Results for ' + collection_name)
+                         title='Results for ' + collection)
 
 
     # Time series figures
