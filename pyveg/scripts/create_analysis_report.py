@@ -41,9 +41,9 @@ def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
 
     except:
         # in case the directory does not have the right name with coordinates
-        output_path = os.path.join(path,'analysis_report_'+collection)
+        output_path = os.path.join(path,'analysis_report_'+collection_name)
         mdFile = MdUtils(file_name=output_path,
-                         title='Results for ' + collection)
+                         title='Results for ' + collection_name)
 
 
     # Time series figures
@@ -96,7 +96,7 @@ def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
     for count_rgb, rgb_figure in enumerate(sorted(glob.glob(rgb_path)), start=1):
 
         rgb_figure_name = str(Path(rgb_figure).name)
-        mdFile.new_line(mdFile.new_inline_image(text=rgb_figure, path=os.path.join(rgb_path,rgb_figure)))
+        mdFile.new_line(mdFile.new_inline_image(text=rgb_figure, path=rgb_figure))
         mdFile.new_line('Figure '+str(count+count_rgb)+': '+rgb_figure_name)
         mdFile.new_line('')
 
@@ -137,4 +137,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
