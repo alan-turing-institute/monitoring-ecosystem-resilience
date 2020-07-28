@@ -35,6 +35,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             ("output_filename", [str]),
         ]
 
+
     def set_default_parameters(self):
         """
         See if we can set our input directories from the output directories
@@ -226,6 +227,23 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                 self.run_status["succeeded"] += 1
         return
 
+    def get_metadata(self):
+        """
+        Fill a dictionary with info about this job - coords, date range etc.
+        """
+        metadata = {}
+        if self.parent and self.parent.parent and "input_veg_sequence" in vars(self):
+            veg_sequence = self.parent.parent.get(self.input_veg_sequence)
+            metadata["start_date"], metadata["end_date"] = veg_sequence.date_range
+            metadata["time_per_point"] = veg_sequence.time_per_point
+            metadata["longitude"] = veg_sequence.coords[0]
+            metadata["latitude"] = veg_sequence.coords[1]
+            metadata["collection"] = veg_sequence.collection_name
+            metadata["num_data_points"] = self.run_status["succeeded"]
+            if "config_filename" in vars(self.parent.parent):
+                metadata["config_filename"] = self.parent.parent.config_filename
+        return metadata
+
     def run(self):
         self.check_config()
         output_dict = {}
@@ -243,12 +261,16 @@ class VegAndWeatherJsonCombiner(CombinerModule):
         }
         logger.info("{}: checking combined JSON".format(self.name))
         self.check_output_dict(output_dict)
+        logger.info("{}: filling metadata dict".format(self.name))
+        metadata_dict = self.get_metadata()
+        output_dict["metadata"] = metadata_dict
         self.save_json(
             output_dict,
             self.output_filename,
             self.output_location,
             self.output_location_type,
         )
+
         logger.info("{}: Wrote output to {}".format(
             self.name,
             os.path.join(self.output_location, self.output_filename)
