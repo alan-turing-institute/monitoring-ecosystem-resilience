@@ -48,6 +48,7 @@ def build_pipeline(config_file, from_cache=False):
 
     # instantiate and setup the pipeline
     p = Pipeline(config.name)
+    p.config_filename = os.path.basename(config_file)
     p.output_location = config.output_location
     if not from_cache:
         p.output_location += "__" + current_time
