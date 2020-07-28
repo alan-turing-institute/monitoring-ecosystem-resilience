@@ -6,7 +6,7 @@ from pathlib import Path
 import pypandoc
 
 
-def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
+def create_markdown_pdf_report(path, collection_name):
 
     # getting the right suffix from the satelite to analyse
     if collection_name == 'COPERNICUS/S2':
@@ -28,6 +28,9 @@ def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
     elif collection_name == 'LANDSAT4':
         collection = 'Landsat4'
         satellite_suffix = 'L4'
+
+    else:
+        raise RuntimeError("Unknown collection_name {}".format(collection_name))
 
     current_path = Path(path)
     current_dirs_parent = str(current_path.parent)
@@ -96,7 +99,7 @@ def create_markdown_pdf_report(path, collection_name ='Sentinel2'):
     for count_rgb, rgb_figure in enumerate(sorted(glob.glob(rgb_path)), start=1):
 
         rgb_figure_name = str(Path(rgb_figure).name)
-        mdFile.new_line(mdFile.new_inline_image(text=rgb_figure, path=os.path.join(rgb_path,rgb_figure)))
+        mdFile.new_line(mdFile.new_inline_image(text=rgb_figure, path=rgb_figure))
         mdFile.new_line('Figure '+str(count+count_rgb)+': '+rgb_figure_name)
         mdFile.new_line('')
 
@@ -137,4 +140,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

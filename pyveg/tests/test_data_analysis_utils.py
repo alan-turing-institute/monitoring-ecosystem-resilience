@@ -4,20 +4,22 @@ Test the functions in data_analysis_utils.py
 
 import os
 import shutil
+import json
 
 from pyveg.src.data_analysis_utils import *
 from pyveg.src.analysis_preprocessing import *
 
 
 def test_coarse_dataframe():
-    test_df = read_json_to_dataframes(
-        os.path.join(
-            os.path.dirname(__file__),
-            "..",
-            "testdata",
-            "network_json_data/test-results-summary.json",
-        )
+
+    json_filename = os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "testdata",
+        "network_json_data/test-results-summary.json",
     )
+    results_dict = json.load(open(json_filename))
+    test_df = read_json_to_dataframes(results_dict)
 
     data_df = convert_to_geopandas(test_df["COPERNICUS/S2"])
 
@@ -36,14 +38,14 @@ def test_create_lat_long_metric_figures():
         os.path.dirname(__file__), "..", "testdata", "network_json_data/"
     )
 
-    test_df = read_json_to_dataframes(
-        os.path.join(
-            os.path.dirname(__file__),
-            "..",
-            "testdata",
-            "network_json_data/test-results-summary.json",
-        )
+    json_filename = os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "testdata",
+        "network_json_data/test-results-summary.json",
     )
+    summary_json = json.load(open(json_filename))
+    test_df = read_json_to_dataframes(summary_json)
 
     data_df = convert_to_geopandas(test_df["COPERNICUS/S2"])
 
@@ -73,7 +75,8 @@ def test_moving_window_analysis():
         "testdata",
         "network_json_data/results_summary.json",
     )
-    dfs = read_json_to_dataframes(path_to_dict)
+    results_json = json.load(open(path_to_dict))
+    dfs = read_json_to_dataframes(results_json)
     time_series_dfs = make_time_series(dfs.copy())
 
     ar1_var_df = moving_window_analysis(

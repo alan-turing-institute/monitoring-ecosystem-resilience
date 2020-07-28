@@ -3,6 +3,7 @@ Test the functions in analyse_gee_data.py
 """
 import os
 import shutil
+import json
 from pyveg.scripts.analyse_gee_data import analyse_gee_data
 
 
@@ -18,7 +19,7 @@ def test_analyse_gee_data():
         shutil.rmtree(analysis_path)
 
     # run script
-    analyse_gee_data(input_dir, spatial=True)
+    analyse_gee_data(input_dir, do_spatial=True)
 
     # assert script produced output
     assert os.path.exists(analysis_path) == True
