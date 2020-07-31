@@ -22,7 +22,8 @@ setup(
         "pyveg_gen_pattern=pyveg.scripts.generate_pattern:main",
         "pyveg_gee_analysis=pyveg.scripts.analyse_gee_data:main",
         "pyveg_run_pipeline=pyveg.scripts.run_pyveg_pipeline:main",
-        "pyveg_run_module=pyveg.scripts.run_pyveg_module:main"
+        "pyveg_run_module=pyveg.scripts.run_pyveg_module:main",
+        "pyveg_azure_download=pyveg.scripts.download_from_azure:main",
         "pyveg_zenodo_upload=pyveg.scripts.upload_to_zenodo:main"
     ]},
 )
