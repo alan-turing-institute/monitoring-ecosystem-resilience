@@ -16,7 +16,7 @@ coordinate_id = "17"
 entry = coordinate_store.loc[coordinate_id]
 coordinates = (entry.longitude, entry.latitude)
 
-date_range = ["2016-01-01", "2020-04-01"]
+date_range = ["2016-01-01", "2020-06-01"]
 
 # From the dictionary entries in data_collections.py, which shall we use
 # (these will become "Sequences")
@@ -36,4 +36,8 @@ modules_to_use = {
 }
 
 # The following demonstrates how parameters can be set for individual Modules:
-special_config = {"NetworkCentralityCalculator": {"n_sub_images": -1, "n_threads": 8}}
+special_config = {
+    "VegetationImageProcessor": {"run_mode": "batch"},
+    "NetworkCentralityCalculator": {"n_threads": 1, "run_mode": "batch"},
+    "NDVICalculator": {"run_mode": "batch"},
+}

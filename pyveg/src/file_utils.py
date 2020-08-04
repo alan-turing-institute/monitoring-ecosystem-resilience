@@ -18,12 +18,14 @@ LOGFILE = os.path.join(TMPDIR, "failed_downloads.log")
 
 def split_filepath(path):
     allparts = []
+    if path.endswith("/") or path.endswith("\\"):
+        path = path[:-1]
     while True:
         parts = os.path.split(path)
-        if parts[0] == path:  # sentinel for absolute paths
+        if parts[0] == path:  # for absolute paths
             allparts.insert(0, parts[0])
             break
-        elif parts[1] == path: # sentinel for relative paths
+        elif parts[1] == path:  # for relative paths
             allparts.insert(0, parts[1])
             break
         else:
@@ -31,6 +33,32 @@ def split_filepath(path):
             allparts.insert(0, parts[1])
     return allparts
 
+
+def get_filepath_after_directory(path, dirname, include_dirname=False):
+    """
+    Return part of a filepath from a certain point onwards.
+    e.g. if we have path /a/b/c/d/e/f  and we say dirname=c,
+    then this will return d/e/f if include_dirname==False,
+    or c/d/e/f if it is True.
+
+    Parameters
+    ==========
+    path: str, full filepath
+    dirname: str, delimeter, from where we will take the remaining filepath
+    include_dirname: bool, if True, the returned path will have dirname as its root.
+    """
+    path_parts = split_filepath(path)
+    output_parts = []
+    dirname_found = False
+    for part in path_parts:
+        if part == dirname:
+            dirname_found=True
+            if include_dirname:
+                output_parts.append(part)
+        else:
+            if dirname_found:
+                output_parts.append(part)
+    return os.path.join(*output_parts)
 
 
 def download_and_unzip(url, output_tmpdir):
@@ -50,28 +78,29 @@ def download_and_unzip(url, output_tmpdir):
     tif_filenames: list of strings, the full paths to unpacked tif files.
     """
 
-    #print("Will download {} to {}".format(url, output_tmpdir))
     # GET the URL
     r = requests.get(url)
     if not r.status_code == 200:
-        raise RuntimeError(" HTTP Error getting download link {}".format(url))
+        raise RuntimeError(" HTTP Error {} getting download link {}".format(r.status_code,
+                                                                            url))
     os.makedirs(output_tmpdir, exist_ok=True)
-    output_zipfile = os.path.join(output_tmpdir,"gee.zip")
+    output_zipfile = os.path.join(output_tmpdir, "gee.zip")
     with open(output_zipfile, "wb") as outfile:
         outfile.write(r.content)
     ## catch zipfile-related exceptions here, and if they arise,
     ## write the name of the zipfile and the url to a logfile
     try:
-        with ZipFile(output_zipfile, 'r') as zip_obj:
+        with ZipFile(output_zipfile, "r") as zip_obj:
             zip_obj.extractall(path=output_tmpdir)
-    except(BadZipFile):
+    except (BadZipFile):
         with open(LOGFILE, "a") as logfile:
-            logfile.write("{}: {} {}\n".format(str(datetime.now()),
-                                               output_zipfile,
-                                               url))
+            logfile.write(
+                "{}: {} {}\n".format(str(datetime.now()), output_zipfile, url)
+            )
         return None
-    tif_files = [filename for filename in os.listdir(output_tmpdir) \
-                 if filename.endswith(".tif")]
+    tif_files = [
+        filename for filename in os.listdir(output_tmpdir) if filename.endswith(".tif")
+    ]
     if len(tif_files) == 0:
         raise RuntimeError("No files extracted")
 
@@ -82,8 +111,9 @@ def download_and_unzip(url, output_tmpdir):
     tif_filebases = set(tif_filebases)
 
     # prepend the directory name to each of the filebases
-    tif_filenames = [os.path.join(output_tmpdir, tif_filebase) \
-               for tif_filebase in tif_filebases]
+    tif_filenames = [
+        os.path.join(output_tmpdir, tif_filebase) for tif_filebase in tif_filebases
+    ]
     return tif_filenames
 
 
@@ -96,7 +126,7 @@ def save_json(out_dict, output_dir, output_filename, verbose=False):
         os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, output_filename)
 
-    with open(output_path, 'w') as fp:
+    with open(output_path, "w") as fp:
         json.dump(out_dict, fp, indent=2)
     if verbose:
         print("Saved json file '{}'".format(output_path))
@@ -117,7 +147,9 @@ def save_image(image, output_dir, output_filename, verbose=False):
         print("Saved image '{}'".format(output_path))
 
 
-def construct_image_savepath(output_dir, collection_name, coords, date_range, image_type):
+def construct_image_savepath(
+    output_dir, collection_name, coords, date_range, image_type
+):
     """
     Function to abstract output image filename construction. Current approach is to create
     a new dir inside `output_dir` for the satellite, and then save date and coordinate
@@ -128,7 +160,7 @@ def construct_image_savepath(output_dir, collection_name, coords, date_range, im
     mid_period_string = find_mid_period(date_range[0], date_range[1])
 
     # filename is the date, coordinates, and image type
-    filename = f'{mid_period_string}_{coords[0]}-{coords[1]}_{image_type}.png'
+    filename = f"{mid_period_string}_{coords[0]}-{coords[1]}_{image_type}.png"
 
     # full path is dir + filename
     full_path = os.path.join(output_dir, filename)
@@ -157,11 +189,11 @@ def consolidate_json_to_list(json_dir, output_dir=None, output_filename=None):
 
     # if input dir doesn't exist, return
     if not os.path.exists(json_dir):
-        print('No sub-images processed!')
+        print("No sub-images processed!")
         return results
 
     for filename in os.listdir(json_dir):
-        results.append(json.load(open(os.path.join(json_dir,filename))))
+        results.append(json.load(open(os.path.join(json_dir, filename))))
     if output_dir and output_filename:
         save_json(results, output_dir, output_filename)
     return results

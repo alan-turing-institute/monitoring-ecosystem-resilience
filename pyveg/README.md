@@ -108,6 +108,21 @@ and also network centrality metrics, discussed in more detail below.
 For weather collections e.g. the ERA5, due to coarser resolution, the precipitation and temperature 
 "images" are averaged into a single value at each point in the time series.
 
+### Rerunning partially succeeded jobs
+
+The output location of a download job is datestamped with the time that the job was launched.  The configuration file used will also be copied and datestamped, to aid reproducibility.  For example if you run the job
+```
+pyveg_run_pipeline --config_file pyveg/configs/my_config.py
+```
+there will be a copy of `my_config.py` saved as `pyveg/configs/cached_configs/my_config_<datestamp>.py`.
+This also means that if a job crashes or timeouts partway through, it is possible to rerun, writing to the same output location and skipping parts that are already done, by using this cached config file.  However, in order to avoid a second datestamp being appended to the output location, use the ```--from_cache``` argument.  So for the above example, the command to rerun the job filling in any failed/incomplete parts would be:
+```
+pyveg_run_pipeline --config_file pyveg/configs/cached_configs/my_config_<datestamp>.py --from_cache
+```
+
+### Using Azure for downloading/processing data
+
+If you have access to Microsoft Azure cloud computing facilities, downloading and processing data can be sped up enormously by using batch computing to run many subjobs in parallel.  See [here](UsingAzure.md) for more details.
 
 ## Analysing the Download Data
 
@@ -196,6 +211,10 @@ The digram below represents the high level flow of the `pyveg` package.
 
 ![`pyveg` program flow.](paper/pveg_flow.png)
 
+
+## Uploading results to the Zenodo open source repository
+
+See [here](UsingZenodo.md) for more details.
 
 # Licence
 

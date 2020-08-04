@@ -9,14 +9,19 @@ import json
 
 from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
 
+
 def test_instantiate_combiner():
     vwc = VegAndWeatherJsonCombiner()
     assert VegAndWeatherJsonCombiner
 
 
 def test_combine():
-    input_veg_dir = os.path.join(os.path.dirname(__file__), "..", "testdata", "Sentinel2", "test_json")
-    input_weather_dir = os.path.join(os.path.dirname(__file__), "..", "testdata", "ERA5", "test_json")
+    input_veg_dir = os.path.join(
+        os.path.dirname(__file__), "..", "testdata", "Sentinel2", "test_json"
+    )
+    input_weather_dir = os.path.join(
+        os.path.dirname(__file__), "..", "testdata", "ERA5", "test_json"
+    )
     output_dir = os.path.join(os.path.dirname(__file__), "..", "testdata", "tmp_json")
     vwc = VegAndWeatherJsonCombiner()
     vwc.input_veg_location = input_veg_dir
@@ -32,4 +37,5 @@ def test_combine():
         assert coll in results.keys()
         assert isinstance(results[coll], dict)
         assert "time-series-data" in results[coll].keys()
+    assert "metadata" in results.keys()
     shutil.rmtree(output_dir)

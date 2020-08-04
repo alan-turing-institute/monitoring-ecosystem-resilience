@@ -1,6 +1,6 @@
 """
 This module consists of methods to process downloaded GEE data. The starting
-point is a json file written out at the end of the downloading step. This 
+point is a json file written out at the end of the downloading step. This
 module cleans, resamples, and reformats the data to make it ready for analysis.
 
 """
@@ -17,14 +17,13 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 from pyveg.src.data_analysis_utils import write_to_json
 
 
-def read_json_to_dataframes(filename):
+def read_json_to_dataframes(data):
     """
-    Read a json file and convert the result to a dict of DataFrame.
+    convert json data to a dict of DataFrame.
 
     Parameters
     ----------
-    filename : str
-        Full path to input json file.
+    data : dict, json data output from run_pyveg_pipeline
 
     Returns
     ----------
@@ -33,14 +32,6 @@ def read_json_to_dataframes(filename):
         names of collections and the values are DataFrame of results
         for that collection.
     """
-
-    # check file exists
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f'Could not find file "{os.path.abspath(filename)}".')
-
-    # json read
-    json_file = open(filename)
-    data = json.load(json_file)
 
     # start with empty output dataframes
     dfs = {}
@@ -51,13 +42,13 @@ def read_json_to_dataframes(filename):
         rows_list = []
 
         # loop over time series
-        for date, time_point in coll_results['time-series-data'].items():
+        for date, time_point in coll_results["time-series-data"].items():
 
             # check we have data for this time point
             if time_point is None or time_point == {} or time_point == []:
-                
-                # add Null row if data is missing at this time point    
-                rows_list.append({'date': date})
+
+                # add Null row if data is missing at this time point
+                rows_list.append({"date": date})
 
             # if we are looking at veg data, loop over space points
             elif isinstance(list(time_point)[0], dict):
@@ -69,14 +60,14 @@ def read_json_to_dataframes(filename):
                 # the key of each object in the time series is the date, and data
                 # for this date should be the values. Here we just add the date
                 # as a value to enable us to add the whole row in one go later.
-                time_point['date'] = date
+                time_point["date"] = date
                 rows_list.append(time_point)
 
         # make a DataFrame and add it to the dict of DataFrames
         df = pd.DataFrame(rows_list)
-        df = df.drop(columns=['slope', 'offset', 'mean', 'std'], errors='ignore')
-        df = df.sort_values(by='date')
-        assert( df.empty == False )
+        df = df.drop(columns=["slope", "offset", "mean", "std"], errors="ignore")
+        df = df.sort_values(by="date")
+        assert df.empty == False
         dfs[collection_name] = df
 
     return dfs
@@ -101,49 +92,49 @@ def make_time_series(dfs):
     """
 
     # the time series dataframe
-    ts_df = pd.DataFrame(columns=['date'])
+    ts_df = pd.DataFrame(columns=["date"])
 
     # loop over collections
     for col_name, df in dfs.items():
 
         #  if vegetation data
-        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+        if "COPERNICUS/S2" in col_name or "LANDSAT" in col_name:
 
             # group by date to collapse all network centrality measurements
-            groups = df.groupby('date')
+            groups = df.groupby("date")
 
             # get summaries
             means = groups.mean()
             stds = groups.std()
 
             # rename columns
-            if 'COPERNICUS/S2' in col_name:
-                s = 'S2_'
-            elif 'LANDSAT' in col_name:
-                s = 'L' + col_name.split('/')[1][-1] + '_'
-            else: 
-                s = col_name + '_'
-            means = means.rename(columns={c: s + c + '_mean' for c in means.columns})
-            stds = stds.rename(columns={c: s + c + '_std' for c in stds.columns})
+            if "COPERNICUS/S2" in col_name:
+                s = "S2_"
+            elif "LANDSAT" in col_name:
+                s = "L" + col_name.split("/")[1][-1] + "_"
+            else:
+                s = col_name + "_"
+            means = means.rename(columns={c: s + c + "_mean" for c in means.columns})
+            stds = stds.rename(columns={c: s + c + "_std" for c in stds.columns})
 
             # merge
-            df = pd.merge(means, stds, on='date', how='inner')
-            ts_df = pd.merge_ordered(ts_df, df, on='date', how='outer')
+            df = pd.merge(means, stds, on="date", how="inner")
+            ts_df = pd.merge_ordered(ts_df, df, on="date", how="outer")
 
         # add climate data if availible
-        elif 'ECMWF/ERA5/' in col_name:
-            df = df.set_index('date')
-            ts_df = pd.merge_ordered(ts_df, df, on='date', how='outer')
+        elif "ECMWF/ERA5/" in col_name:
+            df = df.set_index("date")
+            ts_df = pd.merge_ordered(ts_df, df, on="date", how="outer")
 
     # remove unneeded columns
-    ts_df = ts_df.loc[:,~ts_df.columns.str.contains('latitude_std', case=False)]     
-    ts_df = ts_df.loc[:,~ts_df.columns.str.contains('longitude_std', case=False)]
+    ts_df = ts_df.loc[:, ~ts_df.columns.str.contains("latitude_std", case=False)]
+    ts_df = ts_df.loc[:, ~ts_df.columns.str.contains("longitude_std", case=False)]
 
-    assert( ts_df.empty == False )
+    assert ts_df.empty == False
     return ts_df
 
 
-def resample_time_series(series, period='MS'):
+def resample_time_series(series, period="MS"):
     """
     Resample and interpolate a time series dataframe so we have one row
     per time period (useful for FFT)
@@ -156,17 +147,17 @@ def resample_time_series(series, period='MS'):
         Identifying the column we will pull out
     period: string
         Period for resampling
-    
+
     Returns
     -------
-    Series: 
+    Series:
         pandas Series with datetime index, and one column, one row per day
     """
 
     # give the series a date index if the DataFrame is not index by date already
     #   if df.index.name != 'date':
     #    series.index = df.date
-    
+
     # just in case the index isn't already datetime type
     series.index = pd.to_datetime(series.index)
 
@@ -177,7 +168,7 @@ def resample_time_series(series, period='MS'):
     return new_series
 
 
-def resample_dataframe(df, columns, period='MS'):
+def resample_dataframe(df, columns, period="MS"):
     """
     Resample and interpolate a time series dataframe so we have one row
     per time period.
@@ -190,10 +181,10 @@ def resample_dataframe(df, columns, period='MS'):
         List of column names to resample. Should contain numeric data.
     period: string
         Period for resampling.
-    
+
     Returns
     -------
-    DataFrame: 
+    DataFrame:
         DataFrame with resample time series in `columns`.
     """
 
@@ -204,8 +195,8 @@ def resample_dataframe(df, columns, period='MS'):
     for column in columns:
 
         # resample the column
-        series = df.set_index('date')[column]
-        df_out[column] = resample_time_series(series,  period=period)
+        series = df.set_index("date")[column]
+        df_out[column] = resample_time_series(series, period=period)
 
     # generate a clean index
     df_out = df_out.reset_index()
@@ -213,7 +204,7 @@ def resample_dataframe(df, columns, period='MS'):
     return df_out
 
 
-def resample_data(dfs, period='MS'):
+def resample_data(dfs, period="MS"):
     """
     Resample vegetation and rainfall DataFrames. Vegetation
     DataFrames are resampled at the sub-image level.
@@ -235,19 +226,19 @@ def resample_data(dfs, period='MS'):
     for col_name, df in dfs.items():
 
         #  if vegetation data
-        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
-            
+        if "COPERNICUS/S2" in col_name or "LANDSAT" in col_name:
+
             # specify veg columns to resample
-            columns = [c for c in df.columns if 'offset50' in c]
+            columns = [c for c in df.columns if "offset50" in c]
 
             # group by (lat, long)
             d = {}
-            for name, group in df.groupby(['latitude', 'longitude']):
+            for name, group in df.groupby(["latitude", "longitude"]):
                 d[name] = group
 
             # for each sub-image
             for key, df_ in d.items():
-                
+
                 # resample
                 df_ = resample_dataframe(df_, columns, period=period)
 
@@ -262,9 +253,9 @@ def resample_data(dfs, period='MS'):
             # replace collection
             dfs[col_name] = df
 
-        else: 
+        else:
             # assume ERA5 data
-            columns = ['total_precipitation', 'mean_2m_air_temperature']
+            columns = ["total_precipitation", "mean_2m_air_temperature"]
 
             # resample
             df_ = resample_dataframe(df_, columns, period=period)
@@ -275,7 +266,7 @@ def resample_data(dfs, period='MS'):
     return dfs
 
 
-def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
+def drop_veg_outliers(dfs, column="offset50", sigmas=3.0):
     """
     Loop over vegetation DataFrames and drop points in the
     time series that a significantly far away from the mean
@@ -302,11 +293,11 @@ def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
     for col_name, veg_df in dfs.items():
 
         #  if vegetation data
-        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+        if "COPERNICUS/S2" in col_name or "LANDSAT" in col_name:
 
             # group by (lat, long)
             d = {}
-            for name, group in veg_df.groupby(['latitude', 'longitude']):
+            for name, group in veg_df.groupby(["latitude", "longitude"]):
                 d[name] = group
 
             # for each sub-image
@@ -334,7 +325,7 @@ def drop_veg_outliers(dfs, column='offset50', sigmas=3.0):
     return dfs
 
 
-def smooth_veg_data(dfs, column='offset50', n=4):
+def smooth_veg_data(dfs, column="offset50", n=4):
     """
     Loop over vegetation DataFrames and perform LOESS smoothing
     on the time series of each sub-image.
@@ -361,13 +352,13 @@ def smooth_veg_data(dfs, column='offset50', n=4):
     for col_name, df in dfs.items():
 
         #  if vegetation data
-        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+        if "COPERNICUS/S2" in col_name or "LANDSAT" in col_name:
 
             # remove outliers and smooth
             df = smooth_all_sub_images(df, column=column, n=n)
 
             # calculate ci
-            #df = get_confidence_intervals(df, column=column)
+            # df = get_confidence_intervals(df, column=column)
 
             # replace DataFrame
             dfs[col_name] = df
@@ -375,7 +366,7 @@ def smooth_veg_data(dfs, column='offset50', n=4):
     return dfs
 
 
-def smooth_subimage(df, column='offset50', n=4, it=3):
+def smooth_subimage(df, column="offset50", n=4, it=3):
     """
     Perform LOWESS (Locally Weighted Scatterplot Smoothing) on the time
     series of a single sub-image.
@@ -401,26 +392,28 @@ def smooth_subimage(df, column='offset50', n=4, it=3):
     df.dropna(inplace=True)
 
     # add a new column of datetime objects
-    df['datetime'] = pd.to_datetime(df['date'], format='%Y/%m/%d')
+    df["datetime"] = pd.to_datetime(df["date"], format="%Y/%m/%d")
 
     # extract data
-    xs = df['datetime']
+    xs = df["datetime"]
     ys = df[column]
 
     # num_days_per_timepoint = (xs.iloc[1] - xs.iloc[0]).days
     frac_data = min(n / len(ys), 1.0)
 
     # perform smoothing
-    smoothed_y = lowess(ys, xs, is_sorted=True, return_sorted=False, frac=frac_data, it=it)
+    smoothed_y = lowess(
+        ys, xs, is_sorted=True, return_sorted=False, frac=frac_data, it=it
+    )
 
     # add to df
-    df[column + '_smooth'] = smoothed_y
-    df[column + '_smooth_res'] = ys - smoothed_y
+    df[column + "_smooth"] = smoothed_y
+    df[column + "_smooth_res"] = ys - smoothed_y
 
     return df
 
 
-def smooth_all_sub_images(df, column='offset50', n=4, it=3):
+def smooth_all_sub_images(df, column="offset50", n=4, it=3):
     """
     Perform LOWESS (Locally Weighted Scatterplot Smoothing) on the time
     series of a set of sub-images.
@@ -446,7 +439,7 @@ def smooth_all_sub_images(df, column='offset50', n=4, it=3):
 
     # group by (lat, long)
     d = {}
-    for name, group in df.groupby(['latitude', 'longitude']):
+    for name, group in df.groupby(["latitude", "longitude"]):
         d[name] = group
 
     # for each sub-image
@@ -479,48 +472,52 @@ def store_feature_vectors(dfs, output_dir):
     for col_name, veg_df in dfs.items():
 
         #  if vegetation data
-        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+        if "COPERNICUS/S2" in col_name or "LANDSAT" in col_name:
 
             # check the feature vectors are availible
-            if 'feature_vec' not in veg_df.columns:
-                print('Could not find feature vectors.')
+            if "feature_vec" not in veg_df.columns:
+                print("Could not find feature vectors.")
                 continue
-            
+
             # sort by date
-            veg_df = veg_df.sort_values(by='date').dropna()
+            veg_df = veg_df.sort_values(by="date").dropna()
 
             # create a df to store feature vectors
             df = pd.DataFrame()
-            [print(value) for value in veg_df.feature_vec if not isinstance(value, list)]
+            [
+                print(value)
+                for value in veg_df.feature_vec
+                if not isinstance(value, list)
+            ]
             # add feature vectors to dataframe
             df = pd.DataFrame(value for value in veg_df.feature_vec)
 
             # rename percentile columns
-            df = df.rename(columns={n: f'{(n+1)*5}th_percentile' for n in df.columns})
+            df = df.rename(columns={n: f"{(n+1)*5}th_percentile" for n in df.columns})
 
             # reindex
             df.index = veg_df.index
 
             # add information
-            df.insert(0, 'date', veg_df['date'])
-            df.insert(1, 'latitude', veg_df['latitude'])
-            df.insert(2, 'longitude', veg_df['longitude'])
+            df.insert(0, "date", veg_df["date"])
+            df.insert(1, "latitude", veg_df["latitude"])
+            df.insert(2, "longitude", veg_df["longitude"])
 
             # save csv
-            if col_name == 'COPERNICUS/S2':
-                s = 'S2'
-            elif 'LANDSAT' in col_name:
-                s = 'L' + col_name.split('/')[1][-1] + '_'
+            if col_name == "COPERNICUS/S2":
+                s = "S2"
+            elif "LANDSAT" in col_name:
+                s = "L" + col_name.split("/")[1][-1] + "_"
             else:
                 s = col_name
-            
-            filename = os.path.join(output_dir, s+'_feature_vectors.csv')
+
+            filename = os.path.join(output_dir, s + "_feature_vectors.csv")
             df.to_csv(filename, index=False)
-            
+
 
 def fill_veg_gaps(dfs, missing):
     """
-    Loop through sub-image time series and replace any gaps with mean 
+    Loop through sub-image time series and replace any gaps with mean
     value of the same month in other years.
 
     Parameters
@@ -537,11 +534,11 @@ def fill_veg_gaps(dfs, missing):
     for col_name, veg_df in dfs.items():
 
         #  if vegetation data
-        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+        if "COPERNICUS/S2" in col_name or "LANDSAT" in col_name:
 
             # group by (lat, long)
             d = {}
-            for name, group in veg_df.groupby(['latitude', 'longitude']):
+            for name, group in veg_df.groupby(["latitude", "longitude"]):
                 d[name] = group
 
             # for each sub-image
@@ -550,22 +547,25 @@ def fill_veg_gaps(dfs, missing):
                 # get lat, long of this sub-image
                 lats = df_.latitude.drop_duplicates().values
                 longs = df_.longitude.drop_duplicates().values
-                assert ( len(lats) == 1 )
-                assert ( len(longs) == 1 )
+                assert len(lats) == 1
+                assert len(longs) == 1
                 lat = lats[0]
                 long = longs[0]
 
                 # construct missing rows
-                missing_rows = [pd.Series({'date': date}) for date in missing[col_name]]
+                missing_rows = [pd.Series({"date": date}) for date in missing[col_name]]
+
+                if len(missing_rows) == 0:
+                    continue
 
                 # add back in missing values if necessary
-                df_ = df_.append(missing_rows, ignore_index=True).sort_values(by='date')
+                df_ = df_.append(missing_rows, ignore_index=True).sort_values(by="date")
 
                 # make a new 'month' column
-                df_['month'] = df_.date.str.split('-').str[1]
+                df_["month"] = df_.date.str.split("-").str[1]
 
                 # group by month and get monthly means
-                monthly_means = df_.groupby('month').mean().offset50
+                monthly_means = df_.groupby("month").mean().offset50
 
                 # loop through dataframe
                 for index, row in df_.iterrows():
@@ -573,13 +573,13 @@ def fill_veg_gaps(dfs, missing):
                     # fill missing months with mean value
                     if pd.isnull(row.offset50):
                         this_month = row.month
-                        df_.loc[index, 'offset50'] = monthly_means.loc[this_month]
-                        df_.loc[index, 'latitude'] = lat
-                        df_.loc[index, 'longitude'] = long
-                        df_.loc[index, 'feature_vec'] = np.NaN
+                        df_.loc[index, "offset50"] = monthly_means.loc[this_month]
+                        df_.loc[index, "latitude"] = lat
+                        df_.loc[index, "longitude"] = long
+                        df_.loc[index, "feature_vec"] = np.NaN
 
                 # drop month column and replace old df
-                df_ = df_.drop(columns='month')
+                df_ = df_.drop(columns="month")
                 d[key] = df_
 
             # reconstruct the DataFrame
@@ -594,7 +594,7 @@ def fill_veg_gaps(dfs, missing):
 
 def get_missing_time_points(dfs):
     """
-    Find missing time points for each vegetatuin dataframe in `dfs`,
+    Find missing time points for each vegetation dataframe in `dfs`,
     and return a dict, with the same key as in `dfs`, but with values
     corresponding to missing dates.
 
@@ -606,18 +606,18 @@ def get_missing_time_points(dfs):
     Returns
     ----------
     dict
-        Missing time points for each vegetation df. 
+        Missing time points for each vegetation df.
     """
 
     # determine missing vegetation time points
     missing_points = {}
-    
+
     # loop over collections
     for col_name, veg_df in dfs.items():
 
         #  if vegetation data
-        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
-            
+        if "COPERNICUS/S2" in col_name or "LANDSAT" in col_name:
+
             # get the start of the vegetation time series
             veg_start_date = veg_df.dropna().index[0]
 
@@ -625,14 +625,16 @@ def get_missing_time_points(dfs):
             veg_df = veg_df.loc[veg_start_date:]
 
             # store missing time points
-            missing_points[col_name] = veg_df.drop_duplicates(subset='date', keep=False).date.values
+            missing_points[col_name] = veg_df.drop_duplicates(
+                subset="date", keep=False
+            ).date.values
 
     return missing_points
 
 
-def detrend_df(df, period='MS'):
+def detrend_df(df, period="MS"):
     """
-    Remove seasonality from a DataFrame containing the time series 
+    Remove seasonality from a DataFrame containing the time series
     for a single sub-image.
 
     Parameters
@@ -650,7 +652,7 @@ def detrend_df(df, period='MS'):
     """
 
     # infer lag from period
-    if period == 'MS':
+    if period == "MS":
         lag = 12
     else:
         raise ValueError('Periods other than "MS" are not well supported yet!')
@@ -659,8 +661,11 @@ def detrend_df(df, period='MS'):
     df_out = pd.DataFrame()
 
     # resample time series (in case not done already)
-    columns = [c for c in df.columns if any([s in c 
-                for s in ['offset50', 'precipitation', 'temperature', 'ndvi']])]
+    columns = [
+        c
+        for c in df.columns
+        if any([s in c for s in ["offset50", "precipitation", "temperature", "ndvi"]])
+    ]
 
     df_out = resample_dataframe(df, columns, period=period)
 
@@ -670,15 +675,15 @@ def detrend_df(df, period='MS'):
 
     # need to keep this info for smoothing later
     try:
-        df_out['latitude'] = df['latitude'].iloc[0]
-        df_out['longitude'] = df['longitude'].iloc[0]
+        df_out["latitude"] = df["latitude"].iloc[0]
+        df_out["longitude"] = df["longitude"].iloc[0]
     except:
         pass
 
     return df_out
 
 
-def detrend_data(dfs, period='MS'):
+def detrend_data(dfs, period="MS"):
     """
     Loop over each sub image time series DataFrames and remove
     time series seasonality by subtracting the previous year.
@@ -699,20 +704,20 @@ def detrend_data(dfs, period='MS'):
         seasonality removed.
 
     """
-    
+
     # don't overwrite input
     dfs = dfs.copy()
 
     for col_name, df in dfs.items():
 
         #  if vegetation data
-        if 'COPERNICUS/S2' in col_name or 'LANDSAT' in col_name:
+        if "COPERNICUS/S2" in col_name or "LANDSAT" in col_name:
 
             # group by (lat, long)
             d = {}
-            for name, group in df.groupby(['latitude', 'longitude'], as_index=False):
+            for name, group in df.groupby(["latitude", "longitude"], as_index=False):
                 d[name] = group
-            
+
             # for each sub-image
             for key, df_ in d.items():
                 d[key] = detrend_df(df_, period)
@@ -735,18 +740,28 @@ def detrend_data(dfs, period='MS'):
     return dfs
 
 
-def preprocess_data(input_dir, drop_outliers=True, fill_missing=True, 
-                    resample=True, smoothing=True, detrend=True, 
-                    n_smooth=4, period='MS'):
+def preprocess_data(
+        input_json,
+        output_basedir,
+        drop_outliers=True,
+        fill_missing=True,
+        resample=True,
+        smoothing=True,
+        detrend=True,
+        n_smooth=4,
+        period="MS",
+):
     """
     This function reads and process data downloaded by GEE. Processing
-    can be configured by the function arguments. Processed data is 
+    can be configured by the function arguments. Processed data is
     written to csv.
 
     Parameters
     ----------
-    input_dir : str
-        Path to the directory created during a GEE download job.
+    input_json : dict
+       JSON data created during a GEE download job.
+    output_basedir : str,
+       Directory where time-series csv will be put.
     drop_outliers : bool, optional
         Remove outliers in sub-image time series.
     fill_missing : bool, optional
@@ -759,59 +774,52 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
         Remove seasonal component by subtracting previous year.
     n_smooth : int, optional
         Number of time points to use for the smoothing window size.
-    period : str, optional 
+    period : str, optional
         Pandas DateOffset string describing sampling frequency.
 
     Returns
     ----------
     str
-        Path to the csv file containing processed data.   
+        Path to the csv file containing processed data.
     """
 
     # put output plots in the results dir
-    output_dir = os.path.join(input_dir, 'processed_data')
+    output_dir = os.path.join(output_basedir, "processed_data")
 
-    # check input file exists
-    json_summary_path = os.path.join(input_dir, 'results_summary.json')
-    if not os.path.exists(json_summary_path):
-        raise FileNotFoundError(f'Could not find file "{os.path.abspath(json_summary_path)}".')
 
     # make output subdir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    # read all json files in the directory and produce a dataframe
-    print(f'Reading results from "{os.path.abspath(json_summary_path)}"...')
-
     # read json file to dataframes
-    dfs = read_json_to_dataframes(json_summary_path)
+    dfs = read_json_to_dataframes(input_json)
 
     # keep track of time points where data is missing (by default pandas
     # groupby operations, which is used haveily in this module, drop NaNs)
     missing = get_missing_time_points(dfs)
-    missing_json = {k : list(v) for k, v in missing.items()}
-    write_to_json(os.path.join(output_dir, 'missing_dates.json'), missing_json)
+    missing_json = {k: list(v) for k, v in missing.items()}
+    write_to_json(os.path.join(output_dir, "missing_dates.json"), missing_json)
 
-    print('\nPreprocessing data...')
-    print('-'*21)
+    print("\nPreprocessing data...")
+    print("-" * 21)
 
     # remove outliers from the time series
     if drop_outliers:
-        print('- Dropping vegetation outliers...')
+        print("- Dropping vegetation outliers...")
         dfs = drop_veg_outliers(dfs, sigmas=3)
 
     # use the same month in different years to fill gaps
     if fill_missing:
-        print('- Fill gaps in sub-image time series...')
+        print("- Fill gaps in sub-image time series...")
         dfs = fill_veg_gaps(dfs, missing)
 
     # LOESS smoothing on sub-image time series
     if smoothing:
-        print('- Smoothing vegetation time series...')
+        print("- Smoothing vegetation time series...")
         dfs = smooth_veg_data(dfs, n=n_smooth)
 
     # store feature vectors before averaging over sub-images
-    print('- Saving feature vectors...')
+    print("- Saving feature vectors...")
     store_feature_vectors(dfs, output_dir)
 
     # average over sub-images
@@ -819,32 +827,35 @@ def preprocess_data(input_dir, drop_outliers=True, fill_missing=True,
 
     # resample the averaged time series using linear interpolation
     if resample:
-        print('- Resampling time series...')
-        columns = [c for c in ts_df.columns if any([s in c 
-                     for s in ['offset50', 'precipitation', 'temperature']])]
+        print("- Resampling time series...")
+        columns = [
+            c
+            for c in ts_df.columns
+            if any([s in c for s in ["offset50", "precipitation", "temperature"]])
+        ]
         ts_df = resample_dataframe(ts_df, columns, period=period)
 
-    # save as csv
-    ts_filename = os.path.join(output_dir, 'time_series.csv')
+    #  save as csv
+    ts_filename = os.path.join(output_dir, "time_series.csv")
     print(f'- Saving time series to "{ts_filename}".')
     ts_df.to_csv(ts_filename, index=False)
 
     # additionally save resampled & detrended time series
-    if detrend: 
-        print('- Detrending time series...')
+    if detrend:
+        print("- Detrending time series...")
 
         # remove seasonality from sub-image time series
         dfs_detrended = detrend_data(dfs, period=period)
 
-        print('- Smoothing vegetation time series after removing seasonlity...')
+        print("- Smoothing vegetation time series after removing seasonality...")
         dfs_detrended_smooth = smooth_veg_data(dfs_detrended, n=12)
 
         # combine over sub-images
         ts_df_detrended_smooth = make_time_series(dfs_detrended_smooth)
 
         # save output
-        ts_filename_detrended = os.path.join(output_dir, 'time_series_detrended.csv')
+        ts_filename_detrended = os.path.join(output_dir, "time_series_detrended.csv")
         print(f'- Saving detrended time series to "{ts_filename_detrended}".')
         ts_df_detrended_smooth.to_csv(ts_filename_detrended, index=False)
 
-    return output_dir, dfs # for now return `dfs` for spatial plot compatibility 
+    return output_dir, dfs  #  for now return `dfs` for spatial plot compatibility
