@@ -26,11 +26,11 @@ metadata_dict = {
 test_api_credentials = {
     "base_url": "https://sandbox.zenodo.org/api/",
     "api_token": <api_token>,
-    "deposition_id": <deposition_id>
+    "deposition_id": None
 }
 
 prod_api_credentials = {
     "base_url": "https://zenodo.org/api/",
     "api_token":  <api_token>
-    "deposition_id": <deposition_id>,
+    "deposition_id": None
 }

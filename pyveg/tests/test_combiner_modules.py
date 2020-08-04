@@ -37,4 +37,5 @@ def test_combine():
         assert coll in results.keys()
         assert isinstance(results[coll], dict)
         assert "time-series-data" in results[coll].keys()
+    assert "metadata" in results.keys()
     shutil.rmtree(output_dir)
