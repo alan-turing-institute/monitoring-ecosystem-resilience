@@ -11,6 +11,7 @@ import os
 
 import numpy as np
 import pandas as pd
+import ewstools
 
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
@@ -859,3 +860,83 @@ def preprocess_data(
         ts_df_detrended_smooth.to_csv(ts_filename_detrended, index=False)
 
     return output_dir, dfs  #  for now return `dfs` for spatial plot compatibility
+
+
+def save_ts_summary_stats(ts_dirname, output_dir):
+        """
+        Given a time series DataFrames (constructed with `make_time_series`),
+        give summary statistics of all the avalaible time series.
+
+        Parameters
+        ----------
+        df : DataFrame
+              Time series DataFrame.
+
+        output_dir : str
+            Directory to save the plots in.
+
+        """
+
+        # read processed data
+
+        # get filenames of preprocessed data time series
+        ts_filenames = [f for f in os.listdir(ts_dirname) if "time_series" in f]
+
+        ts_df_detrended = pd.DataFrame()
+        for filename in ts_filenames:
+            if "detrended" in filename:
+                ts_df_detrended = pd.read_csv(os.path.join(ts_dirname,filename))
+            else:
+                ts_df = pd.read_csv(os.path.join(ts_dirname,filename))
+
+
+        def get_ts_summary_stats(series):
+
+            stats_dict = {}
+
+            stats_dict['min'] = series.min()
+            stats_dict['max'] = series.max()
+            stats_dict['mean'] = series.mean()
+            stats_dict['median'] = series.median()
+
+            return stats_dict
+
+        column_names = [c for c in ts_df.columns if 'offset50_mean' in c or
+                        'ndvi_mean' in c or
+                        'total_precipitation' in c]
+
+        ts_dict_list = []
+        for column in column_names:
+
+            print(f'Calculating summary stats for "{column}"...')
+
+            column_dict = get_ts_summary_stats(ts_df[column])
+            column_dict['ts_id'] = column
+
+            # EWS to compute (let's do all of them)
+
+            if ts_df_detrended.empty==False:
+                ews_dic_veg = ewstools.core.ews_compute(ts_df_detrended[column].dropna(),
+                                                        roll_window=0.99 ,
+                                                        smooth='Gaussian',
+                                                        lag_times=[1],
+                                                        ews= ["var", "ac"],
+                                                        band_width=6)
+
+                EWSmetrics_df = ews_dic_veg['EWS metrics']
+                column_dict["Lag-1 AC"] = EWSmetrics_df["Lag-1 AC"].iloc[-1]
+                column_dict["Standard deviation"] = EWSmetrics_df["Variance"].iloc[-1]
+
+
+            ts_dict_list.append(column_dict)
+
+        ts_df_summary = pd.DataFrame(ts_dict_list)
+
+        ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats.csv"))
+
+
+
+
+
+
+
