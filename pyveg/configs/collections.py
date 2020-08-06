@@ -11,7 +11,7 @@ data_collections = {
         "cloudy_pix_flag": "CLOUDY_PIXEL_PERCENTAGE",
         "min_date": "2015-01-01",
         "max_date": time.strftime("%Y-%m-%d"),
-        "time_per_point": "1w",
+        "time_per_point": "7d",
     },
     "Landsat8": {
         "collection_name": "LANDSAT/LC08/C01/T1_SR",
