@@ -36,13 +36,14 @@ modules_to_use = {
     "combine": ["VegAndWeatherJsonCombiner"],
 }
 
-# The following demonstrates how parameters can be set for individual Modules:
+# The following demonstrates how parameters can be set for individual Modules or Sequences:
 special_config = {
-    "VegetationImageProcessor": {"run_type": "local"},
-    "NetworkCentralityCalculator": {
+    "Sentinel2": {"time_per_point": "1m"},             # this is a whole Sequence
+    "VegetationImageProcessor": {"run_type": "local"}, # this is a Module
+    "NetworkCentralityCalculator": {                   # also a Module
         "n_sub_images": 10,
         "n_threads": 4,
         "run_type": "local",
     },
-    "NDVICalculator": {"run_type": "local"},
+    "NDVICalculator": {"run_type": "local"},           # and another Module
 }
