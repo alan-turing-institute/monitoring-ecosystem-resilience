@@ -869,8 +869,8 @@ def save_ts_summary_stats(ts_dirname, output_dir):
 
         Parameters
         ----------
-        df : DataFrame
-              Time series DataFrame.
+        ts_dirname : str
+              Directory where the time series are saved.
 
         output_dir : str
             Directory to save the plots in.
@@ -882,6 +882,7 @@ def save_ts_summary_stats(ts_dirname, output_dir):
         # get filenames of preprocessed data time series
         ts_filenames = [f for f in os.listdir(ts_dirname) if "time_series" in f]
 
+        # we should get one seasonal time series and a detrended one
         ts_df_detrended = pd.DataFrame()
         for filename in ts_filenames:
             if "detrended" in filename:
@@ -891,7 +892,7 @@ def save_ts_summary_stats(ts_dirname, output_dir):
 
 
         def get_ts_summary_stats(series):
-
+            ''' Function that gets the summary stats of the time series and returns a dictionary'''
             stats_dict = {}
 
             stats_dict['min'] = series.min()
@@ -901,10 +902,12 @@ def save_ts_summary_stats(ts_dirname, output_dir):
 
             return stats_dict
 
+        # only look at relevant time series (offset50, ndvi and precipitation)
         column_names = [c for c in ts_df.columns if 'offset50_mean' in c or
                         'ndvi_mean' in c or
                         'total_precipitation' in c]
 
+        # calculate summary statistics for each relevant time series
         ts_dict_list = []
         for column in column_names:
 
@@ -913,8 +916,7 @@ def save_ts_summary_stats(ts_dirname, output_dir):
             column_dict = get_ts_summary_stats(ts_df[column])
             column_dict['ts_id'] = column
 
-            # EWS to compute (let's do all of them)
-
+            # We want the AR1 and Standard deviation of the detreded timeseries for the summary stats
             if ts_df_detrended.empty==False:
                 ews_dic_veg = ewstools.core.ews_compute(ts_df_detrended[column].dropna(),
                                                         roll_window=0.99 ,
@@ -930,8 +932,8 @@ def save_ts_summary_stats(ts_dirname, output_dir):
 
             ts_dict_list.append(column_dict)
 
+        # turn the list of dictionary to dataframe and save it
         ts_df_summary = pd.DataFrame(ts_dict_list)
-
         ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats.csv"))
 
 
