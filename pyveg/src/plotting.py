@@ -28,7 +28,7 @@ from pyveg.src.data_analysis_utils import (
 DPI = 150
 
 
-def plot_time_series(df, output_dir, filename_suffix =''):
+def plot_time_series(df, output_dir):
     """
     Given a time series DataFrames (constructed with `make_time_series`),
     plot the vegetitation and precipitation time series.
@@ -64,8 +64,6 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         ax.tick_params(axis='y', labelcolor=color)
         ax.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
 
-        # plot unsmoothed vegetation means
-        #ax.plot(veg_xs, veg_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
 
         # plot smoothed vegetation means and std
         ax.plot(veg_xs, veg_means, marker='o', markersize=7,
@@ -75,12 +73,8 @@ def plot_time_series(df, output_dir, filename_suffix =''):
         ax.fill_between(veg_xs, veg_means - veg_std, veg_means + veg_std,
                         facecolor='green', alpha=0.1, label='Std Dev')
 
-        # add smoothed time series if availible
-        #if any([smoothing_option in c and veg_prefix in c for c in veg_df.columns]):
-        #
         #    # get smoothed mean, std
         veg_means_smooth = veg_df[veg_prefix+'_offset50_'+smoothing_option+'_mean']
-        veg_stds_smooth = veg_df[veg_prefix+'_offset50_'+smoothing_option+'_std']
 
         # plot vegetation legend
         plt.legend(loc='upper left')
@@ -107,8 +101,7 @@ def plot_time_series(df, output_dir, filename_suffix =''):
             # add veg-precip correlation
             max_corr_smooth, max_corr = get_max_lagged_cor(os.path.dirname(output_dir), veg_prefix)
             textstr = f'$r_{{t-{max_corr[1]}}}={max_corr[0]:.2f}$'
-            #textstr += f'($ unsmoothed)'
-            
+
             # old correlation just calculates the 0-lag correlation
             #raw_corr = veg_means.corr(precip_ys)
             #smoothed_corr = veg_means_smooth.corr(precip_ys)
@@ -126,7 +119,6 @@ def plot_time_series(df, output_dir, filename_suffix =''):
 
             # get vegetation y values
             veg_means_b = veg_df_b[veg_prefix_b+'_offset50_mean']
-            #veg_std_b = veg_df[veg_prefix_b+'_offset50_std']
             veg_means_smooth_b = veg_df_b[veg_prefix_b+'_offset50_smooth_mean']
             veg_stds_smooth_b = veg_df_b[veg_prefix_b+'_offset50_smooth_std']
 
@@ -163,30 +155,6 @@ def plot_time_series(df, output_dir, filename_suffix =''):
 
         # add autoregression info
         veg_means.index = veg_df.date
-        #unsmoothed_ar1, unsmoothed_ar1_se = get_AR1_parameter_estimate(veg_means)
-        #if any(['smooth' in c and veg_prefix in c for c in veg_df.columns]):
-        #    veg_means_smooth.index = veg_df.date
-        #    smoothed_ar1, smoothed_ar1_se = get_AR1_parameter_estimate(veg_means_smooth)
-        #else:
-        #smoothed_ar1, smoothed_ar1_se = np.NaN, np.NaN
-        #ar1_dict = {}
-        #ar1_dict['AR1'] = {'unsmoothed': {'param': unsmoothed_ar1, 'se': unsmoothed_ar1_se}, 'smoothed': {'param': smoothed_ar1, 'se': smoothed_ar1_se}}
-        #write_to_json(os.path.join(output_dir, veg_prefix+'_stats.json'), ar1_dict)
-        #textstr = f'AR$(1)={smoothed_ar1:.2f} \pm {smoothed_ar1_se:.2f}$ (${unsmoothed_ar1:.2f} \pm {unsmoothed_ar1_se:.2f}$ unsmoothed)'
-        #ax.text(0.55, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
-
-        # add Kendall tau
-        #tau, p = get_kendell_tau(veg_means)
-        #if any(['smooth' in c and veg_prefix in c for c in veg_df.columns]):
-        #    tau_smooth, p_smooth = get_kendell_tau(veg_means_smooth)
-        #else:
-        #tau_smooth, p_smooth = np.NaN, np.NaN
-
-        #kendall_tau_dict = {}
-        #kendall_tau_dict['Kendall_tau'] = {'unsmoothed': {'tau': tau, 'p': p}, 'smoothed': {'tau': tau_smooth, 'p': p_smooth}}
-        #write_to_json(os.path.join(output_dir, veg_prefix+'_stats.json'), kendall_tau_dict)
-        #textstr = f'$\\tau,~p$-$\\mathrm{{value}}={tau_smooth:.2f}$, ${p:.2f}$ (${tau:.2f}$, ${p_smooth:.2f}$ unsmoothed)'
-        #ax.text(0.13, 0.85, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
 
         # layout
         sns.set_style('white')
