@@ -530,6 +530,7 @@ class VegetationImageProcessor(ProcessorModule):
             sub_image, sub_coords = sub
             output_filename = f"sub{i}_"
             output_filename += "{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+            output_filename += "_{}".format(date_string)
             output_filename += "_{}".format(image_type)
             output_filename += ".png"
             self.save_image(sub_image, output_location, output_filename, verbose=False)
