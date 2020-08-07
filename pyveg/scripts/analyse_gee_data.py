@@ -16,6 +16,7 @@ import pandas as pd
 import ewstools
 
 from pyveg.src.analysis_preprocessing import preprocess_data
+from pyveg.src.analysis_preprocessing import save_ts_summary_stats
 
 from pyveg.src.data_analysis_utils import (
     create_lat_long_metric_figures,
@@ -266,6 +267,12 @@ def analyse_gee_data(input_location,
     # -----------------------------------
     # for each time series
     if do_time_series:
+
+        # put output plots in the results dir
+        input_dir_ts = os.path.join(output_dir, "processed_data")
+
+        save_ts_summary_stats(input_dir_ts, output_analysis_dir)
+
         for filename in ts_filenames:
 
             ts_file = os.path.join(ts_dirname, filename)
