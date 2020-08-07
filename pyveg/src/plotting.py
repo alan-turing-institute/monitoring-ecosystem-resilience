@@ -298,7 +298,7 @@ def plot_time_series(df, output_dir, filename_suffix=""):
         # save the plot
         output_filename = veg_prefix + "-time-series" + filename_suffix + ".png"
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
-        plt.close(fig)
+        #plt.close(fig)
 
     # make output dir if necessary
     if not os.path.exists(output_dir):
@@ -479,7 +479,7 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=""):
             series.name + "-partial-autocorrelation-function" + filename_suffix + ".png"
         )
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
-        plt.close(fig)
+        #plt.close(fig)
 
     # make plots for selected columns
     for column in df.columns:
@@ -554,7 +554,7 @@ def plot_cross_correlations(df, output_dir):
         # save the plot
         output_filename = veg_ys.name + "-scatterplot-matrix.png"
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
-        plt.close(fig)
+        #plt.close(fig)
 
         # write out correlations as a function of lag
         correlations_dict = {veg_ys.name + "_lagged_correlation": correlations}
@@ -705,7 +705,7 @@ def plot_feature_vector(output_dir):
         output_filename = fv_filename.split("_")[0] + "-feature-vector-minmax.png"
         print(f'Plotting minmax feature vector "{os.path.abspath(output_filename)}"...')
         plt.savefig(os.path.join(fv_subdir, output_filename), dpi=DPI)
-        plt.close(fig)
+        #plt.close(fig)
 
 
 def plot_stl_decomposition(df, period, output_dir):
@@ -760,7 +760,7 @@ def plot_stl_decomposition(df, period, output_dir):
         # save plot
         filename = os.path.join(output_dir, column + "_STL_decomposition.png")
         plt.savefig(filename, dpi=DPI)
-        plt.close(fig)
+        #plt.close(fig)
 
         # undo rc changes
         plt.rc("figure", figsize=default_figsize)
