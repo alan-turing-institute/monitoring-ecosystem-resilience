@@ -164,7 +164,7 @@ def remove_container_name_from_blob_path(blob_path, container_name):
             container_name_found = True
     if len(blob_name_parts) == 0:
         return ""
-    return os.path.join(*blob_name_parts)
+    return "/".join(blob_name_parts)
 
 
 def delete_blob(blob_name, container_name, bbs=None):
