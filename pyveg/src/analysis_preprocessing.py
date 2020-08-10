@@ -42,34 +42,36 @@ def read_json_to_dataframes(data):
 
         rows_list = []
 
-        # loop over time series
-        for date, time_point in coll_results["time-series-data"].items():
+        if "time-series-data" in coll_results.keys():
 
-            # check we have data for this time point
-            if time_point is None or time_point == {} or time_point == []:
+            # loop over time series
+            for date, time_point in coll_results["time-series-data"].items():
 
-                # add Null row if data is missing at this time point
-                rows_list.append({"date": date})
+                # check we have data for this time point
+                if time_point is None or time_point == {} or time_point == []:
 
-            # if we are looking at veg data, loop over space points
-            elif isinstance(list(time_point)[0], dict):
-                for space_point in time_point:
-                    rows_list.append(space_point)
+                    # add Null row if data is missing at this time point
+                    rows_list.append({"date": date})
 
-            # otherwise, just add the row
-            else:
-                # the key of each object in the time series is the date, and data
-                # for this date should be the values. Here we just add the date
-                # as a value to enable us to add the whole row in one go later.
-                time_point["date"] = date
-                rows_list.append(time_point)
+                # if we are looking at veg data, loop over space points
+                elif isinstance(list(time_point)[0], dict):
+                    for space_point in time_point:
+                        rows_list.append(space_point)
 
-        # make a DataFrame and add it to the dict of DataFrames
-        df = pd.DataFrame(rows_list)
-        df = df.drop(columns=["slope", "offset", "mean", "std"], errors="ignore")
-        df = df.sort_values(by="date")
-        assert df.empty == False
-        dfs[collection_name] = df
+                # otherwise, just add the row
+                else:
+                    # the key of each object in the time series is the date, and data
+                    # for this date should be the values. Here we just add the date
+                    # as a value to enable us to add the whole row in one go later.
+                    time_point["date"] = date
+                    rows_list.append(time_point)
+
+            # make a DataFrame and add it to the dict of DataFrames
+            df = pd.DataFrame(rows_list)
+            df = df.drop(columns=["slope", "offset", "mean", "std"], errors="ignore")
+            df = df.sort_values(by="date")
+            assert df.empty == False
+            dfs[collection_name] = df
 
     return dfs
 
