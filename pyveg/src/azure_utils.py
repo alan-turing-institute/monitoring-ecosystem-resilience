@@ -45,6 +45,9 @@ def sanitize_container_name(orig_name):
         else:
             sanitized_name += character.lower()
             previous_character = character
+    if "\\" in sanitized_name:
+        sanitized_name = sanitized_name.replace("\\","/")
+
     return sanitized_name
 
 
