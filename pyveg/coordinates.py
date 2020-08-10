@@ -402,9 +402,95 @@ coordinate_store.loc['45'] = {
   'longitude': -103.92
 }
 
+## Test sites added by Josh:
+
+#Chad
+coordinate_store.loc['46'] = {
+  'continent' : 'Africa', 
+  'country': 'Chad', 
+  'type': 'Gaps', 
+  'latitude': 12, 
+  'longitude': 19.99
+}
+
+coordinate_store.loc['47'] = {
+  'continent' : 'Africa', 
+  'country': 'Chad', 
+  'type': 'Gaps', 
+  'latitude': 12.05, 
+  'longitude': 20.08
+}
+
+#Mali
+coordinate_store.loc['48'] = {
+  'continent' : 'Africa', 
+  'country': 'Mali', 
+  'type': 'Tiger bush', 
+  'latitude': 15.48, 
+  'longitude': -5.83
+}
+
+#Mauritania
+coordinate_store.loc['49'] = {
+  'continent' : 'Africa', 
+  'country': 'Mauritania', 
+  'type': 'Tiger bush', 
+  'latitude': 15.57, 
+  'longitude': -5.92
+}
 
 
+coordinate_store.loc['50'] = {
+  'continent' : 'Africa', 
+  'country': 'Mauritania', 
+  'type': 'Gaps', 
+  'latitude': 15.71, 
+  'longitude': -12.99
+}
+ 
+coordinate_store.loc['51'] = {
+  'continent' : 'Africa', 
+  'country': 'Mauritania', 
+  'type': 'Gaps', 
+  'latitude': 15.58, 
+  'longitude': -13
+}
+
+#Nigeria
+ 
+coordinate_store.loc['52'] = {
+  'continent' : 'Africa', 
+  'country': 'Nigeria', 
+  'type': 'Tiger Bush + Gaps', 
+  'latitude': 12.58, 
+  'longitude': 3.75
+}
+ 
+#Niger 
+coordinate_store.loc['53'] = {
+  'continent' : 'Africa', 
+  'country': 'Niger', 
+  'type': 'Labyrinths', 
+  'latitude': 12.7, 
+  'longitude': 2.63
+}
+ 
+coordinate_store.loc['54'] = {
+  'continent' : 'Africa', 
+  'country': 'Niger', 
+  'type': 'Labyrinths', 
+  'latitude': 12.54, 
+  'longitude': 2.26
+}
+
+coordinate_store.loc['55'] = {
+  'continent' : 'Africa', 
+  'country': 'Niger', 
+  'type': 'Labyrinths', 
+  'latitude': 13.12, 
+  'longitude': 2.17
+}
 
 # hardcode a check to make sure we don't overwrite any rows
 
-assert( len(coordinate_store) == 46 )
+assert( len(coordinate_store) == 56 )
