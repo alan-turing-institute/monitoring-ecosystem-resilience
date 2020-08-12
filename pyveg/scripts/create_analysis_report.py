@@ -48,11 +48,12 @@ def create_markdown_pdf_report(path, collection_name, do_timeseries):
         mdFile = MdUtils(file_name=output_path,
                          title='Results for ' + collection)
 
+    count = 0
+
     if do_timeseries:
         # Time series figures
         mdFile.new_header(level=1, title='Time series')
         ts_path = os.path.join(path,'analysis','time-series')
-        count = 0
         count = count + 1
         mdFile.new_line(mdFile.new_inline_image(text='Time series Offset50', path=os.path.join(ts_path,satellite_suffix+'-time-series_smooth.png')))
         #mdFile.new_paragraph('Figure '+str(count)+': '+'Time series Offset50')
