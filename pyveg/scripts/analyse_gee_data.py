@@ -264,7 +264,14 @@ def analyse_gee_data(input_location,
     plot_feature_vector(output_analysis_dir)
 
     # time-series analysis and plotting
+    # check first if data is a time series
+    ts_df = pd.read_csv(os.path.join(ts_dirname,ts_filenames[0]))
+    if ts_df.shape[0]<=1:
+        print ('WARNING: Only one date point, not possible to do a time series analysis')
+        do_time_series = False
     # -----------------------------------
+
+
     # for each time series
     if do_time_series:
 
@@ -323,7 +330,7 @@ def analyse_gee_data(input_location,
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
 
             try:
-                create_markdown_pdf_report(output_dir, collection_name)
+                create_markdown_pdf_report(output_dir, collection_name,do_time_series)
             except Exception as e:
                 print ("Warning: A problem was found, the report was not created. There might be missing figures needed "
                               "for the report or a problem with the pandoc installation.")
