@@ -843,8 +843,8 @@ def preprocess_data(
     print(f'- Saving time series to "{ts_filename}".')
     ts_df.to_csv(ts_filename, index=False)
 
-    # additionally save resampled & detrended time series
-    if detrend:
+    # additionally save resampled & detrended time series (only if time series has more than one date)
+    if detrend and ts_df.shape[0]>1:
         print("- Detrending time series...")
 
         # remove seasonality from sub-image time series
