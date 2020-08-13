@@ -21,22 +21,26 @@ try:
 except:
     print("Unable to import azure_utils")
 
-def read_results_summary(input_location, input_location_type):
+
+def read_results_summary(input_location,
+                         input_filename="results_summary.json",
+                         input_location_type="local"):
     """
     Read the results_summary.json, either from local storage or from Azure blob storage.
 
     Parameters
     ==========
     input_location: str, directory or container with results_summary.json in
+    input_filename: str, name of json file, default is "results_summary.json"
     input_location_type: str: 'local' or 'azure'
 
     Returns
     =======
     json_data: dict, the contents of results_summary.json
     """
-    json_name = "results_summary.json"
+
     if input_location_type == "local":
-        json_filepath = os.path.join(input_location, json_name)
+        json_filepath = os.path.join(input_location, input_filename)
         if not os.path.exists(json_filepath):
             raise FileNotFoundError("Unable to find {}".format(json_filepath))
         json_data = json.load(open(json_filepath))
@@ -49,49 +53,11 @@ def read_results_summary(input_location, input_location_type):
             if "combine" in subdir:
                 files = azure_utils.list_directory(input_location+"/"+subdir,
                                                    input_location)
-                if json_name in files:
-                    return azure_utils.read_json(input_location+"/"+subdir+"/"+json_name,
+                if input_filename in files:
+                    return azure_utils.read_json(input_location+"/"+subdir+"/"+input_filename,
                                                  input_location)
                 else:
-                    raise RuntimeError("No {} found in {}".format(json_name, subdir))
-        return {}
-    else:
-        raise RuntimeError("input_location_type needs to be either 'local' or 'azure'")
-
-
-def read_results_summary(input_location, input_location_type):
-    """
-    Read the results_summary.json, either from local storage or from Azure blob storage.
-
-    Parameters
-    ==========
-    input_location: str, directory or container with results_summary.json in
-    input_location_type: str: 'local' or 'azure'
-
-    Returns
-    =======
-    json_data: dict, the contents of results_summary.json
-    """
-    json_name = "results_summary.json"
-    if input_location_type == "local":
-        json_filepath = os.path.join(input_location, json_name)
-        if not os.path.exists(json_filepath):
-            raise FileNotFoundError("Unable to find {}".format(json_filepath))
-        json_data = json.load(open(json_filepath))
-        return json_data
-    elif input_location_type == "azure":
-        subdirs = azure_utils.list_directory(input_location, input_location)
-        print("Found subdirs {}".format(subdirs))
-        for subdir in subdirs:
-            print("looking at subdir {}".format(subdir))
-            if "combine" in subdir:
-                files = azure_utils.list_directory(input_location+"/"+subdir,
-                                                   input_location)
-                if json_name in files:
-                    return azure_utils.read_json(input_location+"/"+subdir+"/"+json_name,
-                                                 input_location)
-                else:
-                    raise RuntimeError("No {} found in {}".format(json_name, subdir))
+                    raise RuntimeError("No {} found in {}".format(input_filename, subdir))
         return {}
     else:
         raise RuntimeError("input_location_type needs to be either 'local' or 'azure'")
@@ -119,8 +85,65 @@ def read_label_json(input_label_json):
         return []
     df = pd.DataFrame.from_records(json.load(open(input_label_json)))
     top_labels = df.groupby(["longitude","latitude"]).category.max().to_dict()
-    coords_to_mask = [k for k,v in top_labels.values() if v=="Not patterned vegetation"]
+    coords_to_mask = [k for k,v in top_labels.items() if v=="Not patterned vegetation"]
     return coords_to_mask
+
+
+def read_json_to_dataframes(data, mask_list=None):
+    """
+    convert json data to a dict of DataFrame.
+    Parameters
+    ----------
+    data : dict, json data output from run_pyveg_pipeline
+    mask_list: list of tuples of floats.  Coordinates (long,lat) to be masked out.
+
+    Returns
+    ----------
+    dict
+        A dict of the saved results in a DataFrame format. Keys are
+        names of collections and the values are DataFrame of results
+        for that collection.
+    """
+
+    # start with empty output dataframes
+    dfs = {}
+
+    # loop over collections and make a DataFrame from the results of each
+    for collection_name, coll_results in data.items():
+
+        rows_list = []
+
+        # loop over time series
+        for date, time_point in coll_results["time-series-data"].items():
+
+            # check we have data for this time point
+            if time_point is None or time_point == {} or time_point == []:
+
+                # add Null row if data is missing at this time point
+                rows_list.append({"date": date})
+
+            # if we are looking at veg data, loop over space points
+            elif isinstance(list(time_point)[0], dict):
+                for space_point in time_point:
+
+                    rows_list.append(space_point)
+
+            # otherwise, just add the row
+            else:
+                # the key of each object in the time series is the date, and data
+                # for this date should be the values. Here we just add the date
+                # as a value to enable us to add the whole row in one go later.
+                time_point["date"] = date
+                rows_list.append(time_point)
+
+        # make a DataFrame and add it to the dict of DataFrames
+        df = pd.DataFrame(rows_list)
+        df = df.drop(columns=["slope", "offset", "mean", "std"], errors="ignore")
+        df = df.sort_values(by="date")
+        assert df.empty == False
+        dfs[collection_name] = df
+
+    return dfs
 
 
 def make_time_series(dfs):
@@ -847,8 +870,15 @@ def preprocess_data(
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    # read json file to dataframes
-    dfs = read_json_to_dataframes(input_json, input_label_json)
+    # if we're given a json file from ImageLabeller output to mask out non-patterned
+    # coordinates, read it here
+    if input_label_json:
+        mask_list = read_label_json(input_label_json)
+    else:
+        mask_list=None
+
+    # read dict from json file to dataframes
+    dfs = read_json_to_dataframes(input_json, mask_list)
 
     # keep track of time points where data is missing (by default pandas
     # groupby operations, which is used haveily in this module, drop NaNs)
