@@ -42,7 +42,9 @@ def get_summary_json(container, json_dir):
         if b.endswith("combine"):
             json_blob_dir = b
     json_blob_file = list_directory(json_blob_dir, container)[0]
-    retrieve_blob(os.path.join(json_blob_dir, json_blob_file), container, json_dir)
+    blob_path = "/".join([json_blob_dir, json_blob_file])
+    print("Will retrieve blob {}".format(blob_path))
+    retrieve_blob(blob_path, container, json_dir)
 
 
 def get_rgb(container, rgb_dir):
