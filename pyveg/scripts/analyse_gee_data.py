@@ -279,7 +279,7 @@ def analyse_gee_data(input_location,
         # put output plots in the results dir
         input_dir_ts = os.path.join(output_dir, "processed_data")
 
-        save_ts_summary_stats(input_dir_ts, output_analysis_dir)
+        save_ts_summary_stats(input_dir_ts, output_analysis_dir,input_json['metadata'])
 
         for filename in ts_filenames:
 
