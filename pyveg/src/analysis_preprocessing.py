@@ -654,7 +654,7 @@ def detrend_df(df, period="MS"):
         Input with seasonality removed from time series columns.
     """
 
-    # infer lag from period
+    # infer lag from period, we need at least 2 years for diferenciation to work
     if period == "MS":
         lag = 12
     else:
@@ -843,8 +843,9 @@ def preprocess_data(
     print(f'- Saving time series to "{ts_filename}".')
     ts_df.to_csv(ts_filename, index=False)
 
-    # additionally save resampled & detrended time series (only if time series has more than one date)
-    if detrend and ts_df.shape[0]>1:
+    # additionally save resampled & detrended time series
+    # this detrending option (one year seasonality substraction) only works in monthly data that has at least 2 years of data
+    if detrend and ts_df.shape[0]>24 and period=='MS':
         print("- Detrending time series...")
 
         # remove seasonality from sub-image time series
