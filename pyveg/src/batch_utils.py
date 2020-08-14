@@ -252,7 +252,8 @@ def check_task_failed_dependencies(task, job_id, batch_service_client=None):
 
     Returns
     =======
-    True if the job depends on other tasks that have failed.
+    True if the job depends on other tasks that have failed (or those
+            tasks depend on failed tasks)
     False otherwise
     """
     if not batch_service_client:
@@ -270,6 +271,14 @@ def check_task_failed_dependencies(task, job_id, batch_service_client=None):
            dep_task.execution_info.exit_code != 0:
             # return True if any of the dependencies failed
             return True
+        # use this a recursive function
+        dep_dep_failed = check_task_failed_dependencies(dep_task,
+                                                        job_id,
+                                                        batch_service_client)
+        if dep_dep_failed:
+            return True
+
+    # got all the way through dependency tree with no failues - return False
     return False
 
 
