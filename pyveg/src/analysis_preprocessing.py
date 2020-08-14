@@ -935,8 +935,8 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
                                                         band_width=6)
 
                 EWSmetrics_df = ews_dic_veg['EWS metrics']
-                column_dict["Lag-1 AC"] = EWSmetrics_df["Lag-1 AC"].iloc[-1]
-                column_dict["Variance"] = EWSmetrics_df["Variance"].iloc[-1]
+                column_dict["Lag-1 AC (0.99 rolling window)"] = EWSmetrics_df["Lag-1 AC"].iloc[-1]
+                column_dict["Variance (0.99 rolling window)"] = EWSmetrics_df["Variance"].iloc[-1]
 
                 ews_dic_veg_50 = ewstools.core.ews_compute(ts_df_detrended[column].dropna(),
                                                         roll_window=0.5,
