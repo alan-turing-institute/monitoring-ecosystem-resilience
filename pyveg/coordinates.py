@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Store all coordaintes in one place.
+Store all coordinates in one place.
 
 To chose a location for download, copy the location id into the relevant
 line in `config.py`
@@ -402,7 +402,6 @@ coordinate_store.loc['45'] = {
   'longitude': -103.92
 }
 
-## Test sites added by Josh:
 
 #Chad
 coordinate_store.loc['46'] = {
@@ -439,16 +438,8 @@ coordinate_store.loc['49'] = {
   'longitude': -5.92
 }
 
-
-coordinate_store.loc['50'] = {
-  'continent' : 'Africa', 
-  'country': 'Mauritania', 
-  'type': 'Gaps', 
-  'latitude': 15.71, 
-  'longitude': -12.99
-}
  
-coordinate_store.loc['51'] = {
+coordinate_store.loc['50'] = {
   'continent' : 'Africa', 
   'country': 'Mauritania', 
   'type': 'Gaps', 
@@ -458,7 +449,7 @@ coordinate_store.loc['51'] = {
 
 #Nigeria
  
-coordinate_store.loc['52'] = {
+coordinate_store.loc['51'] = {
   'continent' : 'Africa', 
   'country': 'Nigeria', 
   'type': 'Tiger Bush + Gaps', 
@@ -467,7 +458,7 @@ coordinate_store.loc['52'] = {
 }
  
 #Niger 
-coordinate_store.loc['53'] = {
+coordinate_store.loc['52'] = {
   'continent' : 'Africa', 
   'country': 'Niger', 
   'type': 'Labyrinths', 
@@ -475,7 +466,7 @@ coordinate_store.loc['53'] = {
   'longitude': 2.63
 }
  
-coordinate_store.loc['54'] = {
+coordinate_store.loc['53'] = {
   'continent' : 'Africa', 
   'country': 'Niger', 
   'type': 'Labyrinths', 
@@ -483,7 +474,7 @@ coordinate_store.loc['54'] = {
   'longitude': 2.26
 }
 
-coordinate_store.loc['55'] = {
+coordinate_store.loc['54'] = {
   'continent' : 'Africa', 
   'country': 'Niger', 
   'type': 'Labyrinths', 
@@ -493,4 +484,4 @@ coordinate_store.loc['55'] = {
 
 # hardcode a check to make sure we don't overwrite any rows
 
-assert( len(coordinate_store) == 56 )
+assert( len(coordinate_store) == 55 )
