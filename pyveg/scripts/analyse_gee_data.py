@@ -267,7 +267,7 @@ def analyse_gee_data(input_location,
     # check first if data is a time series
     ts_df = pd.read_csv(os.path.join(ts_dirname,ts_filenames[0]))
     size_ts = ts_df.shape[0]
-    if size_ts <= 3:
+    if size_ts <= 2:
         print ('WARNING: Less than 3 times points, not possible to do a time series analysis')
         do_time_series = False
     # -----------------------------------
