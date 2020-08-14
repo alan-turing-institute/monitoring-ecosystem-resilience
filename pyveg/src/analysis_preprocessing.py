@@ -865,7 +865,7 @@ def preprocess_data(
     return output_dir, dfs  #  for now return `dfs` for spatial plot compatibility
 
 
-def save_ts_summary_stats(ts_dirname, output_dir):
+def save_ts_summary_stats(ts_dirname, output_dir, metadata):
         """
         Given a time series DataFrames (constructed with `make_time_series`),
         give summary statistics of all the avalaible time series.
@@ -877,6 +877,9 @@ def save_ts_summary_stats(ts_dirname, output_dir):
 
         output_dir : str
             Directory to save the plots in.
+
+        metadata: dict
+            Dictionary with metadata from location
 
         """
 
@@ -902,6 +905,7 @@ def save_ts_summary_stats(ts_dirname, output_dir):
             stats_dict['max'] = series.max()
             stats_dict['mean'] = series.mean()
             stats_dict['median'] = series.median()
+            stats_dict['std'] = series.std()
 
             return stats_dict
 
@@ -918,6 +922,8 @@ def save_ts_summary_stats(ts_dirname, output_dir):
 
             column_dict = get_ts_summary_stats(ts_df[column])
             column_dict['ts_id'] = column
+            for key in metadata:
+                column_dict[key] = metadata[key]
 
             # We want the AR1 and Standard deviation of the detreded timeseries for the summary stats
             if ts_df_detrended.empty==False:
@@ -930,14 +936,32 @@ def save_ts_summary_stats(ts_dirname, output_dir):
 
                 EWSmetrics_df = ews_dic_veg['EWS metrics']
                 column_dict["Lag-1 AC"] = EWSmetrics_df["Lag-1 AC"].iloc[-1]
-                column_dict["Standard deviation"] = EWSmetrics_df["Variance"].iloc[-1]
+                column_dict["Variance"] = EWSmetrics_df["Variance"].iloc[-1]
+
+                ews_dic_veg_50 = ewstools.core.ews_compute(ts_df_detrended[column].dropna(),
+                                                        roll_window=0.5,
+                                                        smooth='Gaussian',
+                                                        lag_times=[1],
+                                                        ews=["var", "ac"],
+                                                        band_width=6)
+
+                Kendall_tau_50 = ews_dic_veg_50['Kendall tau']
+                column_dict["Kendall tau Lag-1 AC (0.5 rolling window)"] = Kendall_tau_50["Lag-1 AC"].iloc[-1]
+                column_dict["Kendall tau Variance (0.5 rolling window)"] = Kendall_tau_50["Variance"].iloc[-1]
+
 
 
             ts_dict_list.append(column_dict)
 
+
+        string_name = "_".join([str(metadata[key]) for key in metadata])
+        string_name = string_name.replace("/","_")
         # turn the list of dictionary to dataframe and save it
         ts_df_summary = pd.DataFrame(ts_dict_list)
+
+        #save both name specific and generic (might be useful inside the analysis later)
         ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats.csv"))
+        ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats_"+string_name+".csv"))
 
 
 
