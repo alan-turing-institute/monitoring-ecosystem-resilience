@@ -6,7 +6,7 @@ from pathlib import Path
 import pypandoc
 
 
-def create_markdown_pdf_report(path, collection_name, do_timeseries):
+def create_markdown_pdf_report(path, collection_name, do_timeseries, size_ts):
 
     # getting the right suffix from the satelite to analyse
     if collection_name == 'COPERNICUS/S2':
@@ -76,20 +76,21 @@ def create_markdown_pdf_report(path, collection_name, do_timeseries):
         #mdFile.new_paragraph('Figure '+str(count)+': '+'STL NDVI')
         mdFile.new_line('')
 
-        # Early warning figures
-        mdFile.new_header(level=1, title='Early warnings analysis')
-        ews_path = os.path.join(path, 'analysis', 'resiliance','deseasonalised','ewstools')
+        if size_ts > 12:
+            # Early warning figures
+            mdFile.new_header(level=1, title='Early warnings analysis')
+            ews_path = os.path.join(path, 'analysis', 'resiliance','deseasonalised','ewstools')
 
-        count = count +1
-        mdFile.new_line(mdFile.new_inline_image(text='EWS Offset50', path=os.path.join(ews_path, satellite_suffix+'-offset50-mean-ews.png')))
-        #mdFile.new_paragraph('Figure '+str(count)+': '+'EWS Offset50')
-        mdFile.new_line()
+            count = count +1
+            mdFile.new_line(mdFile.new_inline_image(text='EWS Offset50', path=os.path.join(ews_path, satellite_suffix+'-offset50-mean-ews.png')))
+            #mdFile.new_paragraph('Figure '+str(count)+': '+'EWS Offset50')
+            mdFile.new_line()
 
 
-        count = count +1
-        mdFile.new_line(
-        mdFile.new_inline_image(text='EWS NDVI', path=os.path.join(ews_path, satellite_suffix+'-ndvi-mean-ews.png')))
-        mdFile.new_line('')
+            count = count +1
+            mdFile.new_line(
+            mdFile.new_inline_image(text='EWS NDVI', path=os.path.join(ews_path, satellite_suffix+'-ndvi-mean-ews.png')))
+            mdFile.new_line('')
 
     mdFile.new_header(level=1, title='RGB images through time')  # style is set 'atx' format by default.
 
