@@ -266,8 +266,9 @@ def analyse_gee_data(input_location,
     # time-series analysis and plotting
     # check first if data is a time series
     ts_df = pd.read_csv(os.path.join(ts_dirname,ts_filenames[0]))
-    if ts_df.shape[0]<=1:
-        print ('WARNING: Only one date point, not possible to do a time series analysis')
+    size_ts = ts_df.shape[0]
+    if size_ts <= 3:
+        print ('WARNING: Less than 3 times points, not possible to do a time series analysis')
         do_time_series = False
     # -----------------------------------
 
@@ -291,15 +292,19 @@ def analyse_gee_data(input_location,
                 output_subdir = os.path.join(output_analysis_dir, "detrended")
                 run_time_series_analysis(ts_file, output_subdir, detrended=True)
 
-                ews_subdir = os.path.join(output_analysis_dir, "resiliance/deseasonalised")
-                run_early_warnings_resilience_analysis(ts_file, ews_subdir)
+                # resilience analysis only done in large enough time series
+                if size_ts > 12:
+                    ews_subdir = os.path.join(output_analysis_dir, "resiliance/deseasonalised")
+                    run_early_warnings_resilience_analysis(ts_file, ews_subdir)
 
             else:
                 output_subdir = output_analysis_dir
                 run_time_series_analysis(ts_file, output_subdir)
 
-                ews_subdir = os.path.join(output_analysis_dir, "resiliance/seasonal")
-                run_early_warnings_resilience_analysis(ts_file, ews_subdir)
+                # resilience analysis only done in large enough time series
+                if size_ts > 12:
+                    ews_subdir = os.path.join(output_analysis_dir, "resiliance/seasonal")
+                    run_early_warnings_resilience_analysis(ts_file, ews_subdir)
 
             print("." * 50, "\n")
 
@@ -330,7 +335,7 @@ def analyse_gee_data(input_location,
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
 
             try:
-                create_markdown_pdf_report(output_dir, collection_name,do_time_series)
+                create_markdown_pdf_report(output_dir, collection_name,do_time_series,size_ts)
             except Exception as e:
                 print ("Warning: A problem was found, the report was not created. There might be missing figures needed "
                               "for the report or a problem with the pandoc installation.")
