@@ -16,7 +16,7 @@ coordinate_id = "00"
 entry = coordinate_store.loc[coordinate_id]
 coordinates = (entry.longitude, entry.latitude)
 
-date_range = ["2016-01-01", "2016-02-01"]
+date_range = ["2016-01-01", "2016-04-01"]
 
 # From the dictionary entries in data_collections.py, which shall we use
 # (these will become "Sequences")
