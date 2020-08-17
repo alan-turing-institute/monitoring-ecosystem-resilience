@@ -17,16 +17,16 @@ mean_annual_ts <- function(x, resolution=12) {
 	if (length(missing_inds) > 0) {
 		for (i in 1:length(missing_inds)) {
 			x[missing_inds[i]] <- mean(c(x[i-1],x[i+1]))
-								}
-						}
+		}
+	}
 
 	mean_cycle <- rep(NA, resolution)
 	for (i in 1:resolution) {
 		mean_cycle[i] <- mean(x[seq(i,length(x),resolution)], na.rm=T)
-					}
+	}
 
 	return(mean_cycle)
-							}
+}
 
 decay_rate <- function(x, resolution=12, method='basic') {
 	#takes a time series as an input and uses mean_annual_ts()
@@ -43,19 +43,19 @@ decay_rate <- function(x, resolution=12, method='basic') {
 		ts <- annual_cycle - min(annual_cycle) + 1
 	} else {
 		ts <- NA		#causes fail if method is not specified properly
-		}
+	}
 
 	max_ind <- which.max(ts)
 	min_ind <- which.min(ts)
 
 	if (min_ind < max_ind) {
 		min_ind <- min_ind + resolution	#this ensures the length of time for decay is correct below
-					}
+	}
 
 	dr <- log(min(ts)/max(ts))/(min_ind-max_ind)
 
 	return(dr)
-										}
+}
 
 exp_model_fit <- function(x, resolution=12, method='basic') {
 	#takes a time series as an input and uses mean_annual_ts()
@@ -74,7 +74,7 @@ exp_model_fit <- function(x, resolution=12, method='basic') {
 		ts <- annual_cycle - min(annual_cycle) + 1
 	} else {
 		ts <- NA		#causes fail if method is not specified properly
-		}
+	}
 
 	max_ind <- which.max(ts)
 	min_ind <- which.min(ts)
@@ -86,22 +86,12 @@ exp_model_fit <- function(x, resolution=12, method='basic') {
 		exp_ts <- ts[c(max_ind:resolution,1:min_ind)]
 	} else {
 		exp_ts <- ts[max_ind:min_ind]
-		}
+	}
 
 	exp_mod <- lm(log(exp_ts) ~ c(1:length(exp_ts)))
 
 	return(exp_mod)
 
 	#this will return the output of the model, from which the expoential decay can be extracted
-											}
-
-
-
-
-
-
-
-
-
-
+}
 
