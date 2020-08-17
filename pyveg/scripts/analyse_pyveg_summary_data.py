@@ -54,16 +54,19 @@ def scatter_plots(df, output_dir):
     ax5 = sns.scatterplot(y="S2_offset50_mean_Variance (0.99 rolling window)", x="S2_offset50_mean_mean", data=df)
     ax5.set_ylabel("Offset50 Variance (0.99 rolling window)")
     ax5.set_xlabel("Mean Offset50 over time series")
+    plt.savefig(os.path.join(output_dir,'offset50_offset50Variance.png'))
 
     plt.figure()
     ax6 = sns.scatterplot(y="S2_offset50_mean_Kendall tau Lag-1 AC (0.5 rolling window)", x="S2_offset50_mean_mean", data=df)
     ax6.set_ylabel("Offset50 Kendal tau Lag-1 AC (0.5 rolling window)")
     ax6.set_xlabel("Mean Offset50 over time series")
+    plt.savefig(os.path.join(output_dir,'offset50_offset50KendaltauAR1.png'))
 
     plt.figure()
     ax7 = sns.scatterplot(y="S2_offset50_mean_Kendall tau Variance (0.5 rolling window)", x="S2_offset50_mean_mean", data=df)
     ax7.set_ylabel("Offset50 Kendal tau Variance (0.5 rolling window)")
     ax7.set_xlabel("Mean Offset50 over time series")
+    plt.savefig(os.path.join(output_dir,'offset50_offset50KendaltauVariance.png'))
 
 def process_input_data(input_dir):
 
