@@ -22,7 +22,7 @@ def mean_annual_ts(x, resolution=12):
             x[missing_inds[i]] = np.mean([x[missing_inds[i] - 1], x[missing_inds[i] + 1]])
     mean_cycle = np.repeat(np.nan, resolution, axis=0)
     for i in range(resolution):
-        mean_cycle[i] = np.nanmean(x[np.linspace(start=i, stop=len(x)-1, num=resolution,dtype=int)])
+        mean_cycle[i] = np.nanmean(x[range(i,len(x)-1,12)])
     return mean_cycle
 
 
@@ -72,7 +72,7 @@ def exp_model_fit(x, resolution=12, method='basic'):
         exp_ts = np.append(ts[max_ind:resolution],ts[0:min_ind])
     else:
         exp_ts = ts[max_ind:min_ind]
-    exp_mod = np.polyfit(np.log(exp_ts), np.linspace(start=0, stop=len(exp_ts)-1, num=len(exp_ts),dtype=int),1)
+    exp_mod = np.polyfit(range(1, len(exp_ts)+1), np.log(exp_ts), 1)
     return exp_mod
 	#this will return the output of the model, from which the exponential decay can be extracted
 
