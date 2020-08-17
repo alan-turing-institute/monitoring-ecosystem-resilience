@@ -8,7 +8,6 @@
 #	email: c.a.boulton@exeter.ac.uk
 #
 
-import pandas as pd
 import numpy as np
 
 def mean_annual_ts(x, resolution=12):

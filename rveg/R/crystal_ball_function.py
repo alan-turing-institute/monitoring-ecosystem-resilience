@@ -8,8 +8,9 @@
 #	email: c.a.boulton@exeter.ac.uk
 #
 
-import pandas as pd
 import numpy as np
+import scipy as sp
+from scipy.stats import norm
 
 def mean_annual_ts(x, resolution=12):
     # calculates the mean annual time series of time series x
@@ -33,22 +34,22 @@ def reverse_normalise_ts(x):
 	#this puts the lowest point at the start
 	min_ind = np.where(x == np.min(x))[0][0]
 	arrangex = np.append(x[(min_ind+1):len(x)],x[0:min_ind])
-	revx = rev(arrangex)
+	revx = arrangex[::-1]
 	normx = (revx-np.min(revx))/sum(revx-np.min(revx))
 	return normx
 
 ##A,B,C,D and N are all sub-functions in crystal ball
 ##erf (error function) is a common function also used
 def erf(x):
-	output = 2 * pnorm(x * sqrt(2)) - 1
+	output = 2 * norm.cdf(x * np.sqrt(2)) - 1
 	return output
 
 def A(alpha,n):
-	output = ((n/abs(alpha))^n)*exp((-abs(alpha)^2)/2)
+	output = ((n/np.abs(alpha))**n)*np.exp((-np.abs(alpha)**2)/2)
 	return output
 
 def B(alpha,n):
-	output = n/abs(alpha) - abs(alpha)
+	output = n/np.abs(alpha) - np.abs(alpha)
 	return output
 
 def N(sigma,C,D):
@@ -56,18 +57,18 @@ def N(sigma,C,D):
 	return output
 
 def C(alpha,n):
-	output = (n/abs(alpha))*(1/(n-1))*exp((-abs(alpha)^2)/2)
+	output = (n/np.abs(alpha))*(1/(n-1))*np.exp((-np.abs(alpha)**2)/2)
 	return output
 
 def D(alpha):
-	output = sqrt(pi/2)*(1+erf(abs(alpha)/sqrt(2)))
+	output = np.sqrt(pi/2)*(1+erf(np.abs(alpha)/np.sqrt(2)))
 	return output
 
 def cball(x,alpha,n,xbar,sigma):
 	#uses the functions above to create an output from input x
 	#works for single values but assumed x will be a time series
-	fx = rep(NA, length(x))
-	for (i in 1:length(x)):
+	fx = np.repeat(np.nan, len(x), axis=0)
+	for i in range(len(x)):
 		if (((x[i]-xbar)/sigma) > -alpha):
 			fx[i] = N(sigma,C(alpha,n),D(alpha,n))*exp((-(x[i]-xbar)^2)/(2*sigma^2))
 		if (((x[i]-xbar)/sigma) <= -alpha):
@@ -89,7 +90,6 @@ def cball_parfit(x, alphastart=1.5, nstart=150, xbarstart=8, sigmastart=2, allpa
 	mean_ts = mean_annual_ts(x)
 	norm_ts = reverse_normalise_ts(mean_ts)
 	cball_fit = nlsLM(norm_ts ~ cball(1:length(norm_ts),alpha,n,xbar,sigma), start=list(alpha=alphastart, n=nstart, xbar=xbarstart, sigma=sigmastart))
-
 	#return alpha and n as these are most important as default
 	#can specify with allparams=TRUE to get all parameters out
 	if (allparams==FALSE):
