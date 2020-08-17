@@ -18,16 +18,16 @@ mean_annual_ts <- function(x, resolution=12) {
 	if (length(missing_inds) > 0) {
 		for (i in 1:length(missing_inds)) {
 			x[missing_inds[i]] <- mean(c(x[i-1],x[i+1]))
-								}
-						}
+		}
+	}
 
 	mean_cycle <- rep(NA, resolution)
 	for (i in 1:resolution) {
 		mean_cycle[i] <- mean(x[seq(i,length(x),resolution)], na.rm=T)
-					}
+	}
 
 	return(mean_cycle)
-							}
+}
 
 reverse_normalise_ts <- function(x) {
 	#takes the time series as an input (assumed to be from mean_annual_ts
@@ -42,7 +42,7 @@ reverse_normalise_ts <- function(x) {
 	normx <- (revx-min(revx))/sum(revx-min(revx))
 
 	return(normx)
-						}
+}
 
 ##A,B,C,D and N are all sub-functions in crystal ball
 ##erf (error function) is a common function also used
@@ -52,27 +52,27 @@ erf <- function(x) 2 * pnorm(x * sqrt(2)) - 1
 A <- function(alpha,n) {
 	output <- ((n/abs(alpha))^n)*exp((-abs(alpha)^2)/2)
 	return(output)
-				}
+}
 
 B <- function(alpha,n) {
 	output <- n/abs(alpha) - abs(alpha)
 	return(output)
-				}
+}
 
 N <- function(sigma,C,D) {
 	output <- 1/(sigma*(C+D))
 	return(output)
-				}
+}
 
 C <- function(alpha,n) {
 	output <- (n/abs(alpha))*(1/(n-1))*exp((-abs(alpha)^2)/2)
 	return(output)
-				}
+}
 
-D <- function(alpha,n) {
+D <- function(alpha) {
 	output <- sqrt(pi/2)*(1+erf(abs(alpha)/sqrt(2)))
 	return(output)
-				}
+}
 
 cball <- function(x,alpha,n,xbar,sigma) {
 	#uses the functions above to create an output from input x
@@ -83,13 +83,13 @@ cball <- function(x,alpha,n,xbar,sigma) {
 	for (i in 1:length(x)) {
 		if (((x[i]-xbar)/sigma) > -alpha) {
 			fx[i] <- N(sigma,C(alpha,n),D(alpha,n))*exp((-(x[i]-xbar)^2)/(2*sigma^2))
-								}
+		}
 		if (((x[i]-xbar)/sigma) <= -alpha) {
 			fx[i] <- N(sigma,C(alpha,n),D(alpha,n))*A(alpha,n)*(B(alpha,n)-(x[i]-xbar)/sigma)^(-n)
-								}
-					}
+		}
+	}
 	return(fx)
-							}
+}
 
 ##use nonlinear least squares to estimate parameters alpha, n, xbar and sigma
 ##cball fails when using nls() so use nlsLM() from package below
@@ -114,12 +114,7 @@ cball_parfit <- function(x, alphastart=1.5, nstart=150, xbarstart=8, sigmastart=
 
 	if (allparams==FALSE) {return(coef(cball_fit)[1:2])}
 	if (allparams==TRUE) {return(coef(cball_fit))}
-														}
-
-
-
-
-
+}
 
 
 
