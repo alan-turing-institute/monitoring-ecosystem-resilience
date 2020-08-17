@@ -16,7 +16,7 @@ mean_annual_ts <- function(x, resolution=12) {
 	missing_inds <- which(is.na(x))
 	if (length(missing_inds) > 0) {
 		for (i in 1:length(missing_inds)) {
-			x[i] <- mean(c(x[i-1],x[i+1]))
+			x[missing_inds[i]] <- mean(c(x[i-1],x[i+1]))
 								}
 						}
 
