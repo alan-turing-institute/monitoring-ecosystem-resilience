@@ -13,22 +13,57 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-
-from pyveg.src.plotting import (
-    plot_stl_decomposition,
-    plot_feature_vector,
-    plot_time_series,
-    plot_ndvi_time_series,
-    plot_autocorrelation_function,
-    plot_cross_correlations,
-    plot_moving_window_analysis,
-    plot_ews_resiliance,
-    plot_sensitivity_heatmap,
-    plot_correlation_mwa,
-    kendall_tau_histograms,
-)
-
+sns.set_style("whitegrid")
 from pyveg.scripts.upload_to_zenodo import upload_results
+
+
+def scatter_plots(df, output_dir):
+
+    plt.figure()
+    ax = sns.scatterplot(y="S2_offset50_mean_mean", x="total_precipitation_mean", data=df)
+    ax.set_xlabel("Mean precipitation over time series")
+    ax.set_ylabel("Mean Offset50 over time series")
+    plt.savefig(os.path.join(output_dir,'offset50_vs_precipitation.png'))
+
+    plt.figure()
+    ax1 = sns.scatterplot(x="longitude", y="S2_offset50_mean_mean", data=df)
+    ax1.set_ylabel("Mean Offset50 over time series")
+    ax1.set_xlabel("Longitude")
+    plt.savefig(os.path.join(output_dir,'offset50_vs_Longitude.png'))
+
+    plt.figure()
+    ax2 = sns.scatterplot(x="latitude", y="S2_offset50_mean_mean", data=df)
+    ax2.set_ylabel("Mean Offset50 over time series")
+    ax2.set_xlabel("Latitude")
+    plt.savefig(os.path.join(output_dir,'offset50_vs_Latitude.png'))
+
+    plt.figure()
+    ax3 = sns.scatterplot(x="longitude", y="latitude", size="S2_offset50_mean_mean", data=df)
+    ax3.set_ylabel("Latitude")
+    ax3.set_xlabel("Longitude")
+    plt.savefig(os.path.join(output_dir,'lat_long_offset50.png'))
+
+
+    plt.figure()
+    ax4 = sns.scatterplot(y="S2_offset50_mean_Lag-1 AC (0.99 rolling window)", x="S2_offset50_mean_mean", data=df)
+    ax4.set_ylabel("Offset50 Lag-1 AC (0.99 rolling window)")
+    ax4.set_xlabel("Mean Offset50 over time series")
+    plt.savefig(os.path.join(output_dir,'offset50_offset50AR1.png'))
+
+    plt.figure()
+    ax5 = sns.scatterplot(y="S2_offset50_mean_Variance (0.99 rolling window)", x="S2_offset50_mean_mean", data=df)
+    ax5.set_ylabel("Offset50 Variance (0.99 rolling window)")
+    ax5.set_xlabel("Mean Offset50 over time series")
+
+    plt.figure()
+    ax6 = sns.scatterplot(y="S2_offset50_mean_Kendall tau Lag-1 AC (0.5 rolling window)", x="S2_offset50_mean_mean", data=df)
+    ax6.set_ylabel("Offset50 Kendal tau Lag-1 AC (0.5 rolling window)")
+    ax6.set_xlabel("Mean Offset50 over time series")
+
+    plt.figure()
+    ax7 = sns.scatterplot(y="S2_offset50_mean_Kendall tau Variance (0.5 rolling window)", x="S2_offset50_mean_mean", data=df)
+    ax7.set_ylabel("Offset50 Kendal tau Variance (0.5 rolling window)")
+    ax7.set_xlabel("Mean Offset50 over time series")
 
 def process_input_data(input_dir):
 
@@ -55,6 +90,8 @@ def process_input_data(input_dir):
             for col in group:
                 dict_list[ts + "_" + col] = group[group['ts_id'] == ts][col].values[0]
         dict_list['name'] = name
+        dict_list['latitude'] = group['latitude'].values[0]
+        dict_list['longitude'] = group['longitude'].values[0]
 
         ts_dict_list.append(dict_list)
 
@@ -77,13 +114,12 @@ def analyse_pyveg_summary_data(input_dir, output_dir):
 
     df = process_input_data(input_dir)
 
-    variables =  ['S2_ndvi_mean_mean','S2_offset50_mean_mean','total_precipitation_mean', 'S2_offset50_mean_Lag-1 AC (0.99 rolling window)','S2_offset50_mean_Variance (0.99 rolling window)',]
+    summary_plots = os.path.join(output_dir, "summary_plots")
+    if not os.path.exists(summary_plots):
+        os.makedirs(summary_plots, exist_ok=True)
 
-    g = sns.pairplot(df[variables],corner=True)
-    g.fig.set_size_inches(10, 10)
+    scatter_plots(df,summary_plots)
 
-    print (df)
-    return 0
 
 
 def main():
@@ -114,10 +150,9 @@ def main():
     if not output_dir:
         raise RuntimeError("Need to specify --output_dir argument if reading from Azure blob storage")
 
-    input_location = args.input_dir
 
     # run analysis code
-    analyse_pyveg_summary_data(input_location,
+    analyse_pyveg_summary_data(args.input_dir,
                      output_dir)
 
 
