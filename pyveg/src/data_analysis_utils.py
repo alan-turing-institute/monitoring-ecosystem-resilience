@@ -1294,10 +1294,10 @@ def reverse_normalise_ts(x):
     """
     
     min_ind = np.where(x == np.min(x))[0][0]
-	arrangex = np.append(x[(min_ind+1):len(x)],x[0:(min_ind+1)])
-	revx = arrangex[::-1]
-	normx = (revx-np.min(revx))/sum(revx-np.min(revx))
-	return normx
+    arrangex = np.append(x[(min_ind+1):len(x)],x[0:(min_ind+1)])
+    revx = arrangex[::-1]
+    normx = (revx-np.min(revx))/sum(revx-np.min(revx))
+    return normx
 
 def cball(x=range(1,13), alpha=1.5, n=150.0, xbar=8.0, sigma=2.0):
     """
@@ -1320,36 +1320,36 @@ def cball(x=range(1,13), alpha=1.5, n=150.0, xbar=8.0, sigma=2.0):
     """
     
     def erf(x):
-		output = 2 * norm.cdf(x * np.sqrt(2)) - 1
-		return output
+	output = 2 * norm.cdf(x * np.sqrt(2)) - 1
+	return output
 	
-	def A(alpha,n):
-		output = ((n/np.abs(alpha))**n)*np.exp((-np.abs(alpha)**2)/2)
-		return output
+    def A(alpha,n):
+	output = ((n/np.abs(alpha))**n)*np.exp((-np.abs(alpha)**2)/2)
+	return output
+
+    def B(alpha,n):
+	output = n/np.abs(alpha) - np.abs(alpha)
+	return output
 	
-	def B(alpha,n):
-		output = n/np.abs(alpha) - np.abs(alpha)
-		return output
+    def N(sigma,C,D):
+	output = 1/(sigma*(C+D))
+	return output
 	
-	def N(sigma,C,D):
-		output = 1/(sigma*(C+D))
-		return output
+    def C(alpha,n):
+	output = (n/np.abs(alpha))*(1/(n-1))*np.exp((-np.abs(alpha)**2)/2)
+	return output
 	
-	def C(alpha,n):
-		output = (n/np.abs(alpha))*(1/(n-1))*np.exp((-np.abs(alpha)**2)/2)
-		return output
-	
-	def D(alpha):
-		output = np.sqrt(np.pi/2)*(1+erf(np.abs(alpha)/np.sqrt(2)))
-		return output
+    def D(alpha):
+	output = np.sqrt(np.pi/2)*(1+erf(np.abs(alpha)/np.sqrt(2)))
+	return output
     
-	fx = np.repeat(np.nan, len(x), axis=0)
-	for i in range(len(x)):
-		if (((x[i]-xbar)/sigma) > -alpha):
-			fx[i] = N(sigma,C(alpha,n),D(alpha))*np.exp((-(x[i]-xbar)**2)/(2*sigma**2))
-		if (((x[i]-xbar)/sigma) <= -alpha):
-			fx[i] = N(sigma,C(alpha,n),D(alpha))*A(alpha,n)*(B(alpha,n)-(x[i]-xbar)/sigma)**(-n)
-	return fx
+    fx = np.repeat(np.nan, len(x), axis=0)
+    for i in range(len(x)):
+	if (((x[i]-xbar)/sigma) > -alpha):
+		fx[i] = N(sigma,C(alpha,n),D(alpha))*np.exp((-(x[i]-xbar)**2)/(2*sigma**2))
+	if (((x[i]-xbar)/sigma) <= -alpha):
+		fx[i] = N(sigma,C(alpha,n),D(alpha))*A(alpha,n)*(B(alpha,n)-(x[i]-xbar)/sigma)**(-n)
+    return fx
 
 def err_func(params, ts):
     """
@@ -1376,12 +1376,12 @@ def err_func(params, ts):
     
     model_output = cball(range(1,len(ts)+1),params[0], params[1], params[2], params[3])
     
-	residuals = []
-	for i in range(0,len(ts)):
-		r = model_output[i] - ts[i]
-		residuals.append(r)
+    residuals = []
+    for i in range(0,len(ts)):
+	r = model_output[i] - ts[i]
+	residuals.append(r)
         
-	return residuals
+    return residuals
 
 def cball_parfit(p0, timeseries):
     """
@@ -1408,9 +1408,9 @@ def cball_parfit(p0, timeseries):
     """
     
     mean_ts = mean_annual_ts(timeseries)
-	ts = reverse_normalise_ts(mean_ts)
-	p1, success = sco.leastsq(err_func, p0, args=ts)
-	return p1, success
+    ts = reverse_normalise_ts(mean_ts)
+    p1, success = sco.leastsq(err_func, p0, args=ts)
+    return p1, success
 
     
     
