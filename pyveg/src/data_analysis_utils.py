@@ -1320,7 +1320,7 @@ def cball(x=range(1,13), alpha=1.5, n=150.0, xbar=8.0, sigma=2.0):
     """
     
     def erf(x):
-	output = 2 * norm.cdf(x * np.sqrt(2)) - 1
+        output = 2 * norm.cdf(x * np.sqrt(2)) - 1
 	return output
 	
     def A(alpha,n):
