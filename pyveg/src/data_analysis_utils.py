@@ -1346,9 +1346,9 @@ def cball(x=range(1,13), alpha=1.5, n=150.0, xbar=8.0, sigma=2.0):
     fx = np.repeat(np.nan, len(x), axis=0)
     for i in range(len(x)):
         if (((x[i]-xbar)/sigma) > -alpha):
-	    fx[i] = N(sigma,C(alpha,n),D(alpha))*np.exp((-(x[i]-xbar)**2)/(2*sigma**2))
+		fx[i] = N(sigma,C(alpha,n),D(alpha))*np.exp((-(x[i]-xbar)**2)/(2*sigma**2))
         if (((x[i]-xbar)/sigma) <= -alpha):
-	    fx[i] = N(sigma,C(alpha,n),D(alpha))*A(alpha,n)*(B(alpha,n)-(x[i]-xbar)/sigma)**(-n)
+		fx[i] = N(sigma,C(alpha,n),D(alpha))*A(alpha,n)*(B(alpha,n)-(x[i]-xbar)/sigma)**(-n)
     return fx
 
 def err_func(params, ts):
