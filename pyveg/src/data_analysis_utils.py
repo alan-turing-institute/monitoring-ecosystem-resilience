@@ -19,9 +19,12 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from scipy.fftpack import fft
-from scipy.stats import sem, t
+from scipy.stats import sem, t, norm
 from statsmodels.tsa.seasonal import STL
 import ewstools
+
+import scipy
+import scipy.optimize as sco
 
 
 def convert_to_geopandas(df):
@@ -1151,3 +1154,263 @@ def early_warnings_null_hypothesis(
     kendall_tau_df = pd.concat([data_kendall_tau_df, surrogates_kendall_tau_df])
 
     return kendall_tau_df
+
+def mean_annual_ts(x, resolution=12):
+    """
+    Calculate mean annual time series from time series. Also fills in missing values
+    by linear interpolation. NB Fails if there is missing value at the start or end.
+
+    Parameters
+    ----------
+    x : Time series
+        Time series to calculate mean annual time series for
+    resolution : float
+        Number of values each year in a time series (12 is monthly for example)
+
+    Returns
+    ----------
+    ndarray
+        Array of length equal to resolution that is the mean annual time series
+
+    """
+    
+    missing_inds = np.where(np.isnan(x))[0]
+    if len(missing_inds) > 0:
+        for i in range(len(missing_inds)):
+            print(i)
+            x[missing_inds[i]] = np.mean([x[missing_inds[i] - 1], x[missing_inds[i] + 1]])
+            
+    mean_cycle = np.repeat(np.nan, resolution, axis=0)
+    for i in range(resolution):
+        mean_cycle[i] = np.nanmean(x[np.linspace(start=i, stop=len(x)-1, num=resolution,dtype=int)])
+    return mean_cycle
+
+def decay_rate(x, resolution=12, method='basic'):
+    """
+    Calculates the decay rate between the max and min values of a time series.
+
+    Parameters
+    ----------
+    x : time series
+        Time series to calculate decay rate on. mean_annual_ts is calculated
+        on this series within this function so raw time series is expected.
+    resolution : int
+        Number of values each year in a time series (12 is monthly for example)
+    method : 'basic' (default) or 'adjusted'
+        A choice on whether to calculate the decay rate on the mean annual 
+        time series calculated within the function or to adjust the time series
+        such that the min value is set to 1 by substracting the minimum
+        plus 1 of the mean annual time series (useful for offset50 values)
+
+    Returns
+    ----------
+    float
+        The decay rate value
+
+    """
+    
+    annual_cycle = mean_annual_ts(x, resolution)
+    
+    if method == 'basic':
+        ts = annual_cycle
+    elif method == 'adjusted':
+        ts = annual_cycle - np.min(annual_cycle) + 1
+    else:
+        ts = np.nan  # causes fail if method is not specified properly
+        
+    max_ind = np.where(ts==np.max(ts))[0][0]
+    min_ind = np.where(ts==np.min(ts))[0][0]
+    
+    if min_ind < max_ind:
+        # this ensures the length of time for decay is correct below
+        min_ind = min_ind + resolution
+        
+    dr = np.log(np.min(ts) / np.max(ts)) / (min_ind - max_ind)
+    return dr
+
+def exp_model_fit(x, resolution=12, method='basic'):
+    """
+    Fits an exponential model from the maximum to the minimum of the 
+    mean annual time series. A raw time series is expected as an input.
+
+    Parameters
+    ----------
+    x : time series
+        Time series to calculate decay rate on. mean_annual_ts is calculated
+        on this series within this function so raw time series is expected.
+    resolution : int
+        Number of values each year in a time series (12 is monthly for example)
+    method : 'basic' (default) or 'adjusted'
+        A choice on whether to fit the expoenential model on the mean annual 
+        time series calculated within the function or to adjust the time series
+        such that the min value is set to 1 by substracting the minimum
+        plus 1 of the mean annual time series (useful for offset50 values)
+
+    Returns
+    ----------
+    ndarray
+        The coefficient values from the exponential model fit
+
+    """
+    annual_cycle = mean_annual_ts(x, resolution)
+    
+    if method == 'basic':
+        ts = annual_cycle
+    elif method == 'adjusted':
+        ts = annual_cycle - np.min(annual_cycle) + 1
+    else:
+        ts = np.nan  # causes fail if method is not specified properly
+        
+    max_ind = np.where(ts==np.max(ts))[0][0]
+    min_ind = np.where(ts==np.min(ts))[0][0]
+    
+    #in most cases we find the minimum value is earlier in the year
+	#so the below crosses Dec/Jan if this is the case
+	#otherwise remains within a single year cycle
+    if min_ind < max_ind:
+        exp_ts = np.append(ts[max_ind:resolution],ts[0:min_ind])
+    else:
+        exp_ts = ts[max_ind:min_ind]
+        
+    exp_mod = np.polyfit(np.log(exp_ts), np.linspace(start=0, stop=len(exp_ts)-1, num=len(exp_ts),dtype=int),1)
+    return exp_mod
+
+def reverse_normalise_ts(x):
+    """
+    Takes what is expected to be a mean annual time series (from mean_annual_ts), arranges it so the
+    first value is the last, reverses it and then normalises it.
+    It is to be used within cball function below.
+
+    Parameters
+    ----------
+    x : time series
+        Time series reverse and normalise. Assumed this is from mean_annual_ts output
+
+    Returns
+    ----------
+    ndarray
+        The reversed and normalised time series
+
+    """
+    
+    min_ind = np.where(x == np.min(x))[0][0]
+	arrangex = np.append(x[(min_ind+1):len(x)],x[0:(min_ind+1)])
+	revx = arrangex[::-1]
+	normx = (revx-np.min(revx))/sum(revx-np.min(revx))
+	return normx
+
+def cball(x=range(1,13), alpha=1.5, n=150.0, xbar=8.0, sigma=2.0):
+    """
+    Calculates the Crystal Ball pdf on the values 1 to 12 by default (i.e. monthly)
+    Default parameter values give a fit close to those we would expect from offset50
+    time series
+
+    Parameters
+    ----------
+    x : Time series
+        Index values going from 1 to the length of the annual time series
+    alpha, n, xbar, sigma : Model parameters, int
+        Parameters used in Crystal Ball pdf calculation
+
+    Returns
+    ----------
+    ndarray
+        The values of the Crystal Ball pdf for each index of x
+
+    """
+    
+    def erf(x):
+		output = 2 * norm.cdf(x * np.sqrt(2)) - 1
+		return output
+	
+	def A(alpha,n):
+		output = ((n/np.abs(alpha))**n)*np.exp((-np.abs(alpha)**2)/2)
+		return output
+	
+	def B(alpha,n):
+		output = n/np.abs(alpha) - np.abs(alpha)
+		return output
+	
+	def N(sigma,C,D):
+		output = 1/(sigma*(C+D))
+		return output
+	
+	def C(alpha,n):
+		output = (n/np.abs(alpha))*(1/(n-1))*np.exp((-np.abs(alpha)**2)/2)
+		return output
+	
+	def D(alpha):
+		output = np.sqrt(np.pi/2)*(1+erf(np.abs(alpha)/np.sqrt(2)))
+		return output
+    
+	fx = np.repeat(np.nan, len(x), axis=0)
+	for i in range(len(x)):
+		if (((x[i]-xbar)/sigma) > -alpha):
+			fx[i] = N(sigma,C(alpha,n),D(alpha))*np.exp((-(x[i]-xbar)**2)/(2*sigma**2))
+		if (((x[i]-xbar)/sigma) <= -alpha):
+			fx[i] = N(sigma,C(alpha,n),D(alpha))*A(alpha,n)*(B(alpha,n)-(x[i]-xbar)/sigma)**(-n)
+	return fx
+
+def err_func(params, ts):
+    """
+    Calculates the difference between the cball function with supplied params
+    and a supplied time series of the same length.
+    err_func is used within
+    cball_parfit function below where full time series needs to be supplied
+
+    Parameters
+    ----------
+    params : Model parameters, list
+        Parameters used in Crystal Ball pdf calculation
+        alpha, n, xbar, sigma
+        
+    ts : Time series
+        Time series to compare output of cball function to
+
+    Returns
+    ----------
+    ndarray
+        Residuals/differences between Crytal Ball pdf and supplied time series
+
+    """
+    
+    model_output = cball(range(1,len(ts)+1),params[0], params[1], params[2], params[3])
+    
+	residuals = []
+	for i in range(0,len(ts)):
+		r = model_output[i] - ts[i]
+		residuals.append(r)
+        
+	return residuals
+
+def cball_parfit(p0, timeseries):
+    """
+    Uses least squares regression to optimise the parameters in cball to fit the 
+    timeseries supplied. The supplied time series should be the original series
+    as this function finds the mean annual ts and reverses and normalises it
+
+    Parameters
+    ----------
+    p0 : Initial parameters, list
+        A list a parameters to use in the Crystal Ball calculation as an initial estimate
+        
+    timeseries : Time series
+        Original time series to calculate mean annual time series on, reverse and normalise
+        and then use to optimise the parameters on
+
+    Returns
+    ----------
+    ndarray
+        A list of optimised parameters (alpha, n, xbar, sigma)
+    int
+        A indication that the optimisation works (if output is 1,2,3 or 4 then ok)
+
+    """
+    
+    mean_ts = mean_annual_ts(timeseries)
+	ts = reverse_normalise_ts(mean_ts)
+	p1, success = sco.leastsq(err_func, p0, args=ts)
+	return p1, success
+
+    
+    
