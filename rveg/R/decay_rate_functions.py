@@ -22,7 +22,7 @@ def mean_annual_ts(x, resolution=12):
             x[missing_inds[i]] = np.mean([x[missing_inds[i] - 1], x[missing_inds[i] + 1]])
     mean_cycle = np.repeat(np.nan, resolution, axis=0)
     for i in range(resolution):
-        mean_cycle[i] = np.nanmean(x[range(i,len(x)-1,12)])
+        mean_cycle[i] = np.nanmean(x[range(i,len(x),12)])
     return mean_cycle
 
 
