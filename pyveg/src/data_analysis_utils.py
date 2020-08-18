@@ -1321,34 +1321,34 @@ def cball(x=range(1,13), alpha=1.5, n=150.0, xbar=8.0, sigma=2.0):
     
     def erf(x):
         output = 2 * norm.cdf(x * np.sqrt(2)) - 1
-	return output
+        return output
 	
     def A(alpha,n):
-	output = ((n/np.abs(alpha))**n)*np.exp((-np.abs(alpha)**2)/2)
-	return output
+        output = ((n/np.abs(alpha))**n)*np.exp((-np.abs(alpha)**2)/2)
+        return output
 
     def B(alpha,n):
-	output = n/np.abs(alpha) - np.abs(alpha)
-	return output
+        output = n/np.abs(alpha) - np.abs(alpha)
+        return output
 	
     def N(sigma,C,D):
-	output = 1/(sigma*(C+D))
-	return output
+        output = 1/(sigma*(C+D))
+        return output
 	
     def C(alpha,n):
-	output = (n/np.abs(alpha))*(1/(n-1))*np.exp((-np.abs(alpha)**2)/2)
-	return output
+        output = (n/np.abs(alpha))*(1/(n-1))*np.exp((-np.abs(alpha)**2)/2)
+        return output
 	
     def D(alpha):
-	output = np.sqrt(np.pi/2)*(1+erf(np.abs(alpha)/np.sqrt(2)))
-	return output
+        output = np.sqrt(np.pi/2)*(1+erf(np.abs(alpha)/np.sqrt(2)))
+        return output
     
     fx = np.repeat(np.nan, len(x), axis=0)
     for i in range(len(x)):
-	if (((x[i]-xbar)/sigma) > -alpha):
-		fx[i] = N(sigma,C(alpha,n),D(alpha))*np.exp((-(x[i]-xbar)**2)/(2*sigma**2))
-	if (((x[i]-xbar)/sigma) <= -alpha):
-		fx[i] = N(sigma,C(alpha,n),D(alpha))*A(alpha,n)*(B(alpha,n)-(x[i]-xbar)/sigma)**(-n)
+        if (((x[i]-xbar)/sigma) > -alpha):
+	    fx[i] = N(sigma,C(alpha,n),D(alpha))*np.exp((-(x[i]-xbar)**2)/(2*sigma**2))
+        if (((x[i]-xbar)/sigma) <= -alpha):
+	    fx[i] = N(sigma,C(alpha,n),D(alpha))*A(alpha,n)*(B(alpha,n)-(x[i]-xbar)/sigma)**(-n)
     return fx
 
 def err_func(params, ts):
