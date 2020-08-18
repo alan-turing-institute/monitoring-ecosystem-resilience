@@ -16,6 +16,20 @@ import matplotlib.pyplot as plt
 sns.set_style("whitegrid")
 from pyveg.scripts.upload_to_zenodo import upload_results
 
+def barplot_plots(df, output_dir):
+
+    plt.figure()
+    ax8 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='total_precipitation_mean',data=df)
+    ax8.set_xlabel("Mean precipitation over time series")
+    ax8.set_ylabel("Max Offset50 over time series")
+    plt.savefig(os.path.join(output_dir,'offset50_precipitation_bar.png'))
+
+    plt.figure()
+    ax9 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='S2_offset50_mean_Lag-1 AC (0.99 rolling window)',data=df)
+    ax9.set_xlabel("Offset50 Lag-1 AC (0.99 rolling window)")
+    ax9.set_ylabel("Max Offset50 over time series")
+    plt.savefig(os.path.join(output_dir,'offset50_lag1ACvalue_bar.png'))
+
 
 def scatter_plots(df, output_dir):
 
@@ -122,6 +136,7 @@ def analyse_pyveg_summary_data(input_dir, output_dir):
         os.makedirs(summary_plots, exist_ok=True)
 
     scatter_plots(df,summary_plots)
+    barplot_plots(df,summary_plots)
 
 
 
