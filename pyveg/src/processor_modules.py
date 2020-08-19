@@ -105,7 +105,7 @@ class ProcessorModule(BaseModule):
         """
         for i in range(len(self.input_location_subdirs)):
             if not self.input_location_subdirs[i] in self.list_directory(
-                os.path.join(
+                self.join_path(
                     self.input_location, date_string, *(self.input_location_subdirs[:i])
                 ),
                 self.input_location_type,
@@ -114,7 +114,7 @@ class ProcessorModule(BaseModule):
             if (
                 len(
                     self.list_directory(
-                        os.path.join(
+                        self.join_path(
                             self.input_location,
                             date_string,
                             *(self.input_location_subdirs),
@@ -143,7 +143,7 @@ class ProcessorModule(BaseModule):
              AND self.replace_existing_files is set to False
         False otherwise
         """
-        output_location = os.path.join(
+        output_location = self.join_path(
             self.output_location, date_string, *(self.output_location_subdirs)
         )
         return self.check_for_existing_files(output_location, self.num_files_per_point)
@@ -458,16 +458,16 @@ class VegetationImageProcessor(ProcessorModule):
         """
 
         if "SUB" in image_type:
-            output_location = os.path.join(self.output_location, date_string, "SPLIT")
+            output_location = self.join_path(self.output_location, date_string, "SPLIT")
         else:
-            output_location = os.path.join(
+            output_location = self.join_path(
                 self.output_location, date_string, "PROCESSED"
             )
         # filename is the date, coordinates, and image type
         filename = f"{date_string}_{coords_string}_{image_type}.png"
 
         # full path is dir + filename
-        full_path = os.path.join(output_location, filename)
+        full_path = self.join_path(output_location, filename)
 
         return full_path
 
@@ -580,7 +580,7 @@ class VegetationImageProcessor(ProcessorModule):
             return True
 
         # If no files already there, proceed.
-        input_filepath = os.path.join(
+        input_filepath = self.join_path(
             self.input_location, date_string, *(self.input_location_subdirs)
         )
         logger.info("{} processing files in {}".format(self.name, input_filepath))
@@ -599,13 +599,13 @@ class VegetationImageProcessor(ProcessorModule):
         for icol, col in enumerate("rgb"):
             band = self.RGB_bands[icol]
             filename = self.get_file(
-                os.path.join(input_filepath, "download.{}.tif".format(band)),
+                self.join_path(input_filepath, "download.{}.tif".format(band)),
                 self.input_location_type,
             )
             band_dict[col] = {"band": band, "filename": filename}
 
         logger.info(filenames)
-        tif_filebase = os.path.join(input_filepath, filenames[0].split(".")[0])
+        tif_filebase = self.join_path(input_filepath, filenames[0].split(".")[0])
 
         # save the rgb image
         rgb_ok = self.save_rgb_image(band_dict, date_string, coords_string)
@@ -615,7 +615,7 @@ class VegetationImageProcessor(ProcessorModule):
 
         # save the NDVI image
         ndvi_tif = self.get_file(
-            os.path.join(input_filepath, "download.NDVI.tif"), self.input_location_type
+            self.join_path(input_filepath, "download.NDVI.tif"), self.input_location_type
         )
         ndvi_image = scale_tif(ndvi_tif)
         ndvi_filepath = self.construct_image_savepath(
@@ -681,7 +681,7 @@ class WeatherImageToJSON(ProcessorModule):
             logger.info("{} will not process date {}".format(self.name, date_string))
             return True
         logger.info("{}: Processing date {}".format(self.name, date_string))
-        input_location = os.path.join(
+        input_location = self.join_path(
             self.input_location, date_string, *(self.input_location_subdirs)
         )
         for filename in self.list_directory(input_location, self.input_location_type):
@@ -689,7 +689,7 @@ class WeatherImageToJSON(ProcessorModule):
                 name_variable = (filename.split("."))[1]
                 variable_array = cv.imread(
                     self.get_file(
-                        os.path.join(input_location, filename), self.input_location_type
+                        self.join_path(input_location, filename), self.input_location_type
                     ),
                     cv.IMREAD_ANYDEPTH,
                 )
@@ -698,7 +698,7 @@ class WeatherImageToJSON(ProcessorModule):
         self.save_json(
             metrics_dict,
             "weather_data.json",
-            os.path.join(
+            self.join_path(
                 self.output_location, date_string, *(self.output_location_subdirs)
             ),
             self.output_location_type,
@@ -779,7 +779,7 @@ class NetworkCentralityCalculator(ProcessorModule):
         rgb_filename = re.sub("BWNDVI", "RGB", ndvi_filename)
         rgb_img = Image.open(
             self.get_file(
-                os.path.join(input_path, rgb_filename), self.input_location_type
+                self.join_path(input_path, rgb_filename), self.input_location_type
             )
         )
         img_ok = check_image_ok(rgb_img, 0.05)
@@ -798,7 +798,7 @@ class NetworkCentralityCalculator(ProcessorModule):
             return True
         # see if there is already a network_centralities.json file in
         # the output location - if so, skip
-        output_location = os.path.join(
+        output_location = self.join_path(
             self.output_location, date_string, *(self.output_location_subdirs)
         )
         if (not self.replace_existing_files) and self.check_for_existing_files(
@@ -806,7 +806,7 @@ class NetworkCentralityCalculator(ProcessorModule):
         ):
             return True
 
-        input_path = os.path.join(
+        input_path = self.join_path(
             self.input_location, date_string, *(self.input_location_subdirs)
         )
         all_input_files = self.list_directory(input_path, self.input_location_type)
@@ -835,7 +835,7 @@ class NetworkCentralityCalculator(ProcessorModule):
                 (
                     i,
                     self.get_file(
-                        os.path.join(input_path, filename), self.input_location_type
+                        self.join_path(input_path, filename), self.input_location_type
                     ),
                     tmp_json_dir,
                     date_string,
@@ -887,7 +887,7 @@ class NDVICalculator(ProcessorModule):
         looks OK.
         """
         rgb_filename = re.sub("NDVI", "RGB", ndvi_filename)
-        rgb_img = self.get_image(os.path.join(input_path, rgb_filename))
+        rgb_img = self.get_image(self.join_path(input_path, rgb_filename))
 
         img_ok = check_image_ok(rgb_img, 0.05)
         return img_ok
@@ -940,7 +940,7 @@ class NDVICalculator(ProcessorModule):
 
         # see if there is already a ndvi.json file in
         # the output location - if so, skip
-        output_location = os.path.join(
+        output_location = self.join_path(
             self.output_location, date_string, *(self.output_location_subdirs)
         )
         if (not self.replace_existing_files) and self.check_for_existing_files(
@@ -948,7 +948,7 @@ class NDVICalculator(ProcessorModule):
         ):
             return True
 
-        input_path = os.path.join(
+        input_path = self.join_path(
             self.input_location, date_string, *(self.input_location_subdirs)
         )
         all_input_files = self.list_directory(input_path, self.input_location_type)
@@ -974,7 +974,7 @@ class NDVICalculator(ProcessorModule):
         for ndvi_file in input_files:
             coords_string = find_coords_string(ndvi_file)
             ndvi_dict = self.process_sub_image(
-                os.path.join(input_path, ndvi_file), date_string, coords_string
+                self.join_path(input_path, ndvi_file), date_string, coords_string
             )
             ndvi_vals.append(ndvi_dict)
 

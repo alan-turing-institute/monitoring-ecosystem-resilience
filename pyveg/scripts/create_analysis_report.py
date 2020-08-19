@@ -6,7 +6,7 @@ from pathlib import Path
 import pypandoc
 
 
-def create_markdown_pdf_report(path, collection_name):
+def create_markdown_pdf_report(path, collection_name, do_timeseries, size_ts):
 
     # getting the right suffix from the satelite to analyse
     if collection_name == 'COPERNICUS/S2':
@@ -48,47 +48,49 @@ def create_markdown_pdf_report(path, collection_name):
         mdFile = MdUtils(file_name=output_path,
                          title='Results for ' + collection)
 
-
-    # Time series figures
-    mdFile.new_header(level=1, title='Time series')
-    ts_path = os.path.join(path,'analysis','time-series')
     count = 0
-    count = count + 1
-    mdFile.new_line(mdFile.new_inline_image(text='Time series Offset50', path=os.path.join(ts_path,satellite_suffix+'-time-series_smooth.png')))
-    #mdFile.new_paragraph('Figure '+str(count)+': '+'Time series Offset50')
 
-    count = count +1
-    mdFile.new_line(mdFile.new_inline_image(text='Time series NDVI', path=os.path.join(ts_path,satellite_suffix+'-ndvi-time-series.png')))
-    #mdFile.new_paragraph('Figure '+str(count)+': '+'Time series NDVI')
-    mdFile.new_line('')
+    if do_timeseries:
+        # Time series figures
+        mdFile.new_header(level=1, title='Time series')
+        ts_path = os.path.join(path,'analysis','time-series')
+        count = count + 1
+        mdFile.new_line(mdFile.new_inline_image(text='Time series Offset50', path=os.path.join(ts_path,satellite_suffix+'-time-series_smooth.png')))
+        #mdFile.new_paragraph('Figure '+str(count)+': '+'Time series Offset50')
 
-    # STL figures
-    mdFile.new_header(level=1, title='STL decomposition')
-    stl_path = os.path.join(path, 'analysis', 'detrended','STL')
+        count = count +1
+        mdFile.new_line(mdFile.new_inline_image(text='Time series NDVI', path=os.path.join(ts_path,satellite_suffix+'-ndvi-time-series.png')))
+        #mdFile.new_paragraph('Figure '+str(count)+': '+'Time series NDVI')
+        mdFile.new_line('')
 
-    count = count +1
-    mdFile.new_line(mdFile.new_inline_image(text='STL Offset50', path=os.path.join(stl_path, satellite_suffix+'_offset50_mean_STL_decomposition.png')))
-    #mdFile.new_paragraph('Figure '+str(count)+': '+'STL Offset50')
+        # STL figures
+        mdFile.new_header(level=1, title='STL decomposition')
+        stl_path = os.path.join(path, 'analysis', 'detrended','STL')
 
-    count = count +1
-    mdFile.new_line(mdFile.new_inline_image(text='STL NDVI', path=os.path.join(stl_path, satellite_suffix+'_ndvi_mean_STL_decomposition.png')))
-    #mdFile.new_paragraph('Figure '+str(count)+': '+'STL NDVI')
-    mdFile.new_line('')
+        count = count +1
+        mdFile.new_line(mdFile.new_inline_image(text='STL Offset50', path=os.path.join(stl_path, satellite_suffix+'_offset50_mean_STL_decomposition.png')))
+        #mdFile.new_paragraph('Figure '+str(count)+': '+'STL Offset50')
 
-    # Early warning figures
-    mdFile.new_header(level=1, title='Early warnings analysis')
-    ews_path = os.path.join(path, 'analysis', 'resiliance','deseasonalised','ewstools')
+        count = count +1
+        mdFile.new_line(mdFile.new_inline_image(text='STL NDVI', path=os.path.join(stl_path, satellite_suffix+'_ndvi_mean_STL_decomposition.png')))
+        #mdFile.new_paragraph('Figure '+str(count)+': '+'STL NDVI')
+        mdFile.new_line('')
 
-    count = count +1
-    mdFile.new_line(mdFile.new_inline_image(text='EWS Offset50', path=os.path.join(ews_path, satellite_suffix+'-offset50-mean-ews.png')))
-    #mdFile.new_paragraph('Figure '+str(count)+': '+'EWS Offset50')
-    mdFile.new_line()
+        if size_ts > 12:
+            # Early warning figures
+            mdFile.new_header(level=1, title='Early warnings analysis')
+            ews_path = os.path.join(path, 'analysis', 'resiliance','deseasonalised','ewstools')
+
+            count = count +1
+            mdFile.new_line(mdFile.new_inline_image(text='EWS Offset50', path=os.path.join(ews_path, satellite_suffix+'-offset50-mean-ews.png')))
+            #mdFile.new_paragraph('Figure '+str(count)+': '+'EWS Offset50')
+            mdFile.new_line()
 
 
-    count = count +1
-    mdFile.new_line(
-    mdFile.new_inline_image(text='EWS NDVI', path=os.path.join(ews_path, satellite_suffix+'-ndvi-mean-ews.png')))
-    mdFile.new_line('')
+            count = count +1
+            mdFile.new_line(
+            mdFile.new_inline_image(text='EWS NDVI', path=os.path.join(ews_path, satellite_suffix+'-ndvi-mean-ews.png')))
+            mdFile.new_line('')
 
     mdFile.new_header(level=1, title='RGB images through time')  # style is set 'atx' format by default.
 
