@@ -487,14 +487,6 @@ class BaseModule(object):
                         for ending in file_endings:
                             if filename.endswith(ending):
                                 copyfile(os.path.join(root,filename),os.path.join(output_location,filename))
-                                #subprocess.run(
-                                 #   [
-                                        #"-r"
-                                #        "cp",
-                                #        os.path.join(root, filename),
-                                #        os.path.join(output_location, filename),
-                                #    ]
-                                #)
                     else:
                         subprocess.run(
                             [
