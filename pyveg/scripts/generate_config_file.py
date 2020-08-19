@@ -103,7 +103,6 @@ def write_file(configs_dir,
                              collection_name,
                              run_mode)
 
-    print("Will write file \n {} \n".format(filename))
     text = get_template_text()
     current_time = time.strftime("%y-%m-%d %H:%M:%S")
     text = re.sub("CURRENT_TIME", current_time, text)
@@ -122,7 +121,8 @@ def write_file(configs_dir,
     text = re.sub("NUM_SUBIMAGES", n_subimages, text)
     with open(filename, "w") as configfile:
         configfile.write(text)
-    print("Wrote file \n{}\n  We recommend that you add and commit this to your version control repository.".format(filename))
+    print("================================\nWrote file \n  {}\nWe recommend that you add and commit this to your version control repository.\n================================".format(filename))
+    return filename
 
 
 def main():
@@ -305,18 +305,24 @@ def main():
     n_threads: {}
     """.format(output_location, collection_name, lat_string, long_string, country, start_date, end_date, time_per_point, run_mode, n_threads))
 
-    write_file(configs_dir,
-               output_location,
-               long_string,
-               lat_string,
-               country,
-               start_date,
-               end_date,
-               time_per_point,
-               collection_name,
-               run_mode,
-               n_threads,
-               test_mode)
+    config_filename = write_file(configs_dir,
+                                 output_location,
+                                 long_string,
+                                 lat_string,
+                                 country,
+                                 start_date,
+                                 end_date,
+                                 time_per_point,
+                                 collection_name,
+                                 run_mode,
+                                 n_threads,
+                                 test_mode)
+    print("""
+To run pyveg using this configuration, do:
+
+pyveg_run_pipeline --config_file {}
+
+""".format(config_filename))
 
 
 if __name__ == "__main__":
