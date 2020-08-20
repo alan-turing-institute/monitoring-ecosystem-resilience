@@ -244,7 +244,8 @@ def analyse_gee_data(input_location,
     if not output_dir:
         output_dir = input_location
     # read the results_summary.json
-    input_json = read_results_summary(input_location, input_location_type)
+    input_json = read_results_summary(input_location,
+                                      input_location_type=input_location_type)
 
     # preprocess input data
     ts_dirname, dfs = preprocess_data(

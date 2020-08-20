@@ -7,7 +7,7 @@ import json
 from pyveg.src.analysis_preprocessing import (
     read_results_summary,
     read_json_to_dataframes,
-    read_label_mask
+    read_label_json
 )
 
 
