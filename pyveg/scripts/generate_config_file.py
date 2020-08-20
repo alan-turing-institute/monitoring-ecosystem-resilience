@@ -54,7 +54,19 @@ def make_output_location(collection_name,
                          latitude,
                          longitude,
                          country):
-    return f"{collection_name}-{latitude}N-{longitude}E-{country}"
+    # quite restricted on characters allowed in Azure container names -
+    # use NSEW rather than negative numbers in coordinates
+    if latitude.startswith("-"):
+        latitude = latitude[1:]+"S"
+    else:
+        latitude = latitude+"N"
+    if longitude.startswith("-"):
+        longitude = longitude[1:]+"W"
+    else:
+        longitude = longitude+"E"
+
+    return f"{collection_name}-{latitude}-{longitude}-{country}"
+
 
 def make_filename(configs_dir,
                   test_mode,
