@@ -90,6 +90,33 @@ def read_label_json(input_label_json):
     return coords_to_mask
 
 
+def mask_space_point(space_point, mask_list):
+    """
+    See if a space point is in a list of coords that are to be masked (because
+    they're not patterned vegetation.
+
+    Parameters
+    ==========
+    space_point: dict, include keys "latitude" and "longitude"
+    mask_list: list of tuples (long,lat)
+
+    Returns
+    =======
+    True if space point is to be masked out, False otherwise
+    """
+    if (not mask_list) or len(mask_list)==0 :
+        return False
+    if not ("latitude" in space_point.keys() and "longitude" in space_point.keys()):
+        return False
+    for coords in mask_list:
+        # comparing floats - need to be careful.  Allow +/- 0.002 precision
+        # in case of rounding
+        if abs(space_point["latitude"] - coords[1]) < 0.02 \
+           and abs(space_point["longitude" ] - coords[0]) < 0.02:
+            return True
+    return False
+
+
 def read_json_to_dataframes(data, mask_list=None):
     """
     convert json data to a dict of DataFrame.
@@ -124,15 +151,11 @@ def read_json_to_dataframes(data, mask_list=None):
                     # add Null row if data is missing at this time point
                     rows_list.append({"date": date})
 
-            # if we are looking at veg data, loop over space points
-            elif isinstance(list(time_point)[0], dict):
-                for space_point in time_point:
-                    rows_list.append(space_point)
-
                 # if we are looking at veg data, loop over space points
                 elif isinstance(list(time_point)[0], dict):
                     for space_point in time_point:
-                        rows_list.append(space_point)
+                        if not mask_space_point(space_point, mask_list):
+                            rows_list.append(space_point)
 
                 # otherwise, just add the row
                 else:
