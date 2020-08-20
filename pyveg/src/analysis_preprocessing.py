@@ -11,6 +11,7 @@ import os
 
 import numpy as np
 import pandas as pd
+import ewstools
 
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
@@ -113,35 +114,40 @@ def read_json_to_dataframes(data, mask_list=None):
 
         rows_list = []
 
-        # loop over time series
-        for date, time_point in coll_results["time-series-data"].items():
+        if "time-series-data" in coll_results.keys():
 
-            # check we have data for this time point
-            if time_point is None or time_point == {} or time_point == []:
+            # loop over time series
+            for date, time_point in coll_results["time-series-data"].items():
 
-                # add Null row if data is missing at this time point
-                rows_list.append({"date": date})
+                # check we have data for this time point
+                if time_point is None or time_point == {} or time_point == []:
+                    # add Null row if data is missing at this time point
+                    rows_list.append({"date": date})
 
             # if we are looking at veg data, loop over space points
             elif isinstance(list(time_point)[0], dict):
                 for space_point in time_point:
-
                     rows_list.append(space_point)
 
-            # otherwise, just add the row
-            else:
-                # the key of each object in the time series is the date, and data
-                # for this date should be the values. Here we just add the date
-                # as a value to enable us to add the whole row in one go later.
-                time_point["date"] = date
-                rows_list.append(time_point)
+                # if we are looking at veg data, loop over space points
+                elif isinstance(list(time_point)[0], dict):
+                    for space_point in time_point:
+                        rows_list.append(space_point)
 
-        # make a DataFrame and add it to the dict of DataFrames
-        df = pd.DataFrame(rows_list)
-        df = df.drop(columns=["slope", "offset", "mean", "std"], errors="ignore")
-        df = df.sort_values(by="date")
-        assert df.empty == False
-        dfs[collection_name] = df
+                # otherwise, just add the row
+                else:
+                    # the key of each object in the time series is the date, and data
+                    # for this date should be the values. Here we just add the date
+                    # as a value to enable us to add the whole row in one go later.
+                    time_point["date"] = date
+                    rows_list.append(time_point)
+
+            # make a DataFrame and add it to the dict of DataFrames
+            df = pd.DataFrame(rows_list)
+            df = df.drop(columns=["slope", "offset", "mean", "std"], errors="ignore")
+            df = df.sort_values(by="date")
+            assert df.empty == False
+            dfs[collection_name] = df
 
     return dfs
 
@@ -724,7 +730,7 @@ def detrend_df(df, period="MS"):
         Input with seasonality removed from time series columns.
     """
 
-    # infer lag from period
+    # infer lag from period, we need at least 2 years for diferenciation to work
     if period == "MS":
         lag = 12
     else:
@@ -927,7 +933,8 @@ def preprocess_data(
     ts_df.to_csv(ts_filename, index=False)
 
     # additionally save resampled & detrended time series
-    if detrend:
+    # this detrending option (one year seasonality substraction) only works in monthly data that has at least 2 years of data
+    if detrend and ts_df.shape[0]>24 and period=='MS':
         print("- Detrending time series...")
 
         # remove seasonality from sub-image time series
@@ -945,3 +952,102 @@ def preprocess_data(
         ts_df_detrended_smooth.to_csv(ts_filename_detrended, index=False)
 
     return output_dir, dfs  #  for now return `dfs` for spatial plot compatibility
+
+
+def save_ts_summary_stats(ts_dirname, output_dir, metadata):
+        """
+        Given a time series DataFrames (constructed with `make_time_series`),
+        give summary statistics of all the avalaible time series.
+
+        Parameters
+        ----------
+        ts_dirname : str
+              Directory where the time series are saved.
+
+        output_dir : str
+            Directory to save the plots in.
+
+        metadata: dict
+            Dictionary with metadata from location
+
+        """
+
+        # read processed data
+
+        # get filenames of preprocessed data time series
+        ts_filenames = [f for f in os.listdir(ts_dirname) if "time_series" in f]
+
+        # we should get one seasonal time series and a detrended one
+        ts_df_detrended = pd.DataFrame()
+        for filename in ts_filenames:
+            if "detrended" in filename:
+                ts_df_detrended = pd.read_csv(os.path.join(ts_dirname,filename))
+            else:
+                ts_df = pd.read_csv(os.path.join(ts_dirname,filename))
+
+
+        def get_ts_summary_stats(series):
+            ''' Function that gets the summary stats of the time series and returns a dictionary'''
+            stats_dict = {}
+
+            stats_dict['min'] = series.min()
+            stats_dict['max'] = series.max()
+            stats_dict['mean'] = series.mean()
+            stats_dict['median'] = series.median()
+            stats_dict['std'] = series.std()
+
+            return stats_dict
+
+        # only look at relevant time series (offset50, ndvi and precipitation)
+        column_names = [c for c in ts_df.columns if 'offset50_mean' in c or
+                        'ndvi_mean' in c or
+                        'total_precipitation' in c]
+
+        # calculate summary statistics for each relevant time series
+        ts_dict_list = []
+        for column in column_names:
+
+            print(f'Calculating summary stats for "{column}"...')
+
+            column_dict = get_ts_summary_stats(ts_df[column])
+            column_dict['ts_id'] = column
+            for key in metadata:
+                column_dict[key] = metadata[key]
+
+            # We want the AR1 and Standard deviation of the detreded timeseries for the summary stats
+            if ts_df_detrended.empty==False:
+                ews_dic_veg = ewstools.core.ews_compute(ts_df_detrended[column].dropna(),
+                                                        roll_window=0.99 ,
+                                                        smooth='Gaussian',
+                                                        lag_times=[1],
+                                                        ews= ["var", "ac"],
+                                                        band_width=6)
+
+                EWSmetrics_df = ews_dic_veg['EWS metrics']
+                column_dict["Lag-1 AC (0.99 rolling window)"] = EWSmetrics_df["Lag-1 AC"].iloc[-1]
+                column_dict["Variance (0.99 rolling window)"] = EWSmetrics_df["Variance"].iloc[-1]
+
+                ews_dic_veg_50 = ewstools.core.ews_compute(ts_df_detrended[column].dropna(),
+                                                        roll_window=0.5,
+                                                        smooth='Gaussian',
+                                                        lag_times=[1],
+                                                        ews=["var", "ac"],
+                                                        band_width=6)
+
+                Kendall_tau_50 = ews_dic_veg_50['Kendall tau']
+                column_dict["Kendall tau Lag-1 AC (0.5 rolling window)"] = Kendall_tau_50["Lag-1 AC"].iloc[-1]
+                column_dict["Kendall tau Variance (0.5 rolling window)"] = Kendall_tau_50["Variance"].iloc[-1]
+
+
+
+            ts_dict_list.append(column_dict)
+
+
+        string_name = "_".join([str(metadata[key]) for key in metadata])
+        string_name = string_name.replace("/","_")
+        # turn the list of dictionary to dataframe and save it
+        ts_df_summary = pd.DataFrame(ts_dict_list)
+
+        #save both name specific and generic (might be useful inside the analysis later)
+        ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats.csv"))
+        ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats_"+string_name+".csv"))

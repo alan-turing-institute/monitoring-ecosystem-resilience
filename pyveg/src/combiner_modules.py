@@ -147,14 +147,14 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                 veg_time_series[date_string] = None
             # if there is no JSON directory for this date, add a null entry
             if "JSON" not in self.list_directory(
-                os.path.join(self.input_veg_location, date_string),
+                self.join_path(self.input_veg_location, date_string),
                 self.input_veg_location_type,
             ):
                 veg_time_series[date_string] = None
                 continue
             # find the subdirs of the JSON directory
             subdirs = self.list_directory(
-                os.path.join(self.input_veg_location, date_string, "JSON"),
+                self.join_path(self.input_veg_location, date_string, "JSON"),
                 self.input_veg_location_type,
             )
             veg_lists = []
@@ -162,14 +162,14 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                 logger.debug(
                     "{}: getting vegetation time series for {}".format(
                         self.name,
-                        os.path.join(
+                        self.join_path(
                             self.input_veg_location, date_string, "JSON", subdir
                         ),
                     )
                 )
                 # list the JSON subdirectories and find any .json files in them
                 dir_contents = self.list_directory(
-                    os.path.join(self.input_veg_location, date_string, "JSON", subdir),
+                    self.join_path(self.input_veg_location, date_string, "JSON", subdir),
                     self.input_veg_location_type,
                 )
                 json_files = [
@@ -177,7 +177,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                 ]
                 for filename in json_files:
                     j = self.get_json(
-                        os.path.join(
+                        self.join_path(
                             self.input_veg_location,
                             date_string,
                             "JSON",
@@ -203,7 +203,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
         for date_string in date_strings:
 
             weather_json = self.get_json(
-                os.path.join(
+                self.join_path(
                     self.input_weather_location,
                     date_string,
                     "JSON",
@@ -273,7 +273,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
 
         logger.info("{}: Wrote output to {}".format(
             self.name,
-            os.path.join(self.output_location, self.output_filename)
+            self.join_path(self.output_location, self.output_filename)
         )
         )
         self.is_finished = True
