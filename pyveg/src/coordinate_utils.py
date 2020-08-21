@@ -4,6 +4,7 @@ and their string representations.,
 """
 
 import re
+import requests
 
 
 def get_region_string(coords, region_size):
@@ -104,3 +105,24 @@ def get_sub_image_coords(coords, region_size, x_parts, y_parts):
                     )
                 )
     return sub_image_coords
+
+
+
+
+def lookup_country(latitude, longitude):
+    """
+    Use the OpenCage API to do reverse geocoding
+    """
+    r = requests.get("https://api.opencagedata.com/geocode/v1/json?q={}+{}&key=1a43cea9caa6420a8faf6e3b4bf13abb".format(latitude, longitude))
+    if r.status_code != 200:
+        print("Error accessing OpenCage API: {}".format(r.content))
+        return "Unknown"
+    result = r.json()
+    if not "results" in result.keys() or len(result["results"]) < 1:
+        print("No results found")
+        return "Unknown"
+    components = result["results"][0]["components"]
+    if not "country" in components.keys():
+        print("Couldn't locate {}N {}E to a country".format(latitude, longitude))
+        return "Unknown"
+    return components["country"]

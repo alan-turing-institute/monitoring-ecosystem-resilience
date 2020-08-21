@@ -404,7 +404,7 @@ coordinate_store.loc['45'] = {
 
 
 #Chad
-coordinate_store.loc['46'] = {
+coordinate_store.loc["46"] = {
   'continent' : 'Africa', 
   'country': 'Chad', 
   'type': 'Gaps', 
