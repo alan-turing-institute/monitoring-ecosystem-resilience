@@ -220,9 +220,12 @@ class VegAndWeatherJsonCombiner(CombinerModule):
         For all the keys  (i.e. dates) in the vegetation time-series,
         count how many have data for both veg and weather
         """
-        dates = output_dict[self.veg_collection]["time-series-data"].keys()
-        for date in dates:
+        veg_dates = output_dict[self.veg_collection]["time-series-data"].keys()
+        weather_dates = output_dict[self.weather_collection]["time-series-data"].keys()
+        for date in veg_dates:
+
             if output_dict[self.veg_collection]["time-series-data"][date] \
+               and date in weather_dates \
                and output_dict[self.weather_collection]["time-series-data"][date]:
                 self.run_status["succeeded"] += 1
         return
