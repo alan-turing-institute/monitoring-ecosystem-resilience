@@ -1,7 +1,6 @@
 """
 Data analysis code including functions to read the .json results file,
 and functions analyse and plot the data.
-
 """
 
 import json
@@ -19,21 +18,22 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from scipy.fftpack import fft
-from scipy.stats import sem, t
+from scipy.stats import sem, t, norm
 from statsmodels.tsa.seasonal import STL
 import ewstools
+
+import scipy
+import scipy.optimize as sco
 
 
 def convert_to_geopandas(df):
     """
     Given a pandas DatFrame with `lat` and `long` columns, convert
     to geopandas DataFrame.
-
     Parameters
     ----------
     df : DataFrame
         Pandas DatFrame with `lat` and `long` columns.
-
     Returns
     ----------
     geopandas DataFrame
@@ -48,20 +48,17 @@ def convert_to_geopandas(df):
 def calculate_ci(data, ci_level=0.99):
     """
     Calculate the confidence interval on the mean for a set of data.
-
     Parameters
     ----------
     data : Series
         Series of data to calculate the confidence interval of the mean.
     ci_level : float, optional
         Size of the confidence interval to calculate
-
     Returns
     ----------
     float
         Confidence interval value where the CI is [mu - h, mu + h],
         where mu is the mean.
-
     """
 
     # remove NaNs
@@ -79,7 +76,6 @@ def get_confidence_intervals(df, column, ci_level=0.99):
     """
     Calculate the confidence interval at each time point of a
     DataFrame containing data for a large image.
-
     Parameters
     ----------
     df : DataFrame
@@ -88,7 +84,6 @@ def get_confidence_intervals(df, column, ci_level=0.99):
         Name of the column to calculate the CI of.
     ci_level : float, optional
         Size of the confidence interval to calculate
-
     Returns
     ----------
     DataFrame
@@ -116,7 +111,6 @@ def get_confidence_intervals(df, column, ci_level=0.99):
 def create_lat_long_metric_figures(geodf, metric, output_dir):
     """
     From input data-frame with processed network metrics create 2D gird figure for each date available using Geopandas.
-
     Parameters
     ----------
     geodf:  GeoDataframe
@@ -125,10 +119,8 @@ def create_lat_long_metric_figures(geodf, metric, output_dir):
         Variable to plot
     output_dir: string
         Directory to save the figures
-
      Returns
     ----------
-
     """
 
     if {"date", metric}.issubset(geodf.columns):
@@ -165,20 +157,16 @@ def coarse_dataframe(geodf, side_square):
     """
     Coarse the granularity of a dataframe by grouping lat,long points
     that are close to each other in a square of L = size_square
-
     Parameters
     ----------
     geodf:  Dataframe
         Input dataframe
     side_square: integer
         Side of the square
-
-
     Returns
     ----------
      A  dataframe
         A coarser dataframe
-
     """
 
     # initialise the categories
@@ -205,8 +193,8 @@ def coarse_dataframe(geodf, side_square):
                 for j in range(side_square):
 
                     if (
-                        n + n_grids * i + j < n_grids * n_grids
-                        and data_df["category"].iloc[n + n_grids * i + j] == -1
+                            n + n_grids * i + j < n_grids * n_grids
+                            and data_df["category"].iloc[n + n_grids * i + j] == -1
                     ):
                         indexes.append(n + n_grids * i + j)
 
@@ -241,9 +229,7 @@ def coarse_dataframe(geodf, side_square):
 
 def network_figure(df, date, metric, vmin, vmax, output_dir):
     """
-
     Make 2D heatmap plot with network centrality measures
-
     Parameters
     ----------
     df:  Dataframe
@@ -258,7 +244,6 @@ def network_figure(df, date, metric, vmin, vmax, output_dir):
         Colorbar max values
     output_dir: string
         Directory where to save the plots
-
     Returns
     ----------
     """
@@ -315,11 +300,9 @@ def network_figure(df, date, metric, vmin, vmax, output_dir):
 def fft_series(time_series):
     """
     Perform Fast Fourier Transform on an input series (assume one row per day).
-
     Parameters
     ----------
     time_series: a pandas Series with one row per day, and datetime index (which we'll ignore)
-
     Returns
     -------
     xvals, yvals: np.arrays of frequencies (1/day) and strengths in frequency space.
@@ -334,7 +317,7 @@ def fft_series(time_series):
     fourier = fft(ts)
     # x-axis values
     xvals = np.linspace(0.0, 1.0 / (20 * T), N // 20)
-    yvals = 2.0 / N * np.abs(fourier[0 : N // 20])
+    yvals = 2.0 / N * np.abs(fourier[0: N // 20])
     return xvals, yvals
 
 
@@ -367,12 +350,10 @@ def get_AR1_parameter_estimate(ys):
     """
     Fit an AR(1) model to the time series data and return
     the associated parameter of the model.
-
     Parameters
     ----------
     ys: array
         Input time series data.
-
     Returns
     -------
     float
@@ -417,12 +398,10 @@ def get_kendell_tau(ys):
     variable being the data itself. A tau value of 1 means that the
     time series is always increasing, whereas -1 mean always decreasing,
     and 0 signifies no overall trend.
-
     Parameters
     ----------
     ys: array
         Input time series data.
-
     Returns
     -------
     float
@@ -441,9 +420,8 @@ def get_kendell_tau(ys):
 
 def write_to_json(filename, out_dict):
     """
-    Create or append the contents of `out_dict` 
+    Create or append the contents of `out_dict`
     to json file `filename`.
-
     Parameters
     ----------
     filename: array
@@ -460,7 +438,7 @@ def write_to_json(filename, out_dict):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
 
-        #  write new json file
+        #  write new json file
         with open(filename, "w") as json_file:
             json.dump(out_dict, json_file, indent=2)
 
@@ -483,7 +461,6 @@ def write_to_json(filename, out_dict):
 def stl_decomposition(series, period=12):
     """
     Run STL decomposition on a pandas Series object.
-
     Parameters
     ----------
     series : Series object
@@ -499,18 +476,15 @@ def stl_decomposition(series, period=12):
 
 def get_max_lagged_cor(dirname, veg_prefix):
     """
-    Convenience function which returns the maximum correlation as a 
+    Convenience function which returns the maximum correlation as a
     function of lag (using a file saved earlier).
-
     Parameters
     ----------
     dirname : str
         Path to the `analysis/` directory of the current analysis job.
-
     veg_prefix : str
         Compact representation of the satellite collection name used to
         obtain vegetation data.
-
     Returns
     ----------
     tuple
@@ -536,13 +510,13 @@ def get_max_lagged_cor(dirname, veg_prefix):
     if veg_prefix + "_offset50_mean_lagged_correlation" in lagged_cor.keys():
         max_corr_unsmoothed = lagged_cor[
             veg_prefix + "_offset50_mean_lagged_correlation"
-        ]
+            ]
     else:
         max_corr_unsmoothed = (np.NaN, np.NaN)
     if veg_prefix + "_offset50_smooth_mean_lagged_correlation" in lagged_cor.keys():
         max_corr_smooth = lagged_cor[
             veg_prefix + "_offset50_smooth_mean_lagged_correlation"
-        ]
+            ]
     else:
         max_corr_smooth = (np.NaN, np.NaN)
 
@@ -552,17 +526,15 @@ def get_max_lagged_cor(dirname, veg_prefix):
 def variance_moving_average_time_series(series, length):
     """
     Calculate a variance time series using a moving average
-
     Parameters
     ----------
     series : pandas Series
         Time series observations.
     length : int
         Length of the moving window in number of observations.
-
     Returns
     -------
-    pandas Series: 
+    pandas Series:
         pandas Series with datetime index, and one column, one row per date.
     """
 
@@ -579,17 +551,17 @@ def variance_moving_average_time_series(series, length):
 def ar1_moving_average_time_series(series, length=1):
     """
     Calculate an AR1 time series using a moving average
-    
+
     Parameters
     ----------
     series : pandas Series
         Time series observations.
     length : int
         Length of the moving window in number of observations.
-    
+
     Returns
     -------
-    pandas Series: 
+    pandas Series:
         pandas Series with datetime index, and one column, one row per date
     """
 
@@ -602,7 +574,7 @@ def ar1_moving_average_time_series(series, length=1):
 
     for i in range(len(series) - length):
         # print(series[i:(length  + i)])
-        param, se = get_AR1_parameter_estimate(series[i : (length + i)])
+        param, se = get_AR1_parameter_estimate(series[i: (length + i)])
         ar1.append(param)
         ar1_se.append(se)
         index.append(series.index[length + i])
@@ -623,14 +595,12 @@ def get_ar1_var_timeseries_df(series, window_size=0.5):
     Given a time series calculate AR1 and variance using
     a moving window. Put the two resulting time series into
     a new DataFrame and return the result.
-
     Parameters
     ----------
     series : pandas Series
         Time series observations.
     window_size: float (optional)
         Size of the moving window as a fraction of the time series length.
-
     Returns
     ----------
     DataFrame
@@ -654,14 +624,12 @@ def get_ar1_var_timeseries_df(series, window_size=0.5):
 
 
 def get_corrs_by_lag(series_A, series_B):
-
     # set up
     max_lag = 6  # assuming monthly sampling we shouldn't need to go past this
     correlations = []
 
     # loop through offsets
     for lag in range(0, max_lag):
-
         # shift vegetation time series back
         lagged_data = series_A.shift(-lag)
 
@@ -674,11 +642,10 @@ def get_corrs_by_lag(series_A, series_B):
 
 def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
     """
-    Given two time series and a lag betweent them, calculate the 
-    lagged correlation between the two time series using a moving 
-    window. Additionally calculate the lag of the maximum precipitation 
+    Given two time series and a lag betweent them, calculate the
+    lagged correlation between the two time series using a moving
+    window. Additionally calculate the lag of the maximum precipitation
     using the moving window..
-
     Parameters
     ----------
     series_A : pandas Series
@@ -687,7 +654,6 @@ def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
         Observations of the second time series.
     window_size: float (optional)
         Size of the moving window as a fraction of the time series length.
-
     Returns
     ----------
     DataFrame
@@ -717,11 +683,10 @@ def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
 
     # for each step along the moving window
     for i in range(len(series_A) - length):
-
         # get the slices of the timeseries
-        frame_A = series_A[i : (length + i)]
-        frame_A_lagged = series_A_lagged[i : (length + i)]
-        frame_B = series_B[i : (length + i)]
+        frame_A = series_A[i: (length + i)]
+        frame_A_lagged = series_A_lagged[i: (length + i)]
+        frame_B = series_B[i: (length + i)]
 
         # compute the lagged correlation using the lag
         # which maximises the global correlation
@@ -738,7 +703,7 @@ def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
 
     s = "ndvi" if "ndvi" in series_A else "offest50"
     correlations_mva_series_name = (
-        series_A.name.split("_")[0] + "_" + s + "_precip_corr"
+            series_A.name.split("_")[0] + "_" + s + "_precip_corr"
     )
     mag_max_cors_mw_series_name = series_A.name.split("_")[0] + "_" + s + "_precip_lag"
 
@@ -754,7 +719,6 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
     """
     Run moving window AR1 and variance calculations for several
     input time series time series.
-
     Parameters
     ----------
     df : DataFrame
@@ -763,7 +727,6 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
         Path output plotting directory.
     window_size: float (optional)
         Size of the moving window as a fraction of the time series length.
-
     Returns
     ----------
     DataFrame
@@ -778,11 +741,10 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
 
         # run moving window analysis veg and precip columns
         if (
-            ("offset50" in column or "ndvi" in column)
-            and "mean" in column
-            or "total_precipitation" in column
+                ("offset50" in column or "ndvi" in column)
+                and "mean" in column
+                or "total_precipitation" in column
         ):
-
             # reindex time series using data
             time_series = df.set_index("date")[column]
 
@@ -794,9 +756,9 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
         if "total_precipitation" in column:
             for column_veg in df.columns:
                 if (
-                    ("offset50" in column_veg or "ndvi" in column_veg)
-                    and "mean" in column_veg
-                    and "smooth" not in column_veg
+                        ("offset50" in column_veg or "ndvi" in column_veg)
+                        and "mean" in column_veg
+                        and "smooth" not in column_veg
                 ):
                     mwa_df = mwa_df.merge(
                         get_correlation_lag_ts(
@@ -838,28 +800,25 @@ def get_datetime_xs(df):
 
 
 def early_warnings_sensitivity_analysis(
-    series,
-    indicators=["var", "ac"],
-    winsizerange=[0.10, 0.8],
-    incrwinsize=0.10,
-    smooth="Gaussian",
-    bandwidthrange=[0.05, 1.0],
-    spanrange=[0.05, 1.1],
-    incrbandwidth=0.2,
-    incrspanrange=0.1,
+        series,
+        indicators=["var", "ac"],
+        winsizerange=[0.10, 0.8],
+        incrwinsize=0.10,
+        smooth="Gaussian",
+        bandwidthrange=[0.05, 1.0],
+        spanrange=[0.05, 1.1],
+        incrbandwidth=0.2,
+        incrspanrange=0.1,
 ):
-
     """
-    Function to estimate the sensitivity of the early warnings analysis to 
-    the smoothing and windowsize used. The function returns a dataframe that 
-    contains the Kendall tau rank correlation estimates for the rolling window 
-    sizes (winsize variable) and bandwidths or span sizes depending on the 
+    Function to estimate the sensitivity of the early warnings analysis to
+    the smoothing and windowsize used. The function returns a dataframe that
+    contains the Kendall tau rank correlation estimates for the rolling window
+    sizes (winsize variable) and bandwidths or span sizes depending on the
     de-trending (smooth variable).
-
-    This function is inspired in the sensitivity_ews.R function from Vasilis 
+    This function is inspired in the sensitivity_ews.R function from Vasilis
     Dakos, Leo Lahti in the early-warnings-R package:
     https://github.com/earlywarningtoolbox/earlywarnings-R.
-
     Parameters
     ----------
     series : pandas Series
@@ -880,7 +839,6 @@ def early_warnings_sensitivity_analysis(
         Size to increment the bandwidth used for the Gaussian kernel when gaussian filtering is applied. It is expressed as percentage of the timeseries length (must be numeric between 0 and 1). Default is 0.2.
     incrspanrange: float
         Size to increment the the span used for the Lowess smoothing
-
     Returns
     --------
     DataFrame:
@@ -895,9 +853,8 @@ def early_warnings_sensitivity_analysis(
         if smooth == "Gaussian":
 
             for bw in np.arange(
-                bandwidthrange[0], bandwidthrange[1] + 0.01, incrbandwidth
+                    bandwidthrange[0], bandwidthrange[1] + 0.01, incrbandwidth
             ):
-
                 bw = round(bw, 3)
                 ews_dic_veg = ewstools.core.ews_compute(
                     series.dropna(),
@@ -917,7 +874,6 @@ def early_warnings_sensitivity_analysis(
         elif smooth == "Lowess":
 
             for span in np.arange(spanrange[0], spanrange[1] + 0.01, incrspanrange):
-
                 span = round(span, 2)
                 ews_dic_veg = ewstools.core.ews_compute(
                     series.dropna(),
@@ -956,26 +912,25 @@ def early_warnings_sensitivity_analysis(
 
 
 def early_warnings_null_hypothesis(
-    series,
-    indicators=["var", "ac"],
-    roll_window=0.4,
-    smooth="Lowess",
-    span=0.1,
-    band_width=0.2,
-    lag_times=[1],
-    n_simulations=1000,
+        series,
+        indicators=["var", "ac"],
+        roll_window=0.4,
+        smooth="Lowess",
+        span=0.1,
+        band_width=0.2,
+        lag_times=[1],
+        n_simulations=1000,
 ):
     """
-    Function to estimate the significance of the early warnings analysis 
-    by performing a null hypothesis test. The function estimate distributions 
-    of trends in early warning indicators from different surrogate timeseries 
+    Function to estimate the significance of the early warnings analysis
+    by performing a null hypothesis test. The function estimate distributions
+    of trends in early warning indicators from different surrogate timeseries
     generated after fitting an ARMA(p,q) model on the original data.
-    The trends are estimated by the nonparametric Kendall tau correlation 
-    coefficient and can be compared to the trends estimated in the original 
-    timeseries to produce probabilities of false positives. The function 
-    returns a dataframe that contains the Kendall tau rank correlation 
+    The trends are estimated by the nonparametric Kendall tau correlation
+    coefficient and can be compared to the trends estimated in the original
+    timeseries to produce probabilities of false positives. The function
+    returns a dataframe that contains the Kendall tau rank correlation
     estimates for orignal data and surrogates.
-
     Parameters
     ----------
     series : pandas Series
@@ -998,13 +953,11 @@ def early_warnings_null_hypothesis(
         List of lag times at which to compute autocorrelation.
     n_simulations: int
         The number of surrogate data. Default is 1000.
-
     Returns
     --------
     DataFrame:
-        A dataframe that contains the Kendall tau rank correlation estimates for each 
+        A dataframe that contains the Kendall tau rank correlation estimates for each
         indicator estimated on each surrogate dataset.
-
     """
 
     ews_dic = ewstools.core.ews_compute(
@@ -1103,15 +1056,15 @@ def early_warnings_null_hypothesis(
 
         # List of EWS that can be used for Kendall tau computation
         ktau_metrics = [
-            "Variance",
-            "Standard deviation",
-            "Skewness",
-            "Kurtosis",
-            "Coefficient of variation",
-            "Smax",
-            "Smax/Var",
-            "Smax/Mean",
-        ] + ["Lag-" + str(i) + " AC" for i in lag_times]
+                           "Variance",
+                           "Standard deviation",
+                           "Skewness",
+                           "Kurtosis",
+                           "Coefficient of variation",
+                           "Smax",
+                           "Smax/Var",
+                           "Smax/Mean",
+                       ] + ["Lag-" + str(i) + " AC" for i in lag_times]
         # Find intersection with this list and EWS computed
         ews_list = df_ews.columns.values.tolist()
         ktau_metrics = list(set(ews_list) & set(ktau_metrics))
@@ -1151,3 +1104,247 @@ def early_warnings_null_hypothesis(
     kendall_tau_df = pd.concat([data_kendall_tau_df, surrogates_kendall_tau_df])
 
     return kendall_tau_df
+
+
+def mean_annual_ts(x, resolution=12):
+    """
+    Calculate mean annual time series from time series. Also fills in missing values
+    by linear interpolation. NB Fails if there is missing value at the start or end.
+    Parameters
+    ----------
+    x : Time series
+        Time series to calculate mean annual time series for
+    resolution : float
+        Number of values each year in a time series (12 is monthly for example)
+    Returns
+    ----------
+    ndarray
+        Array of length equal to resolution that is the mean annual time series
+    """
+
+    missing_inds = np.where(np.isnan(x))[0]
+    if len(missing_inds) > 0:
+        for i in range(len(missing_inds)):
+            print(i)
+            x[missing_inds[i]] = np.mean([x[missing_inds[i] - 1], x[missing_inds[i] + 1]])
+
+    mean_cycle = np.repeat(np.nan, resolution, axis=0)
+    for i in range(resolution):
+        mean_cycle[i] = np.nanmean(x[np.linspace(start=i, stop=len(x) - 1, num=resolution, dtype=int)])
+    return mean_cycle
+
+
+def decay_rate(x, resolution=12, method='basic'):
+    """
+    Calculates the decay rate between the max and min values of a time series.
+    Parameters
+    ----------
+    x : time series
+        Time series to calculate decay rate on. mean_annual_ts is calculated
+        on this series within this function so raw time series is expected.
+    resolution : int
+        Number of values each year in a time series (12 is monthly for example)
+    method : 'basic' (default) or 'adjusted'
+        A choice on whether to calculate the decay rate on the mean annual
+        time series calculated within the function or to adjust the time series
+        such that the min value is set to 1 by substracting the minimum
+        plus 1 of the mean annual time series (useful for offset50 values)
+    Returns
+    ----------
+    float
+        The decay rate value
+    """
+
+    annual_cycle = mean_annual_ts(x, resolution)
+
+    if method == 'basic':
+        ts = annual_cycle
+    elif method == 'adjusted':
+        ts = annual_cycle - np.min(annual_cycle) + 1
+    else:
+        ts = np.nan  # causes fail if method is not specified properly
+
+    max_ind = np.where(ts == np.max(ts))[0][0]
+    min_ind = np.where(ts == np.min(ts))[0][0]
+
+    if min_ind < max_ind:
+        # this ensures the length of time for decay is correct below
+        min_ind = min_ind + resolution
+
+    dr = np.log(np.min(ts) / np.max(ts)) / (min_ind - max_ind)
+    return dr
+
+
+def exp_model_fit(x, resolution=12, method='basic'):
+    """
+    Fits an exponential model from the maximum to the minimum of the
+    mean annual time series. A raw time series is expected as an input.
+    Parameters
+    ----------
+    x : time series
+        Time series to calculate decay rate on. mean_annual_ts is calculated
+        on this series within this function so raw time series is expected.
+    resolution : int
+        Number of values each year in a time series (12 is monthly for example)
+    method : 'basic' (default) or 'adjusted'
+        A choice on whether to fit the expoenential model on the mean annual
+        time series calculated within the function or to adjust the time series
+        such that the min value is set to 1 by substracting the minimum
+        plus 1 of the mean annual time series (useful for offset50 values)
+    Returns
+    ----------
+    ndarray
+        The coefficient values from the exponential model fit
+    """
+    annual_cycle = mean_annual_ts(x, resolution)
+
+    if method == 'basic':
+        ts = annual_cycle
+    elif method == 'adjusted':
+        ts = annual_cycle - np.min(annual_cycle) + 1
+    else:
+        ts = np.nan  # causes fail if method is not specified properly
+
+    max_ind = np.where(ts == np.max(ts))[0][0]
+    min_ind = np.where(ts == np.min(ts))[0][0]
+
+    # in most cases we find the minimum value is earlier in the year
+    # so the below crosses Dec/Jan if this is the case
+    # otherwise remains within a single year cycle
+    if min_ind < max_ind:
+        exp_ts = np.append(ts[max_ind:resolution], ts[0:min_ind])
+    else:
+        exp_ts = ts[max_ind:min_ind]
+
+    exp_mod = np.polyfit(np.log(exp_ts), np.linspace(start=0, stop=len(exp_ts) - 1, num=len(exp_ts), dtype=int), 1)
+    return exp_mod
+
+
+def reverse_normalise_ts(x):
+    """
+    Takes what is expected to be a mean annual time series (from mean_annual_ts), arranges it so the
+    first value is the last, reverses it and then normalises it.
+    It is to be used within cball function below.
+    Parameters
+    ----------
+    x : time series
+        Time series reverse and normalise. Assumed this is from mean_annual_ts output
+    Returns
+    ----------
+    ndarray
+        The reversed and normalised time series
+    """
+
+    min_ind = np.where(x == np.min(x))[0][0]
+    arrangex = np.append(x[(min_ind + 1):len(x)], x[0:(min_ind + 1)])
+    revx = arrangex[::-1]
+    normx = (revx - np.min(revx)) / sum(revx - np.min(revx))
+    return normx
+
+
+def cball(x=range(1, 13), alpha=1.5, n=150.0, xbar=8.0, sigma=2.0):
+    """
+    Calculates the Crystal Ball pdf on the values 1 to 12 by default (i.e. monthly)
+    Default parameter values give a fit close to those we would expect from offset50
+    time series
+    Parameters
+    ----------
+    x : Time series
+        Index values going from 1 to the length of the annual time series
+    alpha, n, xbar, sigma : Model parameters, int
+        Parameters used in Crystal Ball pdf calculation
+    Returns
+    ----------
+    ndarray
+        The values of the Crystal Ball pdf for each index of x
+    """
+
+    def erf(x):
+        output = 2 * norm.cdf(x * np.sqrt(2)) - 1
+        return output
+
+    def A(alpha, n):
+        output = ((n / np.abs(alpha)) ** n) * np.exp((-np.abs(alpha) ** 2) / 2)
+        return output
+
+    def B(alpha, n):
+        output = n / np.abs(alpha) - np.abs(alpha)
+        return output
+
+    def N(sigma, C, D):
+        output = 1 / (sigma * (C + D))
+        return output
+
+    def C(alpha, n):
+        output = (n / np.abs(alpha)) * (1 / (n - 1)) * np.exp((-np.abs(alpha) ** 2) / 2)
+        return output
+
+    def D(alpha):
+        output = np.sqrt(np.pi / 2) * (1 + erf(np.abs(alpha) / np.sqrt(2)))
+        return output
+
+    fx = np.repeat(np.nan, len(x), axis=0)
+    for i in range(len(x)):
+        if (((x[i] - xbar) / sigma) > -alpha):
+            fx[i] = N(sigma, C(alpha, n), D(alpha)) * np.exp((-(x[i] - xbar) ** 2) / (2 * sigma ** 2))
+        if (((x[i] - xbar) / sigma) <= -alpha):
+            fx[i] = N(sigma, C(alpha, n), D(alpha)) * A(alpha, n) * (B(alpha, n) - (x[i] - xbar) / sigma) ** (-n)
+    return fx
+
+
+def err_func(params, ts):
+    """
+    Calculates the difference between the cball function with supplied params
+    and a supplied time series of the same length.
+    err_func is used within
+    cball_parfit function below where full time series needs to be supplied
+    Parameters
+    ----------
+    params : Model parameters, list
+        Parameters used in Crystal Ball pdf calculation
+        alpha, n, xbar, sigma
+
+    ts : Time series
+        Time series to compare output of cball function to
+    Returns
+    ----------
+    ndarray
+        Residuals/differences between Crytal Ball pdf and supplied time series
+    """
+
+    model_output = cball(range(1, len(ts) + 1), params[0], params[1], params[2], params[3])
+
+    residuals = []
+    for i in range(0, len(ts)):
+        r = model_output[i] - ts[i]
+        residuals.append(r)
+
+    return residuals
+
+
+def cball_parfit(p0, timeseries):
+    """
+    Uses least squares regression to optimise the parameters in cball to fit the
+    timeseries supplied. The supplied time series should be the original series
+    as this function finds the mean annual ts and reverses and normalises it
+    Parameters
+    ----------
+    p0 : Initial parameters, list
+        A list a parameters to use in the Crystal Ball calculation as an initial estimate
+
+    timeseries : Time series
+        Original time series to calculate mean annual time series on, reverse and normalise
+        and then use to optimise the parameters on
+    Returns
+    ----------
+    ndarray
+        A list of optimised parameters (alpha, n, xbar, sigma)
+    int
+        A indication that the optimisation works (if output is 1,2,3 or 4 then ok)
+    """
+
+    mean_ts = mean_annual_ts(timeseries)
+    ts = reverse_normalise_ts(mean_ts)
+    p1, success = sco.leastsq(err_func, p0, args=ts)
+    return p1, success
+
