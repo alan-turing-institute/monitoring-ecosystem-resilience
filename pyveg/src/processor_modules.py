@@ -83,7 +83,7 @@ class ProcessorModule(BaseModule):
         if not "run_mode" in vars(self):
             self.run_mode = "local"
         if not "n_batch_tasks" in vars(self):
-            self.n_batch_tasks = 100
+            self.n_batch_tasks = -1 # as many as we need
         if not "batch_task_dict" in vars(self):
             self.batch_task_dict = {}
         if not "timeout" in vars(self):
@@ -326,7 +326,11 @@ class ProcessorModule(BaseModule):
                 )
             )
             # split these dates up over the batch tasks
-            dates_per_task = assign_dates_to_tasks(date_strings, self.n_batch_tasks)
+            if self.n_batch_tasks > 0:
+                n_batch_tasks = self.n_batch_tasks
+            else:
+                n_batch_tasks = len(date_strings)
+            dates_per_task = assign_dates_to_tasks(date_strings, n_batch_tasks)
             # create a config dict for each task - will correspond to configuration for an
             # instance of this Module.
 
