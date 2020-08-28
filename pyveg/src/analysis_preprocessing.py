@@ -17,14 +17,113 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pyveg.src.data_analysis_utils import write_to_json
 
+try:
+    from pyveg.src import azure_utils
+except:
+    print("Unable to import azure_utils")
 
-def read_json_to_dataframes(data):
+
+def read_results_summary(input_location,
+                         input_filename="results_summary.json",
+                         input_location_type="local"):
     """
-    convert json data to a dict of DataFrame.
+    Read the results_summary.json, either from local storage or from Azure blob storage.
+
+    Parameters
+    ==========
+    input_location: str, directory or container with results_summary.json in
+    input_filename: str, name of json file, default is "results_summary.json"
+    input_location_type: str: 'local' or 'azure'
+
+    Returns
+    =======
+    json_data: dict, the contents of results_summary.json
+    """
+
+    if input_location_type == "local":
+        json_filepath = os.path.join(input_location, input_filename)
+        if not os.path.exists(json_filepath):
+            raise FileNotFoundError("Unable to find {}".format(json_filepath))
+        json_data = json.load(open(json_filepath))
+        return json_data
+    elif input_location_type == "azure":
+        subdirs = azure_utils.list_directory(input_location, input_location)
+        print("Found subdirs {}".format(subdirs))
+        for subdir in subdirs:
+            print("looking at subdir {}".format(subdir))
+            if "combine" in subdir:
+                files = azure_utils.list_directory(input_location+"/"+subdir,
+                                                   input_location)
+                if input_filename in files:
+                    return azure_utils.read_json(input_location+"/"+subdir+"/"+input_filename,
+                                                 input_location)
+                else:
+                    raise RuntimeError("No {} found in {}".format(input_filename, subdir))
+        return {}
+    else:
+        raise RuntimeError("input_location_type needs to be either 'local' or 'azure'")
+
+
+
+def read_label_json(input_label_json):
+    """
+    Read JSON output of ImageLabeller, and return a list of coords to be masked out
 
     Parameters
     ----------
+    input_label_json : str, path to json file
+
+    Returns
+    ----------
+    mask: list
+        A list of coordinate tuples (long,lat) to be masked out.
+    """
+
+    if not input_label_json:
+        return []
+    if not os.path.exists(input_label_json):
+        print("WARNING! Could not find file {} - will not mask out any sub-images".format(input_label_json))
+        return []
+    df = pd.DataFrame.from_records(json.load(open(input_label_json)))
+    top_labels = df.groupby(["longitude","latitude"]).category.max().to_dict()
+    coords_to_mask = [k for k,v in top_labels.items() if v=="Not patterned vegetation"]
+    return coords_to_mask
+
+
+def mask_space_point(space_point, mask_list):
+    """
+    See if a space point is in a list of coords that are to be masked (because
+    they're not patterned vegetation.
+
+    Parameters
+    ==========
+    space_point: dict, include keys "latitude" and "longitude"
+    mask_list: list of tuples (long,lat)
+
+    Returns
+    =======
+    True if space point is to be masked out, False otherwise
+    """
+    if (not mask_list) or len(mask_list)==0 :
+        return False
+    if not ("latitude" in space_point.keys() and "longitude" in space_point.keys()):
+        return False
+    for coords in mask_list:
+        # comparing floats - need to be careful.  Allow +/- 0.002 precision
+        # in case of rounding
+        if abs(space_point["latitude"] - coords[1]) < 0.02 \
+           and abs(space_point["longitude" ] - coords[0]) < 0.02:
+            return True
+    return False
+
+
+def read_json_to_dataframes(data, mask_list=None):
+    """
+    convert json data to a dict of DataFrame.
+    Parameters
+    ----------
     data : dict, json data output from run_pyveg_pipeline
+    mask_list: list of tuples of floats.  Coordinates (long,lat) to be masked out.
 
     Returns
     ----------
@@ -49,14 +148,14 @@ def read_json_to_dataframes(data):
 
                 # check we have data for this time point
                 if time_point is None or time_point == {} or time_point == []:
-
                     # add Null row if data is missing at this time point
                     rows_list.append({"date": date})
 
                 # if we are looking at veg data, loop over space points
                 elif isinstance(list(time_point)[0], dict):
                     for space_point in time_point:
-                        rows_list.append(space_point)
+                        if not mask_space_point(space_point, mask_list):
+                            rows_list.append(space_point)
 
                 # otherwise, just add the row
                 else:
@@ -746,6 +845,7 @@ def detrend_data(dfs, period="MS"):
 def preprocess_data(
         input_json,
         output_basedir,
+        input_label_json=None,
         drop_outliers=True,
         fill_missing=True,
         resample=True,
@@ -765,6 +865,9 @@ def preprocess_data(
        JSON data created during a GEE download job.
     output_basedir : str,
        Directory where time-series csv will be put.
+    input_label_json: str,
+        JSON file that is the output of ImageLabeller.  If specified, will be used
+        to "mask off" sub-images that are labelled as "Not patterned vegetation".
     drop_outliers : bool, optional
         Remove outliers in sub-image time series.
     fill_missing : bool, optional
@@ -782,8 +885,10 @@ def preprocess_data(
 
     Returns
     ----------
-    str
+    output_dir: str
         Path to the csv file containing processed data.
+    defs: dict
+        Dictionary of dataframes.
     """
 
     # put output plots in the results dir
@@ -794,8 +899,15 @@ def preprocess_data(
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    # read json file to dataframes
-    dfs = read_json_to_dataframes(input_json)
+    # if we're given a json file from ImageLabeller output to mask out non-patterned
+    # coordinates, read it here
+    if input_label_json:
+        mask_list = read_label_json(input_label_json)
+    else:
+        mask_list=None
+
+    # read dict from json file to dataframes
+    dfs = read_json_to_dataframes(input_json, mask_list)
 
     # keep track of time points where data is missing (by default pandas
     # groupby operations, which is used haveily in this module, drop NaNs)
@@ -962,10 +1074,3 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
         #save both name specific and generic (might be useful inside the analysis later)
         ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats.csv"))
         ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats_"+string_name+".csv"))
-
-
-
-
-
-
-

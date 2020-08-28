@@ -15,8 +15,11 @@ import re
 import pandas as pd
 import ewstools
 
-from pyveg.src.analysis_preprocessing import preprocess_data
-from pyveg.src.analysis_preprocessing import save_ts_summary_stats
+from pyveg.src.analysis_preprocessing import (
+    read_results_summary,
+    preprocess_data,
+    save_ts_summary_stats
+)
 
 from pyveg.src.data_analysis_utils import (
     create_lat_long_metric_figures,
@@ -43,11 +46,6 @@ from pyveg.src.plotting import (
 
 from pyveg.scripts.create_analysis_report import create_markdown_pdf_report
 from pyveg.scripts.upload_to_zenodo import upload_results
-
-try:
-    from pyveg.src import azure_utils
-except:
-    print("Unable to import azure_utils")
 
 
 def run_time_series_analysis(filename, output_dir, detrended=False):
@@ -214,6 +212,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 def analyse_gee_data(input_location,
                      input_location_type="local",
                      output_dir=None,
+                     input_label_json=None,
                      do_time_series=True,
                      do_spatial=False,
                      upload_to_zenodo=False,
@@ -229,6 +228,9 @@ def analyse_gee_data(input_location,
         Can be 'local' or 'azure'.
     output_dir: str,
         Location for outputs of the analysis. If None, use input_location
+    input_label_json: str,
+        JSON file that is the output of ImageLabeller.  If specified, will be used
+        to "mask off" sub-images that are labelled as "Not patterned vegetation".
     do_time_series: bool
         Option to run time-series analysis and do plots
     do_spatial: bool
@@ -242,11 +244,12 @@ def analyse_gee_data(input_location,
     if not output_dir:
         output_dir = input_location
     # read the results_summary.json
-    input_json = read_results_summary(input_location, input_location_type)
+    input_json = read_results_summary(input_location,
+                                      input_location_type=input_location_type)
 
     # preprocess input data
     ts_dirname, dfs = preprocess_data(
-        input_json, output_dir, n_smooth=4, resample=False, period="MS"
+        input_json, output_dir, input_label_json, n_smooth=4, resample=False, period="MS"
     )
 
     # get filenames of preprocessed data time series
@@ -370,46 +373,6 @@ def analyse_gee_data(input_location,
     print("\nAnalysis complete.\n")
 
 
-def read_results_summary(input_location, input_location_type):
-    """
-    Read the results_summary.json, either from local storage or from Azure blob storage.
-
-    Parameters
-    ==========
-    input_location: str, directory or container with results_summary.json in
-    input_location_type: str: 'local' or 'azure'
-
-    Returns
-    =======
-    json_data: dict, the contents of results_summary.json
-    """
-    json_name = "results_summary.json"
-    if input_location_type == "local":
-        json_filepath = os.path.join(input_location, json_name)
-        if not os.path.exists(json_filepath):
-            raise FileNotFoundError("Unable to find {}".format(json_filepath))
-        json_data = json.load(open(json_filepath))
-        return json_data
-    elif input_location_type == "azure":
-        subdirs = azure_utils.list_directory(input_location, input_location)
-        print("Found subdirs {}".format(subdirs))
-        for subdir in subdirs:
-            print("looking at subdir {}".format(subdir))
-            if "combine" in subdir:
-                files = azure_utils.list_directory(input_location+"/"+subdir,
-                                                   input_location)
-                if json_name in files:
-                    return azure_utils.read_json(input_location+"/"+subdir+"/"+json_name,
-                                                 input_location)
-                else:
-                    raise RuntimeError("No {} found in {}".format(json_name, subdir))
-        return {}
-    else:
-        raise RuntimeError("input_location_type needs to be either 'local' or 'azure'")
-
-
-
-
 def main():
     """
     CLI interface for gee data analysis.
@@ -424,6 +387,9 @@ def main():
     parser.add_argument(
         "--input_container",
         help="results location on blob storage from `download_gee_data` script, containing `results_summary.json`",
+    )
+    parser.add_argument(
+        "--input_label_json", help="Labels from ImageLabeller, to mask non-patterned vegetation"
     )
     parser.add_argument(
         "--output_dir",
@@ -467,7 +433,7 @@ def main():
         input_location_type = "azure"
 
 
-
+    input_label_json = args.input_label_json
     do_time_series = not args.dont_do_time_series
     do_spatial = args.spatial
     upload_to_zenodo = args.upload_to_zenodo
@@ -476,6 +442,7 @@ def main():
     analyse_gee_data(input_location,
                      input_location_type,
                      output_dir,
+                     input_label_json,
                      do_time_series,
                      do_spatial,
                      upload_to_zenodo,
