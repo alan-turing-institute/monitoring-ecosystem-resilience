@@ -115,16 +115,25 @@ def write_file(configs_dir,
                              collection_name,
                              run_mode)
 
+    if time_per_point.endswith("d") or time_per_point.endswith("w"):
+        weather_collection_name = "ERA5_daily"
+        weather_start_date = start_date
+    else:
+        weather_collection_name = "ERA5"
+        weather_start_date = collections.data_collections[weather_collection_name]["min_date"]
+
     text = get_template_text()
     current_time = time.strftime("%y-%m-%d %H:%M:%S")
     text = re.sub("CURRENT_TIME", current_time, text)
     output_location_type = "azure" if run_mode == "batch" else "local"
     text = re.sub("COLLECTION_NAME", collection_name, text)
+    text = re.sub("WEATHER_COLL_NAME", weather_collection_name, text)
     text = re.sub("OUTPUT_LOCATION_TYPE", output_location_type, text)
     text = re.sub("OUTPUT_LOCATION", output_location, text)
     text = re.sub("LATITUDE", latitude, text)
     text = re.sub("LONGITUDE", longitude, text)
     text = re.sub("START_DATE", start_date, text)
+    text = re.sub("WEATHER_STARTDATE", weather_start_date, text)
     text = re.sub("END_DATE", end_date, text)
     text = re.sub("TIME_PER_POINT", time_per_point, text)
     text = re.sub("RUN_MODE", run_mode, text)
@@ -202,7 +211,7 @@ def main():
             default_configs_dir = "configs"
         else:
             default_configs_dir = "."
-        configs_dir = input("Enter path to directory containing config files, or press Return for default path '{}' : ".format(default_configs_dir))
+        configs_dir = input("Enter path to directory containing config files, or press Return for default path ('{}') : ".format(default_configs_dir))
         if len(configs_dir) == 0:
             configs_dir = default_configs_dir
 
