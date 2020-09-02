@@ -205,7 +205,7 @@ class DownloaderModule(BaseModule):
                 download_locations.append(location)
             else:
                 self.run_status["failed"] += 1
-                logger.error("{}: download succeeded for date range {}".format(self.name, date_range))
+                logger.error("{}: download did not succeed for date range {}".format(self.name, date_range))
         self.is_finished = True
         return self.run_status
 
