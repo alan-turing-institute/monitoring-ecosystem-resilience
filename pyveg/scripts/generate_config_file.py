@@ -6,7 +6,7 @@ download and processing jobs with
 pyveg_run_pipeline --config_file pyveg/configs/<config_filename>
 
 User specifies:
-* Coordinates
+* Coordinates  OR id of location in coordinates.py
 * Date range
 * time per point
 * Satellite collection name (e.g. "Sentinel2", "Landsat8")
@@ -36,6 +36,7 @@ import argparse
 import time
 
 from pyveg.configs import collections
+from pyveg.coordinates import coordinate_store
 from pyveg.src.coordinate_utils import lookup_country
 
 def get_template_text():
@@ -50,7 +51,8 @@ def get_template_text():
     return open(template_filepath).read()
 
 
-def make_output_location(collection_name,
+def make_output_location(coords_id,
+                         collection_name,
                          latitude,
                          longitude,
                          country):
@@ -65,7 +67,11 @@ def make_output_location(collection_name,
     else:
         longitude = longitude+"E"
 
-    return f"{collection_name}-{latitude}-{longitude}-{country}"
+    if coords_id:
+        output_location = f"{coords_id}-{collection_name}-{latitude}-{longitude}-{country}"
+    else:
+        output_location = f"{collection_name}-{latitude}-{longitude}-{country}"
+    return output_location
 
 
 def make_filename(configs_dir,
@@ -77,11 +83,14 @@ def make_filename(configs_dir,
                   end_date,
                   time_per_point,
                   collection_name,
-                  run_mode):
+                  run_mode,
+                  coords_id):
     """
     Construct a filename from the specified parameters.
     """
     filename_start = "testconfig" if test_mode else "config"
+    if coords_id:
+        filename_start += "_"+coords_id
     filepath = os.path.join(
         configs_dir,
         f"{filename_start}_{collection_name}_{latitude}N_{longitude}E_{country}_{start_date}_{end_date}_{time_per_point}_{run_mode}.py"
@@ -100,7 +109,9 @@ def write_file(configs_dir,
                collection_name,
                run_mode,
                n_threads,
-               test_mode=False):
+               test_mode=False,
+               coords_id=None
+               ):
     """
     Take the arguments, construct a filename, and write contents
     """
@@ -113,7 +124,8 @@ def write_file(configs_dir,
                              end_date,
                              time_per_point,
                              collection_name,
-                             run_mode)
+                             run_mode,
+                             coords_id)
 
     if time_per_point.endswith("d") or time_per_point.endswith("w"):
         weather_collection_name = "ERA5_daily"
@@ -147,8 +159,9 @@ def write_file(configs_dir,
 
 
 def main():
-    collection_names = collections.data_collections.keys()
-    #["Sentinel2","Landsat4","Landsat7","Landsat8"]
+    # get lists of options for the user to choose from.
+    collection_names = [k for k in collections.data_collections.keys() \
+                        if collections.data_collections[k]["data_type"] == "vegetation"]
     run_modes = ["local","batch"]
     date_regex = re.compile("[\d]{4}-[01][\d]-[0123][\d]")
     time_per_point_regex = re.compile("[\d]+[dwmy]")
@@ -156,8 +169,13 @@ def main():
     long_range = [-180., 180.]
     n_threads_range = range(1,17)
     default_n_threads = 4
+
+    # create argument parser in case user wants to use command line args
     parser = argparse.ArgumentParser(
         description="create a config file for running pyveg_pipeline"
+    )
+    parser.add_argument(
+        "--coords_id", help="(optional) ID of location in coordinates.py", type=str
     )
     parser.add_argument(
         "--configs_dir", help="path to directory containing config files"
@@ -202,6 +220,15 @@ def main():
 
     args = parser.parse_args()
 
+    # sanity check
+    if args.coords_id and (args.latitude or args.longitude):
+        print("Please select EITHER coords_id OR latitude/longitude")
+        return
+
+    #############
+    # now go through any arguments not already set via command line,
+    # and prompt user for them.
+
     # configs_dir
     configs_dir = args.configs_dir if args.configs_dir else ""
     while not os.path.exists(configs_dir):
@@ -226,19 +253,36 @@ def main():
     while not collection_name in collection_names:
         collection_name = input("Please enter a valid collection name from this list: {} : ".format(collection_names))
 
+    # (optional) ID from coordinates.py
+    coords_id = args.coords_id if args.coords_id else None
+    latitude = None
+    longitude = None
+    country = None
+    if coords_id:
+        try:
+            row = coordinate_store.loc[coords_id]
+            latitude = row["latitude"]
+            longitude = row["longitude"]
+            country = row["country"]
+        except(KeyError):
+            print("Unknown id {} - please enter coordinates manually".format(coords_id))
+
     # latitude and longitude
-    latitude = args.latitude if args.latitude else -999.
-    print("latitude {} lat_range[0] {} lat_range[1]".format(latitude, lat_range[0], lat_range[1]))
-    while not (isinstance(latitude, float) and latitude > lat_range[0] and latitude < lat_range[1]):
-        latitude = float(input("please enter Latitude (degrees N) in the range {} : ".format(lat_range)))
-    longitude = args.longitude if args.longitude else -999.
-    while not (isinstance(longitude, float) and longitude > long_range[0] and longitude < long_range[1]):
-        longitude = float(input("please enter Longitude (degrees E) in the range {} : ".format(long_range)))
+    if not latitude:
+        latitude = args.latitude if args.latitude else -999.
+
+        while not (isinstance(latitude, float) and latitude > lat_range[0] and latitude < lat_range[1]):
+            latitude = float(input("please enter Latitude (degrees N) in the range {} : ".format(lat_range)))
+    if not longitude:
+        longitude = args.longitude if args.longitude else -999.
+        while not (isinstance(longitude, float) and longitude > long_range[0] and longitude < long_range[1]):
+            longitude = float(input("please enter Longitude (degrees E) in the range {} : ".format(long_range)))
 
     # country
-    country = input("Enter name of country, or press return to use OpenCage country lookup based on coordinates : ")
-    if len(country) == 0:
-        country = lookup_country(latitude, longitude)
+    if not country:
+        country = input("Enter name of country, or press return to use OpenCage country lookup based on coordinates : ")
+        if len(country) == 0:
+            country = lookup_country(latitude, longitude)
     # remove spaces
     country = re.sub("[\s]+","",country)
 
@@ -289,7 +333,8 @@ def main():
 
     lat_string = "{:.2f}".format(latitude)
     long_string = "{:.2f}".format(longitude)
-    output_location = make_output_location(collection_name,
+    output_location = make_output_location(coords_id,
+                                           collection_name,
                                            lat_string,
                                            long_string,
                                            country)
@@ -337,7 +382,8 @@ def main():
                                  collection_name,
                                  run_mode,
                                  n_threads,
-                                 test_mode)
+                                 test_mode,
+                                 coords_id)
     print("""
 To run pyveg using this configuration, do:
 
