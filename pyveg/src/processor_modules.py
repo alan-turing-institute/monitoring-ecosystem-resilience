@@ -394,6 +394,10 @@ class ProcessorModule(BaseModule):
                     )
                 )
                 return True
+        else:
+            # task status has changed - reset the timer and the previous_task_status
+            self.previous_task_status = task_status
+            self.previous_task_status_change = datetime.datetime.now()
         return False
 
 
