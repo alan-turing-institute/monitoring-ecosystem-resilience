@@ -87,7 +87,7 @@ class ProcessorModule(BaseModule):
         if not "batch_task_dict" in vars(self):
             self.batch_task_dict = {}
         if not "timeout" in vars(self):
-            self.timeout = 600 # 10 hours
+            self.timeout = 30 # 1/2 hour, with nothing changing
 
     def check_input_data_exists(self, date_string):
         """
@@ -372,6 +372,31 @@ class ProcessorModule(BaseModule):
             )
         return submitted_ok
 
+    def check_timeout(self, task_status):
+        """
+        See how long since task_status last changed.
+        """
+        if not "previous_task_status" in vars(self) \
+           and "previous_task_status_change" in vars(self):
+            self.previous_task_status = task_status
+            self.previous_task_status_change = datetime.datetime.now()
+            return False
+        if self.previous_task_status == task_status:
+            # task status has not changed
+            # see how long it has been since last change
+            time_now = datetime.datetime.now()
+            if time_now > self.previous_task_status_change \
+               + datetime.timedelta(minutes=self.timeout):
+                logger.info(
+                    "{}: reached timeout of {} minutes since last change. Aborting"\
+                    .format(
+                        self.name, self.timeout
+                    )
+                )
+                return True
+        return False
+
+
     def check_if_finished(self):
         if self.run_mode == "local":
             return self.is_finished
@@ -397,15 +422,9 @@ class ProcessorModule(BaseModule):
             self.run_status["incomplete"] = num_incomplete
             self.is_finished = (num_incomplete == 0)
 
-        # if we have exceeded timeout, say that we are finished.
-        time_now = datetime.datetime.now()
-        if time_now > self.start_time + datetime.timedelta(minutes=self.timeout):
-            logger.info(
-                "{}: reached timeout of {} minutes. Aborting".format(
-                    self.name, self.timeout
-                )
-            )
-            self.is_finished = True
+            # if we have exceeded timeout, say that we are finished.
+            if self.check_timeout(task_status):
+                self.is_finished = True
         return self.is_finished
 
 
