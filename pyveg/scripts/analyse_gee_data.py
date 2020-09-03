@@ -271,7 +271,7 @@ def analyse_gee_data(input_location,
     ts_df = pd.read_csv(os.path.join(ts_dirname,ts_filenames[0]))
     size_ts = ts_df.shape[0]
     if size_ts <= 2:
-        print ('WARNING: Less than 3 times points, not possible to do a time series analysis')
+        print ('WARNING: Fewer than 3 time points, not possible to do a time series analysis')
         do_time_series = False
     # -----------------------------------
 
@@ -282,7 +282,7 @@ def analyse_gee_data(input_location,
         # put output plots in the results dir
         input_dir_ts = os.path.join(output_dir, "processed_data")
 
-        save_ts_summary_stats(input_dir_ts, output_analysis_dir,input_json['metadata'])
+        save_ts_summary_stats(input_dir_ts, output_analysis_dir, input_json['metadata'])
 
         for filename in ts_filenames:
 
@@ -349,11 +349,18 @@ def analyse_gee_data(input_location,
     # uploading
     if upload_to_zenodo or upload_to_zenodo_test:
         print('\nUploading results to Zenodo.\n')
-        coll_search = re.search("([Ss]entinel[-]?[\d])|([Ll]andsat[-]?[\d])", input_location)
-        if coll_search:
+        collection = None
+        if "metadata" in input_json.keys():
+            collection = re.sub("/","-", input_json["metadata"]["collection_name"])
+        elif re.search("([Ss]entinel[-]?[\d])|([Ll]andsat[-]?[\d])", input_location):
+            coll_search = re.search("([Ss]entinel[-]?[\d])|([Ll]andsat[-]?[\d])",
+                                    input_location)
             collection = coll_search.groups()[0] if coll_search.groups()[0] \
-                else coll_search.groups()[1]
-
+                    else coll_search.groups()[1]
+        else:
+            print("Unable to ascertain collection from directory path {}.  Skipping Zenodo upload"\
+                  .format(input_dir))
+        if collection:
             uploaded = upload_results(collection,
                                       output_dir,
                                       "local",
@@ -364,9 +371,7 @@ def analyse_gee_data(input_location,
                 print("Uploaded results_summary.json and time series outputs to Zenodo.")
             else:
                 print("Error uploading to Zenodo")
-        else:
-            print("Unable to ascertain collection from directory path {}.  Skipping Zenodo upload"\
-                  .format(input_dir))
+
 
     # ------------------------------------------------
 

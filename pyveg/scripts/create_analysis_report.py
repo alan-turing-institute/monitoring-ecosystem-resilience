@@ -6,7 +6,25 @@ from pathlib import Path
 import pypandoc
 
 
-def create_markdown_pdf_report(path, collection_name, do_timeseries, size_ts):
+def create_markdown_pdf_report(path,
+                               collection_name,
+                               do_timeseries,
+                               size_ts,
+                               metadata=None):
+    """
+    Create a markdown file containing the plots from the time-series analysis
+    and the RGB images downloaded from GEE.
+
+    Parameters
+    ==========
+    path: str, full path to the directory containing 'results_summary.json'
+    collection_name: str,collection in GEE e.g. 'COPERNICUS/S2'
+    do_time_series: bool, include plots from time-series analysis if True
+    size_ts: int, used to determine whether the time-series is long enough to
+           include Early Warning Signals (EWS) plots
+    metadata: dict, metadata from 'results_summary.json' containing, among
+                  other things, the coordinates of the location.
+    """
 
     # getting the right suffix from the satelite to analyse
     if collection_name == 'COPERNICUS/S2':
