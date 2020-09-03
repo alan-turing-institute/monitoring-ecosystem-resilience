@@ -301,11 +301,7 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
         from statsmodels.graphics.tsaplots import plot_pacf
         fig, ax = plt.subplots(figsize=(8,5))
 
-        # for newer version of statsmodels, need to work out lags explicitly
-        lim = min(int(np.ceil(10 * np.log10(nobs))), nobs - 1)
-        lags = np.arange(1,lim)
-        nlags = lags.max(0)
-        plot_pacf(series, nlags=nlags, label=series.name, ax=ax, zero=False)
+        plot_pacf(series, label=series.name, ax=ax, zero=False)
         plt.ylim([-1.0, 1.0])
         plt.xlabel('Lag')
         plt.ylabel('Partial Autocorrelation')
