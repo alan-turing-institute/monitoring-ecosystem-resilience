@@ -252,7 +252,8 @@ def check_task_failed_dependencies(task, job_id, batch_service_client=None):
 
     Returns
     =======
-    True if the job depends on other tasks that have failed.
+    True if the job depends on other tasks that have failed (or those
+            tasks depend on failed tasks)
     False otherwise
     """
     if not batch_service_client:
@@ -270,6 +271,14 @@ def check_task_failed_dependencies(task, job_id, batch_service_client=None):
            dep_task.execution_info.exit_code != 0:
             # return True if any of the dependencies failed
             return True
+        # use this a recursive function
+        dep_dep_failed = check_task_failed_dependencies(dep_task,
+                                                        job_id,
+                                                        batch_service_client)
+        if dep_dep_failed:
+            return True
+
+    # got all the way through dependency tree with no failues - return False
     return False
 
 
@@ -437,7 +446,7 @@ def upload_file_to_container(block_blob_client, container_name, file_path):
         container_name,
         blob_name,
         permission=azureblob.BlobPermissions.READ,
-        expiry=datetime.datetime.utcnow() + datetime.timedelta(hours=2),
+        expiry=datetime.datetime.utcnow() + datetime.timedelta(hours=4),
     )
 
     sas_url = block_blob_client.make_blob_url(

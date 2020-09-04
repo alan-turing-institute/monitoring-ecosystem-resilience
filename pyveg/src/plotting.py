@@ -774,6 +774,11 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
     def zoom_out(ys):
         ymin = ys.mean() - 2*((ys.mean() - ys).abs().max())
         ymax = ys.mean() + 2*((ys.mean() - ys).abs().max())
+        if np.isnan(ymin):
+            ymin = -1
+        if np.isnan(ymax):
+            ymax = 1
+
         return [ymin, ymax]
 
     def annotate(text, xy=(6    , 70), size=10):

@@ -17,14 +17,113 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pyveg.src.data_analysis_utils import write_to_json
 
+try:
+    from pyveg.src import azure_utils
+except:
+    print("Unable to import azure_utils")
 
-def read_json_to_dataframes(data):
+
+def read_results_summary(input_location,
+                         input_filename="results_summary.json",
+                         input_location_type="local"):
     """
-    convert json data to a dict of DataFrame.
+    Read the results_summary.json, either from local storage or from Azure blob storage.
+
+    Parameters
+    ==========
+    input_location: str, directory or container with results_summary.json in
+    input_filename: str, name of json file, default is "results_summary.json"
+    input_location_type: str: 'local' or 'azure'
+
+    Returns
+    =======
+    json_data: dict, the contents of results_summary.json
+    """
+
+    if input_location_type == "local":
+        json_filepath = os.path.join(input_location, input_filename)
+        if not os.path.exists(json_filepath):
+            raise FileNotFoundError("Unable to find {}".format(json_filepath))
+        json_data = json.load(open(json_filepath))
+        return json_data
+    elif input_location_type == "azure":
+        subdirs = azure_utils.list_directory(input_location, input_location)
+        print("Found subdirs {}".format(subdirs))
+        for subdir in subdirs:
+            print("looking at subdir {}".format(subdir))
+            if "combine" in subdir:
+                files = azure_utils.list_directory(input_location+"/"+subdir,
+                                                   input_location)
+                if input_filename in files:
+                    return azure_utils.read_json(input_location+"/"+subdir+"/"+input_filename,
+                                                 input_location)
+                else:
+                    raise RuntimeError("No {} found in {}".format(input_filename, subdir))
+        return {}
+    else:
+        raise RuntimeError("input_location_type needs to be either 'local' or 'azure'")
+
+
+
+def read_label_json(input_label_json):
+    """
+    Read JSON output of ImageLabeller, and return a list of coords to be masked out
 
     Parameters
     ----------
+    input_label_json : str, path to json file
+
+    Returns
+    ----------
+    mask: list
+        A list of coordinate tuples (long,lat) to be masked out.
+    """
+
+    if not input_label_json:
+        return []
+    if not os.path.exists(input_label_json):
+        print("WARNING! Could not find file {} - will not mask out any sub-images".format(input_label_json))
+        return []
+    df = pd.DataFrame.from_records(json.load(open(input_label_json)))
+    top_labels = df.groupby(["longitude","latitude"]).category.max().to_dict()
+    coords_to_mask = [k for k,v in top_labels.items() if v=="Not patterned vegetation"]
+    return coords_to_mask
+
+
+def mask_space_point(space_point, mask_list):
+    """
+    See if a space point is in a list of coords that are to be masked (because
+    they're not patterned vegetation.
+
+    Parameters
+    ==========
+    space_point: dict, include keys "latitude" and "longitude"
+    mask_list: list of tuples (long,lat)
+
+    Returns
+    =======
+    True if space point is to be masked out, False otherwise
+    """
+    if (not mask_list) or len(mask_list)==0 :
+        return False
+    if not ("latitude" in space_point.keys() and "longitude" in space_point.keys()):
+        return False
+    for coords in mask_list:
+        # comparing floats - need to be careful.  Allow +/- 0.002 precision
+        # in case of rounding
+        if abs(space_point["latitude"] - coords[1]) < 0.02 \
+           and abs(space_point["longitude" ] - coords[0]) < 0.02:
+            return True
+    return False
+
+
+def read_json_to_dataframes(data, mask_list=None):
+    """
+    convert json data to a dict of DataFrame.
+    Parameters
+    ----------
     data : dict, json data output from run_pyveg_pipeline
+    mask_list: list of tuples of floats.  Coordinates (long,lat) to be masked out.
 
     Returns
     ----------
@@ -42,34 +141,36 @@ def read_json_to_dataframes(data):
 
         rows_list = []
 
-        # loop over time series
-        for date, time_point in coll_results["time-series-data"].items():
+        if "time-series-data" in coll_results.keys():
 
-            # check we have data for this time point
-            if time_point is None or time_point == {} or time_point == []:
+            # loop over time series
+            for date, time_point in coll_results["time-series-data"].items():
 
-                # add Null row if data is missing at this time point
-                rows_list.append({"date": date})
+                # check we have data for this time point
+                if time_point is None or time_point == {} or time_point == []:
+                    # add Null row if data is missing at this time point
+                    rows_list.append({"date": date})
 
-            # if we are looking at veg data, loop over space points
-            elif isinstance(list(time_point)[0], dict):
-                for space_point in time_point:
-                    rows_list.append(space_point)
+                # if we are looking at veg data, loop over space points
+                elif isinstance(list(time_point)[0], dict):
+                    for space_point in time_point:
+                        if not mask_space_point(space_point, mask_list):
+                            rows_list.append(space_point)
 
-            # otherwise, just add the row
-            else:
-                # the key of each object in the time series is the date, and data
-                # for this date should be the values. Here we just add the date
-                # as a value to enable us to add the whole row in one go later.
-                time_point["date"] = date
-                rows_list.append(time_point)
+                # otherwise, just add the row
+                else:
+                    # the key of each object in the time series is the date, and data
+                    # for this date should be the values. Here we just add the date
+                    # as a value to enable us to add the whole row in one go later.
+                    time_point["date"] = date
+                    rows_list.append(time_point)
 
-        # make a DataFrame and add it to the dict of DataFrames
-        df = pd.DataFrame(rows_list)
-        df = df.drop(columns=["slope", "offset", "mean", "std"], errors="ignore")
-        df = df.sort_values(by="date")
-        assert df.empty == False
-        dfs[collection_name] = df
+            # make a DataFrame and add it to the dict of DataFrames
+            df = pd.DataFrame(rows_list)
+            df = df.drop(columns=["slope", "offset", "mean", "std"], errors="ignore")
+            df = df.sort_values(by="date")
+            assert df.empty == False
+            dfs[collection_name] = df
 
     return dfs
 
@@ -652,7 +753,7 @@ def detrend_df(df, period="MS"):
         Input with seasonality removed from time series columns.
     """
 
-    # infer lag from period
+    # infer lag from period, we need at least 2 years for diferenciation to work
     if period == "MS":
         lag = 12
     else:
@@ -744,6 +845,7 @@ def detrend_data(dfs, period="MS"):
 def preprocess_data(
         input_json,
         output_basedir,
+        input_label_json=None,
         drop_outliers=True,
         fill_missing=True,
         resample=True,
@@ -763,6 +865,9 @@ def preprocess_data(
        JSON data created during a GEE download job.
     output_basedir : str,
        Directory where time-series csv will be put.
+    input_label_json: str,
+        JSON file that is the output of ImageLabeller.  If specified, will be used
+        to "mask off" sub-images that are labelled as "Not patterned vegetation".
     drop_outliers : bool, optional
         Remove outliers in sub-image time series.
     fill_missing : bool, optional
@@ -780,8 +885,10 @@ def preprocess_data(
 
     Returns
     ----------
-    str
+    output_dir: str
         Path to the csv file containing processed data.
+    defs: dict
+        Dictionary of dataframes.
     """
 
     # put output plots in the results dir
@@ -792,8 +899,15 @@ def preprocess_data(
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    # read json file to dataframes
-    dfs = read_json_to_dataframes(input_json)
+    # if we're given a json file from ImageLabeller output to mask out non-patterned
+    # coordinates, read it here
+    if input_label_json:
+        mask_list = read_label_json(input_label_json)
+    else:
+        mask_list=None
+
+    # read dict from json file to dataframes
+    dfs = read_json_to_dataframes(input_json, mask_list)
 
     # keep track of time points where data is missing (by default pandas
     # groupby operations, which is used haveily in this module, drop NaNs)
@@ -842,7 +956,8 @@ def preprocess_data(
     ts_df.to_csv(ts_filename, index=False)
 
     # additionally save resampled & detrended time series
-    if detrend:
+    # this detrending option (one year seasonality substraction) only works in monthly data that has at least 2 years of data
+    if detrend and ts_df.shape[0]>24 and period=='MS':
         print("- Detrending time series...")
 
         # remove seasonality from sub-image time series
@@ -862,7 +977,7 @@ def preprocess_data(
     return output_dir, dfs  #  for now return `dfs` for spatial plot compatibility
 
 
-def save_ts_summary_stats(ts_dirname, output_dir):
+def save_ts_summary_stats(ts_dirname, output_dir, metadata):
         """
         Given a time series DataFrames (constructed with `make_time_series`),
         give summary statistics of all the avalaible time series.
@@ -874,6 +989,9 @@ def save_ts_summary_stats(ts_dirname, output_dir):
 
         output_dir : str
             Directory to save the plots in.
+
+        metadata: dict
+            Dictionary with metadata from location
 
         """
 
@@ -899,6 +1017,7 @@ def save_ts_summary_stats(ts_dirname, output_dir):
             stats_dict['max'] = series.max()
             stats_dict['mean'] = series.mean()
             stats_dict['median'] = series.median()
+            stats_dict['std'] = series.std()
 
             return stats_dict
 
@@ -915,6 +1034,8 @@ def save_ts_summary_stats(ts_dirname, output_dir):
 
             column_dict = get_ts_summary_stats(ts_df[column])
             column_dict['ts_id'] = column
+            for key in metadata:
+                column_dict[key] = metadata[key]
 
             # We want the AR1 and Standard deviation of the detreded timeseries for the summary stats
             if ts_df_detrended.empty==False:
@@ -926,19 +1047,30 @@ def save_ts_summary_stats(ts_dirname, output_dir):
                                                         band_width=6)
 
                 EWSmetrics_df = ews_dic_veg['EWS metrics']
-                column_dict["Lag-1 AC"] = EWSmetrics_df["Lag-1 AC"].iloc[-1]
-                column_dict["Standard deviation"] = EWSmetrics_df["Variance"].iloc[-1]
+                column_dict["Lag-1 AC (0.99 rolling window)"] = EWSmetrics_df["Lag-1 AC"].iloc[-1]
+                column_dict["Variance (0.99 rolling window)"] = EWSmetrics_df["Variance"].iloc[-1]
+
+                ews_dic_veg_50 = ewstools.core.ews_compute(ts_df_detrended[column].dropna(),
+                                                        roll_window=0.5,
+                                                        smooth='Gaussian',
+                                                        lag_times=[1],
+                                                        ews=["var", "ac"],
+                                                        band_width=6)
+
+                Kendall_tau_50 = ews_dic_veg_50['Kendall tau']
+                column_dict["Kendall tau Lag-1 AC (0.5 rolling window)"] = Kendall_tau_50["Lag-1 AC"].iloc[-1]
+                column_dict["Kendall tau Variance (0.5 rolling window)"] = Kendall_tau_50["Variance"].iloc[-1]
+
 
 
             ts_dict_list.append(column_dict)
 
+
+        string_name = "_".join([str(metadata[key]) for key in metadata])
+        string_name = string_name.replace("/","_")
         # turn the list of dictionary to dataframe and save it
         ts_df_summary = pd.DataFrame(ts_dict_list)
+
+        #save both name specific and generic (might be useful inside the analysis later)
         ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats.csv"))
-
-
-
-
-
-
-
+        ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats_"+string_name+".csv"))

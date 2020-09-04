@@ -182,15 +182,35 @@ class Sequence(object):
 
         return self
 
+    def join_path(self, *path_elements):
+        """
+        If output_location_type is 'local', we will just use
+        os.path.join, which puts a "/" separator in for posix, or "\" for windows.
+        However, if output_location_type is 'azure', we always want "/".
+
+        Parameters
+        ==========
+        path_elements: list of strings.  Directory-like path elements.
+
+        Returns
+        =======
+        path: str, the path elements joined by "/" or "\".
+        """
+        if self.output_location_type == "azure":
+            path = "/".join(path_elements)
+        else:
+            path = os.path.join(*path_elements)
+        return path
+
     def set_output_location(self):
         if self.parent:
-            self.output_location = os.path.join(
+            self.output_location_type = self.parent.output_location_type
+            self.output_location = self.join_path(
                 self.parent.output_location,
                 f"gee_{self.coords[0]}_{self.coords[1]}"
                 + "_"
                 + self.name.replace("/", "-"),
             )
-            self.output_location_type = self.parent.output_location_type
         else:
             self.output_location = (
                 f"gee_{self.coords[0]}_{self.coords[1]}"
@@ -468,6 +488,26 @@ class BaseModule(object):
         output += "        =======================\n\n"
         return output
 
+    def join_path(self, *path_elements):
+        """
+        If output_location_type is 'local', we will just use
+        os.path.join, which puts a "/" separator in for posix, or "\" for windows.
+        However, if output_location_type is 'azure', we always want "/".
+
+        Parameters
+        ==========
+        path_elements: list of strings.  Directory-like path elements.
+
+        Returns
+        =======
+        path: str, the path elements joined by "/" or "\".
+        """
+        if self.output_location_type == "azure":
+            path = "/".join(path_elements)
+        else:
+            path = os.path.join(*path_elements)
+        return path
+
     def copy_to_output_location(self, tmpdir, output_location, file_endings=[]):
         """
         Copy contents of a temporary directory to a specified output location.
@@ -486,15 +526,9 @@ class BaseModule(object):
                     if file_endings:
                         for ending in file_endings:
                             if filename.endswith(ending):
-                                copyfile(os.path.join(root,filename),os.path.join(output_location,filename))
-                                #subprocess.run(
-                                 #   [
-                                        #"-r"
-                                #        "cp",
-                                #        os.path.join(root, filename),
-                                #        os.path.join(output_location, filename),
-                                #    ]
-                                #)
+
+                                copyfile(os.path.join(root,filename),
+                                         os.path.join(output_location,filename))
                     else:
                         subprocess.run(
                             [
