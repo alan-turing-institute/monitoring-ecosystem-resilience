@@ -376,8 +376,8 @@ class ProcessorModule(BaseModule):
         """
         See how long since task_status last changed.
         """
-        if not "previous_task_status" in vars(self) \
-           and "previous_task_status_change" in vars(self):
+        if not ("previous_task_status" in vars(self) \
+           and "previous_task_status_change") in vars(self):
             self.previous_task_status = task_status
             self.previous_task_status_change = datetime.datetime.now()
             return False
