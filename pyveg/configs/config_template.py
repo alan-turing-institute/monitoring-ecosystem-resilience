@@ -21,12 +21,12 @@ date_range = ["START_DATE", "END_DATE"]
 
 # From the dictionary entries in data_collections.py, which shall we use
 # (these will become "Sequences")
-collections_to_use = ["COLLECTION_NAME", "ERA5"]
+collections_to_use = ["COLLECTION_NAME", "WEATHER_COLL_NAME"]
 
 # Dictionary defining what Modules should run in each Sequence.
 
 modules_to_use = {
-    "ERA5": ["WeatherDownloader", "WeatherImageToJSON"],
+    "WEATHER_COLL_NAME": ["WeatherDownloader", "WeatherImageToJSON"],
     "COLLECTION_NAME": [
         "VegetationDownloader",
         "VegetationImageProcessor",
@@ -41,8 +41,9 @@ special_config = {
     "COLLECTION_NAME": {
         "time_per_point": "TIME_PER_POINT"
     },
-    "ERA5": {
-        "time_per_point": "TIME_PER_POINT"
+    "WEATHER_COLL_NAME": {
+        "time_per_point": "TIME_PER_POINT",
+        "date_range": ["WEATHER_STARTDATE", "END_DATE"]
     },
     "VegetationImageProcessor": {"run_mode": "RUN_MODE"},
     "NetworkCentralityCalculator": {

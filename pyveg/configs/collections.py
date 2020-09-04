@@ -58,8 +58,17 @@ data_collections = {
         "data_type": "weather",
         "precipitation_band": ["total_precipitation"],
         "temperature_band": ["mean_2m_air_temperature"],
-        "min_date": "1979-01-01",
+        "min_date": "1986-01-01",
         "max_date": time.strftime("%Y-%m-%d"),
         "time_per_point": "1m",
+    },
+    "ERA5_daily": {
+        "collection_name": "ECMWF/ERA5/DAILY",
+        "data_type": "weather",
+        "precipitation_band": ["total_precipitation"],
+        "temperature_band": ["mean_2m_air_temperature"],
+        "min_date": "1986-01-01",
+        "max_date": time.strftime("%Y-%m-%d"),
+        "time_per_point": "1w",
     },
 }
