@@ -6,6 +6,7 @@ Welcome to pyveg's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   README.md
    pyveg.scripts.rst
    pyveg.src.rst
 
