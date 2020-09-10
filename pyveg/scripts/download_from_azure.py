@@ -23,47 +23,8 @@ import subprocess
 
 from azure.storage.blob import BlockBlobService
 
-from pyveg.src.azure_utils import list_directory, retrieve_blob
+from pyveg.src.azure_utils import download_summary_json, download_rgb
 from pyveg.azure_config import config
-
-
-def get_summary_json(container, json_dir):
-    """
-    Parameters
-    ==========
-    container: str, the container name
-    json_dir: str, temporary directory into which to put json file.
-    """
-
-    print("Getting summary JSON file  to {}".format(json_dir))
-    blob_dirs = list_directory(container, container)
-    json_blob_dir = None
-    for b in blob_dirs:
-        if b.endswith("combine"):
-            json_blob_dir = b
-    json_blob_file = list_directory(json_blob_dir, container)[0]
-    blob_path = "/".join([json_blob_dir, json_blob_file])
-    print("Will retrieve blob {}".format(blob_path))
-    retrieve_blob(blob_path, container, json_dir)
-
-
-def get_rgb(container, rgb_dir):
-    """
-    Parameters
-    ==========
-    container: str, the container name
-    rgb_dir: str, temporary directory into which to put image files.
-    """
-    print("Getting RGB images to {}".format(rgb_dir))
-    bbs = BlockBlobService(
-        account_name=config["storage_account_name"],
-        account_key=config["storage_account_key"],
-    )
-    blob_names = bbs.list_blob_names(container)
-    rgb_names = [b for b in blob_names if "PROCESSED" in b and b.endswith("RGB.png")]
-    print("Found {} images".format(len(rgb_names)))
-    for blob in rgb_names:
-        retrieve_blob(blob, container, rgb_dir)
 
 
 def create_zip_archive(temp_dir, output_zipname):
@@ -100,9 +61,9 @@ def main():
     rgb_dir = os.path.join(td, "RGB")
     os.makedirs(rgb_dir)
 
-    get_summary_json(args.container, json_dir)
+    download_summary_json(args.container, json_dir)
 
-    get_rgb(args.container, rgb_dir)
+    download_rgb(args.container, rgb_dir)
     current_dir = os.getcwd()
     create_zip_archive(td, args.output_zipfile)
 
