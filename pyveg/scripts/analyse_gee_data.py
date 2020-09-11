@@ -47,6 +47,7 @@ from pyveg.src.plotting import (
 from pyveg.scripts.create_analysis_report import create_markdown_pdf_report
 from pyveg.scripts.upload_to_zenodo import upload_results
 
+# if time-series is fewer than 12 points, can't do Early Warning Signals analysis
 MIN_TS_SIZE_FOR_EWS = 12
 
 def run_time_series_analysis(filename, output_dir, detrended=False):
