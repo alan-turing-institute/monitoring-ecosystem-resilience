@@ -199,3 +199,30 @@ def assign_dates_to_tasks(date_list, n_tasks):
             if j == len(date_list):
                 break
     return output_lists
+
+
+def get_time_diff(date1, date2, units="years"):
+    """
+    calculate the time difference between two dates,
+    Parameters
+    ==========
+    date1, date2: str, dates in format YYYY-MM-DD
+    units: str, can be "years", "months", "days"
+    Returns
+    =======
+    time_diff: int, difference in times, in specified units
+    """
+    if not isinstance(date1, datetime):
+        date1 = dateparser.parse(date1)
+    if not isinstance(date2, datetime):
+        date2 = dateparser.parse(date2)
+    diff = relativedelta(date1, date2)
+    if units == "years":
+        return diff.years
+    elif units == "months":
+        return diff.months
+    elif units == "days":
+        return diff.days
+    else:
+        print("unknown units for time_diff: {}".format(units))
+        return None
