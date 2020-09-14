@@ -157,6 +157,8 @@ def read_json_to_dataframes(data, mask_list=None):
                 elif isinstance(list(time_point)[0], dict):
                     for space_point in time_point:
                         if not mask_space_point(space_point, mask_list):
+                            space_point['ndvi'] = space_point['ndvi'] * (2.0/255.0) - 1
+                            space_point['ndvi_veg'] = space_point['ndvi_veg'] * (2.0/255.0) - 1
                             rows_list.append(space_point)
 
                 # otherwise, just add the row
