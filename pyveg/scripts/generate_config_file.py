@@ -132,7 +132,11 @@ def write_file(configs_dir,
         weather_start_date = start_date
     else:
         weather_collection_name = "ERA5"
-        weather_start_date = collections.data_collections[weather_collection_name]["min_date"]
+        if test_mode:
+            weather_start_date = start_date
+        else:
+            # also include historical weather data
+            weather_start_date = collections.data_collections[weather_collection_name]["min_date"]
 
     text = get_template_text()
     current_time = time.strftime("%y-%m-%d %H:%M:%S")
@@ -172,7 +176,9 @@ def main():
 
     # create argument parser in case user wants to use command line args
     parser = argparse.ArgumentParser(
-        description="create a config file for running pyveg_pipeline"
+        description="""
+        Create a config file for running pyveg_pipeline.  If run with no arguments (recommended), the user will be prompted for each parameter, or can choose a default value.
+        """
     )
     parser.add_argument(
         "--coords_id", help="(optional) ID of location in coordinates.py", type=str
@@ -279,6 +285,7 @@ def main():
             longitude = float(input("please enter Longitude (degrees E) in the range {} : ".format(long_range)))
 
     # country
+    country = args.country if args.country else ""
     if not country:
         country = input("Enter name of country, or press return to use OpenCage country lookup based on coordinates : ")
         if len(country) == 0:
