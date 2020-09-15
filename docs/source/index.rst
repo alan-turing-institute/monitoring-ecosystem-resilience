@@ -7,6 +7,8 @@ Test something
    :maxdepth: 2
    :caption: Contents:
 
+   pyveg.scripts.rst
+
 
 
 Indices and tables
