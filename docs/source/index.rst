@@ -8,6 +8,7 @@ Test something
    :caption: Contents:
 
    pyveg.scripts.rst
+   pyveg.src.rst
 
 
 
