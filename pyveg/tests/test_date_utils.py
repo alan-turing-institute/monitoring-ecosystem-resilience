@@ -116,3 +116,10 @@ def test_assign_dates_to_tasks_more_tasks_than_dates():
     assert len(date_lists) == len(dates)
     for dl in date_lists:
         assert len(dl) == 1
+
+
+def test_get_time_diff():
+    start_date = "1986-01-01"
+    end_date = "2016-01-01"
+    diff = get_time_diff(start_date, end_date)
+    assert diff == -30

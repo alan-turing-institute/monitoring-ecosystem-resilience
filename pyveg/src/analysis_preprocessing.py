@@ -195,12 +195,16 @@ def make_time_series(dfs):
 
     Returns
     ----------
-    DataFrame
+    ts_list: list of DataFrames
         The time-series results averaged over sub-locations.
+        First entry will be main dataframe of vegetation and weather.
+        Second one (if present) will be historical weather.
     """
 
     # the time series dataframe
     ts_df = pd.DataFrame(columns=["date"])
+
+    veg_satellite_prefix = ""
 
     # loop over collections
     for col_name, df in dfs.items():
@@ -218,10 +222,13 @@ def make_time_series(dfs):
             # rename columns
             if "COPERNICUS/S2" in col_name:
                 s = "S2_"
+                veg_satellite_prefix = s
             elif "LANDSAT" in col_name:
                 s = "L" + col_name.split("/")[1][-1] + "_"
             else:
                 s = col_name + "_"
+                veg_satellite_prefix = s
+
             means = means.rename(columns={c: s + c + "_mean" for c in means.columns})
             stds = stds.rename(columns={c: s + c + "_std" for c in stds.columns})
 
@@ -240,8 +247,14 @@ def make_time_series(dfs):
 
     assert ts_df.empty == False
     ts_list = []
+
+    # if there is a big (>10yr) gap between the start of veg and weather time-series,
+    # we want to make a separate historic time-series.
+
+    veg_col_name = [col for col in ts_df.columns if col.startswith(veg_satellite_prefix)][0]
+
     earliest_date = ts_df.iloc[0]["date"]
-    earliest_veg_date = ts_df[ts_df["S2_offset50_mean"].notna()].iloc[0]["date"]
+    earliest_veg_date = ts_df[ts_df[veg_col_name].notna()].iloc[0]["date"]
     if get_time_diff(earliest_veg_date,earliest_date) > 10:
         ts_df_historic = ts_df[ts_df["date"] < earliest_veg_date][["date","mean_2m_air_temperature","total_precipitation"]]
         ts_df = ts_df[ts_df["date"] >= earliest_veg_date]
