@@ -67,65 +67,12 @@ def read_results_summary(input_location,
 
 
 
-def read_label_json(input_label_json):
-    """
-    Read JSON output of ImageLabeller, and return a list of coords to be masked out
-
-    Parameters
-    ----------
-    input_label_json : str, path to json file
-
-    Returns
-    ----------
-    mask: list
-        A list of coordinate tuples (long,lat) to be masked out.
-    """
-
-    if not input_label_json:
-        return []
-    if not os.path.exists(input_label_json):
-        print("WARNING! Could not find file {} - will not mask out any sub-images".format(input_label_json))
-        return []
-    df = pd.DataFrame.from_records(json.load(open(input_label_json)))
-    top_labels = df.groupby(["longitude","latitude"]).category.max().to_dict()
-    coords_to_mask = [k for k,v in top_labels.items() if v=="Not patterned vegetation"]
-    return coords_to_mask
-
-
-def mask_space_point(space_point, mask_list):
-    """
-    See if a space point is in a list of coords that are to be masked (because
-    they're not patterned vegetation.
-
-    Parameters
-    ==========
-    space_point: dict, include keys "latitude" and "longitude"
-    mask_list: list of tuples (long,lat)
-
-    Returns
-    =======
-    True if space point is to be masked out, False otherwise
-    """
-    if (not mask_list) or len(mask_list)==0 :
-        return False
-    if not ("latitude" in space_point.keys() and "longitude" in space_point.keys()):
-        return False
-    for coords in mask_list:
-        # comparing floats - need to be careful.  Allow +/- 0.002 precision
-        # in case of rounding
-        if abs(space_point["latitude"] - coords[1]) < 0.02 \
-           and abs(space_point["longitude" ] - coords[0]) < 0.02:
-            return True
-    return False
-
-
-def read_json_to_dataframes(data, mask_list=None):
+def read_json_to_dataframes(data):
     """
     convert json data to a dict of DataFrame.
     Parameters
     ----------
     data : dict, json data output from run_pyveg_pipeline
-    mask_list: list of tuples of floats.  Coordinates (long,lat) to be masked out.
 
     Returns
     ----------
@@ -156,12 +103,13 @@ def read_json_to_dataframes(data, mask_list=None):
                 # if we are looking at veg data, loop over space points
                 elif isinstance(list(time_point)[0], dict):
                     for space_point in time_point:
-                        if not mask_space_point(space_point, mask_list):
-                            if 'ndvi' in space_point.keys():
-                                space_point['ndvi'] = space_point['ndvi'] * (2.0/255.0) - 1
-                            if 'ndvi_veg' in space_point.keys():
-                                space_point['ndvi_veg'] = space_point['ndvi_veg'] * (2.0/255.0) - 1
-                            rows_list.append(space_point)
+                        # Scale NDVI values - in the image they will be between 0 and 255 to give a greyscale
+                        # (8-bit) image, but the actual NDVI values are between -1 and 1
+                        if 'ndvi' in space_point.keys():
+                            space_point['ndvi'] = space_point['ndvi'] * (2.0/255.0) - 1
+                        if 'ndvi_veg' in space_point.keys():
+                            space_point['ndvi_veg'] = space_point['ndvi_veg'] * (2.0/255.0) - 1
+                        rows_list.append(space_point)
 
                 # otherwise, just add the row
                 else:
@@ -875,7 +823,6 @@ def detrend_data(dfs, period="MS"):
 def preprocess_data(
         input_json,
         output_basedir,
-        input_label_json=None,
         drop_outliers=True,
         fill_missing=True,
         resample=True,
@@ -895,9 +842,6 @@ def preprocess_data(
        JSON data created during a GEE download job.
     output_basedir : str,
        Directory where time-series csv will be put.
-    input_label_json: str,
-        JSON file that is the output of ImageLabeller.  If specified, will be used
-        to "mask off" sub-images that are labelled as "Not patterned vegetation".
     drop_outliers : bool, optional
         Remove outliers in sub-image time series.
     fill_missing : bool, optional
@@ -929,15 +873,8 @@ def preprocess_data(
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    # if we're given a json file from ImageLabeller output to mask out non-patterned
-    # coordinates, read it here
-    if input_label_json:
-        mask_list = read_label_json(input_label_json)
-    else:
-        mask_list=None
-
     # read dict from json file to dataframes
-    dfs = read_json_to_dataframes(input_json, mask_list)
+    dfs = read_json_to_dataframes(input_json)
 
     # keep track of time points where data is missing (by default pandas
     # groupby operations, which is used haveily in this module, drop NaNs)

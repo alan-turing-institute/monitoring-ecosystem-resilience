@@ -215,7 +215,6 @@ def analyse_gee_data(input_location,
                      input_location_type="local",
                      input_json_file=None,
                      output_dir=None,
-                     input_label_json=None,
                      do_time_series=True,
                      do_spatial=False,
                      upload_to_zenodo=False,
@@ -232,9 +231,6 @@ def analyse_gee_data(input_location,
     input_json: str, optional. Full path to the results summary json file.
     output_dir: str,
         Location for outputs of the analysis. If None, use input_location
-    input_label_json: str,
-        JSON file that is the output of ImageLabeller.  If specified, will be used
-        to "mask off" sub-images that are labelled as "Not patterned vegetation".
     do_time_series: bool
         Option to run time-series analysis and do plots
     do_spatial: bool
@@ -255,7 +251,7 @@ def analyse_gee_data(input_location,
                                           input_location_type=input_location_type)
     # preprocess input data
     ts_dirname, dfs = preprocess_data(
-        input_json, output_dir, input_label_json, n_smooth=4, resample=False, period="MS"
+        input_json, output_dir, n_smooth=4, resample=False, period="MS"
     )
 
     # get filenames of preprocessed data time series
@@ -408,9 +404,6 @@ def main():
         help="results location on blob storage from `pyveg_run_pipeline` command, containing `results_summary.json`",
     )
     parser.add_argument(
-        "--input_label_json", help="Labels from ImageLabeller, to mask non-patterned vegetation"
-    )
-    parser.add_argument(
         "--output_dir",
         help="location where analysis plots will be put.  If not specified, will use input_dir",
     )
@@ -457,7 +450,6 @@ def main():
             input_location = None
     input_json = args.input_json
 
-    input_label_json = args.input_label_json
     do_time_series = not args.dont_do_time_series
     do_spatial = args.spatial
     upload_to_zenodo = args.upload_to_zenodo
@@ -467,7 +459,6 @@ def main():
                      input_location_type,
                      input_json,
                      output_dir,
-                     input_label_json,
                      do_time_series,
                      do_spatial,
                      upload_to_zenodo,
