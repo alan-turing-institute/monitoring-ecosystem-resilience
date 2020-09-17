@@ -1,8 +1,6 @@
-pyveg.scripts package
+Scripts of the pyveg package
 =====================
 
-Submodules
-----------
 
 pyveg.scripts.analyse\_gee\_data module
 ---------------------------------------

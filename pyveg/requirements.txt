@@ -23,3 +23,4 @@ ewstools
 pypandoc
 mdutils
 pandoc
+sphinx_rtd_theme

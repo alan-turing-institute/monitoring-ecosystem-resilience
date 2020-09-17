@@ -1,8 +1,5 @@
-pyveg.src package
+Source code of the pyveg package
 =================
-
-Submodules
-----------
 
 pyveg.src.analysis\_preprocessing module
 ----------------------------------------
