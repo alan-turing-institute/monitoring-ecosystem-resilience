@@ -54,14 +54,14 @@ coordinate_store.loc["02"] = {
 coordinate_store.loc["03"] = {
     "continent": "Africa",
     "country": "Niger",
-    "type": "tiger bush",
+    "type": "labyrinths",
     "latitude": 13.12,
     "longitude": 2.59,
 }
 coordinate_store.loc["04"] = {
     "continent": "Africa",
     "country": "Niger",
-    "type": "tiger bush",
+    "type": "labyrinths",
     "latitude": 13.17,
     "longitude": 1.58,
 }
@@ -136,7 +136,7 @@ coordinate_store.loc["12"] = {
 coordinate_store.loc["13"] = {
     "continent": "America",
     "country": "Mexico",
-    "type": "tiger bush",
+    "type": "labyrinths",
     "latitude": 26.82,
     "longitude": -112.86,
 }
@@ -154,14 +154,14 @@ coordinate_store.loc["14"] = {
 coordinate_store.loc["15"] = {
     "continent": "Africa",
     "country": "Niger",
-    "type": "declining",
+    "type": "labyrinths",
     "latitude": 14.91,
     "longitude": -0.66,
 }
 coordinate_store.loc["16"] = {
     "continent": "Africa",
     "country": "Niger",
-    "type": "declining",
+    "type": "spots",
     "latitude": 15.03,
     "longitude": -0.87,
 }
@@ -175,42 +175,42 @@ coordinate_store.loc["17"] = {
 coordinate_store.loc["18"] = {
     "continent": "Africa",
     "country": "Niger",
-    "type": "declining",
+    "type": "spots/labyrinths",
     "latitude": 15.34,
     "longitude": -1.15,
 }
 coordinate_store.loc["19"] = {
     "continent": "Africa",
-    "country": "Niger",
+    "country": "Mali",
     "type": "declining",
     "latitude": 15.14,
     "longitude": -1.16,
 }
 coordinate_store.loc["20"] = {
     "continent": "Africa",
-    "country": "Niger",
-    "type": "declining",
+    "country": "Mali",
+    "type": "spots/labyrinths",
     "latitude": 14.85,
     "longitude": -1.43,
 }
 coordinate_store.loc["21"] = {
     "continent": "Africa",
-    "country": "Niger",
-    "type": "declining",
+    "country": "Mali",
+    "type": "spots/labyrinths",
     "latitude": 14.97,
     "longitude": -1.12,
 }
 coordinate_store.loc["22"] = {
     "continent": "Africa",
-    "country": "Niger",
-    "type": "declining",
+    "country": "Mali",
+    "type": "labyrinths",
     "latitude": 15.14,
     "longitude": -1.56,
 }
 coordinate_store.loc["23"] = {
     "continent": "Africa",
     "country": "Niger",
-    "type": "declining",
+    "type": "spots/labyrinths",
     "latitude": 15.02,
     "longitude": -1.35,
 }
@@ -218,43 +218,43 @@ coordinate_store.loc["23"] = {
 # degraded locations in West Niger
 coordinate_store.loc["24"] = {
     "continent": "Africa",
-    "country": "Niger",
+    "country": "Mali",
     "type": "degraded",
     "latitude": 16.26,
     "longitude": -1.83,
 }
 coordinate_store.loc["25"] = {
     "continent": "Africa",
-    "country": "Niger",
-    "type": "degraded",
+    "country": "Mali",
+    "type": "spots/labyrinths",
     "latitude": 16.19,
     "longitude": -1.83,
 }
 coordinate_store.loc["26"] = {
     "continent": "Africa",
-    "country": "Niger",
-    "type": "degraded",
+    "country": "Mali",
+    "type": "spots/labyrinths",
     "latitude": 16.17,
     "longitude": -2.03,
 }
 coordinate_store.loc["27"] = {
     "continent": "Africa",
-    "country": "Niger",
-    "type": "degraded",
+    "country": "Mali",
+    "type": "spots/labyrinths",
     "latitude": 16.48,
     "longitude": -1.87,
 }
 coordinate_store.loc["28"] = {
     "continent": "Africa",
-    "country": "Niger",
-    "type": "degraded",
+    "country": "Mali",
+    "type": "spots/labyrinths",
     "latitude": 15.95,
     "longitude": -1.52,
 }
 coordinate_store.loc["29"] = {
     "continent": "Africa",
-    "country": "Niger",
-    "type": "degraded",
+    "country": "Mali",
+    "type": "spots/labyrinths",
     "latitude": 15.86,
     "longitude": -2.05,
 }
@@ -262,15 +262,15 @@ coordinate_store.loc["29"] = {
 # healthy locations in West Niger
 coordinate_store.loc["30"] = {
     "continent": "Africa",
-    "country": "Niger",
-    "type": "healthy",
+    "country": "Mali",
+    "type": "labyrinths",
     "latitude": 14.8,
     "longitude": -3.38,
 }
 coordinate_store.loc["31"] = {
     "continent": "Africa",
-    "country": "Niger",
-    "type": "healthy",
+    "country": "Mali",
+    "type": "labyrinths",
     "latitude": 14.94,
     "longitude": -3.56,
 }
@@ -316,7 +316,7 @@ coordinate_store.loc['35'] = {
 coordinate_store.loc['36'] = {
   'continent' : 'Australia', 
   'country': 'Australia', 
-  'type': 'Tiger Bush', 
+  'type': 'labyrinths', 
   'latitude': -25, 
   'longitude': 119.99
 }
@@ -325,7 +325,7 @@ coordinate_store.loc['36'] = {
 coordinate_store.loc['37'] = {
   'continent' : 'Africa', 
   'country': 'Somalia', 
-  'type': 'Tiger Bush', 
+  'type': 'labyrinths', 
   'latitude': 9.34, 
   'longitude': 48.64
 }
@@ -333,7 +333,7 @@ coordinate_store.loc['37'] = {
 coordinate_store.loc['38'] = {
   'continent' : 'Africa', 
   'country': 'Somalia', 
-  'type': 'Tiger Bush', 
+  'type': 'labyrinths', 
   'latitude': 9.63, 
   'longitude': 47.93
 }
@@ -342,7 +342,7 @@ coordinate_store.loc['38'] = {
 coordinate_store.loc['39'] = {
   'continent' : 'Africa', 
   'country': 'Somalia', 
-  'type': 'Tiger Bush', 
+  'type': 'labyrinths', 
   'latitude': 9.98, 
   'longitude': 48.44
 }
@@ -351,7 +351,7 @@ coordinate_store.loc['39'] = {
 coordinate_store.loc['40'] = {
   'continent' : 'Africa', 
   'country': 'Somalia', 
-  'type': 'Tiger Bush', 
+  'type': 'labyrinths', 
   'latitude': 4.64, 
   'longitude': 43.26
 }
@@ -370,7 +370,7 @@ coordinate_store.loc['41'] = {
 coordinate_store.loc['42'] = {
   'continent' : 'Africa', 
   'country': 'Ethiopia', 
-  'type': 'Tiger Bush', 
+  'type': 'labyrinths', 
   'latitude': 7.43, 
   'longitude': 42.9
 }
@@ -388,7 +388,7 @@ coordinate_store.loc['43'] = {
 coordinate_store.loc['44'] = {
   'continent' : 'Africa', 
   'country': 'Mali', 
-  'type': 'Tiger Bush', 
+  'type': 'labyrinths', 
   'latitude': 14.80, 
   'longitude': -3.38
 }
@@ -397,7 +397,7 @@ coordinate_store.loc['44'] = {
 coordinate_store.loc['45'] = {
   'continent' : 'America', 
   'country': 'Mexico', 
-  'type': 'Tiger Bush', 
+  'type': 'labyrinths', 
   'latitude': 27.19, 
   'longitude': -103.92
 }
@@ -424,7 +424,7 @@ coordinate_store.loc['47'] = {
 coordinate_store.loc['48'] = {
   'continent' : 'Africa', 
   'country': 'Mali', 
-  'type': 'Tiger bush', 
+  'type': 'labyrinths', 
   'latitude': 15.48, 
   'longitude': -5.83
 }
@@ -433,7 +433,7 @@ coordinate_store.loc['48'] = {
 coordinate_store.loc['49'] = {
   'continent' : 'Africa', 
   'country': 'Mauritania', 
-  'type': 'Tiger bush', 
+  'type': 'labyrinths', 
   'latitude': 15.57, 
   'longitude': -5.92
 }
@@ -452,7 +452,7 @@ coordinate_store.loc['50'] = {
 coordinate_store.loc['51'] = {
   'continent' : 'Africa', 
   'country': 'Nigeria', 
-  'type': 'Tiger Bush + Gaps', 
+  'type': 'Gaps', 
   'latitude': 12.58, 
   'longitude': 3.75
 }
@@ -461,7 +461,7 @@ coordinate_store.loc['51'] = {
 coordinate_store.loc['52'] = {
   'continent' : 'Africa', 
   'country': 'Niger', 
-  'type': 'Labyrinths', 
+  'type': 'Gaps', 
   'latitude': 12.7, 
   'longitude': 2.63
 }
@@ -469,7 +469,7 @@ coordinate_store.loc['52'] = {
 coordinate_store.loc['53'] = {
   'continent' : 'Africa', 
   'country': 'Niger', 
-  'type': 'Labyrinths', 
+  'type': 'Gaps', 
   'latitude': 12.54, 
   'longitude': 2.26
 }
