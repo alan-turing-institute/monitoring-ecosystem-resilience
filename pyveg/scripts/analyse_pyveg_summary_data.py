@@ -107,9 +107,9 @@ def scatter_plots(df, output_dir):
     plt.savefig(os.path.join(output_dir,'precipitation_vs_offset50Variance.png'))
 
     plt.figure()
-    ax11 = sns.scatterplot(y="total_precipitation_mean", x="S2_offset50_mean_Lag-1 AC (0.99 rolling window)", data=df)
-    ax11.set_ylabel("Mean precipitation over time series")
-    ax11.set_xlabel("Offset50 Lag-1 AC (0.99 rolling window)")
+    ax12 = sns.scatterplot(y="total_precipitation_mean", x="S2_offset50_mean_Lag-1 AC (0.99 rolling window)", data=df)
+    ax12.set_ylabel("Mean precipitation over time series")
+    ax12.set_xlabel("Offset50 Lag-1 AC (0.99 rolling window)")
     plt.savefig(os.path.join(output_dir,'precipitation_vs_offset50AR1.png'))
     
     
