@@ -82,6 +82,7 @@ def scatter_plots(df, output_dir):
     ax7.set_xlabel("Mean Offset50 over time series")
     plt.savefig(os.path.join(output_dir,'offset50_offset50KendaltauVariance.png'))
 
+    plt.figure()
     ax8 = sns.scatterplot(y="S2_offset50_mean_max", x="total_precipitation_mean", data=df)
     ax8.set_xlabel("Mean precipitation over time series")
     ax8.set_ylabel("Max Offset50 over time series")
@@ -98,6 +99,20 @@ def scatter_plots(df, output_dir):
     ax10.set_ylabel("Offset50 Variance (0.99 rolling window)")
     ax10.set_xlabel("Max Offset50 over time series")
     plt.savefig(os.path.join(output_dir,'offset50max_offset50Variance.png'))
+    
+    plt.figure()
+    ax11 = sns.scatterplot(y="total_precipitation_mean", x="S2_offset50_mean_Variance (0.99 rolling window)", data=df)
+    ax11.set_ylabel("Mean precipitation over time series")
+    ax11.set_xlabel("Offset50 Variance (0.99 rolling window)")
+    plt.savefig(os.path.join(output_dir,'precipitation_vs_offset50Variance.png'))
+
+    plt.figure()
+    ax11 = sns.scatterplot(y="total_precipitation_mean", x="S2_offset50_mean_Lag-1 AC (0.99 rolling window)", data=df)
+    ax11.set_ylabel("Mean precipitation over time series")
+    ax11.set_xlabel("Offset50 Lag-1 AC (0.99 rolling window)")
+    plt.savefig(os.path.join(output_dir,'precipitation_vs_offset50AR1.png'))
+    
+    
     
 def process_input_data(input_dir):
 
