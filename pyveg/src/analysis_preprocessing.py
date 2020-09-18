@@ -17,6 +17,8 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pyveg.src.data_analysis_utils import write_to_json
 
+from pyveg.src.date_utils import get_time_diff
+
 try:
     from pyveg.src import azure_utils
 except:
@@ -155,6 +157,10 @@ def read_json_to_dataframes(data, mask_list=None):
                 elif isinstance(list(time_point)[0], dict):
                     for space_point in time_point:
                         if not mask_space_point(space_point, mask_list):
+                            if 'ndvi' in space_point.keys():
+                                space_point['ndvi'] = space_point['ndvi'] * (2.0/255.0) - 1
+                            if 'ndvi_veg' in space_point.keys():
+                                space_point['ndvi_veg'] = space_point['ndvi_veg'] * (2.0/255.0) - 1
                             rows_list.append(space_point)
 
                 # otherwise, just add the row
@@ -189,12 +195,16 @@ def make_time_series(dfs):
 
     Returns
     ----------
-    DataFrame
+    ts_list: list of DataFrames
         The time-series results averaged over sub-locations.
+        First entry will be main dataframe of vegetation and weather.
+        Second one (if present) will be historical weather.
     """
 
     # the time series dataframe
     ts_df = pd.DataFrame(columns=["date"])
+
+    veg_satellite_prefix = ""
 
     # loop over collections
     for col_name, df in dfs.items():
@@ -212,10 +222,13 @@ def make_time_series(dfs):
             # rename columns
             if "COPERNICUS/S2" in col_name:
                 s = "S2_"
+                veg_satellite_prefix = s
             elif "LANDSAT" in col_name:
                 s = "L" + col_name.split("/")[1][-1] + "_"
             else:
                 s = col_name + "_"
+                veg_satellite_prefix = s
+
             means = means.rename(columns={c: s + c + "_mean" for c in means.columns})
             stds = stds.rename(columns={c: s + c + "_std" for c in stds.columns})
 
@@ -233,7 +246,24 @@ def make_time_series(dfs):
     ts_df = ts_df.loc[:, ~ts_df.columns.str.contains("longitude_std", case=False)]
 
     assert ts_df.empty == False
-    return ts_df
+    ts_list = []
+
+    # if there is a big (>10yr) gap between the start of veg and weather time-series,
+    # we want to make a separate historic time-series.
+
+    veg_col_name = [col for col in ts_df.columns if col.startswith(veg_satellite_prefix)][0]
+
+    earliest_date = ts_df.iloc[0]["date"]
+    earliest_veg_date = ts_df[ts_df[veg_col_name].notna()].iloc[0]["date"]
+    if get_time_diff(earliest_veg_date,earliest_date) > 10:
+        ts_df_historic = ts_df[ts_df["date"] < earliest_veg_date][["date","mean_2m_air_temperature","total_precipitation"]]
+        ts_df = ts_df[ts_df["date"] >= earliest_veg_date]
+        ts_list.append(ts_df)
+        ts_list.append(ts_df_historic)
+    else :
+        ts_list.append(ts_df)
+
+    return ts_list
 
 
 def resample_time_series(series, period="MS"):
@@ -938,7 +968,12 @@ def preprocess_data(
     store_feature_vectors(dfs, output_dir)
 
     # average over sub-images
-    ts_df = make_time_series(dfs)
+    ts_list = make_time_series(dfs)
+    ts_df = ts_list[0]
+    if len(ts_list) > 1 :
+        ts_historic = ts_list[1]
+    else :
+        ts_historic = pd.DataFrame()
 
     # resample the averaged time series using linear interpolation
     if resample:
@@ -954,6 +989,10 @@ def preprocess_data(
     ts_filename = os.path.join(output_dir, "time_series.csv")
     print(f'- Saving time series to "{ts_filename}".')
     ts_df.to_csv(ts_filename, index=False)
+    if not ts_historic.empty :
+        ts_filename = os.path.join(output_dir, "time_series_historic.csv")
+        print(f'- Saving time series to "{ts_filename}".')
+        ts_historic.to_csv(ts_filename, index=False)
 
     # additionally save resampled & detrended time series
     # this detrending option (one year seasonality substraction) only works in monthly data that has at least 2 years of data
@@ -967,7 +1006,7 @@ def preprocess_data(
         dfs_detrended_smooth = smooth_veg_data(dfs_detrended, n=12)
 
         # combine over sub-images
-        ts_df_detrended_smooth = make_time_series(dfs_detrended_smooth)
+        ts_df_detrended_smooth = make_time_series(dfs_detrended_smooth)[0]
 
         # save output
         ts_filename_detrended = os.path.join(output_dir, "time_series_detrended.csv")
@@ -1002,9 +1041,12 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
 
         # we should get one seasonal time series and a detrended one
         ts_df_detrended = pd.DataFrame()
+        ts_df_historic = pd.DataFrame()
         for filename in ts_filenames:
             if "detrended" in filename:
                 ts_df_detrended = pd.read_csv(os.path.join(ts_dirname,filename))
+            elif "historic" in filename:
+                ts_df_historic = pd.read_csv(os.path.join(ts_dirname,filename))
             else:
                 ts_df = pd.read_csv(os.path.join(ts_dirname,filename))
 
@@ -1021,13 +1063,22 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
 
             return stats_dict
 
+        # calculate summary statistics for each relevant time series
+        ts_dict_list = []
         # only look at relevant time series (offset50, ndvi and precipitation)
+        if not ts_df_historic.empty :
+            column_dict = get_ts_summary_stats(ts_df_historic["total_precipitation"])
+            column_dict["ts_id"] = "total_precipitation_historic"
+            for key in metadata:
+                column_dict[key] = metadata[key]
+            ts_dict_list.append(column_dict)
+
+
         column_names = [c for c in ts_df.columns if 'offset50_mean' in c or
                         'ndvi_mean' in c or
                         'total_precipitation' in c]
 
-        # calculate summary statistics for each relevant time series
-        ts_dict_list = []
+
         for column in column_names:
 
             print(f'Calculating summary stats for "{column}"...')
