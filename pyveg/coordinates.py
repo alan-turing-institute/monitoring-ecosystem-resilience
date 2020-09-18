@@ -500,4 +500,4 @@ coordinate_store.loc['56'] = {
 
 # hardcode a check to make sure we don't overwrite any rows
 
-assert( len(coordinate_store) == 55 )
+assert( len(coordinate_store) == 57 )
