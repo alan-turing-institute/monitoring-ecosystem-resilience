@@ -82,22 +82,22 @@ def scatter_plots(df, output_dir):
     ax7.set_xlabel("Mean Offset50 over time series")
     plt.savefig(os.path.join(output_dir,'offset50_offset50KendaltauVariance.png'))
 
-   ax8 = sns.scatterplot(y="S2_offset50_mean_max", x="total_precipitation_mean", data=df)
-   ax8.set_xlabel("Mean precipitation over time series")
-   ax8.set_ylabel("Max Offset50 over time series")
-   plt.savefig(os.path.join(output_dir,'offset50max_vs_precipitation.png'))
+    ax8 = sns.scatterplot(y="S2_offset50_mean_max", x="total_precipitation_mean", data=df)
+    ax8.set_xlabel("Mean precipitation over time series")
+    ax8.set_ylabel("Max Offset50 over time series")
+    plt.savefig(os.path.join(output_dir,'offset50max_vs_precipitation.png'))
 
-   plt.figure()
-   ax9 = sns.scatterplot(y="S2_offset50_mean_Lag-1 AC (0.99 rolling window)", x="S2_offset50_mean_max", data=df)
-   ax9.set_ylabel("Offset50 Lag-1 AC (0.99 rolling window)")
-   ax9.set_xlabel("Max Offset50 over time series")
-   plt.savefig(os.path.join(output_dir,'offset50max_offset50AR1.png'))
+    plt.figure()
+    ax9 = sns.scatterplot(y="S2_offset50_mean_Lag-1 AC (0.99 rolling window)", x="S2_offset50_mean_max", data=df)
+    ax9.set_ylabel("Offset50 Lag-1 AC (0.99 rolling window)")
+    ax9.set_xlabel("Max Offset50 over time series")
+    plt.savefig(os.path.join(output_dir,'offset50max_offset50AR1.png'))
 
-   plt.figure()
-   ax10 = sns.scatterplot(y="S2_offset50_mean_Variance (0.99 rolling window)", x="S2_offset50_mean_max", data=df)
-   ax10.set_ylabel("Offset50 Variance (0.99 rolling window)")
-   ax10.set_xlabel("Max Offset50 over time series")
-   plt.savefig(os.path.join(output_dir,'offset50max_offset50Variance.png'))
+    plt.figure()
+    ax10 = sns.scatterplot(y="S2_offset50_mean_Variance (0.99 rolling window)", x="S2_offset50_mean_max", data=df)
+    ax10.set_ylabel("Offset50 Variance (0.99 rolling window)")
+    ax10.set_xlabel("Max Offset50 over time series")
+    plt.savefig(os.path.join(output_dir,'offset50max_offset50Variance.png'))
     
 def process_input_data(input_dir):
 
