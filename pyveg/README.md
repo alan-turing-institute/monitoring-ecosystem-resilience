@@ -1,5 +1,14 @@
 # The `pyveg` Package
 
+The `pyveg` package is developed to study the evolution of vegetation patterns in semi-arid environments using
+Google Earth Engine.
+
+The code in this repository is intended to perform two main tasks:
+* Download satellite data from Google Earth Engine (images and precipitation data) and compute network centrality metrics 
+of the patterned vegetation.
+* Do a time series analysis on the downloaded data and estimate resilience metrics.
+
+
 This page contains an installation guide, and some usage examples for this package.
 
 ## Installation
@@ -42,8 +51,9 @@ with the Earth Engine API. The earth engine API is installed automatically as pa
 `pyveg` package installation. If you wish to install it separately, you can follow the 
 instructions [here](https://developers.google.com/earth-engine/python_install_manual).
 
+## Running ``pyveg``
 
-## Downloading data from GEE
+### Downloading data from GEE from the CLI
 
 To run a `pyveg` download job, use
 ```
@@ -124,7 +134,8 @@ pyveg_run_pipeline --config_file pyveg/configs/cached_configs/my_config_<datesta
 
 If you have access to Microsoft Azure cloud computing facilities, downloading and processing data can be sped up enormously by using batch computing to run many subjobs in parallel.  See [here](UsingAzure.md) for more details.
 
-## Analysing the Download Data
+
+## Analysing the Downloaded Data
 
 Once you have downloaded the data from GEE, the `pyveg_gee_analysis` command
 allows you to process and analyse the output. To run:
@@ -204,6 +215,9 @@ pyveg_calc_EC --input_txt ../binary_image.txt --do_EC
 >>> plt.plot(list(sel_pixels.keys()), feature_vec, "bo") # plot the feature vector vs pixel rank
 >>> plt.show()
 ```
+
+## Running using the API
+...
 
 ## `pyveg` flow
 
