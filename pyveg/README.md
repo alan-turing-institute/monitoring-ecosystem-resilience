@@ -1,12 +1,39 @@
 # The `pyveg` Package
 
+## Introduction 
+
 The `pyveg` package is developed to study the evolution of vegetation patterns in semi-arid environments using
 Google Earth Engine.
 
 The code in this repository is intended to perform two main tasks:
-* Download satellite data from Google Earth Engine (images and precipitation data) and compute network centrality metrics 
-of the patterned vegetation.
-* Do a time series analysis on the downloaded data and estimate resilience metrics.
+
+**Download an process GEE data**:
+
+* Download satellite data from Google Earth Engine (images and weather data).
+    * Downloaded images are divided into 50x50 pixel sub-images, network centrality metrics are used to describe
+the pattern vegetation are then calculated on the sub-image level. Both colour (RGB) and Normalised Difference Vegetation 
+Index (NDVI) images are downloaded and stored on the sub-image level. 
+    * For weather collections the precipitation and temperature "images" are averaged into a single value at each point in the time series.
+
+**Time series analysis on downloaded data**:
+
+* Time series analysis of following metrics: raw NDVI mean pixel intensity across the image, vegetation network centrality metric, and precipitation.
+    * The time series are processed  (outliers removed and resampled to avoid gaps). All time series of each
+     sub-image are aggregated into one summary time series that is used for analysis. 
+    * The summary time series is deasonalised and smoothed time series and residuals between the raw and de-seasonalised
+     and smoothed time series are calculated and used for an early warning resilience analysis.
+
+* Time series plots are produced, along with auto- and cross-correlation plots. Early warning signals are also computed using the ewstools package [@ewstools], 
+including Lag-1 autocorrelation and standard deviation moving window plots. A sensitivity and significance analysis is 
+also performed in order to determine whether any trends are statistically significant.
+
+* Time series summary statistics and resilience metrics are saved into files.
+
+## `pyveg` flow
+
+The digram below represents the high level flow of the `pyveg` package.
+
+![`pyveg` program flow.](paper/pveg_flow.png)
 
 
 This page contains an installation guide, and some usage examples for this package.
@@ -151,6 +178,10 @@ pyveg_run_pipeline --config_file pyveg/configs/cached_configs/my_config_<datesta
 
 If you have access to Microsoft Azure cloud computing facilities, downloading and processing data can be sped up enormously by using batch computing to run many subjobs in parallel.  See [here](UsingAzure.md) for more details.
 
+### Downloading data using the API
+
+although `pyveg` has been mostly designed to be used with the CLI as shown above, we can also use `pyveg` functions through 
+the API. A tutorial of how to download data this way is included in [here](notebooks/tutorial_download_and_process_gee_images.ipynb). 
 
 ## Analysing the Downloaded Data
 
@@ -236,11 +267,6 @@ pyveg_calc_EC --input_txt ../binary_image.txt --do_EC
 ## Running using the API
 ...
 
-## `pyveg` flow
-
-The digram below represents the high level flow of the `pyveg` package.
-
-![`pyveg` program flow.](paper/pveg_flow.png)
 
 
 ## Uploading results to the Zenodo open source repository
