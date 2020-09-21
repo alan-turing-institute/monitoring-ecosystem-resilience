@@ -67,44 +67,61 @@ to identify the download job using the `--name` argument.
 
 Note that we use the GEE convention for coordinates, i.e. `(longitude,latitude)`.
 
+#### Generating a donwload configuration file 
 
-### Download configuration
+To create a configuration file for use in the pyveg pipeline described above, use the command 
+```
+pyveg_generate_config
+```
+this allows the user to specify various characteristics of the data they want to download via prompts. The list in order is as follows:
 
-Inside the config file, you can specify the output directory for the data 
-downloaded, start and end dates for the download job,
-as well as the location, and GEE collections to download from. The supported 
-GEE collections are themselves specified in `pyveg/configs/collections.py`. 
+* **--configs_dir**: The path to the directory containing the config file, with a default option `pyveg/configs`.
 
-Collections can either be of type "vegetation" or "weather".
-Each type has its own config options, and you can find out more by 
-taking a look inside the `collections.py` file:
-    
-**Vegetation Collection Example**:
-```        
-'Landsat8' : {
-     'collection_name': 'LANDSAT/LC08/C01/T1_SR',
-     'data_type': 'vegetation',
-     'RGB_bands': ['B4','B3','B2'],
-     'NIR_band': 'B5',
-     'cloudy_pix_flag': 'CLOUD_COVER',
-     'min_date': '2013-01-01',
-     'max_date': time.strftime("%Y-%m-%d"),
-     'time_per_point': "1m"
-}
+* **--collection_name**: The name of the dataset used in the collection, either Sentinel2, or Landsat 8, 7, 5 or 4.
+    *    Sentinel2: Available from 2015-06-23 at 10m resolution. https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2
+    *    Landsat8: Available from 2013-04-11 at 30m resolution. https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1
+    *    Landsat7: Available from 1999-01-01 at 30m resolution. https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LE07_C01_T1
+    *    Landsat5: Available from 1984-03-10 to 2013-01-31 at 60m resolution. https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LT05_C01_T1
+    *    Landsat4: Available from 1982-07-16 to 1993-12-14 at 60m resolution. https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LT04_C01_T1
+
+* **--latitude**: The latitude (in degrees north) of the centre point of the image collection.
+
+* **--longitude**: The longitude (in degrees east) of the centre point of the image collection.
+
+* **--country**: After this, the country (for the file name) can either be entered, or use the specified coordinates to look up the country name from the OpenCage database.
+
+* **--start_date**: The start date in the format ‘YYYY-MM-DD’, the default is ‘2015-01-01’ (or ‘2019-01-01’ for a test config file).
+
+* **--end_date**: The end date in the format ‘YYYY-MM-DD’, the default is today’s date (or ‘2019-03-01’ for a test config file).
+
+* **--time_per_point**: The option to run the image collection at either monthly (‘1m’) or weekly (‘1w’), with the default being monthly.
+
+* **--run_mode**: The option to run time-consuming functions on Azure (‘batch’) or running locally on your own computer (‘local’). The default is local. For info about running on
+Azure go [here](UsingAzure.md).
+
+* **--output_dir**: The option to write the output to a specified directory, with the default being the current directory.
+
+* **--test_mode**: The option to make a test config file, containing fewer months and a subset of sub-images, with a default option to have a normal config file.
+    *    By choosing the test config file, the default start and end dates (see below) are defaulted to be over a smaller time span.
+    *    It is recommended that the test config option should be used purely to determine if the options specified by the user are correct.
+
+
+* **--n_threads**:  Finally, how many threads the user would like to use for the time-consuming processes, either 4 (default) or 8.
+
+For example:
 ```
-    
-**Weather Collection Example**:
+ pyveg_generate_config --configs_dir "pyveg/configs" --collection_name "Sentinel2" --latitude 11.58 --longitude 27.94 --start_date "2016-01-01" --end_date "2020-06-30" --time_per_point "1m" --run_mode "local" --n_threads 4
 ```
-'ERA5' : {
-     'collection_name': 'ECMWF/ERA5/MONTHLY',
-     'data_type': 'weather',
-     'precipitation_band': ['total_precipitation'],
-     'temperature_band': ['mean_2m_air_temperature'],
-     'min_date': '1979-01-01',
-     'max_date': time.strftime("%Y-%m-%d"),
-     'time_per_point': "1m"
-} 
+
+This generates a file named `config_Sentinel2_11.58N_27.94E_Sudan_2016-01-01_2020-06-30_1m_local.py` along with instructions on
+ how to use this configuration file to download data through the pipeline, in this case the following:
+
 ```
+pyveg_run_pipeline --config_file pyveg/configs/config_Sentinel2_11.58N_27.94E_Sudan_2016-01-01_2020-06-30_1m_local.py
+```
+
+Individual options can specified, with the user asked for the other options via prompt. The options for this can be found by typing ```pyveg_generate_config --help```. 
+
 
 ### More Details on Downloading
 
