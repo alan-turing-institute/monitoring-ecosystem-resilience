@@ -18,6 +18,7 @@ then call the functions in this module with the "test" argument set to True.
 import os
 import shutil
 import json
+import re
 import requests
 import tempfile
 from zipfile import ZipFile, BadZipFile
@@ -402,3 +403,42 @@ def get_results_summary_json(coords_string, collection, deposition_id, test=Fals
             print("results_summary.json not found in {}".format(zip_filename))
             return {}
     return json.loads(data)
+
+
+
+def download_results_summary_by_coord_id(coords_id, destination_path=None, deposition_id=None, test=False):
+    """
+    Search the deposition (defined by the deposition_id in zenodo_config.py)
+    for results_summary json files beginning with 'coord_id' and download
+    the most recent one.
+
+    Parameters
+    ==========
+    coords_id: str, two-digit string identifiying the row of the location in coordinates.py
+    destination_path: str, directory to download to.  If not given, put in temporary dir
+    deposition_id: str, deposition ID in Zenodo.  If not given, use the one from zenodo_config.py
+    test: bool, if True, use the sandbox Zenodo repository
+    """
+    # coords_id should be two digits, e.g. '00'
+    if not re.search('[\d]{2}', coords_id):
+        raise RuntimeError("coords_id should be a 2-digit string")
+    if not deposition_id:
+        deposition_id = get_deposition_id(test)
+    if not destination_path:
+        destination_path = tempfile.TemporaryDirectory().name
+    elif not os.path.exists(destination_path):
+        os.makedirs(destination_path)
+    # list the files in the deposition
+    file_list = [f for f in list_files(deposition_id, test) \
+                 if f.startswith(coords_id) and "results_summary" in f]
+    if len(file_list)==0:
+        print("No files for coords_id {} found.".format(coords_id))
+        return ""
+    # files should follow the same naming convention, and have the date at the end.
+    # this means they should be sort-able.  Find the most recent:
+    file_list.sort()
+    latest_file = file_list[-1]
+
+    # download this
+    destination = download_file(latest_file, deposition_id, destination_path, test)
+    return destination

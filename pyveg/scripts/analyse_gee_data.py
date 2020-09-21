@@ -225,9 +225,11 @@ def analyse_gee_data(input_location,
     Parameters
     ----------
     input_location : str
-        Location of results_summary.json output from pyveg_run_pipeline
+        Location of results_summary.json output from pyveg_run_pipeline,
+        OR if input_location_type is `zenodo` or `zenodo_test`, the 2-digit coordinate_id
+        representing the row in `coordinates.py`.
     input_location_type: str
-        Can be 'local' or 'azure'.
+        Can be 'local', 'azure', 'zenodo', or 'zenodo_test'.
     input_json: str, optional. Full path to the results summary json file.
     output_dir: str,
         Location for outputs of the analysis. If None, use input_location
