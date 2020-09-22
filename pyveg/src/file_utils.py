@@ -208,3 +208,24 @@ def get_tag():
     p=subprocess.Popen(["git","describe","--tags"],stdout=subprocess.PIPE)
     tag = p.communicate()[0].decode("utf-8").strip()
     return tag
+
+
+def construct_filename_from_metadata(metadata, suffix):
+    """
+    Given a dictionary of metadata, construct a filename.
+    Will be used for the results summary json, and the summary stats csv
+    as they are uploaded to Zenodo.
+    """
+    if "coords_id" in metadata.keys():
+        filename = metadata["coords_id"]
+    else:
+        filename = "coords"
+    filename += "_{}N_{}E_{}_freq-{}".format(metadata["latitude"], metadata["longitude"],
+                                        metadata["collection"], metadata["time_per_point"])
+    if "region_size" in metadata.keys():
+        filename += "region-{}".format(region_size)
+    if "tag" in metadata.keys():
+        filename += "_{}".format(metadata["tag"])
+    filename += "_{}".format(suffix)
+    filename = filename.replace("/","")
+    return filename
