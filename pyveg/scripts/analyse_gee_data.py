@@ -359,13 +359,10 @@ def analyse_gee_data(input_location,
     # ------------------------------------------------
 
     # ------------------------------------------------
-    # uploading
+    # upload the summary csv file to Zenodo
     if upload_to_zenodo or upload_to_zenodo_test:
         print('\nUploading results to Zenodo.\n')
-        coll_search = re.search("([Ss]entinel[-]?[\d])|([Ll]andsat[-]?[\d])", input_location)
-        if coll_search:
-            collection = coll_search.groups()[0] if coll_search.groups()[0] \
-                else coll_search.groups()[1]
+
 
             uploaded = upload_results(collection,
                                       output_dir,
@@ -406,6 +403,14 @@ def main():
         help="results location on blob storage from `pyveg_run_pipeline` command, containing `results_summary.json`",
     )
     parser.add_argument(
+        "--input_zenodo_coords",
+        help="If results_summary json is uploaded to Zenodo deposition, give the two digit coordinate id from coordinates.py, e.g. '00'",
+    )
+    parser.add_argument(
+        "--input_zenodo_test_coords",
+        help="If results_summary json is uploaded to Zenodo sandbox deposition, give the two digit coordinate id from coordinates.py, e.g. '00'",
+    )
+    parser.add_argument(
         "--output_dir",
         help="location where analysis plots will be put.  If not specified, will use input_dir",
     )
@@ -418,11 +423,11 @@ def main():
     )  # off by default as this takes a non-negligable amount of time
 
     parser.add_argument(
-        "--upload_to_zenodo", action="store_true", default=False
+        "--upload_to_zenodo", help="store the summary_stats.csv file on Zenodo", action="store_true", default=False
     )  # off by deafult
 
     parser.add_argument(
-        "--upload_to_zenodo_test", action="store_true", default=False
+        "--upload_to_zenodo_test", help="store the summary_stats.csv file on Zenodo sandbox", action="store_true", default=False
     )  # off by deafult
 
     print("-" * 35)
@@ -434,16 +439,34 @@ def main():
     # check we have the bare minimum of args set that we need
     output_dir = args.output_dir if args.output_dir else args.input_dir
     if not output_dir:
-        raise RuntimeError("Need to specify --output_dir argument if reading from Azure blob storage")
+        raise RuntimeError("Need to specify --output_dir argument if reading from Azure blob storage or Zenodo")
 
     # read the input json, using either input_dir or input_container arguments
     if args.input_json and (args.input_dir or args.input_container):
-        raise RuntimeError("Please use only one of --input_json (specifying full path to results summary json) or (--input_dir (local) or --input_location (for Azure)")
+        raise RuntimeError("""
+        Please use only one of --input_dir or --input_json (for local input), or --onput_container (for Azure),
+        or --zenodo_coords_id (for production Zenodo deposition) or --zenodo_test_coords_id (for Zenodo sandbox)
+        """)
     elif args.input_dir and args.input_container:
-        raise RuntimeError("Please use only one of --input_dir (for local input) or --input_location (for Azure)")
+        raise RuntimeError("""
+        Please use only one of --input_dir or --input_json (for local input), or --onput_container (for Azure),
+        or --zenodo_coords_id (for production Zenodo deposition) or --zenodo_test_coords_id (for Zenodo sandbox)
+        """)
+    elif (args.input_dir or args.input_json or args.input_container) and \
+         (args.input_zenodo_coords or args.input_zenodo_test_coords):
+        raise RuntimeError("""
+        Please use only one of --input_dir or --input_json (for local input), or --onput_container (for Azure),
+        or --zenodo_coords_id (for production Zenodo deposition) or --zenodo_test_coords_id (for Zenodo sandbox)
+        """)
     if args.input_container:
         input_location = args.input_container
         input_location_type = "azure"
+    elif args.input_zenodo_coords:
+        input_location = args.input_zenodo_coords
+        input_location_type = "zenodo"
+    elif args.input_zenodo_test_coords:
+        input_location = args.input_zenodo_test_coords
+        input_location_type = "zenodo_test"
     else:
         input_location_type = "local"
         if args.input_dir:
