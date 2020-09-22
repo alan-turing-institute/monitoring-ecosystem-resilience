@@ -19,6 +19,8 @@ from pyveg.src.data_analysis_utils import write_to_json
 
 from pyveg.src.date_utils import get_time_diff
 
+from pyveg.src.file_utils import construct_filename_from_metadata
+
 try:
     from pyveg.src.zenodo_utils import download_results_summary_by_coord_id
 except:
@@ -1068,16 +1070,7 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
 
             ts_dict_list.append(column_dict)
 
-        if "coords_id" in metadata.keys():
-            ss_name = "coords_id"
-        else:
-            ss_name = ""
-        ss_name += "_{}N_{}E_{}_{}".format(metadata["latitude"], metadata["longitude"],
-                                               metadata["collection"], metadata["time_per_point"])
-        if "tag" in metadata.keys():
-            ss_name += "_{}".format(metadata["tag"])
-        ss_name += "summary_stats.csv"
-        ss_name = ss_name.replace("/","_")
+        ss_name = construct_filename_from_metadata(metadata, "summary_stats.csv")
         # turn the list of dictionary to dataframe and save it
         ts_df_summary = pd.DataFrame(ts_dict_list)
 
