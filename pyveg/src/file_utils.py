@@ -4,6 +4,8 @@ import dateparser
 import json
 import requests
 import re
+import subprocess
+
 from zipfile import ZipFile, BadZipFile
 
 from .date_utils import find_mid_period
@@ -197,3 +199,12 @@ def consolidate_json_to_list(json_dir, output_dir=None, output_filename=None):
     if output_dir and output_filename:
         save_json(results, output_dir, output_filename)
     return results
+
+
+def get_tag():
+    """
+    Get the git tag currently checked out.
+    """
+    p=subprocess.Popen(["git","describe","--tags"],stdout=subprocess.PIPE)
+    tag = p.communicate()[0].decode("utf-8").strip()
+    return tag
