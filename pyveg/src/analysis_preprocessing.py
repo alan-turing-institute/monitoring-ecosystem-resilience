@@ -1068,12 +1068,19 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
 
             ts_dict_list.append(column_dict)
 
-
-        string_name = "_".join([str(metadata[key]) for key in metadata])
-        string_name = string_name.replace("/","_")
+        if "coords_id" in metadata.keys():
+            ss_name = "coords_id"
+        else:
+            ss_name = ""
+        ss_name += "_{}N_{}E_{}_{}".format(metadata["latitude"], metadata["longitude"],
+                                               metadata["collection"], metadata["time_per_point"])
+        if "tag" in metadata.keys():
+            ss_name += "_{}".format(metadata["tag"])
+        ss_name += "summary_stats.csv"
+        ss_name = ss_name.replace("/","_")
         # turn the list of dictionary to dataframe and save it
         ts_df_summary = pd.DataFrame(ts_dict_list)
 
         #save both name specific and generic (might be useful inside the analysis later)
         ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats.csv"))
-        ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats_"+string_name+".csv"))
+        ts_df_summary.to_csv(os.path.join(output_dir, ss_name))
