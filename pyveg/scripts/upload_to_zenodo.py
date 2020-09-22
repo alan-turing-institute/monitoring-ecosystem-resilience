@@ -49,6 +49,9 @@ def create_new_deposition(use_sandbox=False):
 def upload_results_summary(json_location,
                            json_location_type,
                            use_test_api):
+    """
+    Upload the results summary json from running pyveg pipeline to download and process data from GEE.
+    """
     deposition_id = get_deposition_id(use_test_api)
 
     # read in the json
@@ -63,7 +66,16 @@ def upload_results_summary(json_location,
         json.dump(results_summary, outfile)
     print("Uploading {} to Zenodo".format(filename))
     uploaded_ok = upload_file(filepath, deposition_id, use_test_api)
+    return uploaded_ok
 
+
+def upload_summary_stats(csv_filepath, use_test_api):
+    """
+    Typically called by the analyse_gee_data script, upload the
+    results summary csv file.
+    """
+    deposition_id = get_deposition_id(use_test_api)
+    uploaded_ok = upload_file(csv_filepath, deposition_id, use_test_api)
     return uploaded_ok
 
 

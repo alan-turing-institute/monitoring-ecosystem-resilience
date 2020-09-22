@@ -45,7 +45,7 @@ from pyveg.src.plotting import (
 )
 
 from pyveg.scripts.create_analysis_report import create_markdown_pdf_report
-from pyveg.scripts.upload_to_zenodo import upload_results
+from pyveg.scripts.upload_to_zenodo import upload_summary_stats
 
 # if time-series is fewer than 12 points, can't do Early Warning Signals analysis
 MIN_TS_SIZE_FOR_EWS = 12
@@ -362,21 +362,21 @@ def analyse_gee_data(input_location,
     # upload the summary csv file to Zenodo
     if upload_to_zenodo or upload_to_zenodo_test:
         print('\nUploading results to Zenodo.\n')
+        analysis_dir = os.path.join(output_dir, "analysis")
+        filenames = [f for f in os.listdir(analysis_dir) if f.endswith(".csv")
+                     and f != "time_series_summary_stats.csv"]
+        if filenames:
+            filepath = os.path.join(analysis_dir, filenames[0])
 
 
-            uploaded = upload_results(collection,
-                                      output_dir,
-                                      "local",
-                                      input_location,
-                                      input_location_type,
-                                      upload_to_zenodo_test)
+
+            uploaded = upload_summary_stats(filepath,
+                                            upload_to_zenodo_test)
             if uploaded:
-                print("Uploaded results_summary.json and time series outputs to Zenodo.")
-            else:
-                print("Error uploading to Zenodo")
+                print("Uploaded {} to Zenodo.".format(filenames[0]))
         else:
-            print("Unable to ascertain collection from directory path {}.  Skipping Zenodo upload"\
-                  .format(input_dir))
+            print("Couldn't find time series summary stats csv file. Not uploading to Zenodo.")
+
 
     # ------------------------------------------------
 
