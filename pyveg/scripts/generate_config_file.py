@@ -156,6 +156,10 @@ def write_file(configs_dir,
     text = re.sub("NUM_THREADS", str(n_threads), text)
     n_subimages = '10' if test_mode else '-1'
     text = re.sub("NUM_SUBIMAGES", n_subimages, text)
+    if coords_id:
+        text = re.sub("COORDS_ID_STRING", 'coords_id = "{}"'.format(coords_id), text)
+    else:
+        text = re.sub("COORDS_ID_STRING", "", text)
     with open(filename, "w") as configfile:
         configfile.write(text)
     print("================================\nWrote file \n  {}\nWe recommend that you add and commit this to your version control repository.\n================================".format(filename))
