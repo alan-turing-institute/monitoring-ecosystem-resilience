@@ -507,7 +507,7 @@ coordinate_store.loc['51'] = {
     'type': 'Tiger Bush + Gaps',
     'latitude': 12.58,
     'longitude': 3.75,
-    "region_size": 0.08
+    "region_size": 0.04
 }
 
 #Niger
