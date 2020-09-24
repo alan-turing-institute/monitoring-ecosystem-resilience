@@ -37,15 +37,16 @@ also performed in order to determine whether any trends are statistically signif
 * Analysis of a collection of summary data that has been created with the `pyveg` 
 pipeline (downloading + time series analysis).
 * Simulate the generation and evolution of patterned vegetation
-* A standalone network centrality estimation for a 50x50 pixel image.
-
+* A stand-alone network centrality estimation for a 50x50 pixel image.
+* A functionality to upload results to the Zenodo open source repository 
 
 ### `pyveg` flow
 
 The digram below represents the high level flow of the main functionalities of the
-`pyveg` package.
+`pyveg` package. For each main component there is an CLI console_scripts defined, that is shown
+in the diagram. 
 
-![`pyveg` program flow.](paper/pveg_flow.png)
+![The`pyveg` program flow.](paper/pveg_flow.png)
 
 The full ReadTheDocs documentation for this `pyveg` can be found in this [link](https://pyveg.readthedocs.io/en/latest/).
 
@@ -222,7 +223,7 @@ pyveg_gee_analysis --help
 
 The analysis script ran with the ```pyveg_gee_analysis``` commands run the following steps:
 
-### Preprocessing
+#### Preprocessing
 
 `pyevg` supports the following preprocessing operations:
 - Identify and remove outliers from the time series.
@@ -232,7 +233,7 @@ The analysis script ran with the ```pyveg_gee_analysis``` commands run the follo
 - Calculation of residuals between the raw and smoothed time series.
 - Deseasonalising (using first differencing), and detrending using STL.
 
-### Plots
+#### Plots
 
 In the `analysis/` subdirectory, `pyveg` creates the following plots:
 - Time series plots containing vegetation and precipitation time series 
@@ -250,13 +251,32 @@ In the `analysis/` subdirectory, `pyveg` creates the following plots:
        sensitivity plots.
      - Signficance test.
 
-#### Running the analysis using the API
+### Running the analysis using the API
 
 Although `pyveg` has been mostly designed to be used with the CLI as shown above, we can also use `pyveg` functions through 
 the API. A tutorial of how to run the data analysis in this way is included in [here](notebooks/tutorial_analyse_gee_data.ipynb). 
 
 
 ## Other functionalities of `pyveg`
+
+### Analysis summary statistics data 
+
+The ```analyse_pyveg_summary_data.py``` functionality processes collections of data produced by the main `pyveg` 
+pipeline described in the section above (download + time series analysis for different locations and time periods) and 
+creates a number of plots of the summary statistics of these time series.
+
+To run this analysis in Python, there is an entrypoint defined.  Type:
+
+```
+pyveg_analysis_summary_data --input_dir  <path_to_directory_with_collection_summary_statistics>
+```
+
+if you wish you can also specify the ```outpur_dir``` where plots will be saved.  Type:
+```
+pyveg_analysis_summary_data --help
+```
+to see the extra options.
+
 
 ### Pattern simulation
 
@@ -304,7 +324,7 @@ pyveg_calc_EC --input_txt ../binary_image.txt --do_EC
 >>> plt.show()
 ```
 
-## Uploading results to the Zenodo open source repository
+### Uploading results to the Zenodo open source repository
 
 See [here](UsingZenodo.md) for more details.
 
