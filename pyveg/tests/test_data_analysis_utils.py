@@ -77,7 +77,8 @@ def test_moving_window_analysis():
     )
     results_json = json.load(open(path_to_dict))
     dfs = read_json_to_dataframes(results_json)
-    time_series_dfs = make_time_series(dfs.copy())
+    # make_time_series now returns a list - we only want first element
+    time_series_dfs = make_time_series(dfs.copy())[0]
 
     ar1_var_df = moving_window_analysis(
         time_series_dfs, os.path.dirname(path_to_dict), 0.5
