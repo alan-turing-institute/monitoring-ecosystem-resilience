@@ -47,7 +47,7 @@ conda activate veg
 ```
 Get the source.
 ```
-git clone https://alan-turing-institute/monitoring-ecosystem-resilience.git
+git clone https://github.com/alan-turing-institute/monitoring-ecosystem-resilience.git
 ```
 Enter the repository and check out a relevant branch if necessary (the `develop` branch contains the most
 up to date stable version of the code).
@@ -105,11 +105,11 @@ this allows the user to specify various characteristics of the data they want to
 * **--configs_dir**: The path to the directory containing the config file, with a default option `pyveg/configs`.
 
 * **--collection_name**: The name of the dataset used in the collection, either Sentinel2, or Landsat 8, 7, 5 or 4.
-    *    Sentinel2: Available from 2015-06-23 at 10m resolution. https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2
-    *    Landsat8: Available from 2013-04-11 at 30m resolution. https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1
-    *    Landsat7: Available from 1999-01-01 at 30m resolution. https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LE07_C01_T1
-    *    Landsat5: Available from 1984-03-10 to 2013-01-31 at 60m resolution. https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LT05_C01_T1
-    *    Landsat4: Available from 1982-07-16 to 1993-12-14 at 60m resolution. https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LT04_C01_T1
+    *    Sentinel2: [Available from 2015-06-23 at 10m resolution.](https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2)
+    *    Landsat8: [Available from 2013-04-11 at 30m resolution.](https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1)
+    *    Landsat7: [Available from 1999-01-01 at 30m resolution.](https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LE07_C01_T1)
+    *    Landsat5: [Available from 1984-03-10 to 2013-01-31 at 60m resolution.](https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LT05_C01_T1)
+    *    Landsat4: [Available from 1982-07-16 to 1993-12-14 at 60m resolution.](https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LT04_C01_T1)
 
 * **--latitude**: The latitude (in degrees north) of the centre point of the image collection.
 
@@ -180,7 +180,7 @@ If you have access to Microsoft Azure cloud computing facilities, downloading an
 
 ### Downloading data using the API
 
-although `pyveg` has been mostly designed to be used with the CLI as shown above, we can also use `pyveg` functions through 
+Although `pyveg` has been mostly designed to be used with the CLI as shown above, we can also use `pyveg` functions through 
 the API. A tutorial of how to download data this way is included in [here](notebooks/tutorial_download_and_process_gee_images.ipynb). 
 
 ## Analysing the Downloaded Data
@@ -192,8 +192,18 @@ pyveg_gee_analysis --input_dir <path_to_pyveg_download_output_dir>
 ```
 The analysis code preprocesses the data and produces a number of plots. These 
 will be saved in an `analysis/` subdirectory inside the `<path_to_pyveg_download_output_dir>`
-directory..
+directory.
 
+The commands also allows for other options to be added to the execution of the script (e.g. run analysis from a 
+downloaded data in Azure blob storage, define a different output directly, don't include
+a time series analysis, etc), which can be displayed
+by typing:
+
+```
+pyveg_gee_analysis --help
+```
+
+The analysis script ran with the ```pyveg_gee_analysis``` commands run the following steps:
 
 ### Preprocessing
 
@@ -223,6 +233,12 @@ In the `analysis/` subdirectory, `pyveg` creates the following plots:
        sensitivity plots.
      - Signficance test.
 
+#### Running the analysis using the API
+
+Although `pyveg` has been mostly designed to be used with the CLI as shown above, we can also use `pyveg` functions through 
+the API. A tutorial of how to run the data analysis in this way is included in [here](notebooks/tutorial_analyse_gee_data.ipynb). 
+
+
 ## Pattern simulation
 
 The ```generate_patterns.py``` functionality originates from some Matlab code by Stefan Dekker, Willem Bouten, Maarten Boerlijst and Max Rietkerk (included in the "matlab" directory), implementing the scheme described in:
@@ -236,6 +252,11 @@ pyveg_gen_pattern --help
 to see the options.  The most useful option is the `--rainfall` parameter which sets a parameter (the rainfall in mm) of the simulation - values between 1.2 and 1.5 seem to give rise to a good range of patterns.
 Other optional parameters for `generate_patterns.py` allow the generated image to be output as a csv file or a png image.  The `--transpose` option rotates the image 90 degrees (this was useful for comparing the Python and Matlab network-modelling code).
 Other parameters for running the simulation are in the file `patter_gen_config.py`, you are free to change them.
+
+#### Running the pattern simulation using the API
+
+Although `pyveg` has been mostly designed to be used with the CLI as shown above, we can also use `pyveg` functions through 
+the API. A tutorial of how to run the simulation of the pattern generation in this way is included in [here](notebooks/tutorial_simulate_patterned_vegetation.ipynb). 
 
 
 ## Network centrality
@@ -263,11 +284,6 @@ pyveg_calc_EC --input_txt ../binary_image.txt --do_EC
 >>> plt.plot(list(sel_pixels.keys()), feature_vec, "bo") # plot the feature vector vs pixel rank
 >>> plt.show()
 ```
-
-## Running using the API
-...
-
-
 
 ## Uploading results to the Zenodo open source repository
 
