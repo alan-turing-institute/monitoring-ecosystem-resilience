@@ -28,12 +28,22 @@ data they want to download via prompts (satelite to use, coordinates, time perio
 * Time series plots are produced, along with auto- and cross-correlation plots. Early warning signals are also computed using the ewstools package [@ewstools], 
 including Lag-1 autocorrelation and standard deviation moving window plots. A sensitivity and significance analysis is 
 also performed in order to determine whether any trends are statistically significant.
-
 * Time series summary statistics and resilience metrics are saved into files.
 
-## `pyveg` flow
+**Other functionalities**:
 
-The digram below represents the high level flow of the `pyveg` package.
+`pyveg` also has other minor functionalities:
+
+* Analysis of a collection of summary data that has been created with the `pyveg` 
+pipeline (downloading + time series analysis).
+* Simulate the generation and evolution of patterned vegetation
+* A standalone network centrality estimation for a 50x50 pixel image.
+
+
+### `pyveg` flow
+
+The digram below represents the high level flow of the main functionalities of the
+`pyveg` package.
 
 ![`pyveg` program flow.](paper/pveg_flow.png)
 
@@ -83,9 +93,9 @@ with the Earth Engine API. The earth engine API is installed automatically as pa
 `pyveg` package installation. If you wish to install it separately, you can follow the 
 instructions [here](https://developers.google.com/earth-engine/python_install_manual).
 
-## Running ``pyveg``
+## Downloading data from GEE with ``pyveg``
 
-### Downloading data from GEE from the CLI
+### Downloading data from GEE using the CLI
 
 To run a `pyveg` download job, use
 ```
@@ -188,7 +198,9 @@ If you have access to Microsoft Azure cloud computing facilities, downloading an
 Although `pyveg` has been mostly designed to be used with the CLI as shown above, we can also use `pyveg` functions through 
 the API. A tutorial of how to download data this way is included in [here](notebooks/tutorial_download_and_process_gee_images.ipynb). 
 
-## Analysing the Downloaded Data
+## Analysing the Downloaded Data with `pyveg`
+
+### Analysing the Downloaded Data using the CLI
 
 Once you have downloaded the data from GEE, the `pyveg_gee_analysis` command
 allows you to process and analyse the output. To run:
@@ -244,7 +256,9 @@ Although `pyveg` has been mostly designed to be used with the CLI as shown above
 the API. A tutorial of how to run the data analysis in this way is included in [here](notebooks/tutorial_analyse_gee_data.ipynb). 
 
 
-## Pattern simulation
+## Other functionalities of `pyveg`
+
+### Pattern simulation
 
 The ```generate_patterns.py``` functionality originates from some Matlab code by Stefan Dekker, Willem Bouten, Maarten Boerlijst and Max Rietkerk (included in the "matlab" directory), implementing the scheme described in:
 
@@ -264,7 +278,7 @@ Although `pyveg` has been mostly designed to be used with the CLI as shown above
 the API. A tutorial of how to run the simulation of the pattern generation in this way is included in [here](notebooks/tutorial_simulate_patterned_vegetation.ipynb). 
 
 
-## Network centrality
+### Network centrality
 
 There is an entrypoint defined in `setup.py` that runs the *main* function of `calc_euler_characteristic.py`:
 ```
@@ -293,6 +307,11 @@ pyveg_calc_EC --input_txt ../binary_image.txt --do_EC
 ## Uploading results to the Zenodo open source repository
 
 See [here](UsingZenodo.md) for more details.
+
+# Contributing 
+
+We welcome contributions from anyone who is interested in the project. There are lots of ways to contribute, not just writing code.
+See our [Contributor Guidelines](CONTRIBUTING.md) to learn  more about how you can contribute and how we work together as a community.
 
 # Licence
 
