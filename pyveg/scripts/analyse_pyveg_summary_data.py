@@ -19,15 +19,15 @@ from pyveg.scripts.upload_to_zenodo import upload_results
 def barplot_plots(df, output_dir):
 
     plt.figure()
-    ax8 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='total_precipitation_mean',data=df)
-    ax8.set_xlabel("Mean precipitation over time series")
-    ax8.set_ylabel("Max Offset50 over time series")
+    ax13 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='total_precipitation_mean',data=df)
+    ax13.set_xlabel("Mean precipitation over time series")
+    ax13.set_ylabel("Max Offset50 over time series")
     plt.savefig(os.path.join(output_dir,'offset50_precipitation_bar.png'))
 
     plt.figure()
-    ax9 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='S2_offset50_mean_Lag-1 AC (0.99 rolling window)',data=df)
-    ax9.set_xlabel("Offset50 Lag-1 AC (0.99 rolling window)")
-    ax9.set_ylabel("Max Offset50 over time series")
+    ax14 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='S2_offset50_mean_Lag-1 AC (0.99 rolling window)',data=df)
+    ax14.set_xlabel("Offset50 Lag-1 AC (0.99 rolling window)")
+    ax14.set_ylabel("Max Offset50 over time series")
     plt.savefig(os.path.join(output_dir,'offset50_lag1ACvalue_bar.png'))
 
 
@@ -112,6 +112,53 @@ def scatter_plots(df, output_dir):
     ax12.set_xlabel("Offset50 Lag-1 AC (0.99 rolling window)")
     plt.savefig(os.path.join(output_dir,'precipitation_vs_offset50AR1.png'))
     
+    #Calculate Correlations and p-values
+    selected_df = df[["total_precipitation_mean","S2_offset50_mean_mean","S2_offset50_mean_max",
+                      "S2_offset50_mean_Lag-1 AC (0.99 rolling window)","S2_offset50_mean_Variance (0.99 rolling window)",
+                      "latitude","longitude"]]
+    selected_corr=selected_df.corr(method="pearson")
+
+    # Set up the matplotlib figure
+    f, ax = plt.subplots(figsize=(11, 9))
+
+    # Generate a custom diverging colormap
+    cmap = sns.diverging_palette(230, 20, as_cmap=True)
+
+    #Calculate p-value matrix
+    from scipy.stats import pearsonr
+    def calculate_pvalues(df):
+        df = df.dropna()._get_numeric_data()
+        dfcols = pd.DataFrame(columns=df.columns)
+        pvalues = dfcols.transpose().join(dfcols, how='outer')
+        for r in df.columns:
+            for c in df.columns:
+                pvalues[r][c] = round(pearsonr(df[r], df[c])[1], 4)
+        return pvalues
+
+    p_matrix = calculate_pvalues(selected_df)
+
+    # Set up the matplotlib figure
+    f, ax = plt.subplots(figsize=(11, 9))
+
+    # p-value mask
+    p_mask = np.invert(p_matrix < 0.05)
+    p_mask_01 = np.invert(p_matrix < 0.1)
+
+    # Draw the heatmap with the mask and correct aspect ratio
+    sns.heatmap(selected_corr, cmap=cmap, vmax=1, vmin=-1, center=0,
+                square=True, annot=True, linewidths=.5, cbar=False, cbar_kws={"shrink": .5})
+    plt.savefig(os.path.join(output_dir,'pearsons_correlation_plot.png'))
+
+    sns.heatmap(selected_corr, cmap=cmap, vmax=1, vmin=-1, center=0,
+                square=True, annot=True, linewidths=.5, cbar=False, cbar_kws={"shrink": .5},mask=p_mask)
+    plt.savefig(os.path.join(output_dir, 'significant_0.05_pearsons_correlation.png'))
+
+    sns.heatmap(selected_corr, cmap=cmap, vmax=1, vmin=-1, center=0,
+                square=True, annot=True, linewidths=.5, cbar=False, cbar_kws={"shrink": .5},mask=p_mask_01)
+    plt.savefig(os.path.join(output_dir, 'significant_0.1_pearsons_correlation.png'))
+
+    selected_corr.to_csv(os.path.join(output_dir,"Pearson_correlation.csv"))
+    p_matrix.to_csv(os.path.join(output_dir,"Pearson_p_value.csv"))
     
     
 def process_input_data(input_dir):
