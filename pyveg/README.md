@@ -118,38 +118,38 @@ pyveg_generate_config
 ```
 this allows the user to specify various characteristics of the data they want to download via prompts. The list in order is as follows:
 
-* **--configs_dir**: The path to the directory containing the config file, with a default option `pyveg/configs`.
+* `--configs_dir`: The path to the directory containing the config file, with a default option `pyveg/configs`.
 
-* **--collection_name**: The name of the dataset used in the collection, either Sentinel2, or Landsat 8, 7, 5 or 4.
+* `--collection_name`: The name of the dataset used in the collection, either Sentinel2, or Landsat 8, 7, 5 or 4.
     *    Sentinel2: [Available from 2015-06-23 at 10m resolution.](https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2)
     *    Landsat8: [Available from 2013-04-11 at 30m resolution.](https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LC08_C01_T1)
     *    Landsat7: [Available from 1999-01-01 at 30m resolution.](https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LE07_C01_T1)
     *    Landsat5: [Available from 1984-03-10 to 2013-01-31 at 60m resolution.](https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LT05_C01_T1)
     *    Landsat4: [Available from 1982-07-16 to 1993-12-14 at 60m resolution.](https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LT04_C01_T1)
 
-* **--latitude**: The latitude (in degrees north) of the centre point of the image collection.
+* `--latitude`: The latitude (in degrees north) of the centre point of the image collection.
 
-* **--longitude**: The longitude (in degrees east) of the centre point of the image collection.
+* `--longitude`: The longitude (in degrees east) of the centre point of the image collection.
 
-* **--country**: After this, the country (for the file name) can either be entered, or use the specified coordinates to look up the country name from the OpenCage database.
+* `--country`: After this, the country (for the file name) can either be entered, or use the specified coordinates to look up the country name from the OpenCage database.
 
-* **--start_date**: The start date in the format ‘YYYY-MM-DD’, the default is ‘2015-01-01’ (or ‘2019-01-01’ for a test config file).
+* `--start_date`: The start date in the format ‘YYYY-MM-DD’, the default is ‘2015-01-01’ (or ‘2019-01-01’ for a test config file).
 
-* **--end_date**: The end date in the format ‘YYYY-MM-DD’, the default is today’s date (or ‘2019-03-01’ for a test config file).
+* `--end_date`: The end date in the format ‘YYYY-MM-DD’, the default is today’s date (or ‘2019-03-01’ for a test config file).
 
-* **--time_per_point**: The option to run the image collection at either monthly (‘1m’) or weekly (‘1w’), with the default being monthly.
+* `--time_per_point`: The option to run the image collection at either monthly (‘1m’) or weekly (‘1w’), with the default being monthly.
 
-* **--run_mode**: The option to run time-consuming functions on Azure (‘batch’) or running locally on your own computer (‘local’). The default is local. For info about running on
+* `--run_mode`: The option to run time-consuming functions on Azure (‘batch’) or running locally on your own computer (‘local’). The default is local. For info about running on
 Azure go [here](UsingAzure.md).
 
-* **--output_dir**: The option to write the output to a specified directory, with the default being the current directory.
+* `--output_dir`: The option to write the output to a specified directory, with the default being the current directory.
 
-* **--test_mode**: The option to make a test config file, containing fewer months and a subset of sub-images, with a default option to have a normal config file.
+* `--test_mode`: The option to make a test config file, containing fewer months and a subset of sub-images, with a default option to have a normal config file.
     *    By choosing the test config file, the default start and end dates (see below) are defaulted to be over a smaller time span.
     *    It is recommended that the test config option should be used purely to determine if the options specified by the user are correct.
 
 
-* **--n_threads**:  Finally, how many threads the user would like to use for the time-consuming processes, either 4 (default) or 8.
+* `--n_threads`:  Finally, how many threads the user would like to use for the time-consuming processes, either 4 (default) or 8.
 
 For example:
 ```
