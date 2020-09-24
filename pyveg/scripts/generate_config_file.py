@@ -148,7 +148,7 @@ def write_file(configs_dir,
     text = re.sub("COLLECTION_NAME", collection_name, text)
     text = re.sub("WEATHER_COLL_NAME", weather_collection_name, text)
     text = re.sub("OUTPUT_LOCATION_TYPE", output_location_type, text)
-    text = re.sub("OUTPUT_LOCATION", output_location, text)
+    text = text.replace("OUTPUT_LOCATION",output_location)
     text = re.sub("LATITUDE", latitude, text)
     text = re.sub("LONGITUDE", longitude, text)
     text = re.sub("START_DATE", start_date, text)
