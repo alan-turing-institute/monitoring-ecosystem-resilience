@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.abspath('../../pyveg'))
 # -- Project information -----------------------------------------------------
 
 project = 'pyveg'
-copyright = '2020, Camila Rangel Smith, Nick Barlow, Samuel Van Stroud, Chris Boulton'
-author = 'Camila Rangel Smith, Nick Barlow, Samuel Van Stroud, Chris Boulton'
+copyright = '2020, Nick Barlow, Camila Rangel Smith, Samuel Van Stroud, Jesse Abrams, Chris Boulton, Jesse Abrams, Joshua Buxton.'
+author = 'Nick Barlow, Camila Rangel Smith, Samuel Van Stroud, Jesse Abrams, Chris Boulton, Jesse Abrams, Joshua Buxton.'
 
 # The full version, including alpha/beta/rc tags
 release = '1.0.0'
