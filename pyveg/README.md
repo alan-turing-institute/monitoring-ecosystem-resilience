@@ -29,6 +29,7 @@ data they want to download via prompts (satellite to use, coordinates, time peri
 including Lag-1 autocorrelation and standard deviation moving window plots. A sensitivity and significance analysis is 
 also performed in order to determine whether any trends are statistically significant.
 * Time series summary statistics and resilience metrics are saved into files.
+* A PDF report is created with showcasing the main figures resulting of this analysis. 
 
 **Other functionalities**:
 
@@ -42,7 +43,7 @@ pipeline (downloading + time series analysis).
 
 ### `pyveg` flow
 
-The digram below represents the high level flow of the main functionalities of the
+The diagram below represents the high level flow of the main functionalities of the
 `pyveg` package. For each main component there is an CLI console scripts defined, that is shown
 in the diagram. 
 
