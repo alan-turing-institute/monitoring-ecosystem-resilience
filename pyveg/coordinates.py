@@ -485,7 +485,7 @@ coordinate_store.loc['54'] = {
 coordinate_store.loc['55'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'Gaps', 
   'latitude': 11.07, 
   'longitude': 27.93
 }
@@ -493,7 +493,7 @@ coordinate_store.loc['55'] = {
 coordinate_store.loc['56'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'Gaps', 
   'latitude': 11.30, 
   'longitude': 27.94
 }
