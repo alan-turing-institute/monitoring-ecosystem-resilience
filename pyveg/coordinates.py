@@ -551,7 +551,7 @@ coordinate_store.loc['63'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
   'type': 'Spots', 
-  'latitude': 11.37 
+  'latitude': 11.37,
   'longitude': 27.68
 }
 
@@ -560,7 +560,7 @@ coordinate_store.loc['64'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
   'type': 'Spots', 
-  'latitude': 11.60 
+  'latitude': 11.60,
   'longitude': 27.73
 }
 
