@@ -48,6 +48,7 @@ special_config = {
         "time_per_point": "TIME_PER_POINT",
         "date_range": ["WEATHER_STARTDATE", "END_DATE"]
     },
+    "VegetationDownloader": {"region_size": REGION_SIZE},
     "VegetationImageProcessor": {"run_mode": "RUN_MODE"},
     "NetworkCentralityCalculator": {
         "n_threads": NUM_THREADS,

@@ -82,6 +82,7 @@ def make_filename(configs_dir,
                   start_date,
                   end_date,
                   time_per_point,
+                  region_size,
                   collection_name,
                   run_mode,
                   coords_id):
@@ -93,7 +94,7 @@ def make_filename(configs_dir,
         filename_start += "_"+coords_id
     filepath = os.path.join(
         configs_dir,
-        f"{filename_start}_{collection_name}_{latitude}N_{longitude}E_{country}_{start_date}_{end_date}_{time_per_point}_{run_mode}.py"
+        f"{filename_start}_{collection_name}_{latitude}N_{longitude}E_{country}_{region_size}_{start_date}_{end_date}_{time_per_point}_{run_mode}.py"
         )
     return filepath
 
@@ -106,6 +107,7 @@ def write_file(configs_dir,
                start_date,
                end_date,
                time_per_point,
+               region_size,
                collection_name,
                run_mode,
                n_threads,
@@ -123,6 +125,7 @@ def write_file(configs_dir,
                              start_date,
                              end_date,
                              time_per_point,
+                             region_size,
                              collection_name,
                              run_mode,
                              coords_id)
@@ -145,13 +148,14 @@ def write_file(configs_dir,
     text = re.sub("COLLECTION_NAME", collection_name, text)
     text = re.sub("WEATHER_COLL_NAME", weather_collection_name, text)
     text = re.sub("OUTPUT_LOCATION_TYPE", output_location_type, text)
-    text = re.sub("OUTPUT_LOCATION", output_location, text)
+    text = text.replace("OUTPUT_LOCATION",output_location)
     text = re.sub("LATITUDE", latitude, text)
     text = re.sub("LONGITUDE", longitude, text)
     text = re.sub("START_DATE", start_date, text)
     text = re.sub("WEATHER_STARTDATE", weather_start_date, text)
     text = re.sub("END_DATE", end_date, text)
     text = re.sub("TIME_PER_POINT", time_per_point, text)
+    text = re.sub("REGION_SIZE", region_size, text)
     text = re.sub("RUN_MODE", run_mode, text)
     text = re.sub("NUM_THREADS", str(n_threads), text)
     n_subimages = '10' if test_mode else '-1'
@@ -218,6 +222,9 @@ def main():
         "--time_per_point", help="frequency of image, e.g. '1m', '1w'", type=str
     )
     parser.add_argument(
+        "--region_size", help="Size of region to download, in degrees lat/long", type=float
+    )
+    parser.add_argument(
         "--run_mode", help="""
         'local' for running on local machine, 'azure' for running some time-consuming parts (i.e. vegetation image processing) on Azure batch
         """, type=str
@@ -268,12 +275,14 @@ def main():
     latitude = None
     longitude = None
     country = None
+    region_size = None
     if coords_id:
         try:
             row = coordinate_store.loc[coords_id]
             latitude = row["latitude"]
             longitude = row["longitude"]
             country = row["country"]
+            region_size = row["region_size"]
         except(KeyError):
             print("Unknown id {} - please enter coordinates manually".format(coords_id))
 
@@ -327,6 +336,18 @@ def main():
         if len(time_per_point) == 0:
             time_per_point = default_time_per_point
 
+    # region size
+    if not region_size:
+        region_size = args.region_size if args.region_size else -1.0
+        default_region_size = 0.08
+        while not (isinstance(region_size, float) and region_size > 0. and region_size <= 0.08):
+            region_size = input("Enter region size in degrees latitude/longitude, or press Return for max/default ({}) : ".format(default_region_size))
+            if len(region_size) == 0:
+                region_size = default_region_size
+            else:
+                region_size = float(region_size)
+    # now we've established it fulfils the requirements, convert to a str
+    region_size = str(region_size)
     # run mode
     run_mode = args.run_mode if args.run_mode else ""
     default_run_mode = "local"
@@ -378,9 +399,10 @@ def main():
     start_date: {}
     end_date: {}
     time_per_point: {}
+    region_size: {}
     run_mode: {}
     n_threads: {}
-    """.format(output_location, collection_name, lat_string, long_string, country, start_date, end_date, time_per_point, run_mode, n_threads))
+    """.format(output_location, collection_name, lat_string, long_string, country, start_date, end_date, time_per_point, region_size, run_mode, n_threads))
 
     config_filename = write_file(configs_dir,
                                  output_location,
@@ -390,6 +412,7 @@ def main():
                                  start_date,
                                  end_date,
                                  time_per_point,
+                                 region_size,
                                  collection_name,
                                  run_mode,
                                  n_threads,
