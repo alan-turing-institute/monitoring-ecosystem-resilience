@@ -161,7 +161,7 @@ coordinate_store.loc["15"] = {
 coordinate_store.loc["16"] = {
     "continent": "Africa",
     "country": "Niger",
-    "type": "spots",
+    "type": "spots/labyrinths",
     "latitude": 15.03,
     "longitude": -0.87,
 }
@@ -197,7 +197,7 @@ coordinate_store.loc["21"] = {
     "continent": "Africa",
     "country": "Mali",
     "type": "spots/labyrinths",
-    "latitude": 14.972
+    "latitude": 14.92
     "longitude": -0.99,
 }
 coordinate_store.loc["22"] = {
@@ -477,7 +477,7 @@ coordinate_store.loc['53'] = {
 coordinate_store.loc['54'] = {
   'continent' : 'Africa', 
   'country': 'Niger', 
-  'type': 'Labyrinths', 
+  'type': 'labyrinths', 
   'latitude': 13.12, 
   'longitude': 2.17
 }
@@ -501,7 +501,7 @@ coordinate_store.loc['56'] = {
 coordinate_store.loc['57'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'spots', 
   'latitude': 11.27, 
   'longitude': 27.55
 }
@@ -509,7 +509,7 @@ coordinate_store.loc['57'] = {
 coordinate_store.loc['58'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'spots', 
   'latitude': 11.47, 
   'longitude': 27.97
 }
@@ -517,7 +517,7 @@ coordinate_store.loc['58'] = {
 coordinate_store.loc['59'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'spots', 
   'latitude': 11.51, 
   'longitude': 27.87
 }
@@ -525,7 +525,7 @@ coordinate_store.loc['59'] = {
 coordinate_store.loc['60'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'spots', 
   'latitude': 11.22, 
   'longitude': 27.73
 }
@@ -533,7 +533,7 @@ coordinate_store.loc['60'] = {
 coordinate_store.loc['61'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'spots', 
   'latitude': 11.62, 
   'longitude': 27.86
 }
@@ -542,7 +542,7 @@ coordinate_store.loc['61'] = {
 coordinate_store.loc['62'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'spots', 
   'latitude': 11.32, 
   'longitude': 27.88
 }
@@ -550,7 +550,7 @@ coordinate_store.loc['62'] = {
 coordinate_store.loc['63'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'spots', 
   'latitude': 11.37,
   'longitude': 27.68
 }
@@ -559,7 +559,7 @@ coordinate_store.loc['63'] = {
 coordinate_store.loc['64'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'spots', 
   'latitude': 11.60,
   'longitude': 27.73
 }
@@ -567,7 +567,7 @@ coordinate_store.loc['64'] = {
 coordinate_store.loc['65'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'spots', 
   'latitude': 11.46,
   'longitude': 27.68
 }
@@ -575,7 +575,7 @@ coordinate_store.loc['65'] = {
 coordinate_store.loc['66'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Spots', 
+  'type': 'spots', 
   'latitude': 11.71,
   'longitude': 27.91
 }
