@@ -45,6 +45,9 @@ def sanitize_container_name(orig_name):
         else:
             sanitized_name += character.lower()
             previous_character = character
+    if "\\" in sanitized_name:
+        sanitized_name = sanitized_name.replace("\\","/")
+
     return sanitized_name
 
 
@@ -161,7 +164,7 @@ def remove_container_name_from_blob_path(blob_path, container_name):
             container_name_found = True
     if len(blob_name_parts) == 0:
         return ""
-    return os.path.join(*blob_name_parts)
+    return "/".join(blob_name_parts)
 
 
 def delete_blob(blob_name, container_name, bbs=None):
@@ -286,3 +289,42 @@ def get_blob_to_tempfile(filename, container_name, bbs=None):
     output_name = os.path.join(td, os.path.basename(filename))
     bbs.get_blob_to_path(container_name, blob_name, output_name)
     return output_name
+
+
+def download_summary_json(container, json_dir):
+    """
+    Parameters
+    ==========
+    container: str, the container name
+    json_dir: str, temporary directory into which to put json file.
+    """
+
+    print("Getting summary JSON file  to {}".format(json_dir))
+    blob_dirs = list_directory(container, container)
+    json_blob_dir = None
+    for b in blob_dirs:
+        if b.endswith("combine"):
+            json_blob_dir = b
+    json_blob_file = list_directory(json_blob_dir, container)[0]
+    blob_path = "/".join([json_blob_dir, json_blob_file])
+    print("Will retrieve blob {}".format(blob_path))
+    retrieve_blob(blob_path, container, json_dir)
+
+
+def download_rgb(container, rgb_dir):
+    """
+    Parameters
+    ==========
+    container: str, the container name
+    rgb_dir: str, directory into which to put image files.
+    """
+    print("Getting RGB images to {}".format(rgb_dir))
+    bbs = BlockBlobService(
+        account_name=config["storage_account_name"],
+        account_key=config["storage_account_key"],
+    )
+    blob_names = bbs.list_blob_names(container)
+    rgb_names = [b for b in blob_names if "PROCESSED" in b and b.endswith("RGB.png")]
+    print("Found {} images".format(len(rgb_names)))
+    for blob in rgb_names:
+        retrieve_blob(blob, container, rgb_dir)

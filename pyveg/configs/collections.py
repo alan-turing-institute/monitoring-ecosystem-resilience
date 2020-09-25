@@ -9,8 +9,9 @@ data_collections = {
         "mask_cloud": True,
         "cloudy_pix_frac": 50,
         "cloudy_pix_flag": "CLOUDY_PIXEL_PERCENTAGE",
-        "min_date": "2015-01-01",
-        "max_date": time.strftime("%Y-%m-%d"),
+        "min_date": "2016-01-01",
+        "max_date": "2020-01-01",  # For 2020 paper, look at four whole years
+#        "max_date": time.strftime("%Y-%m-%d"),
         "time_per_point": "1m",
     },
     "Landsat8": {
@@ -58,8 +59,18 @@ data_collections = {
         "data_type": "weather",
         "precipitation_band": ["total_precipitation"],
         "temperature_band": ["mean_2m_air_temperature"],
-        "min_date": "1979-01-01",
-        "max_date": time.strftime("%Y-%m-%d"),
+        "min_date": "1986-01-01",
+        "max_date": "2020-01-01",
+        #        "max_date": time.strftime("%Y-%m-%d"),
         "time_per_point": "1m",
+    },
+    "ERA5_daily": {
+        "collection_name": "ECMWF/ERA5/DAILY",
+        "data_type": "weather",
+        "precipitation_band": ["total_precipitation"],
+        "temperature_band": ["mean_2m_air_temperature"],
+        "min_date": "1986-01-01",
+        "max_date": time.strftime("%Y-%m-%d"),
+        "time_per_point": "1w",
     },
 }

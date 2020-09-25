@@ -83,11 +83,11 @@ class ProcessorModule(BaseModule):
         if not "run_mode" in vars(self):
             self.run_mode = "local"
         if not "n_batch_tasks" in vars(self):
-            self.n_batch_tasks = 100
+            self.n_batch_tasks = -1 # as many as we need
         if not "batch_task_dict" in vars(self):
             self.batch_task_dict = {}
         if not "timeout" in vars(self):
-            self.timeout = 600 # 10 hours
+            self.timeout = 30 # 1/2 hour, with nothing changing
 
     def check_input_data_exists(self, date_string):
         """
@@ -105,7 +105,7 @@ class ProcessorModule(BaseModule):
         """
         for i in range(len(self.input_location_subdirs)):
             if not self.input_location_subdirs[i] in self.list_directory(
-                os.path.join(
+                self.join_path(
                     self.input_location, date_string, *(self.input_location_subdirs[:i])
                 ),
                 self.input_location_type,
@@ -114,7 +114,7 @@ class ProcessorModule(BaseModule):
             if (
                 len(
                     self.list_directory(
-                        os.path.join(
+                        self.join_path(
                             self.input_location,
                             date_string,
                             *(self.input_location_subdirs),
@@ -143,7 +143,7 @@ class ProcessorModule(BaseModule):
              AND self.replace_existing_files is set to False
         False otherwise
         """
-        output_location = os.path.join(
+        output_location = self.join_path(
             self.output_location, date_string, *(self.output_location_subdirs)
         )
         return self.check_for_existing_files(output_location, self.num_files_per_point)
@@ -326,7 +326,11 @@ class ProcessorModule(BaseModule):
                 )
             )
             # split these dates up over the batch tasks
-            dates_per_task = assign_dates_to_tasks(date_strings, self.n_batch_tasks)
+            if self.n_batch_tasks > 0:
+                n_batch_tasks = self.n_batch_tasks
+            else:
+                n_batch_tasks = len(date_strings)
+            dates_per_task = assign_dates_to_tasks(date_strings, n_batch_tasks)
             # create a config dict for each task - will correspond to configuration for an
             # instance of this Module.
 
@@ -368,6 +372,35 @@ class ProcessorModule(BaseModule):
             )
         return submitted_ok
 
+    def check_timeout(self, task_status):
+        """
+        See how long since task_status last changed.
+        """
+        if not ("previous_task_status" in vars(self) \
+           and "previous_task_status_change") in vars(self):
+            self.previous_task_status = task_status
+            self.previous_task_status_change = datetime.datetime.now()
+            return False
+        if self.previous_task_status == task_status:
+            # task status has not changed
+            # see how long it has been since last change
+            time_now = datetime.datetime.now()
+            if time_now > self.previous_task_status_change \
+               + datetime.timedelta(minutes=self.timeout):
+                logger.info(
+                    "{}: reached timeout of {} minutes since last change. Aborting"\
+                    .format(
+                        self.name, self.timeout
+                    )
+                )
+                return True
+        else:
+            # task status has changed - reset the timer and the previous_task_status
+            self.previous_task_status = task_status
+            self.previous_task_status_change = datetime.datetime.now()
+        return False
+
+
     def check_if_finished(self):
         if self.run_mode == "local":
             return self.is_finished
@@ -393,15 +426,9 @@ class ProcessorModule(BaseModule):
             self.run_status["incomplete"] = num_incomplete
             self.is_finished = (num_incomplete == 0)
 
-        # if we have exceeded timeout, say that we are finished.
-        time_now = datetime.datetime.now()
-        if time_now > self.start_time + datetime.timedelta(minutes=self.timeout):
-            logger.info(
-                "{}: reached timeout of {} minutes. Aborting".format(
-                    self.name, self.timeout
-                )
-            )
-            self.is_finished = True
+            # if we have exceeded timeout, say that we are finished.
+            if self.check_timeout(task_status):
+                self.is_finished = True
         return self.is_finished
 
 
@@ -454,16 +481,16 @@ class VegetationImageProcessor(ProcessorModule):
         """
 
         if "SUB" in image_type:
-            output_location = os.path.join(self.output_location, date_string, "SPLIT")
+            output_location = self.join_path(self.output_location, date_string, "SPLIT")
         else:
-            output_location = os.path.join(
+            output_location = self.join_path(
                 self.output_location, date_string, "PROCESSED"
             )
         # filename is the date, coordinates, and image type
         filename = f"{date_string}_{coords_string}_{image_type}.png"
 
         # full path is dir + filename
-        full_path = os.path.join(output_location, filename)
+        full_path = self.join_path(output_location, filename)
 
         return full_path
 
@@ -530,6 +557,7 @@ class VegetationImageProcessor(ProcessorModule):
             sub_image, sub_coords = sub
             output_filename = f"sub{i}_"
             output_filename += "{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+            output_filename += "_{}".format(date_string)
             output_filename += "_{}".format(image_type)
             output_filename += ".png"
             self.save_image(sub_image, output_location, output_filename, verbose=False)
@@ -575,7 +603,7 @@ class VegetationImageProcessor(ProcessorModule):
             return True
 
         # If no files already there, proceed.
-        input_filepath = os.path.join(
+        input_filepath = self.join_path(
             self.input_location, date_string, *(self.input_location_subdirs)
         )
         logger.info("{} processing files in {}".format(self.name, input_filepath))
@@ -594,13 +622,13 @@ class VegetationImageProcessor(ProcessorModule):
         for icol, col in enumerate("rgb"):
             band = self.RGB_bands[icol]
             filename = self.get_file(
-                os.path.join(input_filepath, "download.{}.tif".format(band)),
+                self.join_path(input_filepath, "download.{}.tif".format(band)),
                 self.input_location_type,
             )
             band_dict[col] = {"band": band, "filename": filename}
 
         logger.info(filenames)
-        tif_filebase = os.path.join(input_filepath, filenames[0].split(".")[0])
+        tif_filebase = self.join_path(input_filepath, filenames[0].split(".")[0])
 
         # save the rgb image
         rgb_ok = self.save_rgb_image(band_dict, date_string, coords_string)
@@ -610,7 +638,7 @@ class VegetationImageProcessor(ProcessorModule):
 
         # save the NDVI image
         ndvi_tif = self.get_file(
-            os.path.join(input_filepath, "download.NDVI.tif"), self.input_location_type
+            self.join_path(input_filepath, "download.NDVI.tif"), self.input_location_type
         )
         ndvi_image = scale_tif(ndvi_tif)
         ndvi_filepath = self.construct_image_savepath(
@@ -676,7 +704,7 @@ class WeatherImageToJSON(ProcessorModule):
             logger.info("{} will not process date {}".format(self.name, date_string))
             return True
         logger.info("{}: Processing date {}".format(self.name, date_string))
-        input_location = os.path.join(
+        input_location = self.join_path(
             self.input_location, date_string, *(self.input_location_subdirs)
         )
         for filename in self.list_directory(input_location, self.input_location_type):
@@ -684,7 +712,7 @@ class WeatherImageToJSON(ProcessorModule):
                 name_variable = (filename.split("."))[1]
                 variable_array = cv.imread(
                     self.get_file(
-                        os.path.join(input_location, filename), self.input_location_type
+                        self.join_path(input_location, filename), self.input_location_type
                     ),
                     cv.IMREAD_ANYDEPTH,
                 )
@@ -693,7 +721,7 @@ class WeatherImageToJSON(ProcessorModule):
         self.save_json(
             metrics_dict,
             "weather_data.json",
-            os.path.join(
+            self.join_path(
                 self.output_location, date_string, *(self.output_location_subdirs)
             ),
             self.output_location_type,
@@ -774,7 +802,7 @@ class NetworkCentralityCalculator(ProcessorModule):
         rgb_filename = re.sub("BWNDVI", "RGB", ndvi_filename)
         rgb_img = Image.open(
             self.get_file(
-                os.path.join(input_path, rgb_filename), self.input_location_type
+                self.join_path(input_path, rgb_filename), self.input_location_type
             )
         )
         img_ok = check_image_ok(rgb_img, 0.05)
@@ -793,7 +821,7 @@ class NetworkCentralityCalculator(ProcessorModule):
             return True
         # see if there is already a network_centralities.json file in
         # the output location - if so, skip
-        output_location = os.path.join(
+        output_location = self.join_path(
             self.output_location, date_string, *(self.output_location_subdirs)
         )
         if (not self.replace_existing_files) and self.check_for_existing_files(
@@ -801,7 +829,7 @@ class NetworkCentralityCalculator(ProcessorModule):
         ):
             return True
 
-        input_path = os.path.join(
+        input_path = self.join_path(
             self.input_location, date_string, *(self.input_location_subdirs)
         )
         all_input_files = self.list_directory(input_path, self.input_location_type)
@@ -830,7 +858,7 @@ class NetworkCentralityCalculator(ProcessorModule):
                 (
                     i,
                     self.get_file(
-                        os.path.join(input_path, filename), self.input_location_type
+                        self.join_path(input_path, filename), self.input_location_type
                     ),
                     tmp_json_dir,
                     date_string,
@@ -882,7 +910,7 @@ class NDVICalculator(ProcessorModule):
         looks OK.
         """
         rgb_filename = re.sub("NDVI", "RGB", ndvi_filename)
-        rgb_img = self.get_image(os.path.join(input_path, rgb_filename))
+        rgb_img = self.get_image(self.join_path(input_path, rgb_filename))
 
         img_ok = check_image_ok(rgb_img, 0.05)
         return img_ok
@@ -935,7 +963,7 @@ class NDVICalculator(ProcessorModule):
 
         # see if there is already a ndvi.json file in
         # the output location - if so, skip
-        output_location = os.path.join(
+        output_location = self.join_path(
             self.output_location, date_string, *(self.output_location_subdirs)
         )
         if (not self.replace_existing_files) and self.check_for_existing_files(
@@ -943,7 +971,7 @@ class NDVICalculator(ProcessorModule):
         ):
             return True
 
-        input_path = os.path.join(
+        input_path = self.join_path(
             self.input_location, date_string, *(self.input_location_subdirs)
         )
         all_input_files = self.list_directory(input_path, self.input_location_type)
@@ -969,7 +997,7 @@ class NDVICalculator(ProcessorModule):
         for ndvi_file in input_files:
             coords_string = find_coords_string(ndvi_file)
             ndvi_dict = self.process_sub_image(
-                os.path.join(input_path, ndvi_file), date_string, coords_string
+                self.join_path(input_path, ndvi_file), date_string, coords_string
             )
             ndvi_vals.append(ndvi_dict)
 

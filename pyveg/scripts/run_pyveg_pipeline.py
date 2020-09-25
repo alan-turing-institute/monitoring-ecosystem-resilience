@@ -68,6 +68,12 @@ def build_pipeline(config_file, from_cache=False):
     p.output_location_type = config.output_location_type
     p.coords = config.coordinates
     p.date_range = config.date_range
+    # if an id of a row in coordinates.py has been specified, add it here
+    if "coords_id" in vars(config):
+        p.coords_id = config.coords_id
+    # if we have a pattern_type description, add it to the pipeline
+    if "pattern_type" in vars(config):
+        p.pattern_type = config.pattern_type
     if not from_cache:
         # before we run anything, save the current config to the configs dir
         config_cache_dir = os.path.join(os.path.dirname(config_file), "cached_config")
@@ -86,7 +92,13 @@ def build_pipeline(config_file, from_cache=False):
         # overwrite the date range with one that takes into account
         # the limits of this collection
         s.date_range = get_date_range_for_collection(config.date_range, coll_dict)
-        # add modules to the sequence
+
+        # see if there's any special config for this sequence
+        if "special_config" in vars(config):
+            if coll in config.special_config.keys():
+                s.set_config(config.special_config[coll])
+
+                # add modules to the sequence
         for module_name in config.modules_to_use[coll]:
             for n, c in inspect.getmembers(sys.modules[__name__]):
                 if n == module_name:

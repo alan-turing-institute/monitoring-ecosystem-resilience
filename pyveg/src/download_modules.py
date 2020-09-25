@@ -188,7 +188,7 @@ class DownloaderModule(BaseModule):
         download_locations = []
         for date_range in date_ranges:
             mid_date = find_mid_period(date_range[0], date_range[1])
-            location = os.path.join(self.output_location, mid_date, "RAW")
+            location = self.join_path(self.output_location, mid_date, "RAW")
             logger.debug("{} Will check for existing files in {}".format(self.name, location))
             if not self.replace_existing_files and self.check_for_existing_files(
                 location, self.num_files_per_point
@@ -205,7 +205,7 @@ class DownloaderModule(BaseModule):
                 download_locations.append(location)
             else:
                 self.run_status["failed"] += 1
-                logger.error("{}: download succeeded for date range {}".format(self.name, date_range))
+                logger.error("{}: download did not succeed for date range {}".format(self.name, date_range))
         self.is_finished = True
         return self.run_status
 

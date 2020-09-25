@@ -11,16 +11,82 @@ import os
 
 import numpy as np
 import pandas as pd
+import ewstools
 
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
 from pyveg.src.data_analysis_utils import write_to_json
 
+from pyveg.src.date_utils import get_time_diff
+
+from pyveg.src.file_utils import construct_filename_from_metadata
+
+try:
+    from pyveg.src.zenodo_utils import download_results_summary_by_coord_id
+except:
+    print("Unable to import zenodo_utils")
+
+try:
+    from pyveg.src import azure_utils
+except:
+    print("Unable to import azure_utils")
+
+
+def read_results_summary(input_location,
+                         input_filename="results_summary.json",
+                         input_location_type="local"):
+    """
+    Read the results_summary.json, either from local storage, Azure blob storage, or zenodo.
+
+    Parameters
+    ==========
+    input_location: str, directory or container with results_summary.json in,
+                       or coords_id if reading from zenodo
+    input_filename: str, name of json file, default is "results_summary.json"
+    input_location_type: str: 'local' or 'azure' or 'zenodo' or 'zenodo_test'
+
+    Returns
+    =======
+    json_data: dict, the contents of results_summary.json
+    """
+
+    if input_location_type == "local":
+        json_filepath = os.path.join(input_location, input_filename)
+        if not os.path.exists(json_filepath):
+            raise FileNotFoundError("Unable to find {}".format(json_filepath))
+        json_data = json.load(open(json_filepath))
+        return json_data
+    elif input_location_type == "zenodo" or input_location_type == "zenodo_test":
+        use_sandbox = input_location_type == "zenodo_test"
+        json_location = download_results_summary_by_coord_id(input_location, test=use_sandbox)
+        if os.path.exists(json_location):
+            json_data = json.load(open(json_location))
+            return json_data
+        else:
+            print("unable to find {} in Zenodo".format(input_location))
+            return {}
+    elif input_location_type == "azure":
+        subdirs = azure_utils.list_directory(input_location, input_location)
+        print("Found subdirs {}".format(subdirs))
+        for subdir in subdirs:
+            print("looking at subdir {}".format(subdir))
+            if "combine" in subdir:
+                files = azure_utils.list_directory(input_location+"/"+subdir,
+                                                   input_location)
+                if input_filename in files:
+                    return azure_utils.read_json(input_location+"/"+subdir+"/"+input_filename,
+                                                 input_location)
+                else:
+                    raise RuntimeError("No {} found in {}".format(input_filename, subdir))
+        return {}
+    else:
+        raise RuntimeError("input_location_type needs to be either 'local','azure', 'zenodo' or 'zenodo_test'")
+
+
 
 def read_json_to_dataframes(data):
     """
     convert json data to a dict of DataFrame.
-
     Parameters
     ----------
     data : dict, json data output from run_pyveg_pipeline
@@ -41,34 +107,41 @@ def read_json_to_dataframes(data):
 
         rows_list = []
 
-        # loop over time series
-        for date, time_point in coll_results["time-series-data"].items():
+        if "time-series-data" in coll_results.keys():
 
-            # check we have data for this time point
-            if time_point is None or time_point == {} or time_point == []:
+            # loop over time series
+            for date, time_point in coll_results["time-series-data"].items():
 
-                # add Null row if data is missing at this time point
-                rows_list.append({"date": date})
+                # check we have data for this time point
+                if time_point is None or time_point == {} or time_point == []:
+                    # add Null row if data is missing at this time point
+                    rows_list.append({"date": date})
 
-            # if we are looking at veg data, loop over space points
-            elif isinstance(list(time_point)[0], dict):
-                for space_point in time_point:
-                    rows_list.append(space_point)
+                # if we are looking at veg data, loop over space points
+                elif isinstance(list(time_point)[0], dict):
+                    for space_point in time_point:
+                        # Scale NDVI values - in the image they will be between 0 and 255 to give a greyscale
+                        # (8-bit) image, but the actual NDVI values are between -1 and 1
+                        if 'ndvi' in space_point.keys():
+                            space_point['ndvi'] = space_point['ndvi'] * (2.0/255.0) - 1
+                        if 'ndvi_veg' in space_point.keys():
+                            space_point['ndvi_veg'] = space_point['ndvi_veg'] * (2.0/255.0) - 1
+                        rows_list.append(space_point)
 
-            # otherwise, just add the row
-            else:
-                # the key of each object in the time series is the date, and data
-                # for this date should be the values. Here we just add the date
-                # as a value to enable us to add the whole row in one go later.
-                time_point["date"] = date
-                rows_list.append(time_point)
+                # otherwise, just add the row
+                else:
+                    # the key of each object in the time series is the date, and data
+                    # for this date should be the values. Here we just add the date
+                    # as a value to enable us to add the whole row in one go later.
+                    time_point["date"] = date
+                    rows_list.append(time_point)
 
-        # make a DataFrame and add it to the dict of DataFrames
-        df = pd.DataFrame(rows_list)
-        df = df.drop(columns=["slope", "offset", "mean", "std"], errors="ignore")
-        df = df.sort_values(by="date")
-        assert df.empty == False
-        dfs[collection_name] = df
+            # make a DataFrame and add it to the dict of DataFrames
+            df = pd.DataFrame(rows_list)
+            df = df.drop(columns=["slope", "offset", "mean", "std"], errors="ignore")
+            df = df.sort_values(by="date")
+            assert df.empty == False
+            dfs[collection_name] = df
 
     return dfs
 
@@ -87,12 +160,16 @@ def make_time_series(dfs):
 
     Returns
     ----------
-    DataFrame
+    ts_list: list of DataFrames
         The time-series results averaged over sub-locations.
+        First entry will be main dataframe of vegetation and weather.
+        Second one (if present) will be historical weather.
     """
 
     # the time series dataframe
     ts_df = pd.DataFrame(columns=["date"])
+
+    veg_satellite_prefix = ""
 
     # loop over collections
     for col_name, df in dfs.items():
@@ -110,10 +187,13 @@ def make_time_series(dfs):
             # rename columns
             if "COPERNICUS/S2" in col_name:
                 s = "S2_"
+                veg_satellite_prefix = s
             elif "LANDSAT" in col_name:
                 s = "L" + col_name.split("/")[1][-1] + "_"
             else:
                 s = col_name + "_"
+                veg_satellite_prefix = s
+
             means = means.rename(columns={c: s + c + "_mean" for c in means.columns})
             stds = stds.rename(columns={c: s + c + "_std" for c in stds.columns})
 
@@ -131,7 +211,24 @@ def make_time_series(dfs):
     ts_df = ts_df.loc[:, ~ts_df.columns.str.contains("longitude_std", case=False)]
 
     assert ts_df.empty == False
-    return ts_df
+    ts_list = []
+
+    # if there is a big (>10yr) gap between the start of veg and weather time-series,
+    # we want to make a separate historic time-series.
+
+    veg_col_name = [col for col in ts_df.columns if col.startswith(veg_satellite_prefix)][0]
+
+    earliest_date = ts_df.iloc[0]["date"]
+    earliest_veg_date = ts_df[ts_df[veg_col_name].notna()].iloc[0]["date"]
+    if get_time_diff(earliest_veg_date,earliest_date) > 10:
+        ts_df_historic = ts_df[ts_df["date"] < earliest_veg_date][["date","mean_2m_air_temperature","total_precipitation"]]
+        ts_df = ts_df[ts_df["date"] >= earliest_veg_date]
+        ts_list.append(ts_df)
+        ts_list.append(ts_df_historic)
+    else :
+        ts_list.append(ts_df)
+
+    return ts_list
 
 
 def resample_time_series(series, period="MS"):
@@ -651,7 +748,7 @@ def detrend_df(df, period="MS"):
         Input with seasonality removed from time series columns.
     """
 
-    # infer lag from period
+    # infer lag from period, we need at least 2 years for diferenciation to work
     if period == "MS":
         lag = 12
     else:
@@ -779,8 +876,10 @@ def preprocess_data(
 
     Returns
     ----------
-    str
+    output_dir: str
         Path to the csv file containing processed data.
+    defs: dict
+        Dictionary of dataframes.
     """
 
     # put output plots in the results dir
@@ -791,7 +890,7 @@ def preprocess_data(
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    # read json file to dataframes
+    # read dict from json file to dataframes
     dfs = read_json_to_dataframes(input_json)
 
     # keep track of time points where data is missing (by default pandas
@@ -823,7 +922,12 @@ def preprocess_data(
     store_feature_vectors(dfs, output_dir)
 
     # average over sub-images
-    ts_df = make_time_series(dfs)
+    ts_list = make_time_series(dfs)
+    ts_df = ts_list[0]
+    if len(ts_list) > 1 :
+        ts_historic = ts_list[1]
+    else :
+        ts_historic = pd.DataFrame()
 
     # resample the averaged time series using linear interpolation
     if resample:
@@ -839,9 +943,14 @@ def preprocess_data(
     ts_filename = os.path.join(output_dir, "time_series.csv")
     print(f'- Saving time series to "{ts_filename}".')
     ts_df.to_csv(ts_filename, index=False)
+    if not ts_historic.empty :
+        ts_filename = os.path.join(output_dir, "time_series_historic.csv")
+        print(f'- Saving time series to "{ts_filename}".')
+        ts_historic.to_csv(ts_filename, index=False)
 
     # additionally save resampled & detrended time series
-    if detrend:
+    # this detrending option (one year seasonality substraction) only works in monthly data that has at least 2 years of data
+    if detrend and ts_df.shape[0]>24 and period=='MS':
         print("- Detrending time series...")
 
         # remove seasonality from sub-image time series
@@ -851,7 +960,7 @@ def preprocess_data(
         dfs_detrended_smooth = smooth_veg_data(dfs_detrended, n=12)
 
         # combine over sub-images
-        ts_df_detrended_smooth = make_time_series(dfs_detrended_smooth)
+        ts_df_detrended_smooth = make_time_series(dfs_detrended_smooth)[0]
 
         # save output
         ts_filename_detrended = os.path.join(output_dir, "time_series_detrended.csv")
@@ -859,3 +968,112 @@ def preprocess_data(
         ts_df_detrended_smooth.to_csv(ts_filename_detrended, index=False)
 
     return output_dir, dfs  #  for now return `dfs` for spatial plot compatibility
+
+
+def save_ts_summary_stats(ts_dirname, output_dir, metadata):
+        """
+        Given a time series DataFrames (constructed with `make_time_series`),
+        give summary statistics of all the avalaible time series.
+
+        Parameters
+        ----------
+        ts_dirname : str
+              Directory where the time series are saved.
+
+        output_dir : str
+            Directory to save the plots in.
+
+        metadata: dict
+            Dictionary with metadata from location
+
+        """
+
+        # read processed data
+
+        # get filenames of preprocessed data time series
+        ts_filenames = [f for f in os.listdir(ts_dirname) if "time_series" in f]
+
+        # we should get one seasonal time series and a detrended one
+        ts_df_detrended = pd.DataFrame()
+        ts_df_historic = pd.DataFrame()
+        for filename in ts_filenames:
+            if "detrended" in filename:
+                ts_df_detrended = pd.read_csv(os.path.join(ts_dirname,filename))
+            elif "historic" in filename:
+                ts_df_historic = pd.read_csv(os.path.join(ts_dirname,filename))
+            else:
+                ts_df = pd.read_csv(os.path.join(ts_dirname,filename))
+
+
+        def get_ts_summary_stats(series):
+            ''' Function that gets the summary stats of the time series and returns a dictionary'''
+            stats_dict = {}
+
+            stats_dict['min'] = series.min()
+            stats_dict['max'] = series.max()
+            stats_dict['mean'] = series.mean()
+            stats_dict['median'] = series.median()
+            stats_dict['std'] = series.std()
+
+            return stats_dict
+
+        # calculate summary statistics for each relevant time series
+        ts_dict_list = []
+        # only look at relevant time series (offset50, ndvi and precipitation)
+        if not ts_df_historic.empty :
+            column_dict = get_ts_summary_stats(ts_df_historic["total_precipitation"])
+            column_dict["ts_id"] = "total_precipitation_historic"
+            for key in metadata:
+                column_dict[key] = metadata[key]
+            ts_dict_list.append(column_dict)
+
+
+        column_names = [c for c in ts_df.columns if 'offset50_mean' in c or
+                        'ndvi_mean' in c or
+                        'total_precipitation' in c]
+
+
+        for column in column_names:
+
+            print(f'Calculating summary stats for "{column}"...')
+
+            column_dict = get_ts_summary_stats(ts_df[column])
+            column_dict['ts_id'] = column
+            for key in metadata:
+                column_dict[key] = metadata[key]
+
+            # We want the AR1 and Standard deviation of the detreded timeseries for the summary stats
+            if ts_df_detrended.empty==False:
+                ews_dic_veg = ewstools.core.ews_compute(ts_df_detrended[column].dropna(),
+                                                        roll_window=0.99 ,
+                                                        smooth='Gaussian',
+                                                        lag_times=[1],
+                                                        ews= ["var", "ac"],
+                                                        band_width=6)
+
+                EWSmetrics_df = ews_dic_veg['EWS metrics']
+                column_dict["Lag-1 AC (0.99 rolling window)"] = EWSmetrics_df["Lag-1 AC"].iloc[-1]
+                column_dict["Variance (0.99 rolling window)"] = EWSmetrics_df["Variance"].iloc[-1]
+
+                ews_dic_veg_50 = ewstools.core.ews_compute(ts_df_detrended[column].dropna(),
+                                                        roll_window=0.5,
+                                                        smooth='Gaussian',
+                                                        lag_times=[1],
+                                                        ews=["var", "ac"],
+                                                        band_width=6)
+
+                Kendall_tau_50 = ews_dic_veg_50['Kendall tau']
+                column_dict["Kendall tau Lag-1 AC (0.5 rolling window)"] = Kendall_tau_50["Lag-1 AC"].iloc[-1]
+                column_dict["Kendall tau Variance (0.5 rolling window)"] = Kendall_tau_50["Variance"].iloc[-1]
+
+
+
+            ts_dict_list.append(column_dict)
+
+        ss_name = construct_filename_from_metadata(metadata, "summary_stats.csv")
+        # turn the list of dictionary to dataframe and save it
+        ts_df_summary = pd.DataFrame(ts_dict_list)
+
+        #save both name specific and generic (might be useful inside the analysis later)
+        ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats.csv"))
+        ts_df_summary.to_csv(os.path.join(output_dir, ss_name))

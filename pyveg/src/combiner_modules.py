@@ -5,7 +5,7 @@ and produce combined output file (typically JSON).
 import os
 import json
 
-from pyveg.src.file_utils import save_json
+from pyveg.src.file_utils import save_json, get_tag
 from pyveg.src.date_utils import get_date_strings_for_time_period
 from pyveg.src.pyveg_pipeline import BaseModule, logger
 
@@ -147,14 +147,14 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                 veg_time_series[date_string] = None
             # if there is no JSON directory for this date, add a null entry
             if "JSON" not in self.list_directory(
-                os.path.join(self.input_veg_location, date_string),
+                self.join_path(self.input_veg_location, date_string),
                 self.input_veg_location_type,
             ):
                 veg_time_series[date_string] = None
                 continue
             # find the subdirs of the JSON directory
             subdirs = self.list_directory(
-                os.path.join(self.input_veg_location, date_string, "JSON"),
+                self.join_path(self.input_veg_location, date_string, "JSON"),
                 self.input_veg_location_type,
             )
             veg_lists = []
@@ -162,14 +162,14 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                 logger.debug(
                     "{}: getting vegetation time series for {}".format(
                         self.name,
-                        os.path.join(
+                        self.join_path(
                             self.input_veg_location, date_string, "JSON", subdir
                         ),
                     )
                 )
                 # list the JSON subdirectories and find any .json files in them
                 dir_contents = self.list_directory(
-                    os.path.join(self.input_veg_location, date_string, "JSON", subdir),
+                    self.join_path(self.input_veg_location, date_string, "JSON", subdir),
                     self.input_veg_location_type,
                 )
                 json_files = [
@@ -177,7 +177,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                 ]
                 for filename in json_files:
                     j = self.get_json(
-                        os.path.join(
+                        self.join_path(
                             self.input_veg_location,
                             date_string,
                             "JSON",
@@ -203,7 +203,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
         for date_string in date_strings:
 
             weather_json = self.get_json(
-                os.path.join(
+                self.join_path(
                     self.input_weather_location,
                     date_string,
                     "JSON",
@@ -220,9 +220,12 @@ class VegAndWeatherJsonCombiner(CombinerModule):
         For all the keys  (i.e. dates) in the vegetation time-series,
         count how many have data for both veg and weather
         """
-        dates = output_dict[self.veg_collection]["time-series-data"].keys()
-        for date in dates:
+        veg_dates = output_dict[self.veg_collection]["time-series-data"].keys()
+        weather_dates = output_dict[self.weather_collection]["time-series-data"].keys()
+        for date in veg_dates:
+
             if output_dict[self.veg_collection]["time-series-data"][date] \
+               and date in weather_dates \
                and output_dict[self.weather_collection]["time-series-data"][date]:
                 self.run_status["succeeded"] += 1
         return
@@ -242,6 +245,11 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             metadata["num_data_points"] = self.run_status["succeeded"]
             if "config_filename" in vars(self.parent.parent):
                 metadata["config_filename"] = self.parent.parent.config_filename
+            if "coords_id" in vars(self.parent.parent):
+                metadata["coords_id"] = self.parent.parent.coords_id
+            if "pattern_type" in vars(self.parent.parent):
+                metadata["pattern_type"] = self.parent.parent.pattern_type
+        metadata["tag"] = get_tag()
         return metadata
 
     def run(self):
@@ -273,7 +281,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
 
         logger.info("{}: Wrote output to {}".format(
             self.name,
-            os.path.join(self.output_location, self.output_filename)
+            self.join_path(self.output_location, self.output_filename)
         )
         )
         self.is_finished = True

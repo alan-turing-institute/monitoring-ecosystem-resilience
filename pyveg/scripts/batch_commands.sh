@@ -8,7 +8,7 @@
 
 
 # install some packages needed by opencv
-sudo apt-get install -y libsm6 libxext6 libxrender-dev
+sudo apt-get update; sudo apt-get install -y libsm6 libxext6 libxrender-dev libgl1-mesa-glx
 
 # install and setup miniconda
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh

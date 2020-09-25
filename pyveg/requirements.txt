@@ -19,8 +19,9 @@ geetools
 pillow
 imageio
 opencv-python
-statsmodels
+statsmodels==0.11.1
 ewstools
 pypandoc
 mdutils
 pandoc
+sphinx_rtd_theme

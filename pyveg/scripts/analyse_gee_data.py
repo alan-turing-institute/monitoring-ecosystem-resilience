@@ -15,7 +15,11 @@ import re
 import pandas as pd
 import ewstools
 
-from pyveg.src.analysis_preprocessing import preprocess_data
+from pyveg.src.analysis_preprocessing import (
+    read_results_summary,
+    preprocess_data,
+    save_ts_summary_stats
+)
 
 from pyveg.src.data_analysis_utils import (
     create_lat_long_metric_figures,
@@ -41,13 +45,10 @@ from pyveg.src.plotting import (
 )
 
 from pyveg.scripts.create_analysis_report import create_markdown_pdf_report
-from pyveg.scripts.upload_to_zenodo import upload_results
+from pyveg.scripts.upload_to_zenodo import upload_summary_stats
 
-try:
-    from pyveg.src import azure_utils
-except:
-    print("Unable to import azure_utils")
-
+# if time-series is fewer than 12 points, can't do Early Warning Signals analysis
+MIN_TS_SIZE_FOR_EWS = 12
 
 def run_time_series_analysis(filename, output_dir, detrended=False):
     """
@@ -96,7 +97,7 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
 
     # plot the result of running STL decomposition
     if not detrended:
-        plot_stl_decomposition(ts_df, 12, os.path.join(output_dir, "detrended/STL"))
+        plot_stl_decomposition(ts_df,  MIN_TS_SIZE_FOR_EWS, os.path.join(output_dir, "detrended/STL"))
     # ------------------------------------------------
 
 
@@ -212,6 +213,7 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
 
 def analyse_gee_data(input_location,
                      input_location_type="local",
+                     input_json_file=None,
                      output_dir=None,
                      do_time_series=True,
                      do_spatial=False,
@@ -223,9 +225,12 @@ def analyse_gee_data(input_location,
     Parameters
     ----------
     input_location : str
-        Location of results_summary.json output from pyveg_run_pipeline
+        Location of results_summary.json output from pyveg_run_pipeline,
+        OR if input_location_type is `zenodo` or `zenodo_test`, the 2-digit coordinate_id
+        representing the row in `coordinates.py`.
     input_location_type: str
-        Can be 'local' or 'azure'.
+        Can be 'local', 'azure', 'zenodo', or 'zenodo_test'.
+    input_json: str, optional. Full path to the results summary json file.
     output_dir: str,
         Location for outputs of the analysis. If None, use input_location
     do_time_series: bool
@@ -241,8 +246,11 @@ def analyse_gee_data(input_location,
     if not output_dir:
         output_dir = input_location
     # read the results_summary.json
-    input_json = read_results_summary(input_location, input_location_type)
-
+    if input_json_file:
+        input_json = json.load(open(input_json_file))
+    else:
+        input_json = read_results_summary(input_location,
+                                          input_location_type=input_location_type)
     # preprocess input data
     ts_dirname, dfs = preprocess_data(
         input_json, output_dir, n_smooth=4, resample=False, period="MS"
@@ -263,9 +271,23 @@ def analyse_gee_data(input_location,
     plot_feature_vector(output_analysis_dir)
 
     # time-series analysis and plotting
+    # check first if data is a time series
+    ts_df = pd.read_csv(os.path.join(ts_dirname,ts_filenames[0]))
+    size_ts = ts_df.shape[0]
+    if size_ts <= 2:
+        print ('WARNING: Less than 3 times points, not possible to do a time series analysis')
+        do_time_series = False
     # -----------------------------------
+
+
     # for each time series
     if do_time_series:
+
+        # put output plots in the results dir
+        input_dir_ts = os.path.join(output_dir, "processed_data")
+
+        save_ts_summary_stats(input_dir_ts, output_analysis_dir,input_json['metadata'])
+
         for filename in ts_filenames:
 
             ts_file = os.path.join(ts_dirname, filename)
@@ -277,15 +299,19 @@ def analyse_gee_data(input_location,
                 output_subdir = os.path.join(output_analysis_dir, "detrended")
                 run_time_series_analysis(ts_file, output_subdir, detrended=True)
 
-                ews_subdir = os.path.join(output_analysis_dir, "resiliance/deseasonalised")
-                run_early_warnings_resilience_analysis(ts_file, ews_subdir)
+                # resilience analysis only done in large enough time series
+                if size_ts > MIN_TS_SIZE_FOR_EWS:
+                    ews_subdir = os.path.join(output_analysis_dir, "resiliance/deseasonalised")
+                    run_early_warnings_resilience_analysis(ts_file, ews_subdir)
 
             else:
                 output_subdir = output_analysis_dir
                 run_time_series_analysis(ts_file, output_subdir)
 
-                ews_subdir = os.path.join(output_analysis_dir, "resiliance/seasonal")
-                run_early_warnings_resilience_analysis(ts_file, ews_subdir)
+                # resilience analysis only done in large enough time series
+                if size_ts > MIN_TS_SIZE_FOR_EWS:
+                    ews_subdir = os.path.join(output_analysis_dir, "resiliance/seasonal")
+                    run_early_warnings_resilience_analysis(ts_file, ews_subdir)
 
             print("." * 50, "\n")
 
@@ -316,79 +342,45 @@ def analyse_gee_data(input_location,
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
 
             try:
-                create_markdown_pdf_report(output_dir, collection_name)
+                metadata = input_json["metadata"] if "metadata" in input_json.keys() else None
+                create_markdown_pdf_report(output_dir,
+                                           "local",
+                                           input_location,
+                                           input_location_type,
+                                           do_time_series,
+                                           output_dir,
+                                           collection_name,
+                                           metadata)
+
             except Exception as e:
                 print ("Warning: A problem was found, the report was not created. There might be missing figures needed "
-                              "for the report or a problem with the pandoc installation.")
+                              "for the report or a problem with the pandoc installation. {}".format(e))
 
     # ------------------------------------------------
 
     # ------------------------------------------------
-    # uploading
+    # upload the summary csv file to Zenodo
     if upload_to_zenodo or upload_to_zenodo_test:
         print('\nUploading results to Zenodo.\n')
-        coll_search = re.search("([Ss]entinel[-]?[\d])|([Ll]andsat[-]?[\d])", input_location)
-        if coll_search:
-            collection = coll_search.groups()[0] if coll_search.groups()[0] \
-                else coll_search.groups()[1]
+        analysis_dir = os.path.join(output_dir, "analysis")
+        filenames = [f for f in os.listdir(analysis_dir) if f.endswith(".csv")
+                     and f != "time_series_summary_stats.csv"]
+        if filenames:
+            filepath = os.path.join(analysis_dir, filenames[0])
 
-            uploaded = upload_results(collection,
-                                      output_dir,
-                                      "local",
-                                      input_location,
-                                      input_location_type,
-                                      upload_to_zenodo_test)
+
+
+            uploaded = upload_summary_stats(filepath,
+                                            upload_to_zenodo_test)
             if uploaded:
-                print("Uploaded results_summary.json and time series outputs to Zenodo.")
-            else:
-                print("Error uploading to Zenodo")
+                print("Uploaded {} to Zenodo.".format(filenames[0]))
         else:
-            print("Unable to ascertain collection from directory path {}.  Skipping Zenodo upload"\
-                  .format(input_dir))
+            print("Couldn't find time series summary stats csv file. Not uploading to Zenodo.")
+
 
     # ------------------------------------------------
 
     print("\nAnalysis complete.\n")
-
-
-def read_results_summary(input_location, input_location_type):
-    """
-    Read the results_summary.json, either from local storage or from Azure blob storage.
-
-    Parameters
-    ==========
-    input_location: str, directory or container with results_summary.json in
-    input_location_type: str: 'local' or 'azure'
-
-    Returns
-    =======
-    json_data: dict, the contents of results_summary.json
-    """
-    json_name = "results_summary.json"
-    if input_location_type == "local":
-        json_filepath = os.path.join(input_location, json_name)
-        if not os.path.exists(json_filepath):
-            raise FileNotFoundError("Unable to find {}".format(json_filepath))
-        json_data = json.load(open(json_filepath))
-        return json_data
-    elif input_location_type == "azure":
-        subdirs = azure_utils.list_directory(input_location, input_location)
-        print("Found subdirs {}".format(subdirs))
-        for subdir in subdirs:
-            print("looking at subdir {}".format(subdir))
-            if "combine" in subdir:
-                files = azure_utils.list_directory(input_location+"/"+subdir,
-                                                   input_location)
-                if json_name in files:
-                    return azure_utils.read_json(input_location+"/"+subdir+"/"+json_name,
-                                                 input_location)
-                else:
-                    raise RuntimeError("No {} found in {}".format(json_name, subdir))
-        return {}
-    else:
-        raise RuntimeError("input_location_type needs to be either 'local' or 'azure'")
-
-
 
 
 def main():
@@ -399,12 +391,24 @@ def main():
         description="process json files with network centrality measures from from GEE images"
     )
     parser.add_argument(
+        "--input_json",
+        help="path to results file from `pyveg_run_pipeline` command.  Use this  OR '--input_dir' OR '--input_container.",
+    )
+    parser.add_argument(
         "--input_dir",
-        help="results directory from `download_gee_data` script, containing `results_summary.json`",
+        help="results directory from `pyveg_run_pipeline` command, containing `results_summary.json`",
     )
     parser.add_argument(
         "--input_container",
-        help="results location on blob storage from `download_gee_data` script, containing `results_summary.json`",
+        help="results location on blob storage from `pyveg_run_pipeline` command, containing `results_summary.json`",
+    )
+    parser.add_argument(
+        "--input_zenodo_coords",
+        help="If results_summary json is uploaded to Zenodo deposition, give the two digit coordinate id from coordinates.py, e.g. '00'",
+    )
+    parser.add_argument(
+        "--input_zenodo_test_coords",
+        help="If results_summary json is uploaded to Zenodo sandbox deposition, give the two digit coordinate id from coordinates.py, e.g. '00'",
     )
     parser.add_argument(
         "--output_dir",
@@ -419,11 +423,11 @@ def main():
     )  # off by default as this takes a non-negligable amount of time
 
     parser.add_argument(
-        "--upload_to_zenodo", action="store_true", default=False
+        "--upload_to_zenodo", help="store the summary_stats.csv file on Zenodo", action="store_true", default=False
     )  # off by deafult
 
     parser.add_argument(
-        "--upload_to_zenodo_test", action="store_true", default=False
+        "--upload_to_zenodo_test", help="store the summary_stats.csv file on Zenodo sandbox", action="store_true", default=False
     )  # off by deafult
 
     print("-" * 35)
@@ -435,19 +439,41 @@ def main():
     # check we have the bare minimum of args set that we need
     output_dir = args.output_dir if args.output_dir else args.input_dir
     if not output_dir:
-        raise RuntimeError("Need to specify --output_dir argument if reading from Azure blob storage")
+        raise RuntimeError("Need to specify --output_dir argument if reading from Azure blob storage or Zenodo")
 
     # read the input json, using either input_dir or input_container arguments
-    if args.input_dir and args.input_container:
-        raise RuntimeError("Please use only one of --input_dir (for local input) or --input_location (for Azure)")
-    if args.input_dir:
-        input_location = args.input_dir
-        input_location_type = "local"
-    else:
+    if args.input_json and (args.input_dir or args.input_container):
+        raise RuntimeError("""
+        Please use only one of --input_dir or --input_json (for local input), or --onput_container (for Azure),
+        or --zenodo_coords_id (for production Zenodo deposition) or --zenodo_test_coords_id (for Zenodo sandbox)
+        """)
+    elif args.input_dir and args.input_container:
+        raise RuntimeError("""
+        Please use only one of --input_dir or --input_json (for local input), or --onput_container (for Azure),
+        or --zenodo_coords_id (for production Zenodo deposition) or --zenodo_test_coords_id (for Zenodo sandbox)
+        """)
+    elif (args.input_dir or args.input_json or args.input_container) and \
+         (args.input_zenodo_coords or args.input_zenodo_test_coords):
+        raise RuntimeError("""
+        Please use only one of --input_dir or --input_json (for local input), or --onput_container (for Azure),
+        or --zenodo_coords_id (for production Zenodo deposition) or --zenodo_test_coords_id (for Zenodo sandbox)
+        """)
+    if args.input_container:
         input_location = args.input_container
         input_location_type = "azure"
-
-
+    elif args.input_zenodo_coords:
+        input_location = args.input_zenodo_coords
+        input_location_type = "zenodo"
+    elif args.input_zenodo_test_coords:
+        input_location = args.input_zenodo_test_coords
+        input_location_type = "zenodo_test"
+    else:
+        input_location_type = "local"
+        if args.input_dir:
+            input_location = args.input_dir
+        else:
+            input_location = None
+    input_json = args.input_json
 
     do_time_series = not args.dont_do_time_series
     do_spatial = args.spatial
@@ -456,6 +482,7 @@ def main():
     # run analysis code
     analyse_gee_data(input_location,
                      input_location_type,
+                     input_json,
                      output_dir,
                      do_time_series,
                      do_spatial,

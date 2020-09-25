@@ -4,16 +4,20 @@ Test the functions in analysis_preprocessing.py
 import os
 import json
 
-from pyveg.src.analysis_preprocessing import read_json_to_dataframes
+from pyveg.src.analysis_preprocessing import (
+    read_results_summary,
+    read_json_to_dataframes,
+)
 
 
 def test_read_json_to_dataframes():
 
     json_filename = os.path.join(
-            os.path.dirname(__file__),
-            "..",
-            "testdata",
-            "network_json_data/test-results-summary.json",
+        os.path.dirname(__file__),
+        "..",
+        "testdata",
+        "network_json_data",
+        "test-results-summary.json",
     )
     summary_json = json.load(open(json_filename))
     test_df_dict = read_json_to_dataframes(summary_json)

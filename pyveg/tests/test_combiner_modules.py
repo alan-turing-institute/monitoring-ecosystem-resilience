@@ -38,4 +38,6 @@ def test_combine():
         assert isinstance(results[coll], dict)
         assert "time-series-data" in results[coll].keys()
     assert "metadata" in results.keys()
+    assert "tag" in results["metadata"].keys()
+    assert len(results["metadata"]["tag"]) > 0
     shutil.rmtree(output_dir)
