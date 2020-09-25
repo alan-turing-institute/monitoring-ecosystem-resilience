@@ -5,7 +5,7 @@ and produce combined output file (typically JSON).
 import os
 import json
 
-from pyveg.src.file_utils import save_json
+from pyveg.src.file_utils import save_json, get_tag
 from pyveg.src.date_utils import get_date_strings_for_time_period
 from pyveg.src.pyveg_pipeline import BaseModule, logger
 
@@ -245,6 +245,9 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             metadata["num_data_points"] = self.run_status["succeeded"]
             if "config_filename" in vars(self.parent.parent):
                 metadata["config_filename"] = self.parent.parent.config_filename
+            if "coords_id" in vars(self.parent.parent):
+                metadata["coords_id"] = self.parent.parent.coords_id
+        metadata["tag"] = get_tag()
         return metadata
 
     def run(self):

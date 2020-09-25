@@ -17,6 +17,9 @@ output_location_type = "OUTPUT_LOCATION_TYPE"
 # parse selection. Note (long, lat) GEE convention.
 coordinates = (LONGITUDE, LATITUDE)
 
+# optional coords_id setting
+COORDS_ID_STRING
+
 date_range = ["START_DATE", "END_DATE"]
 
 # From the dictionary entries in data_collections.py, which shall we use
