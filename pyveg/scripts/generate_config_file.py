@@ -366,6 +366,7 @@ def main():
             pattern_type = input("Enter type of patterned vegetation (e.g. 'spots', 'labyrinths', or press Return for default ('{}') : ".format(default_pattern_type))
             if len(pattern_type) == 0:
                 pattern_type = default_pattern_type
+    pattern_type = pattern_type.replace(" ","-").lower()
 
     # run mode
     run_mode = args.run_mode if args.run_mode else ""
