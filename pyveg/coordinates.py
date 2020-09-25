@@ -333,7 +333,7 @@ coordinate_store.loc['37'] = {
 coordinate_store.loc['38'] = {
   'continent' : 'Africa', 
   'country': 'Somalia', 
-  'type': 'labyrinths', 
+  'type': 'bands', 
   'latitude': 9.63, 
   'longitude': 47.93
 }
