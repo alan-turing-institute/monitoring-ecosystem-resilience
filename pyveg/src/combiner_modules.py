@@ -247,6 +247,8 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                 metadata["config_filename"] = self.parent.parent.config_filename
             if "coords_id" in vars(self.parent.parent):
                 metadata["coords_id"] = self.parent.parent.coords_id
+            if "pattern_type" in vars(self.parent.parent):
+                metadata["pattern_type"] = self.parent.parent.pattern_type
         metadata["tag"] = get_tag()
         return metadata
 
