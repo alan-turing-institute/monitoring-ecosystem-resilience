@@ -53,16 +53,20 @@ def get_base_url_and_token(test=False):
     return base_url, token
 
 
-def get_deposition_id(test=False):
+def get_deposition_id(json_or_csv="json", test=False):
     """
     If we have previously created a deposition, we hopefully stored its ID in
     the zenodo_config.py file.
     """
     if test:
-        return config.test_api_credentials["deposition_id"]
-    else:
-        return config.prod_api_credentials["deposition_id"]
+        credentials = config.test_api_credentials
 
+    else:
+        credentials =  config.prod_api_credentials
+    if json_or_csv == "json":
+        return credentials["deposition_id_summary_json"]
+    else:
+        return credentials["deposition_id_ts_csv"]
 
 
 def list_depositions(test=False):
@@ -184,13 +188,15 @@ def upload_file(filename, deposition_id, test=False):
         return True
 
 
-def list_files(deposition_id, test=False):
+def list_files(deposition_id, json_or_csv="json", test=False):
     """
     List all the files in a deposition.
 
     Parameters
     ==========
     deposition_id: int, ID of the deposition on which to list files
+    json_or_csv: str, if 'json', list the deposition containing the results_summary.json
+                 otherwise list the one containing ts_summary_stats.csv
     test: bool, True if using the sandbox API, False otherwise
 
     Returns
@@ -199,7 +205,7 @@ def list_files(deposition_id, test=False):
     """
 
     base_url, api_token = get_base_url_and_token(test)
-    deposition_id = get_deposition_id(test)
+    deposition_id = get_deposition_id(json_or_csv, test=test)
     r = requests.get("{}/deposit/depositions/{}/files".format(base_url, deposition_id),
                      params={"access_token": api_token})
     if r.status_code != 200:
@@ -236,7 +242,7 @@ def download_file(filename, deposition_id, destination_path=".", test=False):
     return destination
 
 
-def upload_standard_metadata(deposition_id, test=False):
+def upload_standard_metadata(deposition_id, json_or_csv="json", test=False):
     """
     Upload the metadata dict defined in zenodo_config.py to the
     specified deposition ID.Kcontaining metadata with the format:
@@ -244,13 +250,18 @@ def upload_standard_metadata(deposition_id, test=False):
     Parameters:
     ==========
     deposition_id: int, ID of the deposition to which to upload
+    json_or_csv: str, can be either 'json' to upload the metadata for `results_summary.json`
+                   or `csv` to upload the metadata for `ts_summary_stats.csv`
     test: if True, use the sandbox API, if False use the production one.
 
     Returns
     =======
     r: dict, JSON response from the API.
     """
-    metadata_dict = config.metadata_dict
+    if json_or_csv == "json":
+        metadata_dict = config.metadata_dict_summary_json
+    else:
+        metadata_dict = config.metadata_dict_ts_csv
     base_url, api_token = get_base_url_and_token(test)
     r = requests.put("{}/deposit/depositions/{}".format(base_url, deposition_id),
                      params={"access_token": api_token},
@@ -423,7 +434,7 @@ def download_results_summary_by_coord_id(coords_id, destination_path=None, depos
     if not re.search('[\d]{2}', coords_id):
         raise RuntimeError("coords_id should be a 2-digit string")
     if not deposition_id:
-        deposition_id = get_deposition_id(test)
+        deposition_id = get_deposition_id("json", test=test)
     if not destination_path:
         destination_path = tempfile.TemporaryDirectory().name
     elif not os.path.exists(destination_path):

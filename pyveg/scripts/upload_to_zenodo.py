@@ -52,7 +52,7 @@ def upload_results_summary(json_location,
     """
     Upload the results summary json from running pyveg pipeline to download and process data from GEE.
     """
-    deposition_id = get_deposition_id(use_test_api)
+    deposition_id = get_deposition_id("json", test=use_test_api)
 
     # read in the json
     results_summary = read_results_summary(json_location, input_location_type=json_location_type)
@@ -74,7 +74,7 @@ def upload_summary_stats(csv_filepath, use_test_api):
     Typically called by the analyse_gee_data script, upload the
     results summary csv file.
     """
-    deposition_id = get_deposition_id(use_test_api)
+    deposition_id = get_deposition_id("csv", use_test_api)
     uploaded_ok = upload_file(csv_filepath, deposition_id, use_test_api)
     return uploaded_ok
 
