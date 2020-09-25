@@ -197,7 +197,7 @@ coordinate_store.loc["21"] = {
     "continent": "Africa",
     "country": "Mali",
     "type": "spots/labyrinths",
-    "latitude": 14.92
+    "latitude": 14.92,
     "longitude": -0.99,
 }
 coordinate_store.loc["22"] = {
