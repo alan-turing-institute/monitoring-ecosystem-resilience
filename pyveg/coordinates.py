@@ -161,7 +161,7 @@ coordinate_store.loc["15"] = {
 coordinate_store.loc["16"] = {
     "continent": "Africa",
     "country": "Niger",
-    "type": "spots/labyrinths",
+    "type": "spots-labyrinths",
     "latitude": 15.03,
     "longitude": -0.87,
 }
@@ -175,7 +175,7 @@ coordinate_store.loc["17"] = {
 coordinate_store.loc["18"] = {
     "continent": "Africa",
     "country": "Niger",
-    "type": "spots/labyrinths",
+    "type": "spots-labyrinths",
     "latitude": 15.34,
     "longitude": -1.15,
 }
@@ -189,14 +189,14 @@ coordinate_store.loc["19"] = {
 coordinate_store.loc["20"] = {
     "continent": "Africa",
     "country": "Mali",
-    "type": "spots/labyrinths",
+    "type": "spots-labyrinths",
     "latitude": 14.85,
     "longitude": -1.43,
 }
 coordinate_store.loc["21"] = {
     "continent": "Africa",
     "country": "Mali",
-    "type": "spots/labyrinths",
+    "type": "spots-labyrinths",
     "latitude": 14.92,
     "longitude": -0.99,
 }
@@ -210,7 +210,7 @@ coordinate_store.loc["22"] = {
 coordinate_store.loc["23"] = {
     "continent": "Africa",
     "country": "Niger",
-    "type": "spots/labyrinths",
+    "type": "spots-labyrinths",
     "latitude": 15.02,
     "longitude": -1.35,
 }
@@ -226,35 +226,35 @@ coordinate_store.loc["24"] = {
 coordinate_store.loc["25"] = {
     "continent": "Africa",
     "country": "Mali",
-    "type": "spots/labyrinths",
+    "type": "spots-labyrinths",
     "latitude": 16.19,
     "longitude": -1.83,
 }
 coordinate_store.loc["26"] = {
     "continent": "Africa",
     "country": "Mali",
-    "type": "spots/labyrinths",
+    "type": "spots-labyrinths",
     "latitude": 16.17,
     "longitude": -2.03,
 }
 coordinate_store.loc["27"] = {
     "continent": "Africa",
     "country": "Mali",
-    "type": "spots/labyrinths",
+    "type": "spots-labyrinths",
     "latitude": 16.48,
     "longitude": -1.87,
 }
 coordinate_store.loc["28"] = {
     "continent": "Africa",
     "country": "Mali",
-    "type": "spots/labyrinths",
+    "type": "spots-labyrinths",
     "latitude": 15.95,
     "longitude": -1.52,
 }
 coordinate_store.loc["29"] = {
     "continent": "Africa",
     "country": "Mali",
-    "type": "spots/labyrinths",
+    "type": "spots-labyrinths",
     "latitude": 15.86,
     "longitude": -2.05,
 }
