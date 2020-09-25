@@ -564,6 +564,15 @@ coordinate_store.loc['64'] = {
   'longitude': 27.73
 }
 
+coordinate_store.loc['65'] = {
+  'continent' : 'Africa', 
+  'country': 'Sudan', 
+  'type': 'Spots', 
+  'latitude': 11.46,
+  'longitude': 27.68
+}
+
+
 # hardcode a check to make sure we don't overwrite any rows
 
-assert( len(coordinate_store) == 65 )
+assert( len(coordinate_store) == 66 )
