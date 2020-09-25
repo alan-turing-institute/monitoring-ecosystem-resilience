@@ -27,7 +27,7 @@ from pyveg.src.azure_utils import download_summary_json, download_rgb
 from pyveg.azure_config import config
 
 
-def create_zip_archive(temp_dir, output_zipname):
+def create_zip_archive(temp_dir, output_zipname, json_dir=None, rgb_dir=None):
     """
     Parameters
     ==========
@@ -35,6 +35,10 @@ def create_zip_archive(temp_dir, output_zipname):
     output_zip: str, path to output zipfile.
 
     """
+    if json_dir:
+        subprocess.run(["cp","-r",json_dir, temp_dir])
+    if rgb_dir:
+        subprocess.run(["cp","-r",rgb_dir, temp_dir])
     subprocess.run(["zip", "-r", os.path.basename(output_zipname), "."], cwd=temp_dir)
     subprocess.run(
         ["cp", os.path.join(temp_dir, os.path.basename(output_zipname)), output_zipname]
@@ -49,23 +53,36 @@ def main():
         "--container", help="name of blob storage container", required=True
     )
     parser.add_argument(
-        "--output_zipfile", help="name of zipfile to write to", default="./results.zip"
+        "--output_dir", help="name of output_directory", required=True
+    )
+    parser.add_argument(
+        "--summary_json", help="download results_summary.json?", action='store_true'
+    )
+    parser.add_argument(
+        "--rgb", help="download RGB images?", action='store_true'
+    )
+    parser.add_argument(
+        "--output_zipfile", help="name of zipfile to write to"
     )
     args = parser.parse_args()
 
-    td = tempfile.mkdtemp()
-    print("Created temp dir {}", format(td))
+    if args.output_dir:
+        output_dir = args.output_dir
+    else:
+        output_dir = tempfile.mkdtemp()
+        print("Created temp dir {}", format(output_dir))
 
-    json_dir = os.path.join(td, "JSON")
+    json_dir = os.path.join(output_dir, "JSON")
     os.makedirs(json_dir)
-    rgb_dir = os.path.join(td, "RGB")
+    rgb_dir = os.path.join(output_dir, "RGB")
     os.makedirs(rgb_dir)
 
-    download_summary_json(args.container, json_dir)
-
-    download_rgb(args.container, rgb_dir)
-    current_dir = os.getcwd()
-    create_zip_archive(td, args.output_zipfile)
+    if args.summary_json:
+        download_summary_json(args.container, json_dir)
+    if args.rgb:
+        download_rgb(args.container, rgb_dir)
+    if args.output_zipfile:
+        create_zip_archive(output_dir, args.output_zipfile, json_dir, rgb_dir)
 
 
 if __name__ == "__main__":

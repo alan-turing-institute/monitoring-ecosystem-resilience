@@ -17,6 +17,12 @@ output_location_type = "OUTPUT_LOCATION_TYPE"
 # parse selection. Note (long, lat) GEE convention.
 coordinates = (LONGITUDE, LATITUDE)
 
+# optional coords_id setting
+COORDS_ID_STRING
+
+# pattern_type description
+pattern_type = "PATTERN_TYPE"
+
 date_range = ["START_DATE", "END_DATE"]
 
 # From the dictionary entries in data_collections.py, which shall we use
@@ -45,6 +51,7 @@ special_config = {
         "time_per_point": "TIME_PER_POINT",
         "date_range": ["WEATHER_STARTDATE", "END_DATE"]
     },
+    "VegetationDownloader": {"region_size": REGION_SIZE},
     "VegetationImageProcessor": {"run_mode": "RUN_MODE"},
     "NetworkCentralityCalculator": {
         "n_threads": NUM_THREADS,

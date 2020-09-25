@@ -109,3 +109,8 @@ pyveg/configs/cached_config
 
 # azure secrets
 pyveg/azure_config.py
+
+#docs things
+docs/build
+docs/source/_static
+docs/source/_templates

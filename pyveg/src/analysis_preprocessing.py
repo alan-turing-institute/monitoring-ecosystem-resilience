@@ -19,6 +19,13 @@ from pyveg.src.data_analysis_utils import write_to_json
 
 from pyveg.src.date_utils import get_time_diff
 
+from pyveg.src.file_utils import construct_filename_from_metadata
+
+try:
+    from pyveg.src.zenodo_utils import download_results_summary_by_coord_id
+except:
+    print("Unable to import zenodo_utils")
+
 try:
     from pyveg.src import azure_utils
 except:
@@ -29,13 +36,14 @@ def read_results_summary(input_location,
                          input_filename="results_summary.json",
                          input_location_type="local"):
     """
-    Read the results_summary.json, either from local storage or from Azure blob storage.
+    Read the results_summary.json, either from local storage, Azure blob storage, or zenodo.
 
     Parameters
     ==========
-    input_location: str, directory or container with results_summary.json in
+    input_location: str, directory or container with results_summary.json in,
+                       or coords_id if reading from zenodo
     input_filename: str, name of json file, default is "results_summary.json"
-    input_location_type: str: 'local' or 'azure'
+    input_location_type: str: 'local' or 'azure' or 'zenodo' or 'zenodo_test'
 
     Returns
     =======
@@ -48,6 +56,15 @@ def read_results_summary(input_location,
             raise FileNotFoundError("Unable to find {}".format(json_filepath))
         json_data = json.load(open(json_filepath))
         return json_data
+    elif input_location_type == "zenodo" or input_location_type == "zenodo_test":
+        use_sandbox = input_location_type == "zenodo_test"
+        json_location = download_results_summary_by_coord_id(input_location, test=use_sandbox)
+        if os.path.exists(json_location):
+            json_data = json.load(open(json_location))
+            return json_data
+        else:
+            print("unable to find {} in Zenodo".format(input_location))
+            return {}
     elif input_location_type == "azure":
         subdirs = azure_utils.list_directory(input_location, input_location)
         print("Found subdirs {}".format(subdirs))
@@ -63,7 +80,7 @@ def read_results_summary(input_location,
                     raise RuntimeError("No {} found in {}".format(input_filename, subdir))
         return {}
     else:
-        raise RuntimeError("input_location_type needs to be either 'local' or 'azure'")
+        raise RuntimeError("input_location_type needs to be either 'local','azure', 'zenodo' or 'zenodo_test'")
 
 
 
@@ -1053,12 +1070,10 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
 
             ts_dict_list.append(column_dict)
 
-
-        string_name = "_".join([str(metadata[key]) for key in metadata])
-        string_name = string_name.replace("/","_")
+        ss_name = construct_filename_from_metadata(metadata, "summary_stats.csv")
         # turn the list of dictionary to dataframe and save it
         ts_df_summary = pd.DataFrame(ts_dict_list)
 
         #save both name specific and generic (might be useful inside the analysis later)
         ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats.csv"))
-        ts_df_summary.to_csv(os.path.join(output_dir, "time_series_summary_stats_"+string_name+".csv"))
+        ts_df_summary.to_csv(os.path.join(output_dir, ss_name))

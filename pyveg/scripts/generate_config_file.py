@@ -79,9 +79,11 @@ def make_filename(configs_dir,
                   longitude,
                   latitude,
                   country,
+                  pattern_type,
                   start_date,
                   end_date,
                   time_per_point,
+                  region_size,
                   collection_name,
                   run_mode,
                   coords_id):
@@ -93,7 +95,7 @@ def make_filename(configs_dir,
         filename_start += "_"+coords_id
     filepath = os.path.join(
         configs_dir,
-        f"{filename_start}_{collection_name}_{latitude}N_{longitude}E_{country}_{start_date}_{end_date}_{time_per_point}_{run_mode}.py"
+        f"{filename_start}_{collection_name}_{latitude}N_{longitude}E_{country}_{region_size}_{pattern_type}_{start_date}_{end_date}_{time_per_point}_{run_mode}.py"
         )
     return filepath
 
@@ -103,9 +105,11 @@ def write_file(configs_dir,
                longitude,
                latitude,
                country,
+               pattern_type,
                start_date,
                end_date,
                time_per_point,
+               region_size,
                collection_name,
                run_mode,
                n_threads,
@@ -120,9 +124,11 @@ def write_file(configs_dir,
                              longitude,
                              latitude,
                              country,
+                             pattern_type,
                              start_date,
                              end_date,
                              time_per_point,
+                             region_size,
                              collection_name,
                              run_mode,
                              coords_id)
@@ -140,22 +146,28 @@ def write_file(configs_dir,
 
     text = get_template_text()
     current_time = time.strftime("%y-%m-%d %H:%M:%S")
-    text = re.sub("CURRENT_TIME", current_time, text)
+    text = text.replace("CURRENT_TIME", current_time)
     output_location_type = "azure" if run_mode == "batch" else "local"
-    text = re.sub("COLLECTION_NAME", collection_name, text)
-    text = re.sub("WEATHER_COLL_NAME", weather_collection_name, text)
-    text = re.sub("OUTPUT_LOCATION_TYPE", output_location_type, text)
-    text = re.sub("OUTPUT_LOCATION", output_location, text)
-    text = re.sub("LATITUDE", latitude, text)
-    text = re.sub("LONGITUDE", longitude, text)
-    text = re.sub("START_DATE", start_date, text)
-    text = re.sub("WEATHER_STARTDATE", weather_start_date, text)
-    text = re.sub("END_DATE", end_date, text)
-    text = re.sub("TIME_PER_POINT", time_per_point, text)
-    text = re.sub("RUN_MODE", run_mode, text)
-    text = re.sub("NUM_THREADS", str(n_threads), text)
+    text = text.replace("COLLECTION_NAME", collection_name)
+    text = text.replace("WEATHER_COLL_NAME", weather_collection_name)
+    text = text.replace("OUTPUT_LOCATION_TYPE", output_location_type)
+    text = text.replace("OUTPUT_LOCATION",output_location)
+    text = text.replace("LATITUDE", latitude)
+    text = text.replace("LONGITUDE", longitude)
+    text = text.replace("PATTERN_TYPE", pattern_type)
+    text = text.replace("START_DATE", start_date)
+    text = text.replace("WEATHER_STARTDATE", weather_start_date)
+    text = text.replace("END_DATE", end_date)
+    text = text.replace("TIME_PER_POINT", time_per_point)
+    text = text.replace("REGION_SIZE", region_size)
+    text = text.replace("RUN_MODE", run_mode)
+    text = text.replace("NUM_THREADS", str(n_threads))
     n_subimages = '10' if test_mode else '-1'
-    text = re.sub("NUM_SUBIMAGES", n_subimages, text)
+    text = text.replace("NUM_SUBIMAGES", n_subimages)
+    if coords_id:
+        text = text.replace("COORDS_ID_STRING", 'coords_id = "{}"'.format(coords_id))
+    else:
+        text = text.replace("COORDS_ID_STRING", "")
     with open(filename, "w") as configfile:
         configfile.write(text)
     print("================================\nWrote file \n  {}\nWe recommend that you add and commit this to your version control repository.\n================================".format(filename))
@@ -214,6 +226,12 @@ def main():
         "--time_per_point", help="frequency of image, e.g. '1m', '1w'", type=str
     )
     parser.add_argument(
+        "--region_size", help="Size of region to download, in degrees lat/long", type=float
+    )
+    parser.add_argument(
+        "--pattern_type", help="Type of patterned vegetation, e.g. 'spots', 'labyrinths'", type=str
+    )
+    parser.add_argument(
         "--run_mode", help="""
         'local' for running on local machine, 'azure' for running some time-consuming parts (i.e. vegetation image processing) on Azure batch
         """, type=str
@@ -264,12 +282,16 @@ def main():
     latitude = None
     longitude = None
     country = None
+    region_size = None
+    pattern_type = None
     if coords_id:
         try:
             row = coordinate_store.loc[coords_id]
             latitude = row["latitude"]
             longitude = row["longitude"]
             country = row["country"]
+            region_size = row["region_size"]
+            pattern_type = row["type"]
         except(KeyError):
             print("Unknown id {} - please enter coordinates manually".format(coords_id))
 
@@ -323,6 +345,29 @@ def main():
         if len(time_per_point) == 0:
             time_per_point = default_time_per_point
 
+    # region size
+    if not region_size:
+        region_size = args.region_size if args.region_size else -1.0
+        default_region_size = 0.08
+        while not (isinstance(region_size, float) and region_size > 0. and region_size <= 0.08):
+            region_size = input("Enter region size in degrees latitude/longitude, or press Return for max/default ({}) : ".format(default_region_size))
+            if len(region_size) == 0:
+                region_size = default_region_size
+            else:
+                region_size = float(region_size)
+    # now we've established it fulfils the requirements, convert to a str
+    region_size = str(region_size)
+
+    # pattern_type
+    if not pattern_type:
+        pattern_type = args.pattern_type if args.pattern_type else ""
+        default_pattern_type = "unknown"
+        while len(pattern_type) < 1:
+            pattern_type = input("Enter type of patterned vegetation (e.g. 'spots', 'labyrinths', or press Return for default ('{}') : ".format(default_pattern_type))
+            if len(pattern_type) == 0:
+                pattern_type = default_pattern_type
+    pattern_type = pattern_type.replace(" ","-").lower()
+
     # run mode
     run_mode = args.run_mode if args.run_mode else ""
     default_run_mode = "local"
@@ -371,21 +416,25 @@ def main():
     latitude: {}
     longitude: {}
     country: {}
+    pattern_type: {}
     start_date: {}
     end_date: {}
     time_per_point: {}
+    region_size: {}
     run_mode: {}
     n_threads: {}
-    """.format(output_location, collection_name, lat_string, long_string, country, start_date, end_date, time_per_point, run_mode, n_threads))
+    """.format(output_location, collection_name, lat_string, long_string, country, pattern_type, start_date, end_date, time_per_point, region_size, run_mode, n_threads))
 
     config_filename = write_file(configs_dir,
                                  output_location,
                                  long_string,
                                  lat_string,
                                  country,
+                                 pattern_type,
                                  start_date,
                                  end_date,
                                  time_per_point,
+                                 region_size,
                                  collection_name,
                                  run_mode,
                                  n_threads,

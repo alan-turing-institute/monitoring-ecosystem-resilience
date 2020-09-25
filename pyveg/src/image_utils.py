@@ -95,7 +95,7 @@ def combine_tif(band_dict):
         v["pix_vals"] = []
 
     for col in band_dict.keys():
-        pix = cv.imread(band_dict[col]["filename"], cv.IMREAD_ANYDEPTH)
+        pix = cv.imread(band_dict[col]["filename"], cv.IMREAD_ANYDEPTH).transpose()
         # find the minimum and maximum pixel values in the original scale
         for ix in range(pix.shape[0]):
             for iy in range(pix.shape[1]):
@@ -144,7 +144,7 @@ def scale_tif(input_filename):
     min_val = sys.maxsize
     # load the single band file and extract pixel data
 
-    pix = cv.imread(input_filename, cv.IMREAD_ANYDEPTH)
+    pix = cv.imread(input_filename, cv.IMREAD_ANYDEPTH).transpose()
     # find the minimum and maximum pixel values in the original scale
     # print("Found image of size {}".format(im.size))
     for ix in range(pix.shape[0]):
@@ -162,8 +162,8 @@ def scale_tif(input_filename):
         return int((pix[ix, iy] + 1) / 2 * 255)
 
     new_img = Image.new("RGB", pix.shape)
-    for ix in range(new_img.size[0]):
-        for iy in range(new_img.size[1]):
+    for iy in range(new_img.size[1]):
+        for ix in range(new_img.size[0]):
             new_img.putpixel(
                 (ix, iy), tuple(get_pix_val(ix, iy) for col in ["r", "g", "b"])
             )
