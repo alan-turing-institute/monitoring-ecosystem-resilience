@@ -197,8 +197,8 @@ coordinate_store.loc["21"] = {
     "continent": "Africa",
     "country": "Mali",
     "type": "spots/labyrinths",
-    "latitude": 14.97,
-    "longitude": -1.12,
+    "latitude": 14.972
+    "longitude": -0.99,
 }
 coordinate_store.loc["22"] = {
     "continent": "Africa",
@@ -361,7 +361,7 @@ coordinate_store.loc['40'] = {
 coordinate_store.loc['41'] = {
   'continent' : 'Africa', 
   'country': 'Ethiopia', 
-  'type': 'Gaps', 
+  'type': 'gaps', 
   'latitude': 4.69, 
   'longitude': 43.21
 }
@@ -379,7 +379,7 @@ coordinate_store.loc['42'] = {
 coordinate_store.loc['43'] = {
   'continent' : 'Africa', 
   'country': 'Kenya', 
-  'type': 'Gaps', 
+  'type': 'gaps', 
   'latitude': 0.96, 
   'longitude': 40.37
 }
@@ -407,7 +407,7 @@ coordinate_store.loc['45'] = {
 coordinate_store.loc["46"] = {
   'continent' : 'Africa', 
   'country': 'Chad', 
-  'type': 'Gaps', 
+  'type': 'gaps', 
   'latitude': 12, 
   'longitude': 19.99
 }
@@ -415,7 +415,7 @@ coordinate_store.loc["46"] = {
 coordinate_store.loc['47'] = {
   'continent' : 'Africa', 
   'country': 'Chad', 
-  'type': 'Gaps', 
+  'type': 'gaps', 
   'latitude': 12.05, 
   'longitude': 20.08
 }
@@ -442,7 +442,7 @@ coordinate_store.loc['49'] = {
 coordinate_store.loc['50'] = {
   'continent' : 'Africa', 
   'country': 'Mauritania', 
-  'type': 'Gaps', 
+  'type': 'gaps', 
   'latitude': 15.58, 
   'longitude': -13
 }
@@ -452,7 +452,7 @@ coordinate_store.loc['50'] = {
 coordinate_store.loc['51'] = {
   'continent' : 'Africa', 
   'country': 'Nigeria', 
-  'type': 'Gaps', 
+  'type': 'gaps', 
   'latitude': 12.58, 
   'longitude': 3.75
 }
@@ -461,7 +461,7 @@ coordinate_store.loc['51'] = {
 coordinate_store.loc['52'] = {
   'continent' : 'Africa', 
   'country': 'Niger', 
-  'type': 'Gaps', 
+  'type': 'gaps', 
   'latitude': 12.7, 
   'longitude': 2.63
 }
@@ -469,7 +469,7 @@ coordinate_store.loc['52'] = {
 coordinate_store.loc['53'] = {
   'continent' : 'Africa', 
   'country': 'Niger', 
-  'type': 'Gaps', 
+  'type': 'gaps', 
   'latitude': 12.54, 
   'longitude': 2.26
 }
@@ -485,7 +485,7 @@ coordinate_store.loc['54'] = {
 coordinate_store.loc['55'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Gaps', 
+  'type': 'gaps', 
   'latitude': 11.07, 
   'longitude': 27.93
 }
@@ -493,7 +493,7 @@ coordinate_store.loc['55'] = {
 coordinate_store.loc['56'] = {
   'continent' : 'Africa', 
   'country': 'Sudan', 
-  'type': 'Gaps', 
+  'type': 'gaps', 
   'latitude': 11.28, 
   'longitude': 27.96
 }
