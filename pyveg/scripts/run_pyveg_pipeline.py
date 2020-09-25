@@ -71,6 +71,9 @@ def build_pipeline(config_file, from_cache=False):
     # if an id of a row in coordinates.py has been specified, add it here
     if "coords_id" in vars(config):
         p.coords_id = config.coords_id
+    # if we have a pattern_type description, add it to the pipeline
+    if "pattern_type" in vars(config):
+        p.pattern_type = config.pattern_type
     if not from_cache:
         # before we run anything, save the current config to the configs dir
         config_cache_dir = os.path.join(os.path.dirname(config_file), "cached_config")

@@ -20,6 +20,9 @@ coordinates = (LONGITUDE, LATITUDE)
 # optional coords_id setting
 COORDS_ID_STRING
 
+# pattern_type description
+pattern_type = "PATTERN_TYPE"
+
 date_range = ["START_DATE", "END_DATE"]
 
 # From the dictionary entries in data_collections.py, which shall we use
