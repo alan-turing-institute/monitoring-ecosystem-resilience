@@ -13,11 +13,23 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from scipy.stats import pearsonr
 sns.set_style("whitegrid")
 from pyveg.scripts.upload_to_zenodo import upload_results
 
 def barplot_plots(df, output_dir):
 
+    """
+    Create barplots of summary data.
+    
+    Parameters 
+    -----------
+    df : dataframe 
+        Dataframe of summary data.
+    output_dir : str
+        Path to the directory to save plots to.
+    """
+    
     plt.figure()
     ax13 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='total_precipitation_mean',data=df)
     ax13.set_xlabel("Mean precipitation over time series")
@@ -33,6 +45,17 @@ def barplot_plots(df, output_dir):
 
 def scatter_plots(df, output_dir):
 
+    """
+    Create scatter plots and correlation plots of summary data.
+    
+    Parameters 
+    -----------
+    df : dataframe 
+        Dataframe of summary data.
+    output_dir : str
+        Path to the directory to save plots to.
+    """
+    
     plt.figure()
     ax = sns.scatterplot(y="S2_offset50_mean_mean", x="total_precipitation_mean", data=df)
     ax.set_xlabel("Mean precipitation over time series")
@@ -125,7 +148,6 @@ def scatter_plots(df, output_dir):
     cmap = sns.diverging_palette(230, 20, as_cmap=True)
 
     #Calculate p-value matrix
-    from scipy.stats import pearsonr
     def calculate_pvalues(df):
         df = df.dropna()._get_numeric_data()
         dfcols = pd.DataFrame(columns=df.columns)
