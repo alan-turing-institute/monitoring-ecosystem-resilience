@@ -1330,7 +1330,7 @@ def cball_parfit(p0, timeseries):
     Parameters
     ----------
     p0 : Initial parameters, list
-        A list a parameters to use in the Crystal Ball calculation as an initial estimate
+        A list a parameters (alpha, n, xbar, sigma) to use in the Crystal Ball calculation as an initial estimate
 
     timeseries : Time series
         Original time series to calculate mean annual time series on, reverse and normalise
