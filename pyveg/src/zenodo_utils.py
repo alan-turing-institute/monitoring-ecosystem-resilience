@@ -440,7 +440,7 @@ def download_results_summary_by_coord_id(coords_id, destination_path=None, depos
     elif not os.path.exists(destination_path):
         os.makedirs(destination_path)
     # list the files in the deposition
-    file_list = [f for f in list_files(deposition_id, test) \
+    file_list = [f for f in list_files(deposition_id, test=test) \
                  if f.startswith(coords_id) and "results_summary" in f]
     if len(file_list)==0:
         print("No files for coords_id {} found.".format(coords_id))
