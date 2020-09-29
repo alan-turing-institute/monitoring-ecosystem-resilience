@@ -65,7 +65,7 @@ Install the package using `pip`.
 ```
 pip install .
 ```
-If you plan on making changes to the source code, you can instead run `pip install -e .`.
+If you are using Windows and encounter issues during this stage, a solution may be found here: https://github.com/NREL/OpenOA/issues/37. If you plan on making changes to the source code, you can instead run `pip install -e .`. 
 
 Before using the Google Earth Engine API, you need to sign up with a Google account [here](https://earthengine.google.com/new_signup/), and authenticate.  To authenticate, run
 ```
