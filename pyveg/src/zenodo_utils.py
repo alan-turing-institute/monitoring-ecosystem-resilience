@@ -242,6 +242,30 @@ def download_file(filename, deposition_id, destination_path=".", test=False):
     return destination
 
 
+def delete_file(filename, deposition_id, test=False):
+    """
+    Delete a file from a deposition.
+
+    Parameters
+    ==========
+    filename: str, full path to the file to be deleted
+    deposition_id: int, ID of the deposition containing this file
+    test: bool, True if we will use the sandbox API, False otherwise
+
+    Returns
+    =======
+    True if file was deleted OK, False otherwise.
+    """
+    base_url, api_token = get_base_url_and_token(test)
+    r = requests.delete("{}/deposit/depositions/{}/files/{}".format(base_url, deposition_id, filename),
+                        params = {'access_token': api_token})
+
+    if r.status_code != 204:
+        print("Error deleting file", r.content)
+        return False
+    return True
+
+
 def upload_standard_metadata(deposition_id, json_or_csv="json", test=False):
     """
     Upload the metadata dict defined in zenodo_config.py to the
