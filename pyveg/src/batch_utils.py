@@ -104,7 +104,7 @@ def submit_tasks(task_dicts, job_name):
         account_key=config["storage_account_key"],
     )
     # create a container on the storage account for uploading config to
-    config_container_name = "input"
+    config_container_name = "input{}".format(config["batch_pool_id"])
     input_azure_config, input_script = prepare_for_task_submission(
         job_name, config_container_name, batch_service_client, blob_client
     )

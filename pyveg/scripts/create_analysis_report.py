@@ -124,8 +124,10 @@ def add_rgb_images(mdFile, rgb_location, rgb_location_type, fig_count):
         download_rgb(rgb_location, tmpdir)
         rgb_filenames = [os.path.join(tmpdir, fname) for fname in os.listdir(tmpdir)]
     else:
-        print("Unknown value for rgb_location_type - {}.  Currently accepted values are ['local','azure']"\
-              .format(rgb_location_type))
+        print("""
+        Trying to add RGB images to report - unknown value for rgb_location_type - {}.
+        Currently accepted values are ['local','azure']
+        """.format(rgb_location_type))
         return mdFile
     rgb_filenames.sort()
     for i, rgb_figure in enumerate(rgb_filenames):
