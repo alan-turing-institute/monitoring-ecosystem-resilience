@@ -91,6 +91,23 @@ def add_time_series_plots(mdFile, analysis_plots_location, analysis_plots_locati
         mdFile.new_line(
         mdFile.new_inline_image(text='EWS NDVI', path=os.path.join(ews_path, satellite_suffix+'-ndvi-mean-ews.png')))
         mdFile.new_line('')
+
+    mdFile.new_header(level=1, title='Average annual time series CB fit')
+    fig_count += 1
+    mdFile.new_line(
+        mdFile.new_inline_image(text='Offset50 CB fit', path=os.path.join(analysis_plots_location,'analysis', 'fit_ts_CB_S2_offset50_mean.png')))
+    mdFile.new_line('')
+    fig_count += 1
+    mdFile.new_line(
+        mdFile.new_inline_image(text='NDVI CB fit',
+                                path=os.path.join(analysis_plots_location, 'analysis','fit_ts_CB_S2_ndvi_mean.png')))
+    mdFile.new_line('')
+    fig_count += 1
+    mdFile.new_line(
+        mdFile.new_inline_image(text='total precipitation CB fit',
+                                path=os.path.join(analysis_plots_location, 'analysis','fit_ts_CB_total_precipitation.png')))
+    mdFile.new_line('')
+
     return mdFile, fig_count
 
 
@@ -100,7 +117,7 @@ def add_rgb_images(mdFile, rgb_location, rgb_location_type, fig_count):
     if rgb_location_type == "local":
         for root, dirs, files in os.walk(rgb_location):
             for filename in files:
-                if filename.endswith("RGB.png"):
+                if filename.endswith("RGB.png") and os.path.basename(filename).startswith('sub')==False:
                     rgb_filenames.append(os.path.join(rgb_location, root, filename))
     elif rgb_location_type == "azure":
         tmpdir = tempfile.mkdtemp()
@@ -149,8 +166,6 @@ def create_markdown_pdf_report(analysis_plots_location,
 
     if metadata:
         coordinates = (metadata['longitude'], metadata['latitude'])
-    else:
-        coordinates = find_coords_from_path(analysis_plots_location, rgb_location)
     if not coordinates:
         raise RuntimeError("Unable to find coordinates from path.  Please provide a metadata dict.")
 
@@ -181,7 +196,7 @@ def create_markdown_pdf_report(analysis_plots_location,
     mdFile.new_table_of_contents(table_title='Contents', depth=2)
     mdFile.create_md_file()
 
-
+    print ('Converting to pdf.')
     output = pypandoc.convert_file(output_path+'.md', 'pdf', outputfile=output_path+".pdf")
     assert output == ""
 

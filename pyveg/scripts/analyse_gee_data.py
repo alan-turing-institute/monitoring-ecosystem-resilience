@@ -343,9 +343,17 @@ def analyse_gee_data(input_location,
 
             try:
                 metadata = input_json["metadata"] if "metadata" in input_json.keys() else None
+
+                if input_location_type=='local':
+                    from pathlib import Path
+
+                    parent_path = Path(input_location).parent
+                    rgb_location = parent_path
+                else:
+                    rgb_location = input_location
                 create_markdown_pdf_report(output_dir,
                                            "local",
-                                           input_location,
+                                           rgb_location,
                                            input_location_type,
                                            do_time_series,
                                            output_dir,
