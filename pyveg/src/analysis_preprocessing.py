@@ -15,7 +15,7 @@ import ewstools
 
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-from pyveg.src.data_analysis_utils import write_to_json
+from pyveg.src.data_analysis_utils import write_to_json, cball_parfit, cball
 
 from pyveg.src.date_utils import get_time_diff
 
@@ -1039,6 +1039,17 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
 
             column_dict = get_ts_summary_stats(ts_df[column])
             column_dict['ts_id'] = column
+
+            # make sure is a dated time series for resampling later in the CB calculation
+            ts_df[column].index = pd.DatetimeIndex(ts_df['date'])
+            cb_params, sucess, residuals = cball_parfit([1.5, 150.0, 8.0, 2.0],ts_df[column],column, output_dir)
+            column_dict['CB_fit_success'] = sucess
+            column_dict['CB_fit_residuals'] = residuals
+            column_dict['CB_fit_alpha'] = cb_params[0]
+            column_dict['CB_fit_N'] = cb_params[1]
+            column_dict['CB_fit_xbar'] = cb_params[2]
+            column_dict['CB_fit_sigma'] = cb_params[3]
+
             for key in metadata:
                 column_dict[key] = metadata[key]
 

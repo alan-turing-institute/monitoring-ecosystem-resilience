@@ -25,7 +25,6 @@ import ewstools
 import scipy
 import scipy.optimize as sco
 
-
 def convert_to_geopandas(df):
     """
     Given a pandas DatFrame with `lat` and `long` columns, convert
@@ -1322,7 +1321,7 @@ def err_func(params, ts):
     return residuals
 
 
-def cball_parfit(p0, timeseries):
+def cball_parfit(p0, timeseries, plot_name = 'CB_fit.png', output_dir = ''):
     """
     Uses least squares regression to optimise the parameters in cball to fit the
     timeseries supplied. The supplied time series should be the original series
@@ -1330,21 +1329,64 @@ def cball_parfit(p0, timeseries):
     Parameters
     ----------
     p0 : Initial parameters, list
-        A list a parameters to use in the Crystal Ball calculation as an initial estimate
+        A list a parameters (alpha, n, xbar, sigma) to use in the Crystal Ball calculation as an initial estimate
 
     timeseries : Time series
         Original time series to calculate mean annual time series on, reverse and normalise
         and then use to optimise the parameters on
+    plot_name: string
+        Name for the data/fit comparison plot
+    output_dir : str
+            Directory to save the plots in.
     Returns
     ----------
     ndarray
         A list of optimised parameters (alpha, n, xbar, sigma)
     int
         A indication that the optimisation works (if output is 1,2,3 or 4 then ok)
+    float
+        The residuals from the best CB fit
     """
+    try:
+        mean_ts= timeseries.groupby(timeseries.index.month).mean()
 
-    mean_ts = mean_annual_ts(timeseries)
+        if min(mean_ts)<0 and max(mean_ts)<0:
+            mean_ts = mean_ts - min(mean_ts)
+            p0 = [1.5,150,8.5,1.1]
+    except:
+        raise RuntimeError('Input time series for CB fit must have a datetime index')
+
+
     ts = reverse_normalise_ts(mean_ts)
-    p1, success = sco.leastsq(err_func, p0, args=ts)
-    return p1, success
+
+    residuals_min = 1
+    for i in range(5):
+        params, success = sco.leastsq(err_func, p0, args=ts)
+        residuals = sum(err_func(params, ts))
+        plt.plot(ts, 'k.', label='data')
+        plt.plot(cball(range(1, len(ts) + 1), params[0], params[1], params[2], params[3]), 'r',
+                 label='Crystal ball fit', linewidth=1)
+        if residuals < residuals_min:
+            residuals_min = residuals
+            p0 = params
+            final_params = params
+            final_sucess = success
+
+    fig, ax = plt.subplots()
+    plt.plot(ts, 'k.', label='data')
+    plt.plot(cball(range(1, len(ts) + 1), final_params[0], final_params[1], final_params[2], final_params[3]), 'r', label='Crystal ball fit', linewidth=1)
+    plt.legend(loc='upper right')
+    ax.set_xticks(np.arange(len(ts)))
+    labels = ['Dec', 'Nov','Oct','Sep','Aug','Jul','Jun','May','Apr','Mar','Feb','Jan']
+    ax.set_xticklabels(labels)
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+             rotation_mode="anchor")
+
+    plt.xlabel('Month (reversed)')
+    plt.ylabel('PDF')
+    plt.title('Crystal ball fit for ' + plot_name)
+    plt.savefig(os.path.join(output_dir, "fit_ts_CB_"+plot_name+".png"))
+
+    return final_params, final_sucess, residuals_min
 
