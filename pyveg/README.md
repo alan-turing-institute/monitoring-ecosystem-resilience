@@ -180,6 +180,9 @@ pyveg_gee_analysis --input_dir <path_to_pyveg_download_output_dir>
 ```
 The analysis code preprocesses the data and produces a number of plots. These will be saved in an `analysis/` subdirectory inside the `<path_to_pyveg_download_output_dir>` directory.
 
+Note that in order to have a meaningful analysis, the dowloaded time series should have at least 4 points (and more thant 12
+for an early warning analysis) and not being the result of a "test" config file, in this case the analysis fails.
+ 
 The commands also allows for other options to be added to the execution of the script (e.g. run analysis from a downloaded data in Azure blob storage, define a different output directly, don't include a time series analysis, etc), which can be displayed by typing:
 
 ```
