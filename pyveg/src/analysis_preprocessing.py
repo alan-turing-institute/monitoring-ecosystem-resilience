@@ -22,7 +22,7 @@ from pyveg.src.date_utils import get_time_diff
 from pyveg.src.file_utils import construct_filename_from_metadata
 
 try:
-    from pyveg.src.zenodo_utils import download_results_summary_by_coord_id
+    from pyveg.src.zenodo_utils import download_results_by_coord_id
 except:
     print("Unable to import zenodo_utils")
 
@@ -58,7 +58,7 @@ def read_results_summary(input_location,
         return json_data
     elif input_location_type == "zenodo" or input_location_type == "zenodo_test":
         use_sandbox = input_location_type == "zenodo_test"
-        json_location = download_results_summary_by_coord_id(input_location, test=use_sandbox)
+        json_location = download_results_by_coord_id(input_location, "json", test=use_sandbox)
         if os.path.exists(json_location):
             json_data = json.load(open(json_location))
             return json_data
