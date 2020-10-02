@@ -15,7 +15,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 sns.set_style("whitegrid")
-#from pyveg.scripts.upload_to_zenodo import upload_results
+from pyveg.scripts.upload_to_zenodo import upload_results
 
 def barplot_plots(df, output_dir):
 
