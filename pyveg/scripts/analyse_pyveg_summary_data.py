@@ -15,7 +15,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 sns.set_style("whitegrid")
-from pyveg.scripts.upload_to_zenodo import upload_results
+#from pyveg.scripts.upload_to_zenodo import upload_results
 
 def barplot_plots(df, output_dir):
 
@@ -31,16 +31,17 @@ def barplot_plots(df, output_dir):
     """
     
     plt.figure()
-    ax20 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='total_precipitation_mean',data=df)
-    ax20.set_xlabel("Mean precipitation over time series")
-    ax20.set_ylabel("Max Offset50 over time series")
+    ax30 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='total_precipitation_mean',data=df)
+    ax30.set_xlabel("Mean precipitation over time series")
+    ax30.set_ylabel("Max Offset50 over time series")
     plt.savefig(os.path.join(output_dir,'offset50_precipitation_bar.png'))
 
     plt.figure()
-    ax20 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='S2_offset50_mean_Lag-1 AC (0.99 rolling window)',data=df)
-    ax20.set_xlabel("Offset50 Lag-1 AC (0.99 rolling window)")
-    ax20.set_ylabel("Max Offset50 over time series")
+    ax31 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='S2_offset50_mean_Lag-1 AC (0.99 rolling window)',data=df)
+    ax31.set_xlabel("Offset50 Lag-1 AC (0.99 rolling window)")
+    ax31.set_ylabel("Max Offset50 over time series")
     plt.savefig(os.path.join(output_dir,'offset50_lag1ACvalue_bar.png'))
+
 
 
 def scatter_plots(df, output_dir):
@@ -55,7 +56,7 @@ def scatter_plots(df, output_dir):
     output_dir : str
         Path to the directory to save plots to.
     """
-    
+
     plt.figure()
     ax = sns.scatterplot(y="S2_offset50_mean_mean", x="total_precipitation_mean", data=df,hue="S2_offset50_mean_pattern_type",palette="Accent_r",edgecolor="k",linewidth=1)
     ax.set_xlabel("Mean precipitation over time series")
@@ -138,13 +139,70 @@ def scatter_plots(df, output_dir):
     ax13 = sns.scatterplot(y="S2_offset50_mean_max", x="S2_ndvi_mean_max", data=df, hue="S2_offset50_mean_pattern_type",palette="Accent_r",edgecolor="k",linewidth=1)
     ax13.set_ylabel("Max offset50 over time series")
     ax13.set_xlabel("Max NDVI over time series")
-    plt.savefig(os.path.join(output_dir, 'max_offset50_vs_max_NDVI.png'))
+    plt.savefig(os.path.join(output_dir, 'offset50max_vs_NDVImax.png'))
 
     plt.figure()
     ax14 = sns.scatterplot(y="S2_offset50_mean_mean", x="S2_ndvi_mean_mean", data=df, hue="S2_offset50_mean_pattern_type",palette="Accent_r",edgecolor="k",linewidth=1)
     ax14.set_ylabel("Mean offset50 over time series")
     ax14.set_xlabel("Mean NDVI over time series")
-    plt.savefig(os.path.join(output_dir, 'mean_offset50_vs_mean_NDVI.png'))
+    plt.savefig(os.path.join(output_dir, 'offset50max_vs_NDVImean.png'))
+
+    plt.figure()
+    ax15 = sns.scatterplot(y="S2_offset50_mean_Lag-1 AC (0.99 rolling window) Seasonal", x="S2_offset50_mean_max", data=df,
+                           hue="S2_offset50_mean_pattern_type", palette="Accent_r", edgecolor="k", linewidth=1)
+    ax15.set_ylabel("Offset50 Lag-1 AC (0.99 rolling window) Seasonal")
+    ax15.set_xlabel("Mean NDVI over time series")
+    plt.savefig(os.path.join(output_dir, 'offset50max_vs_offset50AR1_0.99_Seasonal.png'))
+
+    plt.figure()
+    ax16 = sns.scatterplot(y="S2_offset50_mean_Variance (0.99 rolling window) Seasonal", x="S2_offset50_mean_max", data=df,
+                           hue="S2_offset50_mean_pattern_type", palette="Accent_r", edgecolor="k", linewidth=1)
+    ax16.set_ylabel("Offset50 Variance (0.99 rolling window) Seasonal")
+    ax16.set_xlabel("Max offset50")
+    plt.savefig(os.path.join(output_dir, 'offset50max_vs_offset50Variance_0.99_Seasonal.png'))
+
+    plt.figure()
+    ax17 = sns.scatterplot(y="S2_offset50_mean_Lag-1 AC (0.99 rolling window) Seasonal", x="total_precipitation_mean", data=df,
+                           hue="S2_offset50_mean_pattern_type", palette="Accent_r", edgecolor="k", linewidth=1)
+    ax17.set_ylabel("Offset50 Lag-1 AC (0.99 rolling window) Seasonal")
+    ax17.set_xlabel("Mean precipitation")
+    plt.savefig(os.path.join(output_dir, 'precipitationmean_vs_offset50AR1_0.99_Seasonal.png'))
+
+    plt.figure()
+    ax18 = sns.scatterplot(y="S2_offset50_mean_Variance (0.99 rolling window) Seasonal", x="total_precipitation_mean", data=df,
+                           hue="S2_offset50_mean_pattern_type", palette="Accent_r", edgecolor="k", linewidth=1)
+    ax18.set_ylabel("Offset50 Variance (0.99 rolling window) Seasonal")
+    ax18.set_xlabel("Mean precipitation")
+    plt.savefig(os.path.join(output_dir, 'precipitationmean_vs_offset50Variance_0.99_Seasonal.png'))
+
+
+    plt.figure()
+    ax19 = sns.scatterplot(y="offset50_cb_return_rate", x="S2_offset50_mean_max", data=df,
+                           hue="S2_offset50_mean_pattern_type", palette="Accent_r", edgecolor="k", linewidth=1)
+    ax19.set_ylabel("Offset50 return rate")
+    ax19.set_xlabel("Max offset50")
+    plt.savefig(os.path.join(output_dir, 'offset50max_vs_offset50returnrate.png'))
+
+    plt.figure()
+    ax20 = sns.scatterplot(y="offset50_cb_return_rate", x="total_precipitation_mean", data=df,
+                           hue="S2_offset50_mean_pattern_type", palette="Accent_r", edgecolor="k", linewidth=1)
+    ax20.set_ylabel("Offset50 return rate")
+    ax20.set_xlabel("Mean precipitation over time series")
+    plt.savefig(os.path.join(output_dir, 'meanprecipitation_vs_offset50returnrate.png'))
+
+    plt.figure()
+    ax21 = sns.scatterplot(y="ndvi_cb_return_rate", x="S2_ndvi_mean_max", data=df,
+                           hue="S2_offset50_mean_pattern_type", palette="Accent_r", edgecolor="k", linewidth=1)
+    ax21.set_ylabel("NDVI crystall ball return rate")
+    ax21.set_xlabel("Max NDVI in time series")
+    plt.savefig(os.path.join(output_dir, 'NDVImax_vs_NDVIreturnrate.png'))
+
+    plt.figure()
+    ax22 = sns.scatterplot(y="ndvi_cb_return_rate", x="total_precipitation_mean", data=df,
+                           hue="S2_offset50_mean_pattern_type", palette="Accent_r", edgecolor="k", linewidth=1)
+    ax22.set_ylabel("NDVI crystall ball return rate")
+    ax22.set_xlabel("Mean precipitation over time series")
+    plt.savefig(os.path.join(output_dir, 'meanprecipitation_vs_NDVIreturnrate.png'))
 
 def correlation_plots(df, output_dir):
 
@@ -222,15 +280,15 @@ def boxplot_plots(df, output_dir):
         """
 
     plt.figure()
-    ax15 = sns.boxplot(x="S2_offset50_mean_pattern_type", y="S2_offset50_mean_max", data=df,hue="S2_offset50_mean_pattern_type",palette="Accent_r")
-    ax15.set_ylabel("Max Offset50 Values")
-    ax15.set_xlabel("Pattern Type")
+    ax23 = sns.boxplot(x="S2_offset50_mean_pattern_type", y="S2_offset50_mean_max", data=df,hue="S2_offset50_mean_pattern_type",palette="Accent_r")
+    ax23.set_ylabel("Max Offset50 Values")
+    ax23.set_xlabel("Pattern Type")
     plt.savefig(os.path.join(output_dir, 'Max_offset50_boxplot.png'))
 
     plt.figure()
-    ax16 = sns.boxplot(x="S2_offset50_mean_pattern_type", y="S2_offset50_mean_mean", data=df,hue="S2_offset50_mean_pattern_type",palette="Accent_r")
-    ax16.set_ylabel("Mean Offset50 Values")
-    ax16.set_xlabel("Pattern Type")
+    ax24 = sns.boxplot(x="S2_offset50_mean_pattern_type", y="S2_offset50_mean_mean", data=df,hue="S2_offset50_mean_pattern_type",palette="Accent_r")
+    ax24.set_ylabel("Mean Offset50 Values")
+    ax24.set_xlabel("Pattern Type")
     plt.savefig(os.path.join(output_dir, 'Mean_offset50_boxplot.png'))
 
 def process_input_data(input_dir):
@@ -281,6 +339,10 @@ def analyse_pyveg_summary_data(input_dir, output_dir):
     """
 
     df = process_input_data(input_dir)
+
+    #add new variable to the dataframe
+    df["offset50_cb_return_rate"] = (df["S2_offset50_mean_CB_fit_alpha"] ** 2).divide(2.0)
+    df["ndvi_cb_return_rate"] = (df["S2_ndvi_mean_CB_fit_alpha"] ** 2).divide(2.0)
 
     summary_plots = os.path.join(output_dir, "summary_plots")
     if not os.path.exists(summary_plots):
