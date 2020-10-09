@@ -12,19 +12,19 @@ authors:
   - name: Camila Rangel Smith
     affiliation: 1
   - name: Samuel Van Stroud
-    affiliation: 1, 3
+    affiliation: 1, 2
   - name: Jesse Abrams
-    affiliation: 2
+    affiliation: 3
   - name: Chris Boulton
-    affiliation: 2
+    affiliation: 3
   - name: Joshua Buxton
-    affiliation: 2
+    affiliation: 3
 affiliations:
  - name: The Alan Turing Institute
    index: 1
- - name: University of Exeter
-   index: 2
  - name: University College London
+   index: 2
+ - name: University of Exeter
    index: 3
 date: 09 October 2020
 bibliography: paper.bib
@@ -135,8 +135,8 @@ Early warning signals are also computed using the `ewstools` package [@ewstools]
 including Lag-1 autocorrelation and standard deviation moving window plots.
 A sensitivity and significance analysis is also performed in order to determine
 whether any trends (quantified by Kendall tau values) are statistically significant.
-A function to calculate return rate resilience by fitting the crystall ball function
-to the offset50 and NDVI time series is included.
+The return rate resilience is calculated by fitting the crystall ball function
+to the offset50 and NDVI time series.
 
 
 # Acknowledgements
