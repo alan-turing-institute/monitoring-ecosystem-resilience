@@ -135,7 +135,7 @@ Early warning signals are also computed using the `ewstools` package [@ewstools]
 including Lag-1 autocorrelation and standard deviation moving window plots.
 A sensitivity and significance analysis is also performed in order to determine
 whether any trends (quantified by Kendall tau values) are statistically significant.
-The return rate resilience is calculated by fitting the crystall ball function
+The vegetation return rate is calculated by fitting the crystall ball function
 to the offset50 and NDVI time series.
 
 
