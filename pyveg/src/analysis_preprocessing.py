@@ -1056,7 +1056,7 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
             # We want the AR1 and Standard deviation of the detreded timeseries for the summary stats
             if ts_df_detrended.empty==False:
                 ews_dic_veg = ewstools.core.ews_compute(ts_df_detrended[column].dropna(),
-                                                        roll_window=0.99 ,
+                                                        roll_window=0.999 ,
                                                         smooth='Gaussian',
                                                         lag_times=[1],
                                                         ews= ["var", "ac"],
@@ -1077,7 +1077,30 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
                 column_dict["Kendall tau Lag-1 AC (0.5 rolling window)"] = Kendall_tau_50["Lag-1 AC"].iloc[-1]
                 column_dict["Kendall tau Variance (0.5 rolling window)"] = Kendall_tau_50["Variance"].iloc[-1]
 
+                # We also want the AR1 and Standard deviation of the raw seasonal timeseries for the summary stats
+                if ts_df.empty == False:
+                    # make sure in this case that the index is numeric
+                    ts = ts_df[column].dropna()
+                    ts.index = pd.to_numeric(ts.index)
+                    ews_dic_veg_seasonal = ewstools.core.ews_compute(ts,
+                                                            roll_window=0.999,
+                                                            smooth='None',
+                                                            lag_times=[1],
+                                                            ews=["var", "ac"])
 
+                    EWSmetrics_df_seasonal = ews_dic_veg_seasonal['EWS metrics']
+                    column_dict["Lag-1 AC (0.99 rolling window) Seasonal"] = EWSmetrics_df_seasonal["Lag-1 AC"].iloc[-1]
+                    column_dict["Variance (0.99 rolling window)  Seasonal"] = EWSmetrics_df_seasonal["Variance"].iloc[-1]
+
+                    ews_dic_veg_50_seasonal = ewstools.core.ews_compute(ts,
+                                                               roll_window=0.5,
+                                                               smooth='None',
+                                                               lag_times=[1],
+                                                               ews=["var", "ac"])
+
+                    Kendall_tau_50_seasonal = ews_dic_veg_50_seasonal['Kendall tau']
+                    column_dict["Kendall tau Lag-1 AC (0.5 rolling window) Seasonal"] = Kendall_tau_50_seasonal["Lag-1 AC"].iloc[-1]
+                    column_dict["Kendall tau Variance (0.5 rolling window) Seasonal"] = Kendall_tau_50_seasonal["Variance"].iloc[-1]
 
             ts_dict_list.append(column_dict)
 
