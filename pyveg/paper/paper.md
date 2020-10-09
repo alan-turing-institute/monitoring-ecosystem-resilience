@@ -138,6 +138,10 @@ whether any trends (quantified by Kendall tau values) are statistically signific
 The vegetation return rate is calculated by fitting the crystall ball function
 to the offset50 and NDVI time series.
 
+Following data processing, `pyveg` is able to calculate summary plots using
+`pyveg_analysis_summary_data` which will accept summary statistics that are
+hosted locally or on Zenodo.
+
 
 # Acknowledgements
 
