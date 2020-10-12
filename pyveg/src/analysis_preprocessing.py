@@ -1079,7 +1079,9 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
 
                 # We also want the AR1 and Standard deviation of the raw seasonal timeseries for the summary stats
                 if ts_df.empty == False:
-                    # make sure in this case that the index is numeric instead of datetime
+
+                    # make sure in this case that the index is numeric and not datetime
+
                     ts = ts_df[column].dropna()
                     ts.index = pd.to_numeric(ts.index)
                     ews_dic_veg_seasonal = ewstools.core.ews_compute(ts,
