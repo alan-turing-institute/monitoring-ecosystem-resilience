@@ -9,27 +9,33 @@ import os
 import argparse
 import json
 import re
+import tempfile
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 sns.set_style("whitegrid")
-from pyveg.scripts.upload_to_zenodo import upload_results
+
+try:
+    from pyveg.src.zenodo_utils import download_file, list_files, get_deposition_id
+except:
+    print("Unable to import zenodo_utils")
+
 
 def barplot_plots(df, output_dir):
 
     """
     Create barplots of summary data.
-    
-    Parameters 
+
+    Parameters
     -----------
-    df : dataframe 
+    df : dataframe
         Dataframe of summary data.
     output_dir : str
         Path to the directory to save plots to.
     """
-    
+
     plt.figure()
     ax30 = sns.barplot(x='name',y='S2_offset50_mean_max',hue='total_precipitation_mean',data=df)
     ax30.set_xlabel("Mean precipitation over time series")
@@ -48,10 +54,10 @@ def scatter_plots(df, output_dir):
 
     """
     Create scatter plots and correlation plots of summary data.
-    
-    Parameters 
+
+    Parameters
     -----------
-    df : dataframe 
+    df : dataframe
         Dataframe of summary data.
     output_dir : str
         Path to the directory to save plots to.
@@ -122,7 +128,7 @@ def scatter_plots(df, output_dir):
     ax10.set_ylabel("Offset50 Variance (0.99 rolling window)")
     ax10.set_xlabel("Max Offset50 over time series")
     plt.savefig(os.path.join(output_dir,'offset50max_offset50Variance.png'))
-    
+
     plt.figure()
     ax11 = sns.scatterplot(y="total_precipitation_mean", x="S2_offset50_mean_Variance (0.99 rolling window)", data=df,hue="S2_offset50_mean_pattern_type",palette="Accent_r",edgecolor="k",linewidth=1)
     ax11.set_ylabel("Mean precipitation over time series")
@@ -291,20 +297,35 @@ def boxplot_plots(df, output_dir):
     ax24.set_xlabel("Pattern Type")
     plt.savefig(os.path.join(output_dir, 'Mean_offset50_boxplot.png'))
 
-def process_input_data(input_dir):
+
+def process_input_data(input_location):
 
     """Read all input summary statistics and transform data into
      a more analysis-friendly format
 
     Parameters
     ----------
-    input_dir : str
-        Location of summary statistics output files from analyse_gee_data.py
+    input_location : str
+        Location of summary statistics output files from analyse_gee_data.py.
+        Can be 'zenodo' or 'zenodo_test' to download from the production or sandbox Zenodo depository,
+        or the path to a directory on the local filesystem.
+
+    Returns
+    -------
+    df:  DataFrame containing all the time-series data concatenated together.
     """
+    df_list = []
+    if input_location == 'zenodo' or input_location == 'zenodo_test':
+        is_test = input_location == 'zenodo_test'
+        deposition_id = get_deposition_id(is_test)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ts_filenames = [download_file(f, deposition_id, tmpdir, is_test) \
+                            for f in list_files(deposition_id, "csv", is_test)]
+            df_list = [pd.read_csv(filename) for filename in ts_filenames]
+    else:
+        ts_filenames = [f for f in os.listdir(input_location) if "_summary_stats" in f]
+        df_list = [pd.read_csv(os.path.join(input_location, filename)) for filename in ts_filenames]
 
-    ts_filenames = [f for f in os.listdir(input_dir) if "_summary_stats" in f]
-
-    df_list = [pd.read_csv(os.path.join(input_dir, filename)) for filename in ts_filenames]
     df = pd.concat(df_list)
 
     ts_dict_list = []
@@ -325,20 +346,22 @@ def process_input_data(input_dir):
 
 
 
-def analyse_pyveg_summary_data(input_dir, output_dir):
+def analyse_pyveg_summary_data(input_location, output_dir):
 
     """
     Run analysis on summary statistics data
 
     Parameters
     ----------
-    input_dir : str
-        Location of summary statistics output files from analyse_gee_data.py
+    input_location : str
+        Location of summary statistics output files from analyse_gee_data.py.
+        Can be 'zenodo' or 'zenodo_test' for the production or sandbox Zenodo depositions, or
+        the path to the local directory containing the files.
      output_dir: str,
         Location for outputs of the analysis. If None, use input_dir
     """
 
-    df = process_input_data(input_dir)
+    df = process_input_data(input_location)
 
     #add new variable to the dataframe
     df["offset50_cb_return_rate"] = (df["S2_offset50_mean_CB_fit_alpha"] ** 2).divide(2.0)
@@ -362,12 +385,12 @@ def main():
         description="process json files with network centrality measures from from GEE images"
     )
     parser.add_argument(
-        "--input_dir",
-        help="results directory from `download_gee_data` script, containing `results_summary.json`",
+        "--input_location",
+        help="results directory from `download_gee_data` script, containing `summary_stats.csv`, OR 'zenodo' or 'zenodo_test' to download the files from the production or sandbox Zenodo depositions.",
     )
     parser.add_argument(
         "--output_dir",
-        help="location where analysis plots will be put.  If not specified, will use input_dir",
+        help="location where analysis plots will be put.",default="."
     )
 
 
@@ -377,15 +400,11 @@ def main():
 
     # parse args
     args = parser.parse_args()
-    # check we have the bare minimum of args set that we need
-    output_dir = args.output_dir if args.output_dir else args.input_dir
-    if not output_dir:
-        raise RuntimeError("Need to specify --output_dir argument if reading from Azure blob storage")
 
 
     # run analysis code
-    analyse_pyveg_summary_data(args.input_dir,
-                     output_dir)
+    analyse_pyveg_summary_data(args.input_location,
+                               args.output_dir)
 
 
 if __name__ == "__main__":

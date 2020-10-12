@@ -22,7 +22,7 @@ from pyveg.src.date_utils import get_time_diff
 from pyveg.src.file_utils import construct_filename_from_metadata
 
 try:
-    from pyveg.src.zenodo_utils import download_results_summary_by_coord_id
+    from pyveg.src.zenodo_utils import download_results_by_coord_id
 except:
     print("Unable to import zenodo_utils")
 
@@ -58,7 +58,7 @@ def read_results_summary(input_location,
         return json_data
     elif input_location_type == "zenodo" or input_location_type == "zenodo_test":
         use_sandbox = input_location_type == "zenodo_test"
-        json_location = download_results_summary_by_coord_id(input_location, test=use_sandbox)
+        json_location = download_results_by_coord_id(input_location, "json", test=use_sandbox)
         if os.path.exists(json_location):
             json_data = json.load(open(json_location))
             return json_data
@@ -1079,7 +1079,9 @@ def save_ts_summary_stats(ts_dirname, output_dir, metadata):
 
                 # We also want the AR1 and Standard deviation of the raw seasonal timeseries for the summary stats
                 if ts_df.empty == False:
+
                     # make sure in this case that the index is numeric and not datetime
+
                     ts = ts_df[column].dropna()
                     ts.index = pd.to_numeric(ts.index)
                     ews_dic_veg_seasonal = ewstools.core.ews_compute(ts,
