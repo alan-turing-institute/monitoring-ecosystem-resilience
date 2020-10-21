@@ -135,8 +135,8 @@ Early warning signals are also computed using the `ewstools` package [@ewstools]
 including Lag-1 autocorrelation and standard deviation moving window plots.
 A sensitivity and significance analysis is also performed in order to determine
 whether any trends (quantified by Kendall tau values) are statistically significant.
-A crystal ball function is fitted to the annual average offset50 and NDVI time series
-in order to understand changes in [@CrystalBallFunction].
+The vegetation decay rate is calculated by fitting a crystall ball function
+to the annual average offset50 and NDVI time series [@CrystalBallFunction].
 
 Following data processing, `pyveg` is able to calculate summary plots using
 `pyveg_analysis_summary_data`. This uses as input a collection of summary statistics
