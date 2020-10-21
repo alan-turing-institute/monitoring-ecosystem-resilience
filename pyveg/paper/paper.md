@@ -135,12 +135,13 @@ Early warning signals are also computed using the `ewstools` package [@ewstools]
 including Lag-1 autocorrelation and standard deviation moving window plots.
 A sensitivity and significance analysis is also performed in order to determine
 whether any trends (quantified by Kendall tau values) are statistically significant.
-The vegetation return rate is calculated by fitting the crystall ball function
-to the offset50 and NDVI time series.
+The vegetation return rate is calculated by fitting a crystall ball function
+to the annual average offset50 and NDVI time series [@CrystalBallFunction].
 
 Following data processing, `pyveg` is able to calculate summary plots using
-`pyveg_analysis_summary_data` which will accept summary statistics that are
-hosted locally or on Zenodo.
+`pyveg_analysis_summary_data`. This uses as input a collection of summary statistics
+extracted from the time series of each individual location obtained with the download
+and analysis functionality described above. These are hosted locally or on Zenodo.
 
 
 # Acknowledgements
