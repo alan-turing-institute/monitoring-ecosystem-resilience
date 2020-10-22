@@ -226,7 +226,7 @@ The ```analyse_pyveg_summary_data.py``` functionality processes collections of d
 To run this analysis in Python, there is an entrypoint defined.  Type:
 
 ```
-pyveg_analysis_summary_data --input_dir  <path_to_directory_with_collection_summary_statistics>
+pyveg_analysis_summary_data --input_location  <path_to_directory_with_collection_summary_statistics>
 ```
 
 if you wish you can also specify the ```outpur_dir``` where plots will be saved.  Type:

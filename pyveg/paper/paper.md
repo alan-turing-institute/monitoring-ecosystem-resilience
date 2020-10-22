@@ -9,20 +9,24 @@ tags:
 authors:
   - name: Nick Barlow
     affiliation: 1
-  - name: Chris Boulton
-    affiliation: 2
   - name: Camila Rangel Smith
     affiliation: 1
   - name: Samuel Van Stroud
-    affiliation: 1, 3
+    affiliation: 1, 2
+  - name: Jesse Abrams
+    affiliation: 3
+  - name: Chris Boulton
+    affiliation: 3
+  - name: Joshua Buxton
+    affiliation: 3
 affiliations:
  - name: The Alan Turing Institute
    index: 1
- - name: University of Exeter
-   index: 2
  - name: University College London
+   index: 2
+ - name: University of Exeter
    index: 3
-date: 19 June 2020
+date: 09 October 2020
 bibliography: paper.bib
 ---
 
@@ -112,10 +116,12 @@ intensities for each sub-image.
 
 `pyveg` analysis functionality is exposed via a `pveg_gee_analysis` command.
 The command accepts an argument, `--input_dir`, which points to a directory
-previously created by a download job. `pyveg` supports the analysis of the
-following time series: raw NDVI mean pixel intensity across the image,
-offset50 (a measure of the slope of the network centrality feature vector),
-and precipitation.
+previously created by a download job. It is also possible to run this analysis
+on data within Azure using `--input_container`. Users are able to upload data to Zenodo
+with `pyveg` and to analyse data hosted on Zenodo using `--input_zenodo_coords` argument
+of the `pveg_gee_analysis` command. `pyveg` supports the analysis of the
+following time series: raw NDVI mean pixel intensity across the image, offset50
+(a measure of the slope of the network centrality feature vector), and precipitation.
 
 During data processing, `pyveg` is able
 to drop time series outliers and resample the time series to clean the data
@@ -129,6 +135,13 @@ Early warning signals are also computed using the `ewstools` package [@ewstools]
 including Lag-1 autocorrelation and standard deviation moving window plots.
 A sensitivity and significance analysis is also performed in order to determine
 whether any trends (quantified by Kendall tau values) are statistically significant.
+The vegetation decay rate is calculated by fitting a crystall ball function
+to the annual average offset50 and NDVI time series [@CrystalBallFunction].
+
+Following data processing, `pyveg` is able to calculate summary plots using
+`pyveg_analysis_summary_data`. This uses as input a collection of summary statistics
+extracted from the time series of each individual location obtained with the download
+and analysis functionality described above. These are hosted locally or on Zenodo.
 
 
 # Acknowledgements
@@ -137,7 +150,7 @@ The `pyveg` package was developed by researchers from the Alan Turing Institute,
 University College London, and the University of Exeter.  Funding was provided by
 the Alan Turing Institute, the Science and Technology Facilities Council, and the
 Leverhulme Trust (grant number RPG-2018-046).
-We would like to acknowledge support from Tim Lenton and Jesse Abrams during the course of
+We would like to acknowledge support from Tim Lenton during the course of
 this project.
 
 
