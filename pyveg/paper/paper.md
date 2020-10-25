@@ -13,7 +13,7 @@ authors:
     affiliation: 1
   - name: Samuel Van Stroud
     affiliation: 1, 2
-  - name: Jesse Abrams
+  - name: Jesse F. Abrams
     affiliation: 3
   - name: Chris Boulton
     affiliation: 3
