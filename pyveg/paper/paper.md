@@ -15,7 +15,7 @@ authors:
     affiliation: 1, 2
   - name: Jesse F. Abrams
     affiliation: 3
-  - name: Chris Boulton
+  - name: Chris A. Boulton
     affiliation: 3
   - name: Joshua Buxton
     affiliation: 3
