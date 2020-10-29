@@ -9,17 +9,14 @@ from PIL import Image
 
 from pyveg.src.file_utils import split_filepath
 
+AZURE_CONFIG_FOUND=False
+
 # load the azure configuration if we have the azure_config.py file
 try:
     from pyveg.azure_config import config
+    AZURE_CONFIG_FOUND=True
 except:
-    print(
-        """
-    azure_config.py not found - this is needed for using Azure storage or batch.
-    Copy pyveg/azure_config_template.py to pyveg/azure_config.py then input your
-    own values for Azure Storage account name and Access key, then redo `pip install .`
-    """
-    )
+    pass
 
 from azure.storage.blob import (
     BlockBlobService,
@@ -55,6 +52,16 @@ def check_container_exists(container_name, bbs=None):
     """
     See if a container already exists for this account name.
     """
+    if not AZURE_CONFIG_FOUND:
+        raise RuntimeError(
+            """
+            azure_config.py not found - this is needed for using Azure
+            storage or batch.
+            Copy pyveg/azure_config_template.py to pyveg/azure_config.py
+            then input your   own values for Azure Storage account name
+            and Access key, then redo `pip install .`
+            """
+        )
     if not bbs:
         bbs = BlockBlobService(
             account_name=config["storage_account_name"],

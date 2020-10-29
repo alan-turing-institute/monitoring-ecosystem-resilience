@@ -15,16 +15,11 @@ import azure.batch.batch_auth as batch_auth
 import azure.batch.models as batchmodels
 from azure.storage.blob import BlockBlobService
 
+
 try:
     from pyveg.azure_config import config
 except:
-    print(
-        """
-    azure_config.py not found - this is needed for using Azure storage or batch.
-    Copy pyveg/azure_config_template.py to pyveg/azure_config.py then input your
-    own values for Azure Storage account name and Access key, then redo `pip install .`
-    """
-    )
+    pass
 
 
 def prepare_for_task_submission(
