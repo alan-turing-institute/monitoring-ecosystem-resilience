@@ -28,7 +28,7 @@ from pyveg.src.data_analysis_utils import (
 DPI = 150
 
 
-def plot_time_series(df, output_dir):
+def plot_time_series(df, output_dir, plot_smoothed=True):
     """
     Given a time series DataFrames (constructed with `make_time_series`),
     plot the vegetitation and precipitation time series.
@@ -42,7 +42,11 @@ def plot_time_series(df, output_dir):
         Directory to save the plots in.
     """
 
-    def make_plot(df, veg_prefix, output_dir, veg_prefix_b=None, smoothing_option='smooth'):
+    def make_plot(df,
+                  veg_prefix,
+                  output_dir,
+                  veg_prefix_b=None,
+                  smoothing_option='smooth'):
 
         # handle the case where vegetation and precipitation have mismatched NaNs
         veg_df = df.dropna(subset=[veg_prefix+'_offset50_mean'])
@@ -179,7 +183,8 @@ def plot_time_series(df, output_dir):
             veg_prefix = column.split('_')[0]
             print(f'Plotting {veg_prefix} time series.')
             make_plot(df, veg_prefix, output_dir)
-            make_plot(df, veg_prefix, output_dir, smoothing_option='smooth_res')
+            if plot_smoothed:
+                make_plot(df, veg_prefix, output_dir, smoothing_option='smooth_res')
 
     # if we have two vegetation time series availible, plot them both
     if np.sum(df.columns.str.contains('offset50_mean')) == 2:
