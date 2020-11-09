@@ -1,6 +1,6 @@
 ![Build status](https://api.travis-ci.com/alan-turing-institute/monitoring-ecosystem-resilience.svg?branch=develop)
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/alan-turing-institute/monitoring-ecosystem-resilience/bugfix/466-tutorial-notebooks?filepath=notebooks)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/alan-turing-institute/monitoring-ecosystem-resilience/master?filepath=notebooks)
 
 [![Documentation Status](https://readthedocs.org/projects/pyveg/badge/?version=latest)](https://pyveg.readthedocs.io/en/latest/?badge=latest)
 
