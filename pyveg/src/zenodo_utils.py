@@ -445,15 +445,16 @@ def get_results_summary_json(coords_string, collection, deposition_id, test=Fals
 
 
 
-def download_results_summary_by_coord_id(coords_id, destination_path=None, deposition_id=None, test=False):
+def download_results_by_coord_id(coords_id, json_or_csv="json", destination_path=None, deposition_id=None, test=False):
     """
     Search the deposition (defined by the deposition_id in zenodo_config.py)
-    for results_summary json files beginning with 'coord_id' and download
-    the most recent one.
+    for results_summary json or summary_stats csv files beginning with 'coord_id'
+    and download the most recent one.
 
     Parameters
     ==========
     coords_id: str, two-digit string identifiying the row of the location in coordinates.py
+    json_or_csv: str, if "json", download 'results_summary.json', otherwise download 'ts_summary_stats.csv'.
     destination_path: str, directory to download to.  If not given, put in temporary dir
     deposition_id: str, deposition ID in Zenodo.  If not given, use the one from zenodo_config.py
     test: bool, if True, use the sandbox Zenodo repository
@@ -462,7 +463,7 @@ def download_results_summary_by_coord_id(coords_id, destination_path=None, depos
     if not re.search('[\d]{2}', coords_id):
         raise RuntimeError("coords_id should be a 2-digit string")
     if not deposition_id:
-        deposition_id = get_deposition_id("json", test=test)
+        deposition_id = get_deposition_id(json_or_csv, test=test)
     if not destination_path:
         destination_path = tempfile.TemporaryDirectory().name
     elif not os.path.exists(destination_path):
