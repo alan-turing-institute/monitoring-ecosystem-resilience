@@ -99,15 +99,17 @@ def plot_time_series(df, output_dir):
             ax2.plot(precip_xs, precip_ys, linewidth=2, color=color, alpha=0.75)
 
             # add veg-precip correlation
-            max_corr_smooth, max_corr = get_max_lagged_cor(os.path.dirname(output_dir), veg_prefix)
-            textstr = f'$r_{{t-{max_corr[1]}}}={max_corr[0]:.2f}$'
+            try:
+                max_corr_smooth, max_corr = get_max_lagged_cor(os.path.dirname(output_dir), veg_prefix)
+                textstr = f'$r_{{t-{max_corr[1]}}}={max_corr[0]:.2f}$'
 
-            # old correlation just calculates the 0-lag correlation
-            #raw_corr = veg_means.corr(precip_ys)
-            #smoothed_corr = veg_means_smooth.corr(precip_ys)
-            #textstr = f'$r={smoothed_corr:.2f}$ (${raw_corr:.2f}$ unsmoothed)'
-            ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
-
+                # old correlation just calculates the 0-lag correlation
+                #raw_corr = veg_means.corr(precip_ys)
+                #smoothed_corr = veg_means_smooth.corr(precip_ys)
+                #textstr = f'$r={smoothed_corr:.2f}$ (${raw_corr:.2f}$ unsmoothed)'
+                ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+            except(FileNotFoundError):
+                print("Warning - lagged correlations file not found - call plot_autocorrelation_function() first to print correlations on plot")
         # plot second vegetation time series if availible
         if veg_prefix_b:
 
@@ -137,11 +139,11 @@ def plot_time_series(df, output_dir):
             ax.plot(veg_xs_b, veg_means_b, label='Unsmoothed', linewidth=1, color='indigo', linestyle='dashed', alpha=0.2)
 
             # plot smoothed vegetation means and std
-            ax3.plot(veg_xs_b, veg_means_smooth_b, marker='o', markersize=7, 
-                    markeredgecolor=(0.8172, 0.7627, 0.9172), markeredgewidth=2, 
+            ax3.plot(veg_xs_b, veg_means_smooth_b, marker='o', markersize=7,
+                    markeredgecolor=(0.8172, 0.7627, 0.9172), markeredgewidth=2,
                     label='Smoothed', linewidth=2, color=color)
 
-            ax3.fill_between(veg_xs_b, veg_means_smooth_b - veg_stds_smooth_b, veg_means_smooth_b + veg_stds_smooth_b, 
+            ax3.fill_between(veg_xs_b, veg_means_smooth_b - veg_stds_smooth_b, veg_means_smooth_b + veg_stds_smooth_b,
                             facecolor='tab:purple', alpha=0.1, label='Std Dev')
 
             # add veg-veg correlation
@@ -216,12 +218,12 @@ def plot_ndvi_time_series(df, output_dir):
         # plot ndvi
         #ax.plot(veg_xs, ndvi_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
 
-        ax.plot(veg_xs, veg_means, marker='o', markersize=7, 
+        ax.plot(veg_xs, veg_means, marker='o', markersize=7,
                 markeredgecolor=(0.9172, 0.9627, 0.9172), markeredgewidth=2,
                 label='Smoothed', linewidth=2, color='green')
 
         if any([col_name.replace('mean', 'std') == c for c in df.columns]):
-            ax.fill_between(veg_xs, veg_means - veg_std, veg_means + veg_std, 
+            ax.fill_between(veg_xs, veg_means - veg_std, veg_means + veg_std,
                             facecolor='green', alpha=0.1, label='Std Dev')
 
         # plot precipitation if availible
@@ -270,7 +272,7 @@ def plot_ndvi_time_series(df, output_dir):
             print(f'Plotting {veg_prefix} NDVI time series.')
             make_plot(df, veg_prefix, column, output_dir)
 
-    
+
 def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
     """
     Given a time series DataFrames (constructed with `make_time_series`),
@@ -349,7 +351,7 @@ def plot_cross_correlations(df, output_dir):
         df_['offset50'] = veg_ys
 
         # create fig
-        fig, axs = plt.subplots(3, 3, sharex='col', sharey='row', 
+        fig, axs = plt.subplots(3, 3, sharex='col', sharey='row',
                                 figsize=(8, 8))
 
         # loop through offsets
@@ -367,13 +369,13 @@ def plot_cross_correlations(df, output_dir):
             corr = precip_ys.corr(lagged_data)
             correlations.append(round(corr,4))
             sns.regplot(precip_ys, lagged_data, label=f'$r={corr:.2f}$', ax=ax)
-            
+
             # format axis label
             if lag < 6:
                 ax.set_xlabel('')
             if lag % 3 != 0:
                 ax.set_ylabel('')
-                
+
             ax.legend()
 
         plt.tight_layout()
@@ -386,7 +388,7 @@ def plot_cross_correlations(df, output_dir):
         # write out correlations as a function of lag
         correlations_dict = {veg_ys.name + '_lagged_correlation': correlations}
         write_to_json(os.path.join(output_dir, 'lagged_correlations.json'), correlations_dict)
-    
+
     # make plots for selected columns
     for column in df.columns:
         if 'offset50' in column and 'mean' in column:
@@ -425,18 +427,18 @@ def plot_feature_vector(output_dir):
 
         # percentile columns
         cols = [c for c in df.columns if 'percentile' in c]
-        
+
         # compute feature vector averaged over all sub-images
         feature_vector = df[cols].mean()
         feature_vector_std = df[cols].std()
 
         # generate x-values
         xs = np.linspace(0,100,len(feature_vector))
-        
+
         # make the plot
         fig, _ = plt.subplots(figsize=(6,5))
 
-        plt.errorbar(xs, feature_vector, marker='o', markersize=5, linestyle='', 
+        plt.errorbar(xs, feature_vector, marker='o', markersize=5, linestyle='',
                         yerr=feature_vector_std, color='black', capsize=2, elinewidth=1)
 
         plt.xlabel('Pixel Rank (%)', fontsize=14)
@@ -461,7 +463,7 @@ def plot_feature_vector(output_dir):
 
         # loop through time points
         for date, group in df.groupby('date'):
-            
+
             # calculate feature vector and offset50
             feature_vector = group.mean()[cols]
             feature_vecs.append(feature_vector)
@@ -494,7 +496,7 @@ def plot_feature_vector(output_dir):
         plt.ylabel('$X(V-E)$', fontsize=14)
         plt.legend()
         plt.tight_layout()
-        
+
         # save the plot
         output_filename = fv_filename.split('_')[0] + '-feature-vector-minmax.png'
         print(f'Plotting minmax feature vector "{os.path.abspath(output_filename)}"...')
@@ -559,7 +561,7 @@ def plot_stl_decomposition(df, period, output_dir):
         # undo rc changes
         plt.rc('figure', figsize=default_figsize)
         plt.rc('font', size=default_fontsize)
-    
+
     # make output dir if necessary
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
@@ -567,16 +569,16 @@ def plot_stl_decomposition(df, period, output_dir):
     # make plots for selected columns
     for column in df.columns:
         if ('offset50' in column or 'ndvi' in column) and 'mean' in column or 'total_precipitation' in column:
-            
+
             print(f'Plotting STL decomposition for "{column}"...')
-            
+
             # produce plot
             make_plot(df.dropna(), column, output_dir)
 
 
 def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
     """
-    Given a moving window time series DataFrame, plot the time series 
+    Given a moving window time series DataFrame, plot the time series
     of AR1 and Variance.
 
     Parameters
@@ -605,7 +607,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
 
         # get short string prefix on column name
         collection_prefix = column.split('_')[0] if 'offset50' in column else 'precipitation'
-        
+
         # hand mismatched NaNs
         ar1_df = df.dropna(subset=[column.replace('var', 'ar1')])
         var_df = df.dropna(subset=[column])
@@ -662,7 +664,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
         # plot variance
         ax2.plot(var_xs, variance, linewidth=2, color=color, alpha=0.75, label='Variance')
         if any([smoothing_option in c for c in df.columns]):
-            ax2.plot(var_xs, variance_smooth, linewidth=2, color=color, alpha=0.75, 
+            ax2.plot(var_xs, variance_smooth, linewidth=2, color=color, alpha=0.75,
                      linestyle='dotted', label='Variance Smoothed')
 
         # set y lim
@@ -693,7 +695,7 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
             textstr += f'Variance Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_var_smooth:.2f}$, ${p_var_smooth:.2f}$'
         textstr += f' (${tau_var:.2f}$, ${p_var:.2f}$ unsmoothed)'
         ax2.text(0.43, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
-        
+
         # layout
         fig.tight_layout()
 
@@ -705,14 +707,14 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
 
 
     for column in df.columns:
-        if (('offset50_mean' in column or 'total_precipitation' in column) and 
+        if (('offset50_mean' in column or 'total_precipitation' in column) and
              'var' in column):
             make_plot(df, column, output_dir, 'smooth_res')
 
 
 def plot_correlation_mwa(df, output_dir, filename_suffix=''):
     """
-    Given a moving window time series DataFrame, plot the time series 
+    Given a moving window time series DataFrame, plot the time series
     of veg-precip correlation.
 
     Parameters
@@ -729,7 +731,7 @@ def plot_correlation_mwa(df, output_dir, filename_suffix=''):
 
         # get datetime x-values
         xs = get_datetime_xs(df)
-        
+
         # create a figure
         fig, ax = plt.subplots(figsize=(15, 4.5))
         plt.plot(xs, df[column_name])
@@ -811,14 +813,14 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
     annotate('Lag-1 AC')
     tau = Kendalltau_df['Lag-1 AC'].iloc[0]
     annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
-    
+
     """ys = EWSmetrics_df['Lag-2 AC']
     plt.plot(ys, color='navy')
     plt.ylim(zoom_out(ys))
     annotate('Lag-1 AC', xy=(8, 65))
     tau = Kendalltau_df['Lag-1 AC'].iloc[0]
     annotate(f'Kendall $\\tau = {tau:.2f}$', xy=(8, 55), size=8)"""
-        
+
     ax4 = plt.subplot(614, sharex=ax1)
     ys = EWSmetrics_df['Standard deviation']
     plt.plot(dates[-len(ys):], ys, color='black')
@@ -826,7 +828,7 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
     annotate('Standard deviation')
     tau = Kendalltau_df['Standard deviation'].iloc[0]
     annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
-    
+
     ax5 = plt.subplot(615, sharex=ax1)
     ys = EWSmetrics_df['Skewness']
     plt.plot(dates[-len(ys):], ys, color='black')
@@ -834,7 +836,7 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
     annotate('Skewness')
     tau = Kendalltau_df['Skewness'].iloc[0]
     annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
-    
+
     ax6 = plt.subplot(616, sharex=ax1)
     ys = EWSmetrics_df['Kurtosis']
     plt.plot(dates[-len(ys):], ys, color='black')
@@ -842,7 +844,7 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
     annotate('Kurtosis')
     tau = Kendalltau_df['Kurtosis'].iloc[0]
     annotate(f'Kendall $\\tau = {tau:.2f}$', size=8)
-    
+
     plt.xlabel('Time')
 
     # remove vertical space between plots
