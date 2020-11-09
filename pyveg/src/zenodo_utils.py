@@ -25,10 +25,12 @@ from zipfile import ZipFile, BadZipFile
 
 from pyveg.src.file_utils import get_filepath_after_directory
 from pyveg.src.coordinate_utils import find_coords_string
+ZENODO_CONFIG_FOUND=False
 try:
     import pyveg.zenodo_config as config
+    ZENODO_CONFIG_FOUND=True
 except:
-    print("File zenodo_config.py not found - will not be able to access the Zenodo API")
+    pass
 
 
 def get_base_url_and_token(test=False):
@@ -44,6 +46,8 @@ def get_base_url_and_token(test=False):
     base_url: str, the first part of the URL for the API
     api_token: str, the personal access token, read from a file.
     """
+    if not ZENODO_CONFIG_FOUND:
+        raise RuntimeError("File zenodo_config.py not found - will not be able to access the Zenodo API")
     if test:
         base_url = config.test_api_credentials["base_url"]
         token = config.test_api_credentials["api_token"]
