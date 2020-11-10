@@ -85,6 +85,7 @@ def main():
     parser.add_argument("--input_location",help="directory or container with file of interest",required=True)
     parser.add_argument("--input_location_type",help="'local' or 'azure'", default="local")
     parser.add_argument("--test_api", help="use the test API", action="store_true")
+    parser.add_argument("--summary_csv", help="upload the summary stats csv rather than the results_summary.json", action="store_true")
     args = parser.parse_args()
     if args.create_deposition:
         repo_string = "sandbox" if args.test_api else "production"
@@ -102,9 +103,12 @@ We normally do this just once per project.  Please confirm (y/n)
             return
 
     test_api = True if args.test_api else False
-    result = upload_results_summary(args.input_location,
-                                    args.input_location_type,
-                                    test_api)
+    if args.summary_csv:
+        result = upload_summary_stats(args.input_location, test_api)
+    else:
+        result = upload_results_summary(args.input_location,
+                                        args.input_location_type,
+                                        test_api)
     if result:
         print("Uploaded OK")
     else:
