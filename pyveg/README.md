@@ -56,10 +56,9 @@ Get the source.
 ```
 git clone https://github.com/alan-turing-institute/monitoring-ecosystem-resilience.git
 ```
-Enter the repository and check out a relevant branch if necessary (the `develop` branch contains the most up to date stable version of the code).
+Enter the repository and check out a relevant branch if necessary (the default `master` branch contains the most up to date stable version of the code).
 ```
 cd monitoring-ecosystem-resilience
-git checkout develop
 ```
 Install the package using `pip`.
 ```
