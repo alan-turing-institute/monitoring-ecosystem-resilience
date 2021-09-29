@@ -1,15 +1,23 @@
 import os
+import shutil
 import io
 import json
 
 import arrow
 import re
 import tempfile
+import tarfile
 from PIL import Image
 
 from pyveg.src.file_utils import split_filepath
 
 AZURE_CONFIG_FOUND=False
+
+if os.name == "posix":
+    TMPDIR = "/tmp/"
+else:
+    TMPDIR = "%TMP%"
+
 
 # load the azure configuration if we have the azure_config.py file
 try:
@@ -116,7 +124,7 @@ def get_sas_token(container_name, token_duration=1, permissions="READ", bbs=None
     return token
 
 
-def retrieve_blob(blob_name, container_name, destination="/tmp/", bbs=None):
+def retrieve_blob(blob_name, container_name, destination=TMPDIR, bbs=None):
     """
     use the BlockBlobService to retrieve file from Azure, and place in destination folder.
     """
@@ -318,20 +326,94 @@ def download_summary_json(container, json_dir):
     retrieve_blob(blob_path, container, json_dir)
 
 
-def download_rgb(container, rgb_dir):
+def download_images(container, img_type, output_dir):
     """
     Parameters
     ==========
     container: str, the container name
-    rgb_dir: str, directory into which to put image files.
+    img_type: str, format "X/Y", where "X" can be "RAW", "PROCESSED", "SPLIT",
+                   and "Y" can be "RGB", "NDVI", "BWNDVI"
+    output_dir: str, directory into which to put image files.
     """
-    print("Getting RGB images to {}".format(rgb_dir))
+    print("Getting images to {}".format(output_dir))
     bbs = BlockBlobService(
         account_name=config["storage_account_name"],
         account_key=config["storage_account_key"],
     )
+    img_size, img_col = img_type.split("/")
+
     blob_names = bbs.list_blob_names(container)
-    rgb_names = [b for b in blob_names if "PROCESSED" in b and b.endswith("RGB.png")]
-    print("Found {} images".format(len(rgb_names)))
-    for blob in rgb_names:
-        retrieve_blob(blob, container, rgb_dir)
+    img_names = [b for b in blob_names if img_size in b \
+                 and (b.endswith(f"_{img_col}.png") \
+                      or b.endswith(f"_{img_col}.tif"))]
+    print("Found {} images".format(len(img_names)))
+    for blob in img_names:
+        retrieve_blob(blob, container, output_dir)
+
+
+def find_latest_container(prefix, bbs=None):
+    """
+    Parameters
+    ==========
+    prefix: str, first part of container name
+    bbs: BlockBlobService, or None.  If None, will create BlockBlobService
+    Returns
+    =======
+    container_name: str, the full container name with the latest
+                    date, that matches the prefix
+
+    """
+    if not bbs:
+        bbs = BlockBlobService(
+            account_name=config["storage_account_name"],
+            account_key=config["storage_account_key"],
+        )
+    containers = bbs.list_containers(prefix=prefix)
+    containers = [c.name for c in containers]
+    if len(containers) > 0:
+        return sorted(containers)[-1]
+    else:
+        print("No containers found with prefix {}".format(prefix))
+        return None
+
+
+def download_images_from_container(container,
+                                   types=["PROCESSED/NDVI",
+                                          "PROCESSED/RGB",
+                                          "SPLIT/BWNDVI"],
+                                   bbs=None
+                                   ):
+    """
+    Parameters
+    ==========
+    container: str, name of the container
+    types: list of str, describes subdirs and suffixes for files to
+                      download, separated by "/".
+                      First part can be "RAW", "PROCESSED", or "SPLIT".
+                      Second part can be "RGB", "NDVI", or "BWNDVI"
+
+    Returns
+    =======
+    output_tar: list of str, locations of tarfiles on temporary directory
+    """
+    if not bbs:
+        bbs = BlockBlobService(
+            account_name=config["storage_account_name"],
+            account_key=config["storage_account_key"],
+        )
+    output_dir = os.path.join(TMPDIR,container)
+    shutil.rmtree(output_dir, ignore_errors=True)
+    os.makedirs(output_dir)
+    output_tars = []
+    for t in types:
+        ids = t.split("/")
+        output_subdir = os.path.join(output_dir, ids[0], ids[1])
+        os.makedirs(output_subdir)
+        download_images(container, t, output_subdir)
+        tarfilename = f"{container}_{ids[0]}_{ids[1]}.tar.gz"
+        tarfilename = os.path.join(TMPDIR, tarfilename)
+        with tarfile.open(tarfilename, "w:gz") as tar:
+            for filename in os.listdir(output_subdir):
+                tar.add(os.path.join(output_subdir, filename), arcname=filename)
+        output_tars.append(tarfilename)
+    return output_tars
