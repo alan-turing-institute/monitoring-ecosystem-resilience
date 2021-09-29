@@ -7,7 +7,7 @@ import pypandoc
 import json
 import tempfile
 
-from pyveg.src.azure_utils import download_rgb, download_summary_json
+from pyveg.src.azure_utils import download_images, download_summary_json
 
 
 def get_collection_and_suffix(collection_name):
@@ -121,7 +121,7 @@ def add_rgb_images(mdFile, rgb_location, rgb_location_type, fig_count):
                     rgb_filenames.append(os.path.join(rgb_location, root, filename))
     elif rgb_location_type == "azure":
         tmpdir = tempfile.mkdtemp()
-        download_rgb(rgb_location, tmpdir)
+        download_images(rgb_location, "PROCESSED/RGB", tmpdir)
         rgb_filenames = [os.path.join(tmpdir, fname) for fname in os.listdir(tmpdir)]
     else:
         print("""
