@@ -15,6 +15,7 @@ def process_container(container_name,
     tarfiles = download_images_from_container(container_name,
                                               types)
     for tf in tarfiles:
+        print(f"uploading {tf} to {deposition_id}")
         upload_file(tf, deposition_id, test)
 
 
