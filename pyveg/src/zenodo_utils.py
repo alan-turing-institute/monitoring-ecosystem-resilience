@@ -57,7 +57,7 @@ def get_base_url_and_token(test=False):
     return base_url, token
 
 
-def get_deposition_id(json_or_csv="json", test=False):
+def get_deposition_id(file_type="json", test=False):
     """
     If we have previously created a deposition, we hopefully stored its ID in
     the zenodo_config.py file.
@@ -67,10 +67,12 @@ def get_deposition_id(json_or_csv="json", test=False):
 
     else:
         credentials =  config.prod_api_credentials
-    if json_or_csv == "json":
+    if file_type == "json":
         return credentials["deposition_id_summary_json"]
-    else:
+    elif file_type == "csv":
         return credentials["deposition_id_ts_csv"]
+    elif file_type == "images":
+        return credentials["deposition_id_images"]
 
 
 def list_depositions(test=False):
@@ -192,24 +194,27 @@ def upload_file(filename, deposition_id, test=False):
         return True
 
 
-def list_files(deposition_id, json_or_csv="json", test=False):
+def list_files(deposition_id, file_type="json", test=False):
     """
     List all the files in a deposition.
 
     Parameters
     ==========
     deposition_id: int, ID of the deposition on which to list files
-    json_or_csv: str, if 'json', list the deposition containing the results_summary.json
-                 otherwise list the one containing ts_summary_stats.csv
+    file_type: str, 'json', 'csv', or 'images'.
+                 if 'json', list the deposition containing the results_summary.json
+                 if 'csv' list the one containing ts_summary_stats.csv
+                 if 'images' list the tarfiles of images.
     test: bool, True if using the sandbox API, False otherwise
 
     Returns
     =======
     files: list[str], list of all filenames in the deposition.
     """
-
+    if file_type not in ['csv', 'json', 'images']:
+        raise RuntimeError("File type must be 'csv', 'json', or 'images'")
     base_url, api_token = get_base_url_and_token(test)
-    deposition_id = get_deposition_id(json_or_csv, test=test)
+    deposition_id = get_deposition_id(file_type, test=test)
     r = requests.get("{}/deposit/depositions/{}/files".format(base_url, deposition_id),
                      params={"access_token": api_token})
     if r.status_code != 200:
