@@ -194,13 +194,12 @@ def upload_file(filename, deposition_id, test=False):
         return True
 
 
-def list_files(deposition_id, file_type="json", test=False):
+def list_files(file_type="json", test=False):
     """
     List all the files in a deposition.
 
     Parameters
     ==========
-    deposition_id: int, ID of the deposition on which to list files
     file_type: str, 'json', 'csv', or 'images'.
                  if 'json', list the deposition containing the results_summary.json
                  if 'csv' list the one containing ts_summary_stats.csv
@@ -275,7 +274,7 @@ def delete_file(filename, deposition_id, test=False):
     return True
 
 
-def upload_standard_metadata(deposition_id, json_or_csv="json", test=False):
+def upload_standard_metadata(deposition_id, file_type="json", test=False):
     """
     Upload the metadata dict defined in zenodo_config.py to the
     specified deposition ID.Kcontaining metadata with the format:
@@ -291,10 +290,14 @@ def upload_standard_metadata(deposition_id, json_or_csv="json", test=False):
     =======
     r: dict, JSON response from the API.
     """
-    if json_or_csv == "json":
+    if file_type == "json":
         metadata_dict = config.metadata_dict_summary_json
-    else:
+    elif file_type == "csv":
         metadata_dict = config.metadata_dict_ts_csv
+    elif file_type == "images":
+        metadata_dict = config.metadata_dict_images
+    else:
+        print("Unknown file_type {}".format(file_type))
     base_url, api_token = get_base_url_and_token(test)
     r = requests.put("{}/deposit/depositions/{}".format(base_url, deposition_id),
                      params={"access_token": api_token},
