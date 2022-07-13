@@ -1,18 +1,23 @@
-![Build status](https://api.travis-ci.com/alan-turing-institute/monitoring-ecosystem-resilience.svg?branch=develop)
-
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/alan-turing-institute/monitoring-ecosystem-resilience/master?filepath=notebooks)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/urbangrammarai/gee_pipeline/master?labpath=notebooks)
 
 [![Documentation Status](https://readthedocs.org/projects/pyveg/badge/?version=latest)](https://pyveg.readthedocs.io/en/latest/?badge=latest)
 
-# monitoring-ecosystem-resilience
-Repository for mini-projects in the Data science for Sustainable development project.
+# Google Earth Engine Pipeline
 
-Currently the focus of code in this repository is understanding vegetation patterns in semi-arid environments.
+This repository is a pipeline for retrieving imagery from Google Earth Engine for the [Urban Grammar](https://urbangrammarai.xyz/) project.
+
+The purpose is to obtain a time-series (ideally at least yearly) of cloud-free composite images for the UK, for use to infer spatial signatures.
+
+The repo is a fork of [monitoring-ecosystem-resilience](https://github.com/alan-turing-institute/monitoring-ecosystem-resilience) because of the functional similarity, despite the differences in purpose.
 
 The code in this repository is intended to perform three inter-related tasks:
+
 * Download and process satellite imagery from Google Earth Engine.
-* Generate simulated vegetation patterns.
-* Calculate graph metrics to quantify the interconnectedness of vegetation in real and simulated images.
+* Generate cloud-free composite images from Sentinel-2 for each year since 2016.
+* Generate "chips" (or patches) suitable for input into the inference model.
+
+For legacy reasons (related to the parent monitoring-ecosystem-resilience repo) the python and R packages are currently named `pyveg` and `rveg` respectively. These names are likely to be changed in due course.
+
 
 ### Python
 
