@@ -14,7 +14,7 @@ dateparser
 python-igraph
 pandas==1.1.1
 geopandas
-earthengine-api==0.1.222
+earthengine-api
 geetools
 pillow
 imageio
