@@ -19,7 +19,7 @@ output_location_type = "local"
 
 coordinates = (-2.983333, 53.400002)
 
-date_range = ["2016-01-01", "2021-01-01"]
+date_range = ["2016-05-01", "2021-08-01"]
 
 # From the dictionary entries in data_collections.py, which shall we use
 # (these will become "Sequences")
@@ -36,7 +36,7 @@ modules_to_use = {
 
 # The following demonstrates how parameters can be set for individual Modules or Sequences:
 special_config = {
-    "Sentinel2": {"time_per_point": "1y", "region_size": 0.1125,
+    "Sentinel2": {"time_per_point": "3m", "region_size": 0.1125,'ndvi':True
 }     # this is a whole Sequence
            # and another Module
 }
