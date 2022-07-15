@@ -19,7 +19,7 @@ output_location_type = "local"
 
 coordinates = (-2.983333, 53.400002)
 
-date_range = ["2016-05-01", "2021-08-01"]
+date_range = ["2016-05-01", "2016-08-01"]
 
 # From the dictionary entries in data_collections.py, which shall we use
 # (these will become "Sequences")
