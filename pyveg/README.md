@@ -66,12 +66,12 @@ pip install .
 ```
 If you are using Windows and encounter issues during this stage, a solution may be found here: https://github.com/NREL/OpenOA/issues/37. If you plan on making changes to the source code, you can instead run `pip install -e .`. 
 
-Before using the Google Earth Engine API, you need to sign up with a Google service account. You can read more in [here](https://developers.google.com/earth-engine/guides/python_install), how to open and account and authenticate using [gcloud](https://cloud.google.com/sdk/docs/install).  
+Before using the Google Earth Engine API, you need to sign up with a Google account. You can read more in [here](https://developers.google.com/earth-engine/guides/python_install), how to open an account and authenticate using [gcloud](https://cloud.google.com/sdk/docs/install).  
 To authenticate for the first time open python and run
 ```
 ee.Initialize()
 ```
-If you are using `gcloud`, it will initialize automatically and stay authenticated in your machine.
+If you are using `gcloud`, it will initialize automatically.
 
 
 
@@ -88,7 +88,7 @@ To run a `pyveg` download job, use
 pyveg_run_pipeline --config_file <path to config>
 ```
 
-The download job is fully specified by a configuration file, which you point to using the `--config_file` argument. A sample config file is found at `pyveg/configs/config_all.py`. You can also optionally specify a string to identify the download job using the `--name` argument.
+The download job is fully specified by a configuration file, which you point to using the `--config_file` argument. A sample config file with relevant functionality for the urban grammar project is found at `pyveg/configs/config_liverpool_example.py`. You can also optionally specify a string to identify the download job using the `--name` argument.
 
 Note that we use the GEE convention for coordinates, i.e. `(longitude,latitude)`.
 
