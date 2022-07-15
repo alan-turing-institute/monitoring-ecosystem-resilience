@@ -66,11 +66,13 @@ pip install .
 ```
 If you are using Windows and encounter issues during this stage, a solution may be found here: https://github.com/NREL/OpenOA/issues/37. If you plan on making changes to the source code, you can instead run `pip install -e .`. 
 
-Before using the Google Earth Engine API, you need to sign up with a Google account [here](https://earthengine.google.com/new_signup/), and authenticate.  To authenticate, run
+Before using the Google Earth Engine API, you need to sign up with a Google service account. You can read more in [here](https://developers.google.com/earth-engine/guides/python_install), how to open and account and authenticate using [gcloud](https://cloud.google.com/sdk/docs/install).  
+To authenticate for the first time open python and run
 ```
-earthengine authenticate
+ee.Initialize()
 ```
-A new browser window will open. Copy the token from this window to the terminal prompt to complete the authentication process.
+If you are using `gcloud`, it will initialize automatically and stay authenticated in your machine.
+
 
 
 ### Google Earth Engine
