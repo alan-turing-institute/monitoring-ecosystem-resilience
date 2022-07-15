@@ -53,6 +53,7 @@ class DownloaderModule(BaseModule):
             ("output_location", [str]),
             ("output_location_type", [str]),
             ("replace_existing_files", [bool]),
+            ("ndvi",[bool])
         ]
         return
 
@@ -73,6 +74,9 @@ class DownloaderModule(BaseModule):
             self.output_location_type = "local"
         if not "replace_existing_files" in vars(self):
             self.replace_existing_files = False
+        if not "ndvi" in vars(self):
+            self.ndvi = False
+
 
         return
 
@@ -264,10 +268,15 @@ class VegetationDownloader(DownloaderModule):
         dataset = apply_mask_cloud(dataset, self.collection_name, self.cloudy_pix_flag)
         # Take median
         image = dataset.median()
-        # Calculate NDVI
-        image = add_NDVI(image, self.RGB_bands[0], self.NIR_band)
-        # select only RGB + NDVI bands to download
-        bands_to_select = self.RGB_bands + ["NDVI"]
+
+        if self.ndvi:
+            # Calculate NDVI
+            image = add_NDVI(image, self.RGB_bands[0], self.NIR_band)
+            # select only RGB + NDVI bands to download
+            bands_to_select = self.RGB_bands + ["NDVI"]
+        else:
+            bands_to_select = self.RGB_bands
+
         image = image.select(bands_to_select)
         return [image]
 
