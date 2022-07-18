@@ -268,6 +268,8 @@ class VegetationDownloader(DownloaderModule):
         dataset = apply_mask_cloud(dataset, self.collection_name, self.cloudy_pix_flag)
         # Take median
         image = dataset.median()
+        count = dataset.count()
+
 
         if self.ndvi:
             # Calculate NDVI
@@ -277,7 +279,11 @@ class VegetationDownloader(DownloaderModule):
         else:
             bands_to_select = self.RGB_bands
 
-        image = image.select(bands_to_select)
+        mosaic = count.select(self.RGB_bands[0]).add(count.select(self.RGB_bands[1]))\
+            .add(count.select(self.RGB_bands[2])).rename('mosaic')
+
+        image = ee.Image(image).addBands(mosaic)
+        image = image.select(bands_to_select + ['mosaic'])
         return [image]
 
 

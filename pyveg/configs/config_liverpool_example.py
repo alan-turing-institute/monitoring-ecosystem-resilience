@@ -36,7 +36,7 @@ modules_to_use = {
 
 # The following demonstrates how parameters can be set for individual Modules or Sequences:
 special_config = {
-    "Sentinel2": {"time_per_point": "3m", "region_size": 0.1125
+    "Sentinel2": {"time_per_point": "3m", "region_size": 0.10
 }     # this is a whole Sequence
            # and another Module
 }
