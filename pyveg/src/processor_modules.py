@@ -471,6 +471,8 @@ class VegetationImageProcessor(ProcessorModule):
             self.split_RGB_images = True
         if not "ndvi" in vars(self):
             self.ndvi = False
+        if not "count" in vars(self):
+            self.count = True
         # in PROCESSED dir we expect RGB. NDVI, BWNDVI
         self.num_files_per_point = 3
         self.input_location_subdirs = ["RAW"]
@@ -671,6 +673,24 @@ class VegetationImageProcessor(ProcessorModule):
             self.split_and_save_sub_images(
                 processed_ndvi, date_string, coords_string, "BWNDVI"
             )
+
+        if self.count:
+            # save the NDVI image
+            count_tif = self.get_file(
+               self.join_path(input_filepath, "download.COUNT.tif"), self.input_location_type
+            )
+            count_image = scale_tif(count_tif)
+            count_filepath = self.construct_image_savepath(
+                date_string, coords_string, "COUNT"
+            )
+            self.save_image(
+                count_image, os.path.dirname(count_filepath), os.path.basename(count_filepath)
+            )
+
+            # split and save sub-images
+            self.split_and_save_sub_images(count_image, date_string, coords_string, "COUNT")
+
+
 
         return True
 
