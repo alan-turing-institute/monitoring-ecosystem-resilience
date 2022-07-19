@@ -24,7 +24,7 @@ from pyveg.src.date_utils import (
 )
 from pyveg.src.file_utils import download_and_unzip
 from pyveg.src.coordinate_utils import get_region_string
-from pyveg.src.gee_interface import apply_mask_cloud, add_NDVI
+from pyveg.src.gee_interface import apply_mask_cloud, add_NDVI, add_count_mosaic
 
 from pyveg.src.pyveg_pipeline import BaseModule, logger
 
@@ -53,7 +53,9 @@ class DownloaderModule(BaseModule):
             ("output_location", [str]),
             ("output_location_type", [str]),
             ("replace_existing_files", [bool]),
-            ("ndvi",[bool])
+            ("ndvi", [bool]),
+            ("count", [bool])
+
         ]
         return
 
@@ -76,7 +78,8 @@ class DownloaderModule(BaseModule):
             self.replace_existing_files = False
         if not "ndvi" in vars(self):
             self.ndvi = False
-
+        if not "count" in vars(self):
+            self.count = True
 
         return
 
@@ -268,22 +271,26 @@ class VegetationDownloader(DownloaderModule):
         dataset = apply_mask_cloud(dataset, self.collection_name, self.cloudy_pix_flag)
         # Take median
         image = dataset.median()
-        count = dataset.count()
-
+        bands_to_select = self.RGB_bands
 
         if self.ndvi:
             # Calculate NDVI
             image = add_NDVI(image, self.RGB_bands[0], self.NIR_band)
             # select only RGB + NDVI bands to download
-            bands_to_select = self.RGB_bands + ["NDVI"]
-        else:
-            bands_to_select = self.RGB_bands
+            bands_to_select = bands_to_select + ["NDVI"]
 
-        mosaic = count.select(self.RGB_bands[0]).add(count.select(self.RGB_bands[1]))\
-            .add(count.select(self.RGB_bands[2])).rename('mosaic')
+        if self.count:
+            # create pixel level count image
+            count = dataset.count()
+            # sum counts on each band into one image
+            image_count = add_count_mosaic(count, self.RGB_bands)
+            # add count image as a band
+            image = image.addBands(image_count)
 
-        image = ee.Image(image).addBands(mosaic)
-        image = image.select(bands_to_select + ['mosaic'])
+            bands_to_select = bands_to_select+ ['COUNT']
+
+        # select relevant bands
+        image = image.select(bands_to_select)
         return [image]
 
 
