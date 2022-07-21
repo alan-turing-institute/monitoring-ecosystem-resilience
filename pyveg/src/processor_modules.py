@@ -23,7 +23,8 @@ from pyveg.src.image_utils import (
     crop_image_npix,
     scale_tif,
     process_and_threshold,
-    pillow_to_numpy
+    pillow_to_numpy,
+    create_count_heatmap
 )
 from pyveg.src.file_utils import (
     save_image,
@@ -679,7 +680,8 @@ class VegetationImageProcessor(ProcessorModule):
             count_tif = self.get_file(
                self.join_path(input_filepath, "download.COUNT.tif"), self.input_location_type
             )
-            count_image = scale_tif(count_tif)
+
+            count_image = create_count_heatmap(count_tif)
             count_filepath = self.construct_image_savepath(
                 date_string, coords_string, "COUNT"
             )
