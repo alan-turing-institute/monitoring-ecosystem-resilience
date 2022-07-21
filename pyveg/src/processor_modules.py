@@ -439,9 +439,11 @@ class VegetationImageProcessor(ProcessorModule):
 
     Current default is to output:
     1) Full-size RGB image
-    2) Full-size NDVI image (greyscale)
-    3) Full-size black+white NDVI image (after processing, thresholding, ...)
-    4) Many 50x50 pixel sub-images of RGB image
+    2) Many 50x50 pixel sub-images of RGB image
+
+    Optional outputs can be (if ndvi flag is true):
+    3) Full-size NDVI image (greyscale)
+    4) Full-size black+white NDVI image (after processing, thresholding, ...)
     5) Many 50x50 pixel sub-images of black+white NDVI image.
 
     """
@@ -452,6 +454,7 @@ class VegetationImageProcessor(ProcessorModule):
             ("region_size", [float]),
             ("RGB_bands", [list]),
             ("split_RGB_images", [bool]),
+            ("ndvi",[bool])
         ]
 
     def set_default_parameters(self):
@@ -466,6 +469,8 @@ class VegetationImageProcessor(ProcessorModule):
             self.RGB_bands = ["B4", "B3", "B2"]
         if not "split_RGB_images" in vars(self):
             self.split_RGB_images = True
+        if not "ndvi" in vars(self):
+            self.ndvi = False
         # in PROCESSED dir we expect RGB. NDVI, BWNDVI
         self.num_files_per_point = 3
         self.input_location_subdirs = ["RAW"]
@@ -636,35 +641,36 @@ class VegetationImageProcessor(ProcessorModule):
             logger.info("Problem with the rgb image?")
             return False
 
-        # save the NDVI image
-        ndvi_tif = self.get_file(
-            self.join_path(input_filepath, "download.NDVI.tif"), self.input_location_type
-        )
-        ndvi_image = scale_tif(ndvi_tif)
-        ndvi_filepath = self.construct_image_savepath(
-            date_string, coords_string, "NDVI"
-        )
-        self.save_image(
-            ndvi_image, os.path.dirname(ndvi_filepath), os.path.basename(ndvi_filepath)
-        )
+        if self.ndvi:
+            # save the NDVI image
+            ndvi_tif = self.get_file(
+               self.join_path(input_filepath, "download.NDVI.tif"), self.input_location_type
+            )
+            ndvi_image = scale_tif(ndvi_tif)
+            ndvi_filepath = self.construct_image_savepath(
+                date_string, coords_string, "NDVI"
+            )
+            self.save_image(
+                ndvi_image, os.path.dirname(ndvi_filepath), os.path.basename(ndvi_filepath)
+            )
 
-        # preprocess and threshold the NDVI image
-        processed_ndvi = process_and_threshold(ndvi_image)
-        ndvi_bw_filepath = self.construct_image_savepath(
-            date_string, coords_string, "BWNDVI"
-        )
-        self.save_image(
-            processed_ndvi,
-            os.path.dirname(ndvi_bw_filepath),
-            os.path.basename(ndvi_bw_filepath),
-        )
+            # preprocess and threshold the NDVI image
+            processed_ndvi = process_and_threshold(ndvi_image)
+            ndvi_bw_filepath = self.construct_image_savepath(
+                date_string, coords_string, "BWNDVI"
+            )
+            self.save_image(
+                processed_ndvi,
+                os.path.dirname(ndvi_bw_filepath),
+                os.path.basename(ndvi_bw_filepath),
+            )
 
-        # split and save sub-images
-        self.split_and_save_sub_images(ndvi_image, date_string, coords_string, "NDVI")
+            # split and save sub-images
+            self.split_and_save_sub_images(ndvi_image, date_string, coords_string, "NDVI")
 
-        self.split_and_save_sub_images(
-            processed_ndvi, date_string, coords_string, "BWNDVI"
-        )
+            self.split_and_save_sub_images(
+                processed_ndvi, date_string, coords_string, "BWNDVI"
+            )
 
         return True
 

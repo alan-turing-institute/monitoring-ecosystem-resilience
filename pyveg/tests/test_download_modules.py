@@ -65,6 +65,7 @@ def test_veg_downloader_run_sentinel2():
     veg_downloader.cloudy_pix_frac = 50
     veg_downloader.cloudy_pix_flag = "CLOUDY_PIXEL_PERCENTAGE"
     veg_downloader.mask_cloud = True
+    veg_downloader.ndvi = True
     veg_downloader.output_location = os.path.join(TMPDIR, "testveg")
     veg_downloader.configure()
     veg_downloader.run()

@@ -30,6 +30,7 @@ def test_Sentinel2_image_processor():
     vip = VegetationImageProcessor()
     vip.input_location = dir_path
     vip.output_location = tmp_png_path
+    vip.ndvi = True
     vip.coords = [11.58, 27.95]
     vip.configure()
     vip.run()
