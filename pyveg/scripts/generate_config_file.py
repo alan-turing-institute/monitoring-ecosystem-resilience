@@ -30,14 +30,15 @@ to see a list of command line options.
 
 """
 
+import argparse
 import os
 import re
-import argparse
 import time
 
 from pyveg.configs import collections
 from pyveg.coordinates import coordinate_store
 from pyveg.src.coordinate_utils import lookup_country
+
 
 def get_template_text():
     template_filepath = os.path.join(

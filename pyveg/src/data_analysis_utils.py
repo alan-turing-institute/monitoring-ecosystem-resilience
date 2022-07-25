@@ -3,27 +3,24 @@ Data analysis code including functions to read the .json results file,
 and functions analyse and plot the data.
 """
 
+import datetime
 import json
 import math
 import os
-import datetime
 
+import ewstools
+import geopandas as gpd
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-from shapely.geometry import Point
-import geopandas as gpd
-
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-
-from scipy.fftpack import fft
-from scipy.stats import sem, t, norm
-from statsmodels.tsa.seasonal import STL
-import ewstools
-
 import scipy
 import scipy.optimize as sco
+from scipy.fftpack import fft
+from scipy.stats import norm, sem, t
+from shapely.geometry import Point
+from statsmodels.tsa.seasonal import STL
+
 
 def convert_to_geopandas(df):
     """
@@ -372,7 +369,6 @@ def get_AR1_parameter_estimate(ys):
     # more sophisticated models to consider:
     # from statsmodels.tsa.statespace.sarimax import SARIMAX
     # from statsmodels.tsa.arima_model import ARMA
-
     # create and fit the AR(1) model
     if pd.infer_freq(ys.index) is not None:
         # explicitly add frequency to index to prevent warnings

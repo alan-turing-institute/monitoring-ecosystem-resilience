@@ -9,16 +9,13 @@ import json
 import math
 import os
 
+import ewstools
 import numpy as np
 import pandas as pd
-import ewstools
-
 from statsmodels.nonparametric.smoothers_lowess import lowess
 
-from pyveg.src.data_analysis_utils import write_to_json, cball_parfit, cball
-
+from pyveg.src.data_analysis_utils import cball, cball_parfit, write_to_json
 from pyveg.src.date_utils import get_time_diff
-
 from pyveg.src.file_utils import construct_filename_from_metadata
 
 try:

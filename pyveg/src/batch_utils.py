@@ -2,19 +2,18 @@
 Functions for submitting batch jobs.  Currently only support Azure Batch.
 Largely taken from https://github.com/Azure-Samples/batch-python-quickstart
 """
+import datetime
+import json
 import os
 import sys
-import json
 import tempfile
-import datetime
 import time
 
-import azure.storage.blob as azureblob
-import azure.batch.batch_service_client as batch
 import azure.batch.batch_auth as batch_auth
+import azure.batch.batch_service_client as batch
 import azure.batch.models as batchmodels
+import azure.storage.blob as azureblob
 from azure.storage.blob import BlockBlobService
-
 
 try:
     from pyveg.azure_config import config

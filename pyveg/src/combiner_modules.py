@@ -2,11 +2,11 @@
 Modules that can consolidate inputs from different sources
 and produce combined output file (typically JSON).
 """
-import os
 import json
+import os
 
-from pyveg.src.file_utils import save_json, get_tag
 from pyveg.src.date_utils import get_date_strings_for_time_period
+from pyveg.src.file_utils import get_tag, save_json
 from pyveg.src.pyveg_pipeline import BaseModule, logger
 
 

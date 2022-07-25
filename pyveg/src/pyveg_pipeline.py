@@ -13,12 +13,11 @@ A special type of MODULE may be placed at the end of a PIPELINE to combine
 the results of the different SEQUENCES into one output file.
 """
 
-import os
 import json
+import logging
+import os
 import subprocess
 import time
-
-import logging
 from logging.handlers import RotatingFileHandler
 
 logger = logging.getLogger("pyveg_logger")
@@ -39,13 +38,12 @@ logger.addHandler(c_handler)
 
 
 
-from pyveg.src.file_utils import save_json
-
 from shutil import copyfile
 
+from pyveg.src.file_utils import save_json
+
 try:
-    from pyveg.src import azure_utils
-    from pyveg.src import batch_utils
+    from pyveg.src import azure_utils, batch_utils
 except:
     print("Azure utils could not be imported - is Azure SDK installed?")
 

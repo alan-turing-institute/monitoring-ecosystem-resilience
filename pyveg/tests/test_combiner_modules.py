@@ -3,9 +3,9 @@ Test the module that combines input from different collections
 e.g. vegetation images and weather, to produce one output json file.
 """
 
+import json
 import os
 import shutil
-import json
 
 from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
 

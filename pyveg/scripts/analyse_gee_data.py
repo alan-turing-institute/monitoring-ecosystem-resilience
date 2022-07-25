@@ -7,45 +7,33 @@ Plots are produced from the processed data.
 
 """
 
-import os
 import argparse
 import json
+import os
 import re
 
-import pandas as pd
 import ewstools
-
-from pyveg.src.analysis_preprocessing import (
-    read_results_summary,
-    preprocess_data,
-    save_ts_summary_stats
-)
-
-from pyveg.src.data_analysis_utils import (
-    create_lat_long_metric_figures,
-    convert_to_geopandas,
-    coarse_dataframe,
-    moving_window_analysis,
-    early_warnings_sensitivity_analysis,
-    early_warnings_null_hypothesis,
-)
-
-from pyveg.src.plotting import (
-    plot_stl_decomposition,
-    plot_feature_vector,
-    plot_time_series,
-    plot_ndvi_time_series,
-    plot_autocorrelation_function,
-    plot_cross_correlations,
-    plot_moving_window_analysis,
-    plot_ews_resiliance,
-    plot_sensitivity_heatmap,
-    plot_correlation_mwa,
-    kendall_tau_histograms,
-)
+import pandas as pd
 
 from pyveg.scripts.create_analysis_report import create_markdown_pdf_report
 from pyveg.scripts.upload_to_zenodo import upload_summary_stats
+from pyveg.src.analysis_preprocessing import (preprocess_data,
+                                              read_results_summary,
+                                              save_ts_summary_stats)
+from pyveg.src.data_analysis_utils import (coarse_dataframe,
+                                           convert_to_geopandas,
+                                           create_lat_long_metric_figures,
+                                           early_warnings_null_hypothesis,
+                                           early_warnings_sensitivity_analysis,
+                                           moving_window_analysis)
+from pyveg.src.plotting import (kendall_tau_histograms,
+                                plot_autocorrelation_function,
+                                plot_correlation_mwa, plot_cross_correlations,
+                                plot_ews_resiliance, plot_feature_vector,
+                                plot_moving_window_analysis,
+                                plot_ndvi_time_series,
+                                plot_sensitivity_heatmap,
+                                plot_stl_decomposition, plot_time_series)
 
 # if time-series is fewer than 12 points, can't do Early Warning Signals analysis
 MIN_TS_SIZE_FOR_EWS = 12

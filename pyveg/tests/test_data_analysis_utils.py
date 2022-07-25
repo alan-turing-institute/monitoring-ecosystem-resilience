@@ -2,12 +2,12 @@
 Test the functions in data_analysis_utils.py
 """
 
+import json
 import os
 import shutil
-import json
 
-from pyveg.src.data_analysis_utils import *
 from pyveg.src.analysis_preprocessing import *
+from pyveg.src.data_analysis_utils import *
 
 
 def test_coarse_dataframe():

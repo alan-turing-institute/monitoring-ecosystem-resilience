@@ -15,16 +15,18 @@ OR, to use the "Sandbox" API for testing, follow the same steps but replacing "z
 with "sandbox.zenodo.org" in the URLs, and put the token into a file named "zenodo_test_api_token"
 then call the functions in this module with the "test" argument set to True.
 """
-import os
-import shutil
 import json
+import os
 import re
-import requests
+import shutil
 import tempfile
-from zipfile import ZipFile, BadZipFile
+from zipfile import BadZipFile, ZipFile
 
-from pyveg.src.file_utils import get_filepath_after_directory
+import requests
+
 from pyveg.src.coordinate_utils import find_coords_string
+from pyveg.src.file_utils import get_filepath_after_directory
+
 ZENODO_CONFIG_FOUND=False
 try:
     import pyveg.zenodo_config as config

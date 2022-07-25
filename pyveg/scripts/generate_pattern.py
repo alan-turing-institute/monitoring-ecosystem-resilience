@@ -5,6 +5,7 @@ Translation of Matlab code to model patterned vegetation in semi-arid landscapes
 """
 
 import argparse
+
 from pyveg.src.pattern_generation import PatternGenerator
 
 

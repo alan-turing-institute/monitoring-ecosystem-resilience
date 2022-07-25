@@ -1,10 +1,10 @@
-import os
 import io
 import json
-
-import arrow
+import os
 import re
 import tempfile
+
+import arrow
 from PIL import Image
 
 from pyveg.src.file_utils import split_filepath
@@ -18,12 +18,9 @@ try:
 except:
     pass
 
-from azure.storage.blob import (
-    BlockBlobService,
-    PublicAccess,
-    ContainerPermissions
-)
 from azure.common import AzureMissingResourceHttpError
+from azure.storage.blob import (BlockBlobService, ContainerPermissions,
+                                PublicAccess)
 
 
 def sanitize_container_name(orig_name):

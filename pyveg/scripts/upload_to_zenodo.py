@@ -9,20 +9,16 @@ In addition to the main production zenodo API, there is also a "sandbox"
 for testing.  Use the '--test_api' argument to use this.
 """
 
-import os
 import argparse
-import tempfile
 import json
+import os
+import tempfile
 
-from pyveg.src.file_utils import get_tag, construct_filename_from_metadata
 from pyveg.src.analysis_preprocessing import read_results_summary
-from pyveg.src.zenodo_utils import (
-    get_deposition_id,
-    prepare_results_zipfile,
-    upload_file,
-    create_deposition,
-    upload_standard_metadata
-)
+from pyveg.src.file_utils import construct_filename_from_metadata, get_tag
+from pyveg.src.zenodo_utils import (create_deposition, get_deposition_id,
+                                    prepare_results_zipfile, upload_file,
+                                    upload_standard_metadata)
 
 
 def create_new_deposition(use_sandbox=False):

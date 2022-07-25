@@ -1,11 +1,11 @@
 """
 Translation of Matlab code to model patterned vegetation in semi-arid landscapes.
 """
+import json
 import os
 import random
-import json
-import numpy as np
 
+import numpy as np
 from matplotlib import pyplot as plt
 
 

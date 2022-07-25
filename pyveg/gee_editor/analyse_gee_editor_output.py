@@ -9,17 +9,15 @@ run the `pyveg` analysis on the downloaded result.
 """
 
 
-import os
 import argparse
 import datetime
+import os
 
 import pandas as pd
 
-from pyveg.src.analysis_preprocessing import resample_dataframe, detrend_df
 from pyveg.scripts.analyse_gee_data import (
-    run_time_series_analysis,
-    run_early_warnings_resilience_analysis,
-)
+    run_early_warnings_resilience_analysis, run_time_series_analysis)
+from pyveg.src.analysis_preprocessing import detrend_df, resample_dataframe
 
 
 def convert_gee_date(gee_date_series):

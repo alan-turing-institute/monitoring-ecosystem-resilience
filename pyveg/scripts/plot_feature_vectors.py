@@ -13,8 +13,7 @@ import argparse
 
 import matplotlib.pyplot as plt
 from generate_patterns import generate_pattern
-
-from subgraph_centrality import subgraph_centrality, generate_sc_images
+from subgraph_centrality import generate_sc_images, subgraph_centrality
 
 LABELS = ["bo", "ro", "go", "b^", "r^", "g^"]
 

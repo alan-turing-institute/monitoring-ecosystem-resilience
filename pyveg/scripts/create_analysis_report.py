@@ -1,11 +1,12 @@
-from mdutils.mdutils import MdUtils
-import os
 import argparse
 import glob
-from pathlib import Path
-import pypandoc
 import json
+import os
 import tempfile
+from pathlib import Path
+
+import pypandoc
+from mdutils.mdutils import MdUtils
 
 from pyveg.src.azure_utils import download_rgb, download_summary_json
 

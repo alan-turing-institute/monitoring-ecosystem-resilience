@@ -6,10 +6,11 @@ When dealing with date strings, ALWAYS use the ISO format YYYY-MM-DD
 
 """
 
-import dateparser
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
 import re
+from datetime import datetime, timedelta
+
+import dateparser
+from dateutil.relativedelta import relativedelta
 
 
 def get_num_n_day_slices(start_date, end_date, days_per_chunk):

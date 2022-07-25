@@ -1,9 +1,10 @@
 """
 Test the functions in analyse_gee_data.py
 """
+import json
 import os
 import shutil
-import json
+
 from pyveg.scripts.analyse_gee_data import analyse_gee_data
 
 

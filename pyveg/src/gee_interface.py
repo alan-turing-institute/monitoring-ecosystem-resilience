@@ -5,10 +5,10 @@ Functions to help interface with GEE, in particular to download images.
 import os
 import shutil
 from datetime import datetime
-from geetools import cloud_mask
-import cv2 as cv
 
+import cv2 as cv
 import ee
+from geetools import cloud_mask
 
 ee.Initialize()
 

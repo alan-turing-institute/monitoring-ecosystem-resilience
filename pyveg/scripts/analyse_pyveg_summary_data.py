@@ -5,20 +5,23 @@ This script analyses summary statistics produced previously with `analyse_gee_da
 
 """
 
-import os
 import argparse
 import json
+import os
 import re
 import tempfile
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
+
 sns.set_style("whitegrid")
 
 try:
-    from pyveg.src.zenodo_utils import download_file, list_files, get_deposition_id
+    from pyveg.src.zenodo_utils import (download_file, get_deposition_id,
+                                        list_files)
 except:
     print("Unable to import zenodo_utils")
 

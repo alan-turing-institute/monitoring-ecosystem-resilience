@@ -2,27 +2,21 @@
 Plotting code.
 """
 
-import os
-import json
 import datetime
+import json
+import os
 
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import seaborn as sns
 from pandas.plotting import register_matplotlib_converters
 
-from pyveg.src.data_analysis_utils import (
-    get_AR1_parameter_estimate,
-    get_kendell_tau,
-    write_to_json,
-    stl_decomposition,
-    get_max_lagged_cor,
-    get_corrs_by_lag,
-    get_datetime_xs,
-)
+from pyveg.src.data_analysis_utils import (get_AR1_parameter_estimate,
+                                           get_corrs_by_lag, get_datetime_xs,
+                                           get_kendell_tau, get_max_lagged_cor,
+                                           stl_decomposition, write_to_json)
 
 # globally set image quality
 DPI = 150

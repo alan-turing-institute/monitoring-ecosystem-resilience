@@ -1,8 +1,8 @@
 import os
 import shutil
+import unittest
 
 import pytest
-import unittest
 
 if os.name == "posix":
     TMPDIR = "/tmp/"
@@ -10,7 +10,8 @@ else:
     TMPDIR = "%TMP%"
 
 if not os.environ.get("TRAVIS") == "true":
-    from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
+    from pyveg.src.download_modules import (VegetationDownloader,
+                                            WeatherDownloader)
 
 
 @unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")

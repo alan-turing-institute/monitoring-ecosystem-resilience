@@ -3,33 +3,27 @@ Classes for modules that download from GEE
 """
 
 import os
-import requests
-from datetime import datetime, timedelta
-import dateparser
-import tempfile
 import subprocess
+import tempfile
+from datetime import datetime, timedelta
 
-from geetools import cloud_mask
 import cv2 as cv
-
+import dateparser
 import ee
+import requests
+from geetools import cloud_mask
 
 ee.Initialize()
 
-from pyveg.src.date_utils import (
-    find_mid_period,
-    get_num_n_day_slices,
-    slice_time_period_into_n,
-    slice_time_period,
-)
-from pyveg.src.file_utils import download_and_unzip
-from pyveg.src.coordinate_utils import get_region_string
-from pyveg.src.gee_interface import apply_mask_cloud, add_NDVI
-
-from pyveg.src.pyveg_pipeline import BaseModule, logger
-
 # silence google API WARNING
 import logging
+
+from pyveg.src.coordinate_utils import get_region_string
+from pyveg.src.date_utils import (find_mid_period, get_num_n_day_slices,
+                                  slice_time_period, slice_time_period_into_n)
+from pyveg.src.file_utils import download_and_unzip
+from pyveg.src.gee_interface import add_NDVI, apply_mask_cloud
+from pyveg.src.pyveg_pipeline import BaseModule, logger
 
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 

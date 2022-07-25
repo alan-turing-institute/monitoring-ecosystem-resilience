@@ -2,17 +2,16 @@
 Tests for the modules that process the images downloaded from GEE
 """
 
-import os
-import pytest
 import json
+import os
 import shutil
 
-from pyveg.src.processor_modules import (
-    VegetationImageProcessor,
-    NetworkCentralityCalculator,
-    NDVICalculator,
-    WeatherImageToJSON,
-)
+import pytest
+
+from pyveg.src.processor_modules import (NDVICalculator,
+                                         NetworkCentralityCalculator,
+                                         VegetationImageProcessor,
+                                         WeatherImageToJSON)
 
 
 def test_Sentinel2_image_processor():

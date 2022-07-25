@@ -16,15 +16,15 @@ running pyveg_run_pipeline.
 
 """
 
-import os
-import tempfile
 import argparse
+import os
 import subprocess
+import tempfile
 
 from azure.storage.blob import BlockBlobService
 
-from pyveg.src.azure_utils import download_summary_json, download_rgb
 from pyveg.azure_config import config
+from pyveg.src.azure_utils import download_rgb, download_summary_json
 
 
 def create_zip_archive(temp_dir, output_zipname, json_dir=None, rgb_dir=None):

@@ -3,47 +3,29 @@ Class for holding analysis modules
 that can be chained together to build a sequence.
 """
 
+import datetime
 import os
 import re
 import shutil
 import tempfile
-import datetime
 import time
-
-import numpy as np
-
-from PIL import Image
-import cv2 as cv
-
 from multiprocessing import Pool
 
-from pyveg.src.image_utils import (
-    convert_to_rgb,
-    check_image_ok,
-    crop_image_npix,
-    scale_tif,
-    process_and_threshold,
-    pillow_to_numpy
-)
-from pyveg.src.file_utils import (
-    save_image,
-    save_json,
-    consolidate_json_to_list
-)
-from pyveg.src.coordinate_utils import (
-    find_coords_string
-)
-from pyveg.src.date_utils import (
-    assign_dates_to_tasks
-)
+import cv2 as cv
+import numpy as np
+from PIL import Image
 
-from pyveg.src.subgraph_centrality import (
-    subgraph_centrality,
-    feature_vector_metrics,
-)
-from pyveg.src import azure_utils
-from pyveg.src import batch_utils
+from pyveg.src import azure_utils, batch_utils
+from pyveg.src.coordinate_utils import find_coords_string
+from pyveg.src.date_utils import assign_dates_to_tasks
+from pyveg.src.file_utils import (consolidate_json_to_list, save_image,
+                                  save_json)
+from pyveg.src.image_utils import (check_image_ok, convert_to_rgb,
+                                   crop_image_npix, pillow_to_numpy,
+                                   process_and_threshold, scale_tif)
 from pyveg.src.pyveg_pipeline import BaseModule, logger
+from pyveg.src.subgraph_centrality import (feature_vector_metrics,
+                                           subgraph_centrality)
 
 
 class ProcessorModule(BaseModule):

@@ -2,7 +2,7 @@
 Tests of the core functionality of pipelines, sequences, and modules.
 """
 
-from pyveg.src.pyveg_pipeline import Pipeline, Sequence, BaseModule
+from pyveg.src.pyveg_pipeline import BaseModule, Pipeline, Sequence
 
 
 def test_instantiate_pipeline():

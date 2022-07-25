@@ -1,12 +1,12 @@
-import os
 import datetime
-import dateparser
 import json
-import requests
+import os
 import re
 import subprocess
+from zipfile import BadZipFile, ZipFile
 
-from zipfile import ZipFile, BadZipFile
+import dateparser
+import requests
 
 from .date_utils import find_mid_period
 

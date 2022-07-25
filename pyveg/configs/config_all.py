@@ -1,5 +1,5 @@
-from pyveg.coordinates import coordinate_store
 from pyveg.configs.collections import data_collections
+from pyveg.coordinates import coordinate_store
 
 name = "pyvegtest"
 
