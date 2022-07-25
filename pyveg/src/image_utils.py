@@ -185,19 +185,9 @@ def create_count_heatmap(input_filename):
 
     pix = cv.imread(input_filename, cv.IMREAD_ANYDEPTH)
 
-    print (pix.max())
-    print (pix.min())
-
     image_plt = plt.matshow(pix)
-    plt.colorbar()
-
     scaled_img = (image_plt.get_array() - image_plt.get_clim()[0]) / (image_plt.get_clim()[1] - image_plt.get_clim()[0])
     new_image = Image.fromarray(np.uint8(image_plt.get_cmap()(scaled_img) * 255))
-
-    #f, ax = plt.subplot()
-    #ax.matshow(pix)
-    #f.colorbar(f,ax=ax)
-
     return new_image
 
 def convert_to_rgb(band_dict):
