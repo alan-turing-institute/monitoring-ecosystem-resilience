@@ -27,10 +27,10 @@ import requests
 from pyveg.src.coordinate_utils import find_coords_string
 from pyveg.src.file_utils import get_filepath_after_directory
 
-ZENODO_CONFIG_FOUND=False
+ZENODO_CONFIG_FOUND = False
 try:
     import pyveg.zenodo_config as config
-    ZENODO_CONFIG_FOUND=True
+    ZENODO_CONFIG_FOUND = True
 except:
     pass
 
@@ -49,7 +49,8 @@ def get_base_url_and_token(test=False):
     api_token: str, the personal access token, read from a file.
     """
     if not ZENODO_CONFIG_FOUND:
-        raise RuntimeError("File zenodo_config.py not found - will not be able to access the Zenodo API")
+        raise RuntimeError(
+            "File zenodo_config.py not found - will not be able to access the Zenodo API")
     if test:
         base_url = config.test_api_credentials["base_url"]
         token = config.test_api_credentials["api_token"]
@@ -68,7 +69,7 @@ def get_deposition_id(json_or_csv="json", test=False):
         credentials = config.test_api_credentials
 
     else:
-        credentials =  config.prod_api_credentials
+        credentials = config.prod_api_credentials
     if json_or_csv == "json":
         return credentials["deposition_id_summary_json"]
     else:
@@ -112,9 +113,9 @@ def create_deposition(test=False):
     base_url, api_token = get_base_url_and_token(test)
     params = {'access_token': api_token}
     r = requests.post('{}/deposit/depositions'.format(base_url),
-                   params=params,
-                   json={},
-                   headers=headers)
+                      params=params,
+                      json={},
+                      headers=headers)
     if r.status_code != 201:
         print("Error creating deposition", r.content)
         return None
@@ -138,9 +139,9 @@ def get_deposition_info(deposition_id, test=False):
     base_url, api_token = get_base_url_and_token(test)
     params = {'access_token': api_token}
     r = requests.get('{}/deposit/depositions/{}'.format(base_url, deposition_id),
-                   params=params,
-                   json={},
-                   headers=headers)
+                     params=params,
+                     json={},
+                     headers=headers)
     if r.status_code != 200:
         print("Error getting deposition", r.content)
         return {}
@@ -187,7 +188,7 @@ def upload_file(filename, deposition_id, test=False):
     with open(filename, "rb") as f:
         r = requests.put("{}/{}".format(bucket_url, os.path.basename(filename)),
                          data=f,
-                         params = {'access_token': api_token})
+                         params={'access_token': api_token})
         if r.status_code != 200:
             print("Error uploading file", r.content)
             return False
@@ -237,7 +238,7 @@ def download_file(filename, deposition_id, destination_path=".", test=False):
     base_url, api_token = get_base_url_and_token(test)
     bucket_url = get_bucket_url(deposition_id, test)
     r = requests.get("{}/{}".format(bucket_url, os.path.basename(filename)),
-                 params = {'access_token': api_token})
+                     params={'access_token': api_token})
     if r.status_code != 200:
         print("Error downloading file", r.content)
         return {}
@@ -264,7 +265,7 @@ def delete_file(filename, deposition_id, test=False):
     """
     base_url, api_token = get_base_url_and_token(test)
     r = requests.delete("{}/deposit/depositions/{}/files/{}".format(base_url, deposition_id, filename),
-                        params = {'access_token': api_token})
+                        params={'access_token': api_token})
 
     if r.status_code != 204:
         print("Error deleting file", r.content)
@@ -334,7 +335,7 @@ def upload_custom_metadata(title, upload_type, description, creators, deposition
             "upload_type": upload_type,
             "description": description,
             "creators": creators
-            }
+        }
     }
     base_url, api_token = get_base_url_and_token(test)
     r = requests.put("{}/deposit/depositions/{}".format(base_url, deposition_id),
@@ -395,7 +396,7 @@ def prepare_results_zipfile(collection_name,
     zip_filename: str, location of the produced zipfile
     """
     tmpdir = tempfile.mkdtemp()
-    zip_filename = os.path.join(tmpdir,"results_")
+    zip_filename = os.path.join(tmpdir, "results_")
     if find_coords_string(png_location):
         zip_filename += find_coords_string(png_location) + "_"
     zip_filename += collection_name + ".zip"
@@ -408,19 +409,23 @@ def prepare_results_zipfile(collection_name,
             raise RuntimeError("{} is not a directory".format(json_location))
         dir_contents = os.listdir(json_location)
         if not os.path.exists(os.path.join(json_location, "results_summary.json")):
-            raise RuntimeError("Could not find results_summary.json in {}".format(json_location))
+            raise RuntimeError(
+                "Could not find results_summary.json in {}".format(json_location))
         zf.write(os.path.join(json_location, "results_summary.json"),
                  arcname="results_summary.json")
     if png_location_type == "local":
         if not os.path.exists(os.path.join(png_location, "analysis")):
-            raise RuntimeError("Could not find analysis dir in {}".format(png_location))
+            raise RuntimeError(
+                "Could not find analysis dir in {}".format(png_location))
         for root, dirnames, filenames in os.walk(os.path.join(png_location, "analysis")):
             for filename in filenames:
                 full_filepath = os.path.join(root, filename)
-                short_filepath = get_filepath_after_directory(full_filepath, "analysis")
+                short_filepath = get_filepath_after_directory(
+                    full_filepath, "analysis")
                 zf.write(full_filepath, arcname=short_filepath)
         zf.close()
     return zip_filename
+
 
 def get_results_summary_json(coords_string, collection, deposition_id, test=False):
     """
@@ -431,7 +436,8 @@ def get_results_summary_json(coords_string, collection, deposition_id, test=Fals
     """
     zip_filename = "results_{}_{}.zip".format(coords_string, collection)
     if not zip_filename in list_files(deposition_id, test):
-        print("Unable to find file {} in deposition {}".format(zip_filename, deposition_id))
+        print("Unable to find file {} in deposition {}".format(
+            zip_filename, deposition_id))
         return None
 
     data = {}
@@ -444,7 +450,6 @@ def get_results_summary_json(coords_string, collection, deposition_id, test=Fals
             print("results_summary.json not found in {}".format(zip_filename))
             return {}
     return json.loads(data)
-
 
 
 def download_results_by_coord_id(coords_id, json_or_csv="json", destination_path=None, deposition_id=None, test=False):
@@ -471,9 +476,9 @@ def download_results_by_coord_id(coords_id, json_or_csv="json", destination_path
     elif not os.path.exists(destination_path):
         os.makedirs(destination_path)
     # list the files in the deposition
-    file_list = [f for f in list_files(deposition_id, test=test) \
+    file_list = [f for f in list_files(deposition_id, test=test)
                  if f.startswith(coords_id) and "results_summary" in f]
-    if len(file_list)==0:
+    if len(file_list) == 0:
         print("No files for coords_id {} found.".format(coords_id))
         return ""
     # files should follow the same naming convention, and have the date at the end.
@@ -482,5 +487,6 @@ def download_results_by_coord_id(coords_id, json_or_csv="json", destination_path
     latest_file = file_list[-1]
 
     # download this
-    destination = download_file(latest_file, deposition_id, destination_path, test)
+    destination = download_file(
+        latest_file, deposition_id, destination_path, test)
     return destination

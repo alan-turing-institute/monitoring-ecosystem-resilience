@@ -18,7 +18,8 @@ class PatternGenerator(object):
 
     def __init__(self):
         default_config_file = os.path.join(
-            os.path.dirname(__file__), "..", "testdata", "patternGenConfig.json"
+            os.path.dirname(
+                __file__), "..", "testdata", "patternGenConfig.json"
         )
         self.load_config(default_config_file)
         self.plant_biomass = None
@@ -128,12 +129,15 @@ class PatternGenerator(object):
         self.surface_water_frac = self.config[
             "alpha"
         ]  # proportion of surface water available for infiltration (d-1)
-        self.bare_soil_infiltration = self.config["W0"]  # Bare soil infiltration (-)
-        self.grazing_loss = self.config["beta"]  # Plant loss rate due to grazing (d-1)
+        # Bare soil infiltration (-)
+        self.bare_soil_infiltration = self.config["W0"]
+        # Plant loss rate due to grazing (d-1)
+        self.grazing_loss = self.config["beta"]
         self.soil_water_loss = self.config[
             "rw"
         ]  # Soil water loss rate due to seepage and evaporation (d-1)
-        self.plant_uptake = self.config["c"]  # Plant uptake constant (g.mm-1.m-2)
+        # Plant uptake constant (g.mm-1.m-2)
+        self.plant_uptake = self.config["c"]
         self.plant_growth = self.config[
             "gmax"
         ]  # Plant growth constant (mm.g-1.m-2.d-1)
@@ -243,21 +247,21 @@ class PatternGenerator(object):
             self.x_flow_plant[0:ny, 1:nx] = (
                 -1
                 * self.diffusion_plant
-                * (self.plant_biomass[:, 1:nx] - self.plant_biomass[:, 0 : (nx - 1)])
+                * (self.plant_biomass[:, 1:nx] - self.plant_biomass[:, 0: (nx - 1)])
                 * self.delta_y
                 / self.delta_x
             )
             self.x_flow_soil[0:ny, 1:nx] = (
                 -1
                 * self.diffusion_soil
-                * (self.soil_water[:, 1:nx] - self.soil_water[:, 0 : (nx - 1)])
+                * (self.soil_water[:, 1:nx] - self.soil_water[:, 0: (nx - 1)])
                 * self.delta_y
                 / self.delta_x
             )
             self.x_flow_surf[0:ny, 1:nx] = (
                 -1
                 * self.diffusion_surface
-                * (self.surface_water[:, 1:nx] - self.surface_water[:, 0 : (nx - 1)])
+                * (self.surface_water[:, 1:nx] - self.surface_water[:, 0: (nx - 1)])
                 * self.delta_y
                 / self.delta_x
             )
@@ -266,21 +270,21 @@ class PatternGenerator(object):
             self.y_flow_plant[1:ny, 0:nx] = (
                 -1
                 * self.diffusion_plant
-                * (self.plant_biomass[1:ny, :] - self.plant_biomass[0 : (ny - 1), :])
+                * (self.plant_biomass[1:ny, :] - self.plant_biomass[0: (ny - 1), :])
                 * self.delta_x
                 / self.delta_y
             )
             self.y_flow_soil[1:ny, 0:nx] = (
                 -1
                 * self.diffusion_soil
-                * (self.soil_water[1:ny, :] - self.soil_water[0 : (ny - 1), :])
+                * (self.soil_water[1:ny, :] - self.soil_water[0: (ny - 1), :])
                 * self.delta_x
                 / self.delta_y
             )
             self.y_flow_surf[1:ny, 0:nx] = (
                 -1
                 * self.diffusion_surface
-                * (self.surface_water[1:ny, :] - self.surface_water[0 : (ny - 1), :])
+                * (self.surface_water[1:ny, :] - self.surface_water[0: (ny - 1), :])
                 * self.delta_x
                 / self.delta_y
             )
@@ -288,21 +292,21 @@ class PatternGenerator(object):
             # calculate netflow
             net_plant = (
                 self.x_flow_plant[:, 0:nx]
-                - self.x_flow_plant[:, 1 : (nx + 1)]
+                - self.x_flow_plant[:, 1: (nx + 1)]
                 + self.y_flow_plant[0:ny, :]
-                - self.y_flow_plant[1 : ny + 1, :]
+                - self.y_flow_plant[1: ny + 1, :]
             )
             net_soil = (
                 self.x_flow_soil[:, 0:nx]
-                - self.x_flow_soil[:, 1 : (nx + 1)]
+                - self.x_flow_soil[:, 1: (nx + 1)]
                 + self.y_flow_soil[0:ny, :]
-                - self.y_flow_soil[1 : ny + 1, :]
+                - self.y_flow_soil[1: ny + 1, :]
             )
             net_surf = (
                 self.x_flow_surf[:, 0:nx]
-                - self.x_flow_surf[:, 1 : (nx + 1)]
+                - self.x_flow_surf[:, 1: (nx + 1)]
                 + self.y_flow_surf[0:ny, :]
-                - self.y_flow_surf[1 : ny + 1, :]
+                - self.y_flow_surf[1: ny + 1, :]
             )
 
             # Update
@@ -425,7 +429,8 @@ class PatternGenerator(object):
         Load a set of configuration parameters from a JSON file
         """
         if not os.path.exists(config_filename):
-            raise RuntimeError("Config file {} does not exist".format(config_filename))
+            raise RuntimeError(
+                "Config file {} does not exist".format(config_filename))
         self.config = json.load(open(config_filename))
         self.configure()
 
@@ -434,7 +439,8 @@ class PatternGenerator(object):
         Save the image as a csv file
         """
         print(f'Saving file "{filename}"')
-        np.savetxt(filename, self.plant_biomass, delimiter=",", newline="\n", fmt="%f")
+        np.savetxt(filename, self.plant_biomass,
+                   delimiter=",", newline="\n", fmt="%f")
 
     def save_as_matlab(self, filename):
         """

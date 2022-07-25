@@ -10,9 +10,10 @@ import cv2 as cv
 import ee
 from geetools import cloud_mask
 
+from .file_utils import download_and_unzip
+
 ee.Initialize()
 
-from .file_utils import download_and_unzip
 
 if os.name == "posix":
     TMPDIR = "/tmp/"
@@ -72,7 +73,8 @@ def apply_mask_cloud(image_coll, collection_name, cloudy_pix_flag):
 
     # remove images that have more than `cloud_pix_frac`% cloudy pixels
     if cloudy_pix_flag != "None":
-        image_coll = image_coll.filter(ee.Filter.lt(cloudy_pix_flag, cloud_pix_frac))
+        image_coll = image_coll.filter(
+            ee.Filter.lt(cloudy_pix_flag, cloud_pix_frac))
 
     # apply per pixel cloud mask
     image_coll = image_coll.map(mask_func)

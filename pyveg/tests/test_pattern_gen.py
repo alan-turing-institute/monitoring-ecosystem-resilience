@@ -228,7 +228,8 @@ def test_plant_growth_quantitative():
 
     expected = np.loadtxt(
         os.path.join(
-            os.path.dirname(__file__), "..", "testdata", "PG-1mm-100iterations.csv"
+            os.path.dirname(
+                __file__), "..", "testdata", "PG-1mm-100iterations.csv"
         ),
         delimiter=",",
     )

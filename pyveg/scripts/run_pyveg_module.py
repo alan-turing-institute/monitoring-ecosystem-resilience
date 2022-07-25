@@ -55,7 +55,8 @@ def configure_and_run_module(module):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config_file", help="Path to config file", required=True)
+    parser.add_argument(
+        "--config_file", help="Path to config file", required=True)
 
     args = parser.parse_args()
     module = build_module(args.config_file)

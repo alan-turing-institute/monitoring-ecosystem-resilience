@@ -151,7 +151,8 @@ def add_task(
     task_dependencies: list of str, task_ids of any tasks that this one depends on
     batch_service_client: BatchServiceClient
     """
-    print("Adding task {} with dependency on {}".format(task_id, task_dependencies))
+    print("Adding task {} with dependency on {}".format(
+        task_id, task_dependencies))
 
     if not batch_service_client:
         batch_service_client = create_batch_client()
@@ -171,7 +172,8 @@ def add_task(
             command_line=command,
             user_identity=user,
             resource_files=[input_script, input_config, input_azure_config],
-            depends_on=batch.models.TaskDependencies(task_ids=task_dependencies),
+            depends_on=batch.models.TaskDependencies(
+                task_ids=task_dependencies),
         )
     else:
         task = batch.models.TaskAddParameter(
@@ -200,7 +202,8 @@ def wait_for_tasks_to_complete(job_id, timeout=60, batch_service_client=None):
     timeout_expiration = datetime.datetime.now() + datetime.timedelta(minutes=timeout)
 
     print(
-        "Monitoring all tasks for 'Completed' state, timeout in {}...".format(timeout),
+        "Monitoring all tasks for 'Completed' state, timeout in {}...".format(
+            timeout),
         end="",
     )
 
@@ -294,11 +297,12 @@ def check_tasks_status(job_id, task_name_prefix="", batch_service_client=None):
     tasks = batch_service_client.task.list(job_id)
     # Filter by name if provided.  Most tasks will be named after the Module they run.
     if task_name_prefix:
-        tasks = [task for task in tasks if task.id.startswith(task_name_prefix)]
+        tasks = [task for task in tasks if task.id.startswith(
+            task_name_prefix)]
 
     running_tasks = [
-        task for task in tasks if (task.state == batchmodels.TaskState.running \
-        or task.state == batchmodels.TaskState.preparing)
+        task for task in tasks if (task.state == batchmodels.TaskState.running
+                                   or task.state == batchmodels.TaskState.preparing)
     ]
     num_running = len(running_tasks)
 
@@ -432,9 +436,11 @@ def upload_file_to_container(block_blob_client, container_name, file_path):
     """
     blob_name = os.path.basename(file_path)
 
-    print("Uploading file {} to container [{}]...".format(file_path, container_name))
+    print("Uploading file {} to container [{}]...".format(
+        file_path, container_name))
 
-    block_blob_client.create_blob_from_path(container_name, blob_name, file_path)
+    block_blob_client.create_blob_from_path(
+        container_name, blob_name, file_path)
 
     sas_token = block_blob_client.generate_blob_shared_access_signature(
         container_name,
@@ -484,7 +490,8 @@ def print_task_output(batch_service_client, job_id, encoding=None):
 
     for task in tasks:
 
-        node_id = batch_service_client.task.get(job_id, task.id).node_info.node_id
+        node_id = batch_service_client.task.get(
+            job_id, task.id).node_info.node_id
         print("Task: {}".format(task.id))
         print("Node: {}".format(node_id))
 

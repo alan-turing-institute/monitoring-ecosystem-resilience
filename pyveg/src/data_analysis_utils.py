@@ -198,20 +198,24 @@ def coarse_dataframe(geodf, side_square):
             data_df["category"].iloc[indexes] = str(category)
 
             # get the geometry points of that catery
-            cat_geometry = data_df[data_df["category"] == str(category)]["geometry"]
+            cat_geometry = data_df[data_df["category"]
+                                   == str(category)]["geometry"]
 
             # get indexes of each point belonging to the category
             indexes_all = []
             for point in cat_geometry:
-                indexes_all.append(geodf[geodf["geometry"] == point].index.tolist())
+                indexes_all.append(
+                    geodf[geodf["geometry"] == point].index.tolist())
 
-            indexes_all_flat = [item for sublist in indexes_all for item in sublist]
+            indexes_all_flat = [
+                item for sublist in indexes_all for item in sublist]
 
             geodf["category"].iloc[indexes_all_flat] = str(category)
 
             category = category + 1
 
-    geodf["category"] = (geodf["category"].astype(str)).str.cat(geodf["date"], sep="_")
+    geodf["category"] = (geodf["category"].astype(str)
+                         ).str.cat(geodf["date"], sep="_")
 
     geodf = geodf.dissolve(by=["category", "date"], aggfunc="mean")
 
@@ -274,7 +278,8 @@ def network_figure(df, date, metric, vmin, vmax, output_dir):
     )
 
     # Create colorbar as a legend
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+    sm = plt.cm.ScalarMappable(
+        cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax))
     sm._A = []
     fig.colorbar(sm)
 
@@ -321,8 +326,10 @@ def write_slimmed_csv(dfs, output_dir, filename_suffix=""):
     for collection_name, veg_df in dfs.items():
         if collection_name == "COPERNICUS/S2" or "LANDSAT" in collection_name:
             df_summary = dfs["ECMWF/ERA5/DAILY"]
-            df_summary.loc[veg_df.index, "offset50_mean"] = veg_df["offset50_mean"]
-            df_summary.loc[veg_df.index, "offset50_std"] = veg_df["offset50_std"]
+            df_summary.loc[veg_df.index,
+                           "offset50_mean"] = veg_df["offset50_mean"]
+            df_summary.loc[veg_df.index,
+                           "offset50_std"] = veg_df["offset50_std"]
             df_summary.loc[veg_df.index, "offset50_smooth_mean"] = veg_df[
                 "offset50_smooth_mean"
             ]
@@ -376,7 +383,8 @@ def get_AR1_parameter_estimate(ys):
         model = AutoReg(ys, lags=1, missing="drop").fit()  # currently warning
     else:
         # remove index
-        model = AutoReg(ys.values, lags=1, missing="drop").fit()  # currently warning
+        # currently warning
+        model = AutoReg(ys.values, lags=1, missing="drop").fit()
 
     # get the single parameter value
     parameter = model.params[1]
@@ -488,30 +496,33 @@ def get_max_lagged_cor(dirname, veg_prefix):
     """
 
     # construct path to lagged correlations file
-    filename = os.path.join(dirname, "correlations", "lagged_correlations.json")
+    filename = os.path.join(dirname, "correlations",
+                            "lagged_correlations.json")
 
     # check file exists
     if not os.path.exists(filename):
-        raise FileNotFoundError(f'Could not find file "{os.path.abspath(filename)}".')
+        raise FileNotFoundError(
+            f'Could not find file "{os.path.abspath(filename)}".')
 
     # read file
     json_file = open(filename)
     lagged_cor = json.load(json_file)
 
     # calculate max corr
-    lagged_cor = {k: np.array(v[:5]) for k, v in lagged_cor.items() if veg_prefix in k}
+    lagged_cor = {k: np.array(v[:5])
+                  for k, v in lagged_cor.items() if veg_prefix in k}
     lagged_cor = {k: (np.max(v), np.argmax(v)) for k, v in lagged_cor.items()}
 
     if veg_prefix + "_offset50_mean_lagged_correlation" in lagged_cor.keys():
         max_corr_unsmoothed = lagged_cor[
             veg_prefix + "_offset50_mean_lagged_correlation"
-            ]
+        ]
     else:
         max_corr_unsmoothed = (np.NaN, np.NaN)
     if veg_prefix + "_offset50_smooth_mean_lagged_correlation" in lagged_cor.keys():
         max_corr_smooth = lagged_cor[
             veg_prefix + "_offset50_smooth_mean_lagged_correlation"
-            ]
+        ]
     else:
         max_corr_smooth = (np.NaN, np.NaN)
 
@@ -698,9 +709,10 @@ def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
 
     s = "ndvi" if "ndvi" in series_A else "offest50"
     correlations_mva_series_name = (
-            series_A.name.split("_")[0] + "_" + s + "_precip_corr"
+        series_A.name.split("_")[0] + "_" + s + "_precip_corr"
     )
-    mag_max_cors_mw_series_name = series_A.name.split("_")[0] + "_" + s + "_precip_lag"
+    mag_max_cors_mw_series_name = series_A.name.split(
+        "_")[0] + "_" + s + "_precip_lag"
 
     out_df = pd.DataFrame()
     out_df[correlations_mva_series_name] = pd.Series(correlations_mw)
@@ -784,7 +796,8 @@ def get_datetime_xs(df):
 
     # safely read date column and convert to datetime objects
     try:
-        xs = [datetime.datetime.strptime(d, "%Y-%m-%d").date() for d in df.date]
+        xs = [datetime.datetime.strptime(
+            d, "%Y-%m-%d").date() for d in df.date]
     except:
         # if the time series has been resampled the index is a TimeStamp object
         xs = [
@@ -1051,15 +1064,15 @@ def early_warnings_null_hypothesis(
 
         # List of EWS that can be used for Kendall tau computation
         ktau_metrics = [
-                           "Variance",
-                           "Standard deviation",
-                           "Skewness",
-                           "Kurtosis",
-                           "Coefficient of variation",
-                           "Smax",
-                           "Smax/Var",
-                           "Smax/Mean",
-                       ] + ["Lag-" + str(i) + " AC" for i in lag_times]
+            "Variance",
+            "Standard deviation",
+            "Skewness",
+            "Kurtosis",
+            "Coefficient of variation",
+            "Smax",
+            "Smax/Var",
+            "Smax/Mean",
+        ] + ["Lag-" + str(i) + " AC" for i in lag_times]
         # Find intersection with this list and EWS computed
         ews_list = df_ews.columns.values.tolist()
         ktau_metrics = list(set(ews_list) & set(ktau_metrics))
@@ -1096,7 +1109,8 @@ def early_warnings_null_hypothesis(
     data_kendall_tau_df["true_data"] = True
 
     # return dataframe with both surrogates and true data
-    kendall_tau_df = pd.concat([data_kendall_tau_df, surrogates_kendall_tau_df])
+    kendall_tau_df = pd.concat(
+        [data_kendall_tau_df, surrogates_kendall_tau_df])
 
     return kendall_tau_df
 
@@ -1121,11 +1135,13 @@ def mean_annual_ts(x, resolution=12):
     if len(missing_inds) > 0:
         for i in range(len(missing_inds)):
             print(i)
-            x[missing_inds[i]] = np.mean([x[missing_inds[i] - 1], x[missing_inds[i] + 1]])
+            x[missing_inds[i]] = np.mean(
+                [x[missing_inds[i] - 1], x[missing_inds[i] + 1]])
 
     mean_cycle = np.repeat(np.nan, resolution, axis=0)
     for i in range(resolution):
-        mean_cycle[i] = np.nanmean(x[np.linspace(start=i, stop=len(x) - 1, num=resolution, dtype=int)])
+        mean_cycle[i] = np.nanmean(
+            x[np.linspace(start=i, stop=len(x) - 1, num=resolution, dtype=int)])
     return mean_cycle
 
 
@@ -1211,7 +1227,8 @@ def exp_model_fit(x, resolution=12, method='basic'):
     else:
         exp_ts = ts[max_ind:min_ind]
 
-    exp_mod = np.polyfit(np.log(exp_ts), np.linspace(start=0, stop=len(exp_ts) - 1, num=len(exp_ts), dtype=int), 1)
+    exp_mod = np.polyfit(np.log(exp_ts), np.linspace(
+        start=0, stop=len(exp_ts) - 1, num=len(exp_ts), dtype=int), 1)
     return exp_mod
 
 
@@ -1271,7 +1288,8 @@ def cball(x=range(1, 13), alpha=1.5, n=150.0, xbar=8.0, sigma=2.0):
         return output
 
     def C(alpha, n):
-        output = (n / np.abs(alpha)) * (1 / (n - 1)) * np.exp((-np.abs(alpha) ** 2) / 2)
+        output = (n / np.abs(alpha)) * (1 / (n - 1)) * \
+            np.exp((-np.abs(alpha) ** 2) / 2)
         return output
 
     def D(alpha):
@@ -1281,9 +1299,11 @@ def cball(x=range(1, 13), alpha=1.5, n=150.0, xbar=8.0, sigma=2.0):
     fx = np.repeat(np.nan, len(x), axis=0)
     for i in range(len(x)):
         if (((x[i] - xbar) / sigma) > -alpha):
-            fx[i] = N(sigma, C(alpha, n), D(alpha)) * np.exp((-(x[i] - xbar) ** 2) / (2 * sigma ** 2))
+            fx[i] = N(sigma, C(alpha, n), D(alpha)) * \
+                np.exp((-(x[i] - xbar) ** 2) / (2 * sigma ** 2))
         if (((x[i] - xbar) / sigma) <= -alpha):
-            fx[i] = N(sigma, C(alpha, n), D(alpha)) * A(alpha, n) * (B(alpha, n) - (x[i] - xbar) / sigma) ** (-n)
+            fx[i] = N(sigma, C(alpha, n), D(alpha)) * A(alpha, n) * \
+                (B(alpha, n) - (x[i] - xbar) / sigma) ** (-n)
     return fx
 
 
@@ -1307,7 +1327,8 @@ def err_func(params, ts):
         Residuals/differences between Crytal Ball pdf and supplied time series
     """
 
-    model_output = cball(range(1, len(ts) + 1), params[0], params[1], params[2], params[3])
+    model_output = cball(range(1, len(ts) + 1),
+                         params[0], params[1], params[2], params[3])
 
     residuals = []
     for i in range(0, len(ts)):
@@ -1317,7 +1338,7 @@ def err_func(params, ts):
     return residuals
 
 
-def cball_parfit(p0, timeseries, plot_name = 'CB_fit.png', output_dir = ''):
+def cball_parfit(p0, timeseries, plot_name='CB_fit.png', output_dir=''):
     """
     Uses least squares regression to optimise the parameters in cball to fit the
     timeseries supplied. The supplied time series should be the original series
@@ -1344,14 +1365,14 @@ def cball_parfit(p0, timeseries, plot_name = 'CB_fit.png', output_dir = ''):
         The residuals from the best CB fit
     """
     try:
-        mean_ts= timeseries.groupby(timeseries.index.month).mean()
+        mean_ts = timeseries.groupby(timeseries.index.month).mean()
 
-        if min(mean_ts)<0 and max(mean_ts)<0:
+        if min(mean_ts) < 0 and max(mean_ts) < 0:
             mean_ts = mean_ts - min(mean_ts)
-            p0 = [1.5,150,8.5,1.1]
+            p0 = [1.5, 150, 8.5, 1.1]
     except:
-        raise RuntimeError('Input time series for CB fit must have a datetime index')
-
+        raise RuntimeError(
+            'Input time series for CB fit must have a datetime index')
 
     ts = reverse_normalise_ts(mean_ts)
 
@@ -1370,10 +1391,12 @@ def cball_parfit(p0, timeseries, plot_name = 'CB_fit.png', output_dir = ''):
 
     fig, ax = plt.subplots()
     plt.plot(ts, 'k.', label='data')
-    plt.plot(cball(range(1, len(ts) + 1), final_params[0], final_params[1], final_params[2], final_params[3]), 'r', label='Crystal ball fit', linewidth=1)
+    plt.plot(cball(range(1, len(ts) + 1), final_params[0], final_params[1],
+             final_params[2], final_params[3]), 'r', label='Crystal ball fit', linewidth=1)
     plt.legend(loc='upper right')
     ax.set_xticks(np.arange(len(ts)))
-    labels = ['Dec', 'Nov','Oct','Sep','Aug','Jul','Jun','May','Apr','Mar','Feb','Jan']
+    labels = ['Dec', 'Nov', 'Oct', 'Sep', 'Aug', 'Jul',
+              'Jun', 'May', 'Apr', 'Mar', 'Feb', 'Jan']
     ax.set_xticklabels(labels)
     # Rotate the tick labels and set their alignment.
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right",

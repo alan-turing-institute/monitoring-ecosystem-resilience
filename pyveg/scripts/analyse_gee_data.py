@@ -38,6 +38,7 @@ from pyveg.src.plotting import (kendall_tau_histograms,
 # if time-series is fewer than 12 points, can't do Early Warning Signals analysis
 MIN_TS_SIZE_FOR_EWS = 12
 
+
 def run_time_series_analysis(filename, output_dir, detrended=False):
     """
     Make plots for the time series data. This function can
@@ -85,7 +86,8 @@ def run_time_series_analysis(filename, output_dir, detrended=False):
 
     # plot the result of running STL decomposition
     if not detrended:
-        plot_stl_decomposition(ts_df,  MIN_TS_SIZE_FOR_EWS, os.path.join(output_dir, "detrended/STL"))
+        plot_stl_decomposition(ts_df,  MIN_TS_SIZE_FOR_EWS,
+                               os.path.join(output_dir, "detrended/STL"))
     # ------------------------------------------------
 
 
@@ -128,7 +130,8 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
     plot_correlation_mwa(mwa_df, mwa_subdir)
 
     # save to csv
-    mwa_df.to_csv(os.path.join(mwa_subdir, "moving-window-analysis.csv"), index=False)
+    mwa_df.to_csv(os.path.join(
+        mwa_subdir, "moving-window-analysis.csv"), index=False)
     # ------------------------------------------------
 
     # new resilience analysis
@@ -156,11 +159,11 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
         # run resilience analysis on vegetation data
 
         ews_dic_veg = ewstools.core.ews_compute(ts_df[column_name].dropna(),
-                                    roll_window=0.5,
-                                    smooth='Gaussian',
-                                    lag_times=[1, 2],
-                                    ews=ews,
-                                    band_width=6)
+                                                roll_window=0.5,
+                                                smooth='Gaussian',
+                                                lag_times=[1, 2],
+                                                ews=ews,
+                                                band_width=6)
 
         # make plots
         series_name = column_name.replace("_", " ")
@@ -181,11 +184,11 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
         # significance tests
 
         significance = early_warnings_null_hypothesis(ts_df[column_name].dropna(),
-                                    roll_window=0.5,
-                                    smooth='Gaussian',
-                                    lag_times=[1, 2],
-                                    indicators=ews,
-                                    band_width=6)
+                                                      roll_window=0.5,
+                                                      smooth='Gaussian',
+                                                      lag_times=[1, 2],
+                                                      indicators=ews,
+                                                      band_width=6)
 
         kendall_tau_histograms(series_name, significance, mwa_subdir)
 
@@ -193,7 +196,8 @@ def run_early_warnings_resilience_analysis(filename, output_dir):
         for key, df in ews_dic_veg.items():
             df.to_csv(
                 os.path.join(
-                    mwa_subdir, f"ews-{column_name}__" + key.replace(" ", "") + ".csv"
+                    mwa_subdir, f"ews-{column_name}__" +
+                    key.replace(" ", "") + ".csv"
                 ),
                 index=False,
             )
@@ -260,13 +264,13 @@ def analyse_gee_data(input_location,
 
     # time-series analysis and plotting
     # check first if data is a time series
-    ts_df = pd.read_csv(os.path.join(ts_dirname,ts_filenames[0]))
+    ts_df = pd.read_csv(os.path.join(ts_dirname, ts_filenames[0]))
     size_ts = ts_df.shape[0]
     if size_ts <= 2:
-        print ('WARNING: Less than 3 times points, not possible to do a time series analysis')
+        print(
+            'WARNING: Less than 3 times points, not possible to do a time series analysis')
         do_time_series = False
     # -----------------------------------
-
 
     # for each time series
     if do_time_series:
@@ -274,7 +278,8 @@ def analyse_gee_data(input_location,
         # put output plots in the results dir
         input_dir_ts = os.path.join(output_dir, "processed_data")
 
-        save_ts_summary_stats(input_dir_ts, output_analysis_dir,input_json['metadata'])
+        save_ts_summary_stats(
+            input_dir_ts, output_analysis_dir, input_json['metadata'])
 
         for filename in ts_filenames:
 
@@ -285,11 +290,13 @@ def analyse_gee_data(input_location,
             # run the standard or detrended analysis
             if "detrended" in filename:
                 output_subdir = os.path.join(output_analysis_dir, "detrended")
-                run_time_series_analysis(ts_file, output_subdir, detrended=True)
+                run_time_series_analysis(
+                    ts_file, output_subdir, detrended=True)
 
                 # resilience analysis only done in large enough time series
                 if size_ts > MIN_TS_SIZE_FOR_EWS:
-                    ews_subdir = os.path.join(output_analysis_dir, "resiliance/deseasonalised")
+                    ews_subdir = os.path.join(
+                        output_analysis_dir, "resiliance/deseasonalised")
                     run_early_warnings_resilience_analysis(ts_file, ews_subdir)
 
             else:
@@ -298,7 +305,8 @@ def analyse_gee_data(input_location,
 
                 # resilience analysis only done in large enough time series
                 if size_ts > MIN_TS_SIZE_FOR_EWS:
-                    ews_subdir = os.path.join(output_analysis_dir, "resiliance/seasonal")
+                    ews_subdir = os.path.join(
+                        output_analysis_dir, "resiliance/seasonal")
                     run_early_warnings_resilience_analysis(ts_file, ews_subdir)
 
             print("." * 50, "\n")
@@ -330,9 +338,10 @@ def analyse_gee_data(input_location,
         if collection_name == 'COPERNICUS/S2' or 'LANDSAT' in collection_name:
 
             try:
-                metadata = input_json["metadata"] if "metadata" in input_json.keys() else None
+                metadata = input_json["metadata"] if "metadata" in input_json.keys(
+                ) else None
 
-                if input_location_type=='local':
+                if input_location_type == 'local':
                     from pathlib import Path
 
                     parent_path = Path(input_location).parent
@@ -349,8 +358,8 @@ def analyse_gee_data(input_location,
                                            metadata)
 
             except Exception as e:
-                print ("Warning: A problem was found, the report was not created. There might be missing figures needed "
-                              "for the report or a problem with the pandoc installation. {}".format(e))
+                print("Warning: A problem was found, the report was not created. There might be missing figures needed "
+                      "for the report or a problem with the pandoc installation. {}".format(e))
 
     # ------------------------------------------------
 
@@ -364,15 +373,13 @@ def analyse_gee_data(input_location,
         if filenames:
             filepath = os.path.join(analysis_dir, filenames[0])
 
-
-
             uploaded = upload_summary_stats(filepath,
                                             upload_to_zenodo_test)
             if uploaded:
                 print("Uploaded {} to Zenodo.".format(filenames[0]))
         else:
-            print("Couldn't find time series summary stats csv file. Not uploading to Zenodo.")
-
+            print(
+                "Couldn't find time series summary stats csv file. Not uploading to Zenodo.")
 
     # ------------------------------------------------
 
@@ -435,7 +442,8 @@ def main():
     # check we have the bare minimum of args set that we need
     output_dir = args.output_dir if args.output_dir else args.input_dir
     if not output_dir:
-        raise RuntimeError("Need to specify --output_dir argument if reading from Azure blob storage or Zenodo")
+        raise RuntimeError(
+            "Need to specify --output_dir argument if reading from Azure blob storage or Zenodo")
 
     # read the input json, using either input_dir or input_container arguments
     if args.input_json and (args.input_dir or args.input_container):

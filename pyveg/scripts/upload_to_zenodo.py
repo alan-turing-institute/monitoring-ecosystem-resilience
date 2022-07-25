@@ -51,11 +51,13 @@ def upload_results_summary(json_location,
     deposition_id = get_deposition_id("json", test=use_test_api)
 
     # read in the json
-    results_summary = read_results_summary(json_location, input_location_type=json_location_type)
+    results_summary = read_results_summary(
+        json_location, input_location_type=json_location_type)
     if (not results_summary) or (not "metadata" in results_summary.keys()):
         print("Unable to find metadata in json file in {}".format(json_location))
         return False
-    filename = construct_filename_from_metadata(results_summary["metadata"],"results_summary.json")
+    filename = construct_filename_from_metadata(
+        results_summary["metadata"], "results_summary.json")
     tmpdir = tempfile.mkdtemp()
     filepath = os.path.join(tmpdir, filename)
     with open(filepath, "w") as outfile:
@@ -77,11 +79,16 @@ def upload_summary_stats(csv_filepath, use_test_api):
 
 def main():
     parser = argparse.ArgumentParser(description="upload to zenodo")
-    parser.add_argument("--create_deposition", help="create a new deposition", action="store_true")
-    parser.add_argument("--input_location",help="directory or container with file of interest",required=True)
-    parser.add_argument("--input_location_type",help="'local' or 'azure'", default="local")
-    parser.add_argument("--test_api", help="use the test API", action="store_true")
-    parser.add_argument("--summary_csv", help="upload the summary stats csv rather than the results_summary.json", action="store_true")
+    parser.add_argument("--create_deposition",
+                        help="create a new deposition", action="store_true")
+    parser.add_argument(
+        "--input_location", help="directory or container with file of interest", required=True)
+    parser.add_argument("--input_location_type",
+                        help="'local' or 'azure'", default="local")
+    parser.add_argument(
+        "--test_api", help="use the test API", action="store_true")
+    parser.add_argument(
+        "--summary_csv", help="upload the summary stats csv rather than the results_summary.json", action="store_true")
     args = parser.parse_args()
     if args.create_deposition:
         repo_string = "sandbox" if args.test_api else "production"
@@ -91,7 +98,7 @@ We normally do this just once per project.  Please confirm (y/n)
 """.format(repo_string))
         if confirm in ["y", "Y", "yes", "Yes"]:
             deposition_id = create_new_deposition(args.test_api)
-            print("Created new deposition in {} repository with deposition_id={}."\
+            print("Created new deposition in {} repository with deposition_id={}."
                   .format(repo_string, deposition_id))
             return
         else:
@@ -109,6 +116,7 @@ We normally do this just once per project.  Please confirm (y/n)
         print("Uploaded OK")
     else:
         print("Problem uploading")
+
 
 if __name__ == "__main__":
     main()

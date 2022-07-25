@@ -1,8 +1,8 @@
-##############  config file for running pyveg_run_pipeline
+# config file for running pyveg_run_pipeline
 ##
-## This file was generated from the command
-## pyveg_generate_config
-## on CURRENT_TIME
+# This file was generated from the command
+# pyveg_generate_config
+# on CURRENT_TIME
 
 from pyveg.configs.collections import data_collections
 

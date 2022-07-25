@@ -36,12 +36,14 @@ def create_zip_archive(temp_dir, output_zipname, json_dir=None, rgb_dir=None):
 
     """
     if json_dir:
-        subprocess.run(["cp","-r",json_dir, temp_dir])
+        subprocess.run(["cp", "-r", json_dir, temp_dir])
     if rgb_dir:
-        subprocess.run(["cp","-r",rgb_dir, temp_dir])
-    subprocess.run(["zip", "-r", os.path.basename(output_zipname), "."], cwd=temp_dir)
+        subprocess.run(["cp", "-r", rgb_dir, temp_dir])
     subprocess.run(
-        ["cp", os.path.join(temp_dir, os.path.basename(output_zipname)), output_zipname]
+        ["zip", "-r", os.path.basename(output_zipname), "."], cwd=temp_dir)
+    subprocess.run(
+        ["cp", os.path.join(temp_dir, os.path.basename(
+            output_zipname)), output_zipname]
     )
 
 

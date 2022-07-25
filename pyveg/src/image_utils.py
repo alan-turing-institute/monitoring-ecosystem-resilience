@@ -13,15 +13,15 @@ import sys
 import cv2 as cv
 import imageio
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from PIL import Image
 
-matplotlib.use("PS")
-import matplotlib.pyplot as plt
-
 from .coordinate_utils import get_sub_image_coords
 from .file_utils import save_image
+
+matplotlib.use("PS")
 
 
 def image_from_array(input_array, output_size=None, sel_val=200):
@@ -93,7 +93,8 @@ def combine_tif(band_dict):
         v["pix_vals"] = []
 
     for col in band_dict.keys():
-        pix = cv.imread(band_dict[col]["filename"], cv.IMREAD_ANYDEPTH).transpose()
+        pix = cv.imread(band_dict[col]["filename"],
+                        cv.IMREAD_ANYDEPTH).transpose()
         # find the minimum and maximum pixel values in the original scale
         for ix in range(pix.shape[0]):
             for iy in range(pix.shape[1]):
@@ -112,7 +113,7 @@ def combine_tif(band_dict):
             int(
                 band_dict[col]["pix_vals"][ix, iy]
                 * 255
-                / (overall_max + 1)  #                   band_dict[col]["max_val"]
+                / (overall_max + 1)  # band_dict[col]["max_val"]
             ),
         )
 
@@ -120,7 +121,8 @@ def combine_tif(band_dict):
     for ix in range(new_img.size[0]):
         for iy in range(new_img.size[1]):
             new_img.putpixel(
-                (ix, iy), tuple(get_pix_val(ix, iy, col) for col in ["r", "g", "b"])
+                (ix, iy), tuple(get_pix_val(ix, iy, col)
+                                for col in ["r", "g", "b"])
             )
     return new_img
 
@@ -223,18 +225,21 @@ def crop_image_npix(input_image, n_pix_x, n_pix_y=None, region_size=None, coords
     y_parts = int(ysize // n_pix_y)
 
     # if we are given coords, calculate coords for all sub-regions
-    sub_image_coords = get_sub_image_coords(coords, region_size, x_parts, y_parts)
+    sub_image_coords = get_sub_image_coords(
+        coords, region_size, x_parts, y_parts)
 
     # now do the actual cropping
     sub_images = []
     for ix in range(x_parts):
         for iy in range(y_parts):
-            box = (ix * n_pix_x, iy * n_pix_y, (ix + 1) * n_pix_x, (iy + 1) * n_pix_y)
+            box = (ix * n_pix_x, iy * n_pix_y, (ix + 1)
+                   * n_pix_x, (iy + 1) * n_pix_y)
             region = input_image.crop(box)
             # depending on whether we have been given coordinates,
             # return a list of images, or a list of (image,coords) tuples.
             if sub_image_coords:
-                sub_images.append((region, sub_image_coords[ix * x_parts + iy]))
+                sub_images.append(
+                    (region, sub_image_coords[ix * x_parts + iy]))
             else:
                 sub_images.append(region)
 
@@ -310,7 +315,6 @@ def crop_and_convert_to_bw(
 
 
 def create_gif_from_images(directory_path, output_name, string_in_filename=""):
-
     """
         Loop through a directory and convert all images in it into a gif chronologically
 
@@ -336,7 +340,8 @@ def create_gif_from_images(directory_path, output_name, string_in_filename=""):
         # only use images with certain name (optional)
         if string_in_filename in filename:
 
-            images.append(imageio.imread(os.path.join(directory_path, filename)))
+            images.append(imageio.imread(
+                os.path.join(directory_path, filename)))
 
             # the name of each file should end with the date of the image
             # (this is true in the gee images)
@@ -375,7 +380,8 @@ def crop_and_convert_all(input_dir, output_dir, threshold=470, num_x=50, num_y=5
             continue
         print("Processing {}".format(filename))
         input_filename = os.path.join(input_dir, filename)
-        crop_and_convert_to_bw(input_filename, output_dir, threshold, num_x, num_y)
+        crop_and_convert_to_bw(input_filename, output_dir,
+                               threshold, num_x, num_y)
 
 
 def image_file_all_same_colour(image_filename, colour=(255, 255, 255), threshold=0.99):

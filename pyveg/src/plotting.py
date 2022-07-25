@@ -60,8 +60,8 @@ def plot_time_series(df, output_dir, plot_smoothed=True):
         color = 'tab:green'
         ax.set_ylabel(f'{veg_prefix} Offset50', color=color, fontsize=14)
         ax.tick_params(axis='y', labelcolor=color)
-        ax.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
-
+        ax.set_ylim([veg_means.min() - 1*veg_std.max(),
+                    veg_means.max() + 3*veg_std.max()])
 
         # plot smoothed vegetation means and std
         ax.plot(veg_xs, veg_means, marker='o', markersize=7,
@@ -72,7 +72,8 @@ def plot_time_series(df, output_dir, plot_smoothed=True):
                         facecolor='green', alpha=0.1, label='Std Dev')
 
         #    # get smoothed mean, std
-        veg_means_smooth = veg_df[veg_prefix+'_offset50_'+smoothing_option+'_mean']
+        veg_means_smooth = veg_df[veg_prefix +
+                                  '_offset50_'+smoothing_option+'_mean']
 
         # plot vegetation legend
         plt.legend(loc='upper left')
@@ -91,21 +92,25 @@ def plot_time_series(df, output_dir, plot_smoothed=True):
             color = 'tab:blue'
             ax2.set_ylabel(f'Precipitation [mm]', color=color, fontsize=14)
             ax2.tick_params(axis='y', labelcolor=color)
-            ax2.set_ylim([min(precip_ys)-1*np.array(precip_ys).std(), max(precip_ys)+2*np.array(precip_ys).std()])
+            ax2.set_ylim([min(precip_ys)-1*np.array(precip_ys).std(),
+                         max(precip_ys)+2*np.array(precip_ys).std()])
 
             # plot precipitation
-            ax2.plot(precip_xs, precip_ys, linewidth=2, color=color, alpha=0.75)
+            ax2.plot(precip_xs, precip_ys, linewidth=2,
+                     color=color, alpha=0.75)
 
             # add veg-precip correlation
             try:
-                max_corr_smooth, max_corr = get_max_lagged_cor(os.path.dirname(output_dir), veg_prefix)
+                max_corr_smooth, max_corr = get_max_lagged_cor(
+                    os.path.dirname(output_dir), veg_prefix)
                 textstr = f'$r_{{t-{max_corr[1]}}}={max_corr[0]:.2f}$'
 
                 # old correlation just calculates the 0-lag correlation
                 #raw_corr = veg_means.corr(precip_ys)
                 #smoothed_corr = veg_means_smooth.corr(precip_ys)
                 #textstr = f'$r={smoothed_corr:.2f}$ (${raw_corr:.2f}$ unsmoothed)'
-                ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+                ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes,
+                         fontsize=14, verticalalignment='top')
             except(FileNotFoundError):
                 print("Warning - lagged correlations file not found - call plot_autocorrelation_function() first to print correlations on plot")
         # plot second vegetation time series if availible
@@ -127,28 +132,32 @@ def plot_time_series(df, output_dir, plot_smoothed=True):
             ax3.spines["left"].set_position(("axes", -0.08))
             ax3.spines["left"].set_visible(True)
             color = 'tab:purple'
-            ax3.set_ylabel(veg_prefix_b + ' Offset50', color=color, fontsize=14)
+            ax3.set_ylabel(veg_prefix_b + ' Offset50',
+                           color=color, fontsize=14)
             ax3.tick_params(axis='y', labelcolor=color)
             ax3.yaxis.tick_left()
             ax3.yaxis.set_label_position('left')
-            ax3.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
+            ax3.set_ylim([veg_means.min() - 1*veg_std.max(),
+                         veg_means.max() + 3*veg_std.max()])
 
             # plot unsmoothed vegetation means
-            ax.plot(veg_xs_b, veg_means_b, label='Unsmoothed', linewidth=1, color='indigo', linestyle='dashed', alpha=0.2)
+            ax.plot(veg_xs_b, veg_means_b, label='Unsmoothed',
+                    linewidth=1, color='indigo', linestyle='dashed', alpha=0.2)
 
             # plot smoothed vegetation means and std
             ax3.plot(veg_xs_b, veg_means_smooth_b, marker='o', markersize=7,
-                    markeredgecolor=(0.8172, 0.7627, 0.9172), markeredgewidth=2,
-                    label='Smoothed', linewidth=2, color=color)
+                     markeredgecolor=(0.8172, 0.7627, 0.9172), markeredgewidth=2,
+                     label='Smoothed', linewidth=2, color=color)
 
             ax3.fill_between(veg_xs_b, veg_means_smooth_b - veg_stds_smooth_b, veg_means_smooth_b + veg_stds_smooth_b,
-                            facecolor='tab:purple', alpha=0.1, label='Std Dev')
+                             facecolor='tab:purple', alpha=0.1, label='Std Dev')
 
             # add veg-veg correlation
             vegveg_corr = veg_means.corr(veg_means_b)
             vegveg_corr_smooth = veg_means_smooth.corr(veg_means_smooth_b)
             textstr = f'$r_{{vv}} = {vegveg_corr:.2f}$'
-            ax2.text(0.55, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+            ax2.text(0.55, 0.85, textstr, transform=ax2.transAxes,
+                     fontsize=14, verticalalignment='top')
 
             # update prefix for filename use
             veg_prefix = veg_prefix + '+' + veg_prefix_b
@@ -165,7 +174,7 @@ def plot_time_series(df, output_dir, plot_smoothed=True):
         # save the plot
         output_filename = veg_prefix + '-time-series' + filename_suffix + '.png'
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
-        #plt.close(fig)
+        # plt.close(fig)
 
     # make output dir if necessary
     if not os.path.exists(output_dir):
@@ -178,14 +187,17 @@ def plot_time_series(df, output_dir, plot_smoothed=True):
             print(f'Plotting {veg_prefix} time series.')
             make_plot(df, veg_prefix, output_dir)
             if plot_smoothed:
-                make_plot(df, veg_prefix, output_dir, smoothing_option='smooth_res')
+                make_plot(df, veg_prefix, output_dir,
+                          smoothing_option='smooth_res')
 
     # if we have two vegetation time series availible, plot them both
     if np.sum(df.columns.str.contains('offset50_mean')) == 2:
-        veg_columns = df.columns[np.where(df.columns.str.contains('offset50_mean'))].values
+        veg_columns = df.columns[np.where(
+            df.columns.str.contains('offset50_mean'))].values
         veg_prefixes = [c.split('_')[0] for c in veg_columns]
-        assert( len(veg_prefixes) == 2 )
-        make_plot(df, veg_prefixes[0], output_dir, veg_prefix_b=veg_prefixes[1])
+        assert(len(veg_prefixes) == 2)
+        make_plot(df, veg_prefixes[0], output_dir,
+                  veg_prefix_b=veg_prefixes[1])
 
 
 def plot_ndvi_time_series(df, output_dir):
@@ -212,7 +224,8 @@ def plot_ndvi_time_series(df, output_dir):
         ax.tick_params(axis='y', labelcolor=color)
 
         if any([col_name.replace('mean', 'std') == c for c in df.columns]):
-            ax.set_ylim([veg_means.min() - 1*veg_std.max(), veg_means.max() + 3*veg_std.max()])
+            ax.set_ylim([veg_means.min() - 1*veg_std.max(),
+                        veg_means.max() + 3*veg_std.max()])
 
         # plot ndvi
         #ax.plot(veg_xs, ndvi_means, label='Unsmoothed', linewidth=1, color='dimgray', linestyle='dotted')
@@ -239,17 +252,21 @@ def plot_ndvi_time_series(df, output_dir):
             color = 'tab:blue'
             ax2.set_ylabel(f'Precipitation [mm]', color=color, fontsize=14)
             ax2.tick_params(axis='y', labelcolor=color)
-            ax2.set_ylim([min(precip_ys)-1*np.array(precip_ys).std(), max(precip_ys)+2*np.array(precip_ys).std()])
+            ax2.set_ylim([min(precip_ys)-1*np.array(precip_ys).std(),
+                         max(precip_ys)+2*np.array(precip_ys).std()])
 
             # plot precipitation
-            ax2.plot(precip_xs, precip_ys, linewidth=2, color=color, alpha=0.75)
+            ax2.plot(precip_xs, precip_ys, linewidth=2,
+                     color=color, alpha=0.75)
 
             # add correlation information
-            correlations = get_corrs_by_lag(df[col_name], df['total_precipitation'])
+            correlations = get_corrs_by_lag(
+                df[col_name], df['total_precipitation'])
             max_corr = np.max(np.array(correlations))
             max_corr_lag = np.array(np.argmax(correlations))
             textstr = f'$r_{{t-{max_corr_lag}}}={max_corr:.2f}$ '
-            ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+            ax2.text(0.13, 0.95, textstr, transform=ax2.transAxes,
+                     fontsize=14, verticalalignment='top')
 
         # layout
         sns.set_style('white')
@@ -289,34 +306,36 @@ def plot_autocorrelation_function(df, output_dir, filename_suffix=''):
     def make_plots(series, output_dir, filename_suffix=''):
 
         # make the full autocorrelation function plot
-        fig, _ = plt.subplots(figsize=(8,5))
+        fig, _ = plt.subplots(figsize=(8, 5))
         pd.plotting.autocorrelation_plot(series, label=series.name)
         plt.legend()
 
         # save the plot
-        output_filename = series.name + '-autocorrelation-function' + filename_suffix + '.png'
+        output_filename = series.name + \
+            '-autocorrelation-function' + filename_suffix + '.png'
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
         plt.close(fig)
 
         # use statsmodels for partial autocorrelation
         from statsmodels.graphics.tsaplots import plot_pacf
-        fig, ax = plt.subplots(figsize=(8,5))
+        fig, ax = plt.subplots(figsize=(8, 5))
         plot_pacf(series, label=series.name, ax=ax, zero=False)
         plt.ylim([-1.0, 1.0])
         plt.xlabel('Lag')
         plt.ylabel('Partial Autocorrelation')
 
         # save the plot
-        output_filename = series.name + '-partial-autocorrelation-function' + filename_suffix + '.png'
+        output_filename = series.name + \
+            '-partial-autocorrelation-function' + filename_suffix + '.png'
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
-        #plt.close(fig)
-
+        # plt.close(fig)
 
     # make plots for selected columns
     for column in df.columns:
         if ('offset50' in column or 'ndvi' in column) and 'mean' in column or 'total_precipitation' in column:
             print(f'Plotting autocorrelation functions for "{column}"...')
-            make_plots(df[column].dropna(), output_dir, filename_suffix=filename_suffix)
+            make_plots(df[column].dropna(), output_dir,
+                       filename_suffix=filename_suffix)
 
 
 def plot_cross_correlations(df, output_dir):
@@ -366,7 +385,7 @@ def plot_cross_correlations(df, output_dir):
             # plot data
             lagged_data = df_['offset50'].shift(-lag)
             corr = precip_ys.corr(lagged_data)
-            correlations.append(round(corr,4))
+            correlations.append(round(corr, 4))
             sns.regplot(precip_ys, lagged_data, label=f'$r={corr:.2f}$', ax=ax)
 
             # format axis label
@@ -382,11 +401,12 @@ def plot_cross_correlations(df, output_dir):
         # save the plot
         output_filename = veg_ys.name + '-scatterplot-matrix.png'
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
-        #plt.close(fig)
+        # plt.close(fig)
 
         # write out correlations as a function of lag
         correlations_dict = {veg_ys.name + '_lagged_correlation': correlations}
-        write_to_json(os.path.join(output_dir, 'lagged_correlations.json'), correlations_dict)
+        write_to_json(os.path.join(
+            output_dir, 'lagged_correlations.json'), correlations_dict)
 
     # make plots for selected columns
     for column in df.columns:
@@ -432,13 +452,13 @@ def plot_feature_vector(output_dir):
         feature_vector_std = df[cols].std()
 
         # generate x-values
-        xs = np.linspace(0,100,len(feature_vector))
+        xs = np.linspace(0, 100, len(feature_vector))
 
         # make the plot
-        fig, _ = plt.subplots(figsize=(6,5))
+        fig, _ = plt.subplots(figsize=(6, 5))
 
         plt.errorbar(xs, feature_vector, marker='o', markersize=5, linestyle='',
-                        yerr=feature_vector_std, color='black', capsize=2, elinewidth=1)
+                     yerr=feature_vector_std, color='black', capsize=2, elinewidth=1)
 
         plt.xlabel('Pixel Rank (%)', fontsize=14)
         plt.ylabel('$X(V-E)$', fontsize=14)
@@ -450,8 +470,10 @@ def plot_feature_vector(output_dir):
             os.makedirs(fv_subdir, exist_ok=True)
 
         # save the plot
-        output_filename = fv_filename.split('_')[0] + '-feature-vector-summary.png'
-        print(f'Plotting feature vector "{os.path.abspath(output_filename)}"...')
+        output_filename = fv_filename.split(
+            '_')[0] + '-feature-vector-summary.png'
+        print(
+            f'Plotting feature vector "{os.path.abspath(output_filename)}"...')
         plt.savefig(os.path.join(fv_subdir, output_filename), dpi=DPI)
         plt.close(fig)
 
@@ -467,7 +489,8 @@ def plot_feature_vector(output_dir):
             feature_vector = group.mean()[cols]
             feature_vecs.append(feature_vector)
             feature_vecs_stds.append(group.std()[cols])
-            offset50s.append((feature_vector[-1] - feature_vector[len(feature_vector)//2]))
+            offset50s.append(
+                (feature_vector[-1] - feature_vector[len(feature_vector)//2]))
             dates.append(date)
 
         # get max and min
@@ -482,13 +505,13 @@ def plot_feature_vector(output_dir):
         min_date = dates[imin]
 
         # plot the min/max veg feature vectors
-        fig, _ = plt.subplots(figsize=(6,5))
+        fig, _ = plt.subplots(figsize=(6, 5))
 
         # add to plot
         plt.errorbar(xs, max_fv, marker='o', markersize=5, linestyle='', label=f'max veg: {max_date}',
-                        yerr=max_fv_std, color='tab:green', capsize=2, elinewidth=1)
+                     yerr=max_fv_std, color='tab:green', capsize=2, elinewidth=1)
         plt.errorbar(xs, min_fv, marker='o', markersize=5, linestyle='', label=f'min veg: {min_date}',
-                        yerr=min_fv_std, color='tab:red', capsize=2, elinewidth=1)
+                     yerr=min_fv_std, color='tab:red', capsize=2, elinewidth=1)
 
         # format plot
         plt.xlabel('Pixel Rank (%)', fontsize=14)
@@ -497,10 +520,12 @@ def plot_feature_vector(output_dir):
         plt.tight_layout()
 
         # save the plot
-        output_filename = fv_filename.split('_')[0] + '-feature-vector-minmax.png'
-        print(f'Plotting minmax feature vector "{os.path.abspath(output_filename)}"...')
+        output_filename = fv_filename.split(
+            '_')[0] + '-feature-vector-minmax.png'
+        print(
+            f'Plotting minmax feature vector "{os.path.abspath(output_filename)}"...')
         plt.savefig(os.path.join(fv_subdir, output_filename), dpi=DPI)
-        #plt.close(fig)
+        # plt.close(fig)
 
 
 def plot_stl_decomposition(df, period, output_dir):
@@ -555,7 +580,7 @@ def plot_stl_decomposition(df, period, output_dir):
         # save plot
         filename = os.path.join(output_dir, column+'_STL_decomposition.png')
         plt.savefig(filename, dpi=DPI)
-        #plt.close(fig)
+        # plt.close(fig)
 
         # undo rc changes
         plt.rc('figure', figsize=default_figsize)
@@ -605,7 +630,8 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
         """
 
         # get short string prefix on column name
-        collection_prefix = column.split('_')[0] if 'offset50' in column else 'precipitation'
+        collection_prefix = column.split(
+            '_')[0] if 'offset50' in column else 'precipitation'
 
         # hand mismatched NaNs
         ar1_df = df.dropna(subset=[column.replace('var', 'ar1')])
@@ -621,9 +647,12 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
         ar1_se = ar1_df[column.replace('var', 'ar1_se')]
 
         if any([smoothing_option in c for c in df.columns]):
-            variance_smooth = var_df[column.replace('offset50_mean', 'offset50_' + smoothing_option + '_mean')]
-            ar1_smooth = ar1_df[column.replace('var', 'ar1').replace('offset50_mean', 'offset50_' + smoothing_option + '_mean')]
-            ar1_se_smooth = ar1_df[column.replace('var', 'ar1_se').replace('offset50_mean', 'offset50_' + smoothing_option + '_mean')]
+            variance_smooth = var_df[column.replace(
+                'offset50_mean', 'offset50_' + smoothing_option + '_mean')]
+            ar1_smooth = ar1_df[column.replace('var', 'ar1').replace(
+                'offset50_mean', 'offset50_' + smoothing_option + '_mean')]
+            ar1_se_smooth = ar1_df[column.replace('var', 'ar1_se').replace(
+                'offset50_mean', 'offset50_' + smoothing_option + '_mean')]
 
         # create a figure
         fig, ax = plt.subplots(figsize=(15, 5))
@@ -641,13 +670,15 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
 
         if any([smoothing_option in c for c in df.columns]):
             # plot smoothed vegetation ar1 and std
-            ax.plot(ar1_xs, ar1_smooth, label='AR1 Smoothed', linewidth=2, color='tab:blue', linestyle='dotted')
+            ax.plot(ar1_xs, ar1_smooth, label='AR1 Smoothed',
+                    linewidth=2, color='tab:blue', linestyle='dotted')
             ax.fill_between(ar1_xs, ar1_smooth - ar1_se_smooth, ar1_smooth + ar1_se_smooth,
                             facecolor='none', alpha=0.15, label='AR1 SE Smoothed', hatch='X', edgecolor='tab:blue')
 
         # set y lim
-        try: # in case there are no ar1 values, the array will be empty
-            ax.set_ylim([min(ar1-ar1_se)-0.8*max(ar1+ar1_se), 1.8*max(ar1+ar1_se)])
+        try:  #  in case there are no ar1 values, the array will be empty
+            ax.set_ylim(
+                [min(ar1-ar1_se)-0.8*max(ar1+ar1_se), 1.8*max(ar1+ar1_se)])
         except:
             return
 
@@ -657,18 +688,19 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
         # duplicate x-axis for variance
         ax2 = ax.twinx()
         color = 'tab:red'
-        ax2.set_ylabel(f'{collection_prefix} Variance', color=color, fontsize=12)
+        ax2.set_ylabel(f'{collection_prefix} Variance',
+                       color=color, fontsize=12)
         ax2.tick_params(axis='y', labelcolor=color)
 
         # plot variance
-        ax2.plot(var_xs, variance, linewidth=2, color=color, alpha=0.75, label='Variance')
+        ax2.plot(var_xs, variance, linewidth=2,
+                 color=color, alpha=0.75, label='Variance')
         if any([smoothing_option in c for c in df.columns]):
             ax2.plot(var_xs, variance_smooth, linewidth=2, color=color, alpha=0.75,
                      linestyle='dotted', label='Variance Smoothed')
 
         # set y lim
         ax2.set_ylim([0, 2*max(variance)])
-
 
         # add legend
         plt.legend(loc='lower left')
@@ -687,13 +719,15 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
         if any([smoothing_option in c for c in df.columns]):
             textstr += f'AR1 Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_smooth:.2f}$, ${p_smooth:.2f}$'
         textstr += f' (${tau:.2f}$, ${p:.2f}$ unsmoothed)'
-        ax2.text(0.43, 0.95, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+        ax2.text(0.43, 0.95, textstr, transform=ax2.transAxes,
+                 fontsize=14, verticalalignment='top')
 
         textstr = ''
         if any([smoothing_option in c for c in df.columns]):
             textstr += f'Variance Kendall $\\tau,~p$-$\\mathrm{{value}}={tau_var_smooth:.2f}$, ${p_var_smooth:.2f}$'
         textstr += f' (${tau_var:.2f}$, ${p_var:.2f}$ unsmoothed)'
-        ax2.text(0.43, 0.85, textstr, transform=ax2.transAxes, fontsize=14, verticalalignment='top')
+        ax2.text(0.43, 0.85, textstr, transform=ax2.transAxes,
+                 fontsize=14, verticalalignment='top')
 
         # layout
         fig.tight_layout()
@@ -704,10 +738,9 @@ def plot_moving_window_analysis(df, output_dir, filename_suffix=''):
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
         plt.close(fig)
 
-
     for column in df.columns:
         if (('offset50_mean' in column or 'total_precipitation' in column) and
-             'var' in column):
+                'var' in column):
             make_plot(df, column, output_dir, 'smooth_res')
 
 
@@ -742,12 +775,14 @@ def plot_correlation_mwa(df, output_dir, filename_suffix=''):
         # calculate Kendall taus and annotate plot
         tau, p = get_kendell_tau(df[column_name].dropna())
         textstr = f'Kendall $\\tau,~p = {tau:.3f}$, ${p:.4f}$'
-        ax.text(0.1, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top')
+        ax.text(0.1, 0.95, textstr, transform=ax.transAxes,
+                fontsize=14, verticalalignment='top')
 
         # save the plot
         output_filename = f'{column_name}' + filename_suffix + '.png'
         collection_prefix = column_name.split('_')[0]
-        print(f'Plotting {collection_prefix} correlation moving window analysis...')
+        print(
+            f'Plotting {collection_prefix} correlation moving window analysis...')
         plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
         plt.close(fig)
 
@@ -782,20 +817,21 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
 
         return [ymin, ymax]
 
-    def annotate(text, xy=(6    , 70), size=10):
+    def annotate(text, xy=(6, 70), size=10):
         if 'Kendall' in text:
             xy = (xy[0], 60)
         plt.gca().annotate(text, xy=xy, xycoords='axes points',
                            size=size, ha='left', va='top')
 
     dates = get_datetime_xs(pd.DataFrame(dates).dropna())
-    fig, _ = plt.subplots(figsize=(4,8), sharex='col')
+    fig, _ = plt.subplots(figsize=(4, 8), sharex='col')
 
     ax1 = plt.subplot(611)
     ys = EWSmetrics_df['State variable']
 
     plt.plot(dates[-len(ys):], ys, color='black')
-    plt.plot(dates[-len(ys):], EWSmetrics_df['Smoothing'], color='red', linestyle='dashed')
+    plt.plot(dates[-len(ys):], EWSmetrics_df['Smoothing'],
+             color='red', linestyle='dashed')
     plt.ylim(zoom_out(ys))
     annotate(series_name)
 
@@ -879,7 +915,8 @@ def plot_ews_resiliance(series_name, EWSmetrics_df, Kendalltau_df, dates, output
     # save the plot
     output_filename = series_name.replace(' ', '-') + '-ews.png'
     print(f'Plotting {series_name} ews plots...')
-    plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI, bbox_inches='tight')
+    plt.savefig(os.path.join(output_dir, output_filename),
+                dpi=DPI, bbox_inches='tight')
     plt.close(fig)
 
 
@@ -897,18 +934,20 @@ def plot_sensitivity_heatmap(series_name, df, output_dir):
     """
 
     for column in df.columns:
-        if column == "smooth" or column=="winsize":
+        if column == "smooth" or column == "winsize":
             continue
         else:
             fig, ax = plt.subplots(figsize=(5, 5))
-            piv = pd.pivot_table(df, values=column, index=["smooth"], columns=["winsize"], fill_value=0)
-            ax = sns.heatmap(piv, square=True,cmap='viridis',vmin=-1, vmax=1)
-            ax.set_title('Sensitivity for '+ column)
+            piv = pd.pivot_table(df, values=column, index=[
+                                 "smooth"], columns=["winsize"], fill_value=0)
+            ax = sns.heatmap(piv, square=True, cmap='viridis', vmin=-1, vmax=1)
+            ax.set_title('Sensitivity for ' + column)
             plt.setp(ax.xaxis.get_majorticklabels(), rotation=90)
             plt.tight_layout()
             plt.xlabel('Rolling Window')
             plt.ylabel('Smoothing')
-            output_filename = series_name.replace(' ', '-') + '-' + column + '-sensitivity.png'
+            output_filename = series_name.replace(
+                ' ', '-') + '-' + column + '-sensitivity.png'
             print(f'Plotting {series_name} {column} sensitivity plot...')
             plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)
             plt.close(fig)
@@ -939,7 +978,8 @@ def kendall_tau_histograms(series_name, df, output_dir):
             fig, ax = plt.subplots(figsize=(5, 5))
 
             ax.hist(surrogates_df)
-            plt.axvline(data_df.values, color="black", linestyle="solid", linewidth=2)
+            plt.axvline(data_df.values, color="black",
+                        linestyle="solid", linewidth=2)
             plt.text(
                 data_df.values,
                 ax.get_ylim()[0] + 8,
@@ -964,7 +1004,8 @@ def kendall_tau_histograms(series_name, df, output_dir):
             plt.xlabel("Kendall tau")
             plt.ylabel("Frequency")
             output_filename = (
-                series_name.replace(" ", "-") + "-" + column + "-significance.png"
+                series_name.replace(" ", "-") + "-" +
+                column + "-significance.png"
             )
 
             plt.savefig(os.path.join(output_dir, output_filename), dpi=DPI)

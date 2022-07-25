@@ -13,7 +13,8 @@ from pyveg.src.pyveg_pipeline import BaseModule, logger
 class CombinerModule(BaseModule):
     def __init__(self, name=None):
         super().__init__(name)
-        self.params += [("output_location", [str]), ("output_location_type", [str])]
+        self.params += [("output_location", [str]),
+                        ("output_location_type", [str])]
 
 
 class VegAndWeatherJsonCombiner(CombinerModule):
@@ -34,7 +35,6 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             ("veg_collection", [str]),
             ("output_filename", [str]),
         ]
-
 
     def set_default_parameters(self):
         """
@@ -70,7 +70,8 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             self.input_veg_location_type = veg_sequence.output_location_type
             self.veg_collection = veg_sequence.collection_name
 
-            weather_sequence = self.parent.parent.get(self.input_weather_sequence)
+            weather_sequence = self.parent.parent.get(
+                self.input_weather_sequence)
             self.input_weather_location = weather_sequence.output_location
             self.input_weather_location_type = weather_sequence.output_location_type
             self.weather_collection = weather_sequence.collection_name
@@ -94,7 +95,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             return None
         elif len(json_lists) == 1:
             return json_lists[0]
-        ## any way to do this without a huge nested loop?
+        # any way to do this without a huge nested loop?
 
         # loop over all the lists apart from the first, which we will add to
         for jlist in json_lists[1:]:
@@ -169,7 +170,8 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                 )
                 # list the JSON subdirectories and find any .json files in them
                 dir_contents = self.list_directory(
-                    self.join_path(self.input_veg_location, date_string, "JSON", subdir),
+                    self.join_path(self.input_veg_location,
+                                   date_string, "JSON", subdir),
                     self.input_veg_location_type,
                 )
                 json_files = [

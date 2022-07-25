@@ -44,7 +44,7 @@ def main():
         type=int,
     )
     args = parser.parse_args()
-    ## now call the crop_and_convert function
+    # now call the crop_and_convert function
     crop_and_convert_all(
         args.input_dir, args.output_dir, args.threshold, args.num_pix_x, args.num_pix_y
     )

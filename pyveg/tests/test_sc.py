@@ -9,7 +9,8 @@ import numpy as np
 
 from pyveg.src.subgraph_centrality import *
 
-IMG_FILE = os.path.join(os.path.dirname(__file__), "..", "testdata", "binary_image.txt")
+IMG_FILE = os.path.join(os.path.dirname(__file__), "..",
+                        "testdata", "binary_image.txt")
 FULL_IMG = text_file_to_array(IMG_FILE)
 IMG = crop_image_array(FULL_IMG, (0, 5), (0, 5))
 
@@ -87,7 +88,7 @@ def test_calc_ec():
     # use the T matrix
     indices = calc_and_sort_sc_indices(adj_matrix)
     # look at the top half of ordered list
-    sub_region = indices[0 : len(indices) // 2]
+    sub_region = indices[0: len(indices) // 2]
     sel_pix = [sig_pix[j] for j in sub_region]
     graph = make_graph(adj_matrix)
     ec = calc_euler_characteristic(sel_pix, graph)

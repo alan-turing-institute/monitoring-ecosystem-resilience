@@ -36,7 +36,8 @@ def build_pipeline(config_file, from_cache=False):
     Load json config and instantiate modules
     """
     if not os.path.exists(config_file):
-        raise FileNotFoundError("Unable to find config file {}".format(config_file))
+        raise FileNotFoundError(
+            "Unable to find config file {}".format(config_file))
 
     current_time = time.strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -61,7 +62,8 @@ def build_pipeline(config_file, from_cache=False):
         else:
             print(
                 "Wasn't able to infer timestamp from config filename.",
-                "Will use original output_location from {}.".format(config_file),
+                "Will use original output_location from {}.".format(
+                    config_file),
             )
     p.output_location_type = config.output_location_type
     p.coords = config.coordinates
@@ -74,13 +76,15 @@ def build_pipeline(config_file, from_cache=False):
         p.pattern_type = config.pattern_type
     if not from_cache:
         # before we run anything, save the current config to the configs dir
-        config_cache_dir = os.path.join(os.path.dirname(config_file), "cached_config")
+        config_cache_dir = os.path.join(
+            os.path.dirname(config_file), "cached_config")
         os.makedirs(config_cache_dir, exist_ok=True)
         cached_config_file = (
             os.path.basename(config_file)[:-3] + "__" + current_time + ".py"
         )
 
-        copyfile(config_file, os.path.join(config_cache_dir, cached_config_file))
+        copyfile(config_file, os.path.join(
+            config_cache_dir, cached_config_file))
 
     # add sequences to the pipeline to deal with different data types
     for coll in config.collections_to_use:
@@ -89,7 +93,8 @@ def build_pipeline(config_file, from_cache=False):
         s.set_config(coll_dict)
         # overwrite the date range with one that takes into account
         # the limits of this collection
-        s.date_range = get_date_range_for_collection(config.date_range, coll_dict)
+        s.date_range = get_date_range_for_collection(
+            config.date_range, coll_dict)
 
         # see if there's any special config for this sequence
         if "special_config" in vars(config):
@@ -134,7 +139,8 @@ def configure_and_run_pipeline(pipeline):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config_file", help="Path to config file", required=True)
+    parser.add_argument(
+        "--config_file", help="Path to config file", required=True)
     parser.add_argument(
         "--from_cache",
         help="Are we using a cached config file to resume an unfinished job?",

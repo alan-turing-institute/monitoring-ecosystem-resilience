@@ -54,7 +54,7 @@ def get_filepath_after_directory(path, dirname, include_dirname=False):
     dirname_found = False
     for part in path_parts:
         if part == dirname:
-            dirname_found=True
+            dirname_found = True
             if include_dirname:
                 output_parts.append(part)
         else:
@@ -89,8 +89,8 @@ def download_and_unzip(url, output_tmpdir):
     output_zipfile = os.path.join(output_tmpdir, "gee.zip")
     with open(output_zipfile, "wb") as outfile:
         outfile.write(r.content)
-    ## catch zipfile-related exceptions here, and if they arise,
-    ## write the name of the zipfile and the url to a logfile
+    # catch zipfile-related exceptions here, and if they arise,
+    # write the name of the zipfile and the url to a logfile
     try:
         with ZipFile(output_zipfile, "r") as zip_obj:
             zip_obj.extractall(path=output_tmpdir)
@@ -205,7 +205,7 @@ def get_tag():
     """
     Get the git tag currently checked out.
     """
-    p=subprocess.Popen(["git","describe","--tags"],stdout=subprocess.PIPE)
+    p = subprocess.Popen(["git", "describe", "--tags"], stdout=subprocess.PIPE)
     tag = p.communicate()[0].decode("utf-8").strip()
     return tag
 
@@ -221,11 +221,11 @@ def construct_filename_from_metadata(metadata, suffix):
     else:
         filename = "coords"
     filename += "_{}N_{}E_{}_freq-{}".format(metadata["latitude"], metadata["longitude"],
-                                        metadata["collection"], metadata["time_per_point"])
+                                             metadata["collection"], metadata["time_per_point"])
     if "region_size" in metadata.keys():
         filename += "region-{}".format(region_size)
     if "tag" in metadata.keys():
         filename += "_{}".format(metadata["tag"])
     filename += "_{}".format(suffix)
-    filename = filename.replace("/","")
+    filename = filename.replace("/", "")
     return filename

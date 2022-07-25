@@ -33,10 +33,13 @@ def test_Sentinel2_image_processor():
     vip.coords = [11.58, 27.95]
     vip.configure()
     vip.run()
-    assert os.path.exists(os.path.join(tmp_png_path, "2018-03-01", "PROCESSED"))
-    assert len(os.listdir(os.path.join(tmp_png_path, "2018-03-01", "PROCESSED"))) == 3
+    assert os.path.exists(os.path.join(
+        tmp_png_path, "2018-03-01", "PROCESSED"))
+    assert len(os.listdir(os.path.join(
+        tmp_png_path, "2018-03-01", "PROCESSED"))) == 3
     assert os.path.exists(os.path.join(tmp_png_path, "2018-03-01", "SPLIT"))
-    assert len(os.listdir(os.path.join(tmp_png_path, "2018-03-01", "SPLIT"))) == 1452
+    assert len(os.listdir(os.path.join(
+        tmp_png_path, "2018-03-01", "SPLIT"))) == 1452
     shutil.rmtree(tmp_png_path, ignore_errors=True)
 
 
@@ -134,7 +137,8 @@ def test_NDVICalculator():
     ndvic.configure()
     ndvic.run()
     assert os.path.exists(
-        os.path.join(tmp_json_path, "2018-03-01", "JSON", "NDVI", "ndvi_values.json")
+        os.path.join(tmp_json_path, "2018-03-01",
+                     "JSON", "NDVI", "ndvi_values.json")
     )
     nc_json = json.load(
         open(

@@ -36,4 +36,5 @@ modules_to_use = {
 }
 
 # The following demonstrates how parameters can be set for individual Modules:
-special_config = {"NetworkCentralityCalculator": {"n_sub_images": -1, "n_threads": 8}}
+special_config = {"NetworkCentralityCalculator": {
+    "n_sub_images": -1, "n_threads": 8}}

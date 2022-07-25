@@ -31,7 +31,8 @@ def test_analyse_gee_data():
         for f in os.listdir(os.path.join(input_dir, "analysis", "time-series"))
         if (
             os.path.isfile(
-                os.path.join(os.path.join(input_dir, "analysis", "time-series"), f)
+                os.path.join(os.path.join(
+                    input_dir, "analysis", "time-series"), f)
             )
             and f.endswith(".png")
         )

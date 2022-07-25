@@ -52,11 +52,12 @@ def slice_time_period_into_n(start_date, end_date, n):
     for i in range(n):
         chunk_start = start + timedelta(days=(i * days_per_chunk))
         chunk_end = start + timedelta(days=((i + 1) * days_per_chunk))
-        ## unless we are in the last chunk, which should finish at end_date
+        # unless we are in the last chunk, which should finish at end_date
         if i == n - 1:
             chunk_end = end
         output_list.append(
-            (chunk_start.isoformat().split("T")[0], chunk_end.isoformat().split("T")[0])
+            (chunk_start.isoformat().split("T")[
+             0], chunk_end.isoformat().split("T")[0])
         )
     return output_list
 
@@ -85,7 +86,8 @@ def slice_time_period(start_date, end_date, period_length):
     # parse the period_length
     match = re.search("^([\d]+)([dwmy])", period_length)
     if not match:
-        raise RuntimeError("Period length must be in format '<int><d|w|m|y>', e.g. 30d")
+        raise RuntimeError(
+            "Period length must be in format '<int><d|w|m|y>', e.g. 30d")
 
     num, units = match.groups()
     num = int(num)
