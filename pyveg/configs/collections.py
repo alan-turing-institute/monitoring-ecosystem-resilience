@@ -10,7 +10,7 @@ data_collections = {
         "cloudy_pix_frac": 50,
         "cloudy_pix_flag": "CLOUDY_PIXEL_PERCENTAGE",
         "min_date": "2016-01-01",
-        "max_date": "2022-01-01",  # For 2020 paper, look at four whole years
+        "max_date": "2022-01-01",  # Get to current year.
 #        "max_date": time.strftime("%Y-%m-%d"),
         "time_per_point": "1m",
     },
