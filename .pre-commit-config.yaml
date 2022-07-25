@@ -1,0 +1,30 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+# Ignore RVeg and Notebooks for now
+exclude: (^rveg|^notebooks|^binder)
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.2.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-xml
+    -   id: check-added-large-files
+# -   repo: https://github.com/psf/black
+#     rev: 22.3.0
+#     hooks:
+#     -   id: black
+# -   repo: https://github.com/pre-commit/mirrors-autopep8
+#     rev: 'v1.6.0'  # Use the sha / tag you want to point at
+#     hooks:
+#     -   id: autopep8
+# -   repo: https://github.com/pre-commit/mirrors-mypy
+#     rev: 'v0.960'  # Use the sha / tag you want to point at
+#     hooks:
+#     -   id: mypy
+# -   repo: https://github.com/pre-commit/mirrors-isort
+#     rev: v5.10.1
+#     hooks:
+#     -   id: isort

@@ -350,10 +350,10 @@ coordinate_store.loc['35'] = {
 
 #Australia
 coordinate_store.loc['36'] = {
-  'continent' : 'Australia', 
-  'country': 'Australia', 
-  'type': 'labyrinths', 
-  'latitude': -25, 
+  'continent' : 'Australia',
+  'country': 'Australia',
+  'type': 'labyrinths',
+  'latitude': -25,
   'longitude': 119.99,
     "region_size": 0.08
 
@@ -361,29 +361,29 @@ coordinate_store.loc['36'] = {
 
 #Somalia
 coordinate_store.loc['37'] = {
-  'continent' : 'Africa', 
-  'country': 'Somalia', 
-  'type': 'labyrinths', 
-  'latitude': 9.34, 
+  'continent' : 'Africa',
+  'country': 'Somalia',
+  'type': 'labyrinths',
+  'latitude': 9.34,
   'longitude': 48.64,
   'region_size': 0.08
 }
 
 coordinate_store.loc['38'] = {
-  'continent' : 'Africa', 
-  'country': 'Somalia', 
-  'type': 'bands', 
-  'latitude': 9.63, 
+  'continent' : 'Africa',
+  'country': 'Somalia',
+  'type': 'bands',
+  'latitude': 9.63,
   'longitude': 47.93,
    "region_size": 0.08
 }
 
 
 coordinate_store.loc['39'] = {
-  'continent' : 'Africa', 
-  'country': 'Somalia', 
-  'type': 'labyrinths', 
-  'latitude': 9.98, 
+  'continent' : 'Africa',
+  'country': 'Somalia',
+  'type': 'labyrinths',
+  'latitude': 9.98,
   'longitude': 48.44,
    "region_size": 0.08
 }
@@ -391,10 +391,10 @@ coordinate_store.loc['39'] = {
 
 coordinate_store.loc['40'] = {
 
-  'continent' : 'Africa', 
-  'country': 'Somalia', 
-  'type': 'labyrinths', 
-  'latitude': 4.64, 
+  'continent' : 'Africa',
+  'country': 'Somalia',
+  'type': 'labyrinths',
+  'latitude': 4.64,
   'longitude': 43.26,
    "region_size": 0.08
 }
@@ -402,50 +402,50 @@ coordinate_store.loc['40'] = {
 
 #Ethiopia
 coordinate_store.loc['41'] = {
-  'continent' : 'Africa', 
-  'country': 'Ethiopia', 
-  'type': 'gaps', 
-  'latitude': 4.69, 
+  'continent' : 'Africa',
+  'country': 'Ethiopia',
+  'type': 'gaps',
+  'latitude': 4.69,
   'longitude': 43.21,
   "region_size": 0.08
 }
 
 
 coordinate_store.loc['42'] = {
-  'continent' : 'Africa', 
-  'country': 'Ethiopia', 
-  'type': 'labyrinths', 
-  'latitude': 7.43, 
+  'continent' : 'Africa',
+  'country': 'Ethiopia',
+  'type': 'labyrinths',
+  'latitude': 7.43,
   'longitude': 42.9,
    "region_size": 0.08
 }
 
 #Kenya
 coordinate_store.loc['43'] = {
-  'continent' : 'Africa', 
-  'country': 'Kenya', 
-  'type': 'gaps', 
-  'latitude': 0.96, 
+  'continent' : 'Africa',
+  'country': 'Kenya',
+  'type': 'gaps',
+  'latitude': 0.96,
   'longitude': 40.37,
   "region_size": 0.08
 }
 
 #Mali
 coordinate_store.loc['44'] = {
-  'continent' : 'Africa', 
-  'country': 'Mali', 
-  'type': 'labyrinths', 
-  'latitude': 14.80, 
+  'continent' : 'Africa',
+  'country': 'Mali',
+  'type': 'labyrinths',
+  'latitude': 14.80,
   'longitude': -3.38,
   "region_size": 0.08
 }
 
 #Mexico
 coordinate_store.loc['45'] = {
-  'continent' : 'America', 
-  'country': 'Mexico', 
-  'type': 'labyrinths', 
-  'latitude': 27.19, 
+  'continent' : 'America',
+  'country': 'Mexico',
+  'type': 'labyrinths',
+  'latitude': 27.19,
   'longitude': -103.92,
   "region_size": 0.08
 }
@@ -453,39 +453,39 @@ coordinate_store.loc['45'] = {
 
 #Chad
 coordinate_store.loc["46"] = {
-  'continent' : 'Africa', 
-  'country': 'Chad', 
-  'type': 'gaps', 
-  'latitude': 12, 
+  'continent' : 'Africa',
+  'country': 'Chad',
+  'type': 'gaps',
+  'latitude': 12,
   'longitude': 19.99,
   'region_size': 0.08
 }
 
 coordinate_store.loc['47'] = {
-  'continent' : 'Africa', 
-  'country': 'Chad', 
-  'type': 'gaps', 
-  'latitude': 12.05, 
+  'continent' : 'Africa',
+  'country': 'Chad',
+  'type': 'gaps',
+  'latitude': 12.05,
   'longitude': 20.08,
   'region_size': 0.08
 }
 
 #Mali
 coordinate_store.loc['48'] = {
-  'continent' : 'Africa', 
-  'country': 'Mali', 
-  'type': 'labyrinths', 
-  'latitude': 15.48, 
+  'continent' : 'Africa',
+  'country': 'Mali',
+  'type': 'labyrinths',
+  'latitude': 15.48,
   'longitude': -5.83,
   'region_size': 0.08
 }
 
 #Mauritania
 coordinate_store.loc['49'] = {
-  'continent' : 'Africa', 
-  'country': 'Mauritania', 
-  'type': 'labyrinths', 
-  'latitude': 15.57, 
+  'continent' : 'Africa',
+  'country': 'Mauritania',
+  'type': 'labyrinths',
+  'latitude': 15.57,
   'longitude': -5.92,
   "region_size": 0.08
 }
@@ -493,10 +493,10 @@ coordinate_store.loc['49'] = {
 
 coordinate_store.loc['50'] = {
 
-  'continent' : 'Africa', 
-  'country': 'Mauritania', 
-  'type': 'gaps', 
-  'latitude': 15.58, 
+  'continent' : 'Africa',
+  'country': 'Mauritania',
+  'type': 'gaps',
+  'latitude': 15.58,
   'longitude': -13.00,
     "region_size": 0.08
 }
@@ -504,119 +504,119 @@ coordinate_store.loc['50'] = {
 #Nigeria
 
 coordinate_store.loc['51'] = {
-  'continent' : 'Africa', 
-  'country': 'Nigeria', 
-  'type': 'gaps', 
-  'latitude': 12.58, 
+  'continent' : 'Africa',
+  'country': 'Nigeria',
+  'type': 'gaps',
+  'latitude': 12.58,
   'longitude': 3.75,
   'region_size': 0.08
 }
- 
-#Niger 
+
+#Niger
 coordinate_store.loc['52'] = {
-  'continent' : 'Africa', 
-  'country': 'Niger', 
-  'type': 'gaps', 
-  'latitude': 12.7, 
+  'continent' : 'Africa',
+  'country': 'Niger',
+  'type': 'gaps',
+  'latitude': 12.7,
   'longitude': 2.63,
     "region_size": 0.08
 }
 
 coordinate_store.loc['53'] = {
-  'continent' : 'Africa', 
-  'country': 'Niger', 
-  'type': 'gaps', 
-  'latitude': 12.54, 
+  'continent' : 'Africa',
+  'country': 'Niger',
+  'type': 'gaps',
+  'latitude': 12.54,
   'longitude': 2.26,
   'region_size': 0.08
 }
 
 coordinate_store.loc['54'] = {
-  'continent' : 'Africa', 
-  'country': 'Niger', 
-  'type': 'labyrinths', 
-  'latitude': 13.12, 
+  'continent' : 'Africa',
+  'country': 'Niger',
+  'type': 'labyrinths',
+  'latitude': 13.12,
   'longitude': 2.17,
   "region_size": 0.08
 }
 
 coordinate_store.loc['55'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'gaps', 
-  'latitude': 11.07, 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'gaps',
+  'latitude': 11.07,
   'longitude': 27.93,
   "region_size": 0.08
 }
 
 coordinate_store.loc['56'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'gaps', 
-  'latitude': 11.28, 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'gaps',
+  'latitude': 11.28,
   'longitude': 27.96,
   "region_size": 0.08
 }
 
 coordinate_store.loc['57'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'spots', 
-  'latitude': 11.27, 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'spots',
+  'latitude': 11.27,
   'longitude': 27.55,
   "region_size": 0.08
 }
 
 coordinate_store.loc['58'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'spots', 
-  'latitude': 11.47, 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'spots',
+  'latitude': 11.47,
   'longitude': 27.97,
   "region_size": 0.08
 }
 
 coordinate_store.loc['59'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'spots', 
-  'latitude': 11.51, 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'spots',
+  'latitude': 11.51,
   'longitude': 27.87,
   "region_size": 0.08
 }
 
 coordinate_store.loc['60'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'spots', 
-  'latitude': 11.22, 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'spots',
+  'latitude': 11.22,
   'longitude': 27.73,
   "region_size": 0.08
 }
 
 coordinate_store.loc['61'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'spots', 
-  'latitude': 11.62, 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'spots',
+  'latitude': 11.62,
   'longitude': 27.86,
   "region_size": 0.08
 }
 
 
 coordinate_store.loc['62'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'spots', 
-  'latitude': 11.32, 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'spots',
+  'latitude': 11.32,
   'longitude': 27.88,
   "region_size": 0.08
 }
 
 coordinate_store.loc['63'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'spots', 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'spots',
   'latitude': 11.37,
   'longitude': 27.68,
   "region_size": 0.08
@@ -624,27 +624,27 @@ coordinate_store.loc['63'] = {
 
 
 coordinate_store.loc['64'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'spots', 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'spots',
   'latitude': 11.60,
   'longitude': 27.73,
   "region_size": 0.08
 }
 
 coordinate_store.loc['65'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'spots', 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'spots',
   'latitude': 11.46,
   'longitude': 27.68,
   "region_size": 0.08
 }
 
 coordinate_store.loc['66'] = {
-  'continent' : 'Africa', 
-  'country': 'Sudan', 
-  'type': 'spots', 
+  'continent' : 'Africa',
+  'country': 'Sudan',
+  'type': 'spots',
   'latitude': 11.71,
   'longitude': 27.91,
   "region_size": 0.08

@@ -1389,4 +1389,3 @@ def cball_parfit(p0, timeseries, plot_name = 'CB_fit.png', output_dir = ''):
     plt.savefig(os.path.join(output_dir, "fit_ts_CB_"+plot_name+".png"))
 
     return final_params, final_sucess, residuals_min
-

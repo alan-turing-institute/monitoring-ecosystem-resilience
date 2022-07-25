@@ -87,7 +87,7 @@ supported).
 
 `pyveg` will then form a series of date ranges, and query GEE for the relevant
 data in each date range. Colour (RGB) and Normalised Difference vegetation
-Index (NDVI) images are downloaded from vegetation collections. Supported 
+Index (NDVI) images are downloaded from vegetation collections. Supported
 vegetation collections include Landsat [@landsat] and Sentinel-2 [@sentinel2] GEE
 collections. Cloud masking
 logic is included to improve data quality using the `geetools` package [@geetools].
