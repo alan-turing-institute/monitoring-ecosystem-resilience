@@ -16,7 +16,9 @@ import os
 import pandas as pd
 
 from pyveg.scripts.analyse_gee_data import (
-    run_early_warnings_resilience_analysis, run_time_series_analysis)
+    run_early_warnings_resilience_analysis,
+    run_time_series_analysis,
+)
 from pyveg.src.analysis_preprocessing import detrend_df, resample_dataframe
 
 

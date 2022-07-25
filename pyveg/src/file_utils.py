@@ -83,8 +83,9 @@ def download_and_unzip(url, output_tmpdir):
     # GET the URL
     r = requests.get(url)
     if not r.status_code == 200:
-        raise RuntimeError(" HTTP Error {} getting download link {}".format(r.status_code,
-                                                                            url))
+        raise RuntimeError(
+            " HTTP Error {} getting download link {}".format(r.status_code, url)
+        )
     os.makedirs(output_tmpdir, exist_ok=True)
     output_zipfile = os.path.join(output_tmpdir, "gee.zip")
     with open(output_zipfile, "wb") as outfile:
@@ -220,8 +221,12 @@ def construct_filename_from_metadata(metadata, suffix):
         filename = metadata["coords_id"]
     else:
         filename = "coords"
-    filename += "_{}N_{}E_{}_freq-{}".format(metadata["latitude"], metadata["longitude"],
-                                             metadata["collection"], metadata["time_per_point"])
+    filename += "_{}N_{}E_{}_freq-{}".format(
+        metadata["latitude"],
+        metadata["longitude"],
+        metadata["collection"],
+        metadata["time_per_point"],
+    )
     if "region_size" in metadata.keys():
         filename += "region-{}".format(region_size)
     if "tag" in metadata.keys():

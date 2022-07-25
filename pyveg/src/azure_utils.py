@@ -6,8 +6,7 @@ import tempfile
 
 import arrow
 from azure.common import AzureMissingResourceHttpError
-from azure.storage.blob import (BlockBlobService, ContainerPermissions,
-                                PublicAccess)
+from azure.storage.blob import BlockBlobService, ContainerPermissions, PublicAccess
 from PIL import Image
 
 from pyveg.src.file_utils import split_filepath
@@ -17,6 +16,7 @@ AZURE_CONFIG_FOUND = False
 # load the azure configuration if we have the azure_config.py file
 try:
     from pyveg.azure_config import config
+
     AZURE_CONFIG_FOUND = True
 except:
     pass
@@ -124,8 +124,7 @@ def retrieve_blob(blob_name, container_name, destination="/tmp/", bbs=None):
     local_filename = blob_name.split("/")[-1]
     try:
         bbs.get_blob_to_path(
-            container_name, blob_name, os.path.join(
-                destination, local_filename)
+            container_name, blob_name, os.path.join(destination, local_filename)
         )
         return True, "retrieved script OK"
     except (AzureMissingResourceHttpError):
@@ -145,8 +144,7 @@ def list_directory(path, container_name, bbs=None):
     if prefix and not prefix.endswith("/"):
         prefix += "/"
 
-    blob_names = bbs.list_blob_names(
-        container_name, prefix=prefix, delimiter="/")
+    blob_names = bbs.list_blob_names(container_name, prefix=prefix, delimiter="/")
     blob_names = [bn[:-1] if bn.endswith("/") else bn for bn in blob_names]
     return [os.path.basename(bn) for bn in blob_names]
 
@@ -219,12 +217,10 @@ def write_files_to_blob(
                 filepaths_to_upload.append(filepath)
     for filepath in filepaths_to_upload:
         if blob_path:
-            blob_fullpath = os.path.join(
-                blob_path, os.path.split(filepath)[-1])
+            blob_fullpath = os.path.join(blob_path, os.path.split(filepath)[-1])
         else:
             blob_fullpath = filepath
-        blob_name = remove_container_name_from_blob_path(
-            blob_fullpath, container_name)
+        blob_name = remove_container_name_from_blob_path(blob_fullpath, container_name)
 
         write_file_to_blob(filepath, blob_name, container_name, bbs)
 
@@ -244,8 +240,7 @@ def save_image(
             account_key=config["storage_account_key"],
         )
     output_path = os.path.join(output_location, output_filename)
-    blob_name = remove_container_name_from_blob_path(
-        output_path, container_name)
+    blob_name = remove_container_name_from_blob_path(output_path, container_name)
     im_bytes = io.BytesIO()
     image.save(im_bytes, format=format)
     bbs.create_blob_from_bytes(container_name, blob_name, im_bytes.getvalue())
@@ -332,8 +327,7 @@ def download_rgb(container, rgb_dir):
         account_key=config["storage_account_key"],
     )
     blob_names = bbs.list_blob_names(container)
-    rgb_names = [
-        b for b in blob_names if "PROCESSED" in b and b.endswith("RGB.png")]
+    rgb_names = [b for b in blob_names if "PROCESSED" in b and b.endswith("RGB.png")]
     print("Found {} images".format(len(rgb_names)))
     for blob in rgb_names:
         retrieve_blob(blob, container, rgb_dir)

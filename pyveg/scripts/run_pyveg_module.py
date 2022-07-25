@@ -1,7 +1,6 @@
 """
 Build and run a pyveg pipeline based on a configuration json file.
 """
-
 import argparse
 import datetime
 import inspect
@@ -17,16 +16,17 @@ from pyveg.src.date_utils import get_date_range_for_collection
 from pyveg.src.pyveg_pipeline import Pipeline, Sequence
 
 try:
-    from pyveg.src.download_modules import (VegetationDownloader,
-                                            WeatherDownloader)
+    from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
 except (ee.ee_exception.EEException):
     print("Earth Engine not initialized - will not be able to download from GEE")
     pass
 from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
-from pyveg.src.processor_modules import (NDVICalculator,
-                                         NetworkCentralityCalculator,
-                                         VegetationImageProcessor,
-                                         WeatherImageToJSON)
+from pyveg.src.processor_modules import (
+    NDVICalculator,
+    NetworkCentralityCalculator,
+    VegetationImageProcessor,
+    WeatherImageToJSON,
+)
 
 
 def build_module(config_file):
@@ -55,8 +55,7 @@ def configure_and_run_module(module):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--config_file", help="Path to config file", required=True)
+    parser.add_argument("--config_file", help="Path to config file", required=True)
 
     args = parser.parse_args()
     module = build_module(args.config_file)

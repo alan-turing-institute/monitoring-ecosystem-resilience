@@ -31,7 +31,8 @@ c_handler = logging.StreamHandler()
 c_handler.setFormatter(formatter)
 f_handler = RotatingFileHandler(
     "pyveg_{}.log".format(time.strftime("%Y-%m-%d_%H-%M-%S")),
-    maxBytes=5 * 1024 * 1024, backupCount=10
+    maxBytes=5 * 1024 * 1024,
+    backupCount=10,
 )
 f_handler.setFormatter(formatter)
 
@@ -80,8 +81,7 @@ class Pipeline(object):
         output += "coordinates: {}\n".format(self.coords)
         output += "date_range:  {}\n".format(self.date_range)
         output += "output_location:  {}\n".format(self.output_location)
-        output += "output_location_type:  {}\n".format(
-            self.output_location_type)
+        output += "output_location_type:  {}\n".format(self.output_location_type)
         output += "\n ------- Sequences ----------\n\n"
         for s in self.sequences:
             output += s.__repr__()
@@ -109,8 +109,7 @@ class Pipeline(object):
                 )
         if self.output_location_type == "azure":
             # ensure that the output location conforms to azure container-name requirements
-            container_name = azure_utils.sanitize_container_name(
-                self.output_location)
+            container_name = azure_utils.sanitize_container_name(self.output_location)
             self.output_location = container_name
 
         for sequence in self.sequences:
@@ -236,8 +235,7 @@ class Sequence(object):
             module.output_location_type = self.output_location_type
             if i > 0:
                 module.input_location = self.modules[i - 1].output_location
-                module.input_location_type = self.modules[i -
-                                                          1].output_location_type
+                module.input_location_type = self.modules[i - 1].output_location_type
                 # modules will depend on the previous module in the sequence
                 module.depends_on.append(self.modules[i - 1].name)
             module.coords = self.coords
@@ -261,17 +259,14 @@ class Sequence(object):
                 num_seq_finished = 0
                 for seq_name in self.depends_on:
                     seq = self.parent.get(seq_name)
-                    logger.info("{}: checking status of {}".format(
-                        self.name, seq.name))
+                    logger.info("{}: checking status of {}".format(self.name, seq.name))
                     if seq.check_if_finished():
                         logger.info("     {}   ... finished".format(seq.name))
                         num_seq_finished += 1
-                    dependencies_finished = num_seq_finished == len(
-                        self.depends_on)
+                    dependencies_finished = num_seq_finished == len(self.depends_on)
                     logger.info(
                         "{}: {} / {} dependencies finished".format(
-                            self.name,
-                            num_seq_finished, len(self.depends_on)
+                            self.name, num_seq_finished, len(self.depends_on)
                         )
                     )
                 time.sleep(10)
@@ -339,8 +334,7 @@ class Sequence(object):
         """
 
         if self.has_batch_job():
-            self.batch_job_id = self.name + "_" + \
-                time.strftime("%Y-%m-%d_%H-%M-%S")
+            self.batch_job_id = self.name + "_" + time.strftime("%Y-%m-%d_%H-%M-%S")
             batch_utils.create_job(self.batch_job_id)
             logger.info(
                 "Sequence {}: Creating batch job {}".format(
@@ -357,14 +351,12 @@ class Sequence(object):
         num_modules_finished = 0
 
         for module in self.modules:
-            logger.info("{}: checking status of {}".format(
-                self.name, module.name))
+            logger.info("{}: checking status of {}".format(self.name, module.name))
             if module.check_if_finished():
                 logger.info("{}   ... finished".format(module.name))
                 num_modules_finished += 1
         logger.info(
-            "{} / {} modules finished".format(
-                num_modules_finished, len(self.modules))
+            "{} / {} modules finished".format(num_modules_finished, len(self.modules))
         )
 
         self.is_finished = num_modules_finished == len(self.modules)
@@ -420,8 +412,7 @@ class BaseModule(object):
         if self.parent:
             for param, param_type in self.params:
                 if param in vars(self.parent):
-                    self.__setattr__(
-                        param, self.parent.__getattribute__(param))
+                    self.__setattr__(param, self.parent.__getattribute__(param))
         if config_dict:
             self.set_parameters(config_dict)
 
@@ -459,15 +450,13 @@ class BaseModule(object):
     def prepare_for_run(self):
         if not self.is_configured:
             raise RuntimeError(
-                "Module {} needs to be configured before running".format(
-                    self.name)
+                "Module {} needs to be configured before running".format(self.name)
             )
         if self.output_location_type == "azure":
             # if we're running this module standalone on azure, we might need to
             # create the output container on the blob storage account"
             output_location_base = self.output_location.split("/")[0]
-            container_name = azure_utils.sanitize_container_name(
-                output_location_base)
+            container_name = azure_utils.sanitize_container_name(output_location_base)
             if not azure_utils.check_container_exists(container_name):
                 logger.info("Create container {}".format(container_name))
                 azure_utils.create_container(container_name)
@@ -532,8 +521,10 @@ class BaseModule(object):
                         for ending in file_endings:
                             if filename.endswith(ending):
 
-                                copyfile(os.path.join(root, filename),
-                                         os.path.join(output_location, filename))
+                                copyfile(
+                                    os.path.join(root, filename),
+                                    os.path.join(output_location, filename),
+                                )
                     else:
                         subprocess.run(
                             [
@@ -564,8 +555,7 @@ class BaseModule(object):
             container_name = self.output_location.split("/")[0]
             return azure_utils.list_directory(directory_path, container_name)
         else:
-            raise RuntimeError(
-                "Unknown location_type - must be 'local' or 'azure'")
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
 
     def save_json(self, data, filename, location, location_type):
         """
@@ -578,8 +568,7 @@ class BaseModule(object):
             container_name = self.output_location.split("/")[0]
             azure_utils.save_json(data, location, filename, container_name)
         else:
-            raise RuntimeError(
-                "Unknown location_type - must be 'local' or 'azure'")
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
 
     def get_json(self, filepath, location_type):
         """
@@ -595,8 +584,7 @@ class BaseModule(object):
             container_name = filepath.split("/")[0]
             return azure_utils.read_json(filepath, container_name)
         else:
-            raise RuntimeError(
-                "Unknown location_type - must be 'local' or 'azure'")
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
 
     def get_file(self, filename, location_type):
         """
@@ -611,8 +599,7 @@ class BaseModule(object):
             container_name = self.output_location.split("/")[0]
             return azure_utils.get_blob_to_tempfile(filename, container_name)
         else:
-            raise RuntimeError(
-                "Unknown location_type - must be 'local' or 'azure'")
+            raise RuntimeError("Unknown location_type - must be 'local' or 'azure'")
 
     def check_for_existing_files(self, location, num_files_expected):
         """
@@ -626,8 +613,7 @@ class BaseModule(object):
             return False
         if self.replace_existing_files:
             return False
-        existing_files = self.list_directory(
-            location, self.output_location_type)
+        existing_files = self.list_directory(location, self.output_location_type)
         if len(existing_files) == num_files_expected:
             logger.info(
                 "{}: Already found {} files in {} - skipping".format(
@@ -659,8 +645,7 @@ class BaseModule(object):
 
         with open(config_location, "w") as output_json:
             json.dump(config_dict, output_json)
-        logger.info("{}: wrote config to {}".format(
-            self.name, config_location))
+        logger.info("{}: wrote config to {}".format(self.name, config_location))
 
     def print_run_status(self):
         """
@@ -671,6 +656,6 @@ class BaseModule(object):
                 self.name,
                 self.run_status["succeeded"],
                 self.run_status["failed"],
-                self.run_status["incomplete"]
+                self.run_status["incomplete"],
             )
         )

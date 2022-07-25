@@ -79,7 +79,7 @@ def crop_image_array(input_image, x_range, y_range):
     """
     return a new image from specified pixel range of input image
     """
-    return input_image[x_range[0]: x_range[1], y_range[0]: y_range[1]]
+    return input_image[x_range[0] : x_range[1], y_range[0] : y_range[1]]
 
 
 def fill_sc_pixels(sel_pixels, orig_image, val=200):
@@ -307,8 +307,7 @@ def subgraph_centrality(
         dist_vec, dist_matrix = calc_distance_matrix(signal_coords)
 
         # will use to fill our feature vector
-        adj_matrix = calc_adjacency_matrix(
-            dist_matrix, use_diagonal_neighbours)
+        adj_matrix = calc_adjacency_matrix(dist_matrix, use_diagonal_neighbours)
         # calculate the subgraph centrality and order our signal pixels accordingly
         sorted_pix_indices = calc_and_sort_sc_indices(adj_matrix)
         # calculate the feature vector and get the subsets of pixels in each quantile

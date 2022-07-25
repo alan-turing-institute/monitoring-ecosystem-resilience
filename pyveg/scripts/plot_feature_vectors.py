@@ -45,8 +45,7 @@ def display_plots(xvals, yvals):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="plot feature vector")
-    parser.add_argument("--rainfall_vals",
-                        help="comma-separated list of rainfall vals")
+    parser.add_argument("--rainfall_vals", help="comma-separated list of rainfall vals")
     args = parser.parse_args()
     rainfall_vals = args.rainfall_vals.split(",")
     images = {}

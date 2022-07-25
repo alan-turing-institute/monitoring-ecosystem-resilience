@@ -15,8 +15,12 @@ import requests
 from geetools import cloud_mask
 
 from pyveg.src.coordinate_utils import get_region_string
-from pyveg.src.date_utils import (find_mid_period, get_num_n_day_slices,
-                                  slice_time_period, slice_time_period_into_n)
+from pyveg.src.date_utils import (
+    find_mid_period,
+    get_num_n_day_slices,
+    slice_time_period,
+    slice_time_period_into_n,
+)
 from pyveg.src.file_utils import download_and_unzip
 from pyveg.src.gee_interface import add_NDVI, apply_mask_cloud
 from pyveg.src.pyveg_pipeline import BaseModule, logger
@@ -48,7 +52,7 @@ class DownloaderModule(BaseModule):
             ("output_location", [str]),
             ("output_location_type", [str]),
             ("replace_existing_files", [bool]),
-            ("ndvi", [bool])
+            ("ndvi", [bool]),
         ]
         return
 
@@ -125,8 +129,7 @@ class DownloaderModule(BaseModule):
         image_coll = ee.ImageCollection(self.collection_name)
         geom = ee.Geometry.Point(self.coords)
 
-        dataset = image_coll.filterBounds(
-            geom).filterDate(start_date, end_date)
+        dataset = image_coll.filterBounds(geom).filterDate(start_date, end_date)
         dataset_size = dataset.size().getInfo()
 
         if dataset_size == 0:
@@ -139,8 +142,7 @@ class DownloaderModule(BaseModule):
         for image in image_list:
             # get a URL from which we can download the resulting data
             try:
-                url = image.getDownloadURL(
-                    {"region": region, "scale": self.scale})
+                url = image.getDownloadURL({"region": region, "scale": self.scale})
                 url_list.append(url)
             except Exception as e:
                 logger.info("Unable to get URL: {}".format(e))
@@ -164,8 +166,7 @@ class DownloaderModule(BaseModule):
         bool, True if downloaded something, False otherwise
         """
         if len(download_urls) == 0:
-            logger.info("{}: No URLs found for {}".format(
-                self.name, self.coords))
+            logger.info("{}: No URLs found for {}".format(self.name, self.coords))
             return False
 
         # download files and unzip to temporary directory
@@ -175,10 +176,8 @@ class DownloaderModule(BaseModule):
                 download_and_unzip(download_url, tempdir.name)
             except RuntimeError as e:
                 return False
-        logger.debug("{}: Wrote zipfiles to {}".format(
-            self.name, tempdir.name))
-        logger.info("{}: Will download to {}".format(
-            self.name, download_location))
+        logger.debug("{}: Wrote zipfiles to {}".format(self.name, tempdir.name))
+        logger.info("{}: Will download to {}".format(self.name, download_location))
         self.copy_to_output_location(tempdir.name, download_location, [".tif"])
         return True
 
@@ -186,33 +185,38 @@ class DownloaderModule(BaseModule):
         self.prepare_for_run()
 
         start_date, end_date = self.date_range
-        date_ranges = slice_time_period(
-            start_date, end_date, self.time_per_point)
+        date_ranges = slice_time_period(start_date, end_date, self.time_per_point)
         download_locations = []
         for date_range in date_ranges:
             mid_date = find_mid_period(date_range[0], date_range[1])
             location = self.join_path(self.output_location, mid_date, "RAW")
-            logger.debug("{} Will check for existing files in {}".format(
-                self.name, location))
+            logger.debug(
+                "{} Will check for existing files in {}".format(self.name, location)
+            )
             if not self.replace_existing_files and self.check_for_existing_files(
                 location, self.num_files_per_point
             ):
                 continue
             urls = self.prep_data(date_range)
             logger.debug(
-                "{}: got URL {} for date range {}".format(
-                    self.name, urls, date_range)
+                "{}: got URL {} for date range {}".format(self.name, urls, date_range)
             )
             downloaded_ok = self.download_data(urls, location)
             if downloaded_ok:
                 self.run_status["succeeded"] += 1
-                logger.info("{}: download succeeded for date range {}".format(
-                    self.name, date_range))
+                logger.info(
+                    "{}: download succeeded for date range {}".format(
+                        self.name, date_range
+                    )
+                )
                 download_locations.append(location)
             else:
                 self.run_status["failed"] += 1
-                logger.error("{}: download did not succeed for date range {}".format(
-                    self.name, date_range))
+                logger.error(
+                    "{}: download did not succeed for date range {}".format(
+                        self.name, date_range
+                    )
+                )
         self.is_finished = True
         return self.run_status
 
@@ -268,8 +272,7 @@ class VegetationDownloader(DownloaderModule):
             List of Images to be downloaded
         """
         # Apply cloud mask
-        dataset = apply_mask_cloud(
-            dataset, self.collection_name, self.cloudy_pix_flag)
+        dataset = apply_mask_cloud(dataset, self.collection_name, self.cloudy_pix_flag)
         # Take median
         image = dataset.median()
 

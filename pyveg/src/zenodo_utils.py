@@ -30,6 +30,7 @@ from pyveg.src.file_utils import get_filepath_after_directory
 ZENODO_CONFIG_FOUND = False
 try:
     import pyveg.zenodo_config as config
+
     ZENODO_CONFIG_FOUND = True
 except:
     pass
@@ -50,7 +51,8 @@ def get_base_url_and_token(test=False):
     """
     if not ZENODO_CONFIG_FOUND:
         raise RuntimeError(
-            "File zenodo_config.py not found - will not be able to access the Zenodo API")
+            "File zenodo_config.py not found - will not be able to access the Zenodo API"
+        )
     if test:
         base_url = config.test_api_credentials["base_url"]
         token = config.test_api_credentials["api_token"]
@@ -89,8 +91,9 @@ def list_depositions(test=False):
     r: list of dicts, response from the API with info about the depositions
     """
     base_url, api_token = get_base_url_and_token(test)
-    r = requests.get('{}/deposit/depositions'.format(base_url),
-                     params={'access_token': api_token})
+    r = requests.get(
+        "{}/deposit/depositions".format(base_url), params={"access_token": api_token}
+    )
     if r.status_code != 200:
         print("Error retrieving depositions", r.content)
         return False
@@ -111,11 +114,13 @@ def create_deposition(test=False):
     """
     headers = {"Content-Type": "application/json"}
     base_url, api_token = get_base_url_and_token(test)
-    params = {'access_token': api_token}
-    r = requests.post('{}/deposit/depositions'.format(base_url),
-                      params=params,
-                      json={},
-                      headers=headers)
+    params = {"access_token": api_token}
+    r = requests.post(
+        "{}/deposit/depositions".format(base_url),
+        params=params,
+        json={},
+        headers=headers,
+    )
     if r.status_code != 201:
         print("Error creating deposition", r.content)
         return None
@@ -137,11 +142,13 @@ def get_deposition_info(deposition_id, test=False):
     """
     headers = {"Content-Type": "application/json"}
     base_url, api_token = get_base_url_and_token(test)
-    params = {'access_token': api_token}
-    r = requests.get('{}/deposit/depositions/{}'.format(base_url, deposition_id),
-                     params=params,
-                     json={},
-                     headers=headers)
+    params = {"access_token": api_token}
+    r = requests.get(
+        "{}/deposit/depositions/{}".format(base_url, deposition_id),
+        params=params,
+        json={},
+        headers=headers,
+    )
     if r.status_code != 200:
         print("Error getting deposition", r.content)
         return {}
@@ -186,9 +193,11 @@ def upload_file(filename, deposition_id, test=False):
     bucket_url = get_bucket_url(deposition_id, test)
 
     with open(filename, "rb") as f:
-        r = requests.put("{}/{}".format(bucket_url, os.path.basename(filename)),
-                         data=f,
-                         params={'access_token': api_token})
+        r = requests.put(
+            "{}/{}".format(bucket_url, os.path.basename(filename)),
+            data=f,
+            params={"access_token": api_token},
+        )
         if r.status_code != 200:
             print("Error uploading file", r.content)
             return False
@@ -213,8 +222,10 @@ def list_files(deposition_id, json_or_csv="json", test=False):
 
     base_url, api_token = get_base_url_and_token(test)
     deposition_id = get_deposition_id(json_or_csv, test=test)
-    r = requests.get("{}/deposit/depositions/{}/files".format(base_url, deposition_id),
-                     params={"access_token": api_token})
+    r = requests.get(
+        "{}/deposit/depositions/{}/files".format(base_url, deposition_id),
+        params={"access_token": api_token},
+    )
     if r.status_code != 200:
         print("Error getting file list for deposition {}".format(deposition_id))
     return [f["filename"] for f in r.json()]
@@ -237,8 +248,10 @@ def download_file(filename, deposition_id, destination_path=".", test=False):
     """
     base_url, api_token = get_base_url_and_token(test)
     bucket_url = get_bucket_url(deposition_id, test)
-    r = requests.get("{}/{}".format(bucket_url, os.path.basename(filename)),
-                     params={'access_token': api_token})
+    r = requests.get(
+        "{}/{}".format(bucket_url, os.path.basename(filename)),
+        params={"access_token": api_token},
+    )
     if r.status_code != 200:
         print("Error downloading file", r.content)
         return {}
@@ -264,8 +277,10 @@ def delete_file(filename, deposition_id, test=False):
     True if file was deleted OK, False otherwise.
     """
     base_url, api_token = get_base_url_and_token(test)
-    r = requests.delete("{}/deposit/depositions/{}/files/{}".format(base_url, deposition_id, filename),
-                        params={'access_token': api_token})
+    r = requests.delete(
+        "{}/deposit/depositions/{}/files/{}".format(base_url, deposition_id, filename),
+        params={"access_token": api_token},
+    )
 
     if r.status_code != 204:
         print("Error deleting file", r.content)
@@ -294,16 +309,20 @@ def upload_standard_metadata(deposition_id, json_or_csv="json", test=False):
     else:
         metadata_dict = config.metadata_dict_ts_csv
     base_url, api_token = get_base_url_and_token(test)
-    r = requests.put("{}/deposit/depositions/{}".format(base_url, deposition_id),
-                     params={"access_token": api_token},
-                     json=metadata_dict)
+    r = requests.put(
+        "{}/deposit/depositions/{}".format(base_url, deposition_id),
+        params={"access_token": api_token},
+        json=metadata_dict,
+    )
     if r.status_code != 200:
         print("Error uploading metadata", r.content)
         return False
     return r.json()
 
 
-def upload_custom_metadata(title, upload_type, description, creators, deposition_id, test=False):
+def upload_custom_metadata(
+    title, upload_type, description, creators, deposition_id, test=False
+):
     """
     Upload a dict to the deposition containing metadata with the format:
 
@@ -334,13 +353,15 @@ def upload_custom_metadata(title, upload_type, description, creators, deposition
             "title": title,
             "upload_type": upload_type,
             "description": description,
-            "creators": creators
+            "creators": creators,
         }
     }
     base_url, api_token = get_base_url_and_token(test)
-    r = requests.put("{}/deposit/depositions/{}".format(base_url, deposition_id),
-                     params={"access_token": api_token},
-                     json=metadata_dict)
+    r = requests.put(
+        "{}/deposit/depositions/{}".format(base_url, deposition_id),
+        params={"access_token": api_token},
+        json=metadata_dict,
+    )
     if r.status_code != 200:
         print("Error uploading metadata", r.content)
         return False
@@ -352,8 +373,10 @@ def publish_deposition(deposition_id, test=False):
     Submit the deposition, so it will be findable on Zenodo and have a DOI.
     """
     base_url, api_token = get_base_url_and_token(test)
-    r = requests.post("{}/deposit/depositions/{}/actions/publish".format(base_url, deposition_id),
-                      params={"access_token": api_token})
+    r = requests.post(
+        "{}/deposit/depositions/{}/actions/publish".format(base_url, deposition_id),
+        params={"access_token": api_token},
+    )
     if r.status_code != 202:
         print("Error publishing", r.content)
         return False
@@ -365,19 +388,23 @@ def unlock_deposition(deposition_id, test=False):
     Unlock a previously submitted deposition, so we can add to it.
     """
     base_url, api_token = get_base_url_and_token(test)
-    r = requests.post("{}/deposit/depositions/{}/actions/edit".format(base_url, deposition_id),
-                      params={"access_token": api_token})
+    r = requests.post(
+        "{}/deposit/depositions/{}/actions/edit".format(base_url, deposition_id),
+        params={"access_token": api_token},
+    )
     if r.status_code != 201:
         print("Error unlocking", r.content)
         return False
     return r.json()
 
 
-def prepare_results_zipfile(collection_name,
-                            png_location,
-                            png_location_type="local",
-                            json_location=None,
-                            json_location_type="local"):
+def prepare_results_zipfile(
+    collection_name,
+    png_location,
+    png_location_type="local",
+    json_location=None,
+    json_location_type="local",
+):
     """
     Create a zipfile called <results_long_lat_collection> containing the 'results_summary.json',
     and the outputs of the analysis.
@@ -410,18 +437,21 @@ def prepare_results_zipfile(collection_name,
         dir_contents = os.listdir(json_location)
         if not os.path.exists(os.path.join(json_location, "results_summary.json")):
             raise RuntimeError(
-                "Could not find results_summary.json in {}".format(json_location))
-        zf.write(os.path.join(json_location, "results_summary.json"),
-                 arcname="results_summary.json")
+                "Could not find results_summary.json in {}".format(json_location)
+            )
+        zf.write(
+            os.path.join(json_location, "results_summary.json"),
+            arcname="results_summary.json",
+        )
     if png_location_type == "local":
         if not os.path.exists(os.path.join(png_location, "analysis")):
-            raise RuntimeError(
-                "Could not find analysis dir in {}".format(png_location))
-        for root, dirnames, filenames in os.walk(os.path.join(png_location, "analysis")):
+            raise RuntimeError("Could not find analysis dir in {}".format(png_location))
+        for root, dirnames, filenames in os.walk(
+            os.path.join(png_location, "analysis")
+        ):
             for filename in filenames:
                 full_filepath = os.path.join(root, filename)
-                short_filepath = get_filepath_after_directory(
-                    full_filepath, "analysis")
+                short_filepath = get_filepath_after_directory(full_filepath, "analysis")
                 zf.write(full_filepath, arcname=short_filepath)
         zf.close()
     return zip_filename
@@ -436,8 +466,11 @@ def get_results_summary_json(coords_string, collection, deposition_id, test=Fals
     """
     zip_filename = "results_{}_{}.zip".format(coords_string, collection)
     if not zip_filename in list_files(deposition_id, test):
-        print("Unable to find file {} in deposition {}".format(
-            zip_filename, deposition_id))
+        print(
+            "Unable to find file {} in deposition {}".format(
+                zip_filename, deposition_id
+            )
+        )
         return None
 
     data = {}
@@ -452,7 +485,9 @@ def get_results_summary_json(coords_string, collection, deposition_id, test=Fals
     return json.loads(data)
 
 
-def download_results_by_coord_id(coords_id, json_or_csv="json", destination_path=None, deposition_id=None, test=False):
+def download_results_by_coord_id(
+    coords_id, json_or_csv="json", destination_path=None, deposition_id=None, test=False
+):
     """
     Search the deposition (defined by the deposition_id in zenodo_config.py)
     for results_summary json or summary_stats csv files beginning with 'coord_id'
@@ -467,7 +502,7 @@ def download_results_by_coord_id(coords_id, json_or_csv="json", destination_path
     test: bool, if True, use the sandbox Zenodo repository
     """
     # coords_id should be two digits, e.g. '00'
-    if not re.search('[\d]{2}', coords_id):
+    if not re.search("[\d]{2}", coords_id):
         raise RuntimeError("coords_id should be a 2-digit string")
     if not deposition_id:
         deposition_id = get_deposition_id(json_or_csv, test=test)
@@ -476,8 +511,11 @@ def download_results_by_coord_id(coords_id, json_or_csv="json", destination_path
     elif not os.path.exists(destination_path):
         os.makedirs(destination_path)
     # list the files in the deposition
-    file_list = [f for f in list_files(deposition_id, test=test)
-                 if f.startswith(coords_id) and "results_summary" in f]
+    file_list = [
+        f
+        for f in list_files(deposition_id, test=test)
+        if f.startswith(coords_id) and "results_summary" in f
+    ]
     if len(file_list) == 0:
         print("No files for coords_id {} found.".format(coords_id))
         return ""
@@ -487,6 +525,5 @@ def download_results_by_coord_id(coords_id, json_or_csv="json", destination_path
     latest_file = file_list[-1]
 
     # download this
-    destination = download_file(
-        latest_file, deposition_id, destination_path, test)
+    destination = download_file(latest_file, deposition_id, destination_path, test)
     return destination

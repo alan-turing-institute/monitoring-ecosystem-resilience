@@ -16,9 +16,13 @@ import tempfile
 
 from pyveg.src.analysis_preprocessing import read_results_summary
 from pyveg.src.file_utils import construct_filename_from_metadata, get_tag
-from pyveg.src.zenodo_utils import (create_deposition, get_deposition_id,
-                                    prepare_results_zipfile, upload_file,
-                                    upload_standard_metadata)
+from pyveg.src.zenodo_utils import (
+    create_deposition,
+    get_deposition_id,
+    prepare_results_zipfile,
+    upload_file,
+    upload_standard_metadata,
+)
 
 
 def create_new_deposition(use_sandbox=False):
@@ -38,13 +42,15 @@ def create_new_deposition(use_sandbox=False):
     deposition_json = create_deposition(use_sandbox)
     deposition_id = deposition_json["id"]
     metadata_response = upload_standard_metadata(deposition_id, use_sandbox)
-    print("Created new deposition with deposition_id={}.  We recommend that you now copy this deposition_id into the {} section of pyveg/zenodo_config.py".format(deposition_id, section_str))
+    print(
+        "Created new deposition with deposition_id={}.  We recommend that you now copy this deposition_id into the {} section of pyveg/zenodo_config.py".format(
+            deposition_id, section_str
+        )
+    )
     return deposition_id
 
 
-def upload_results_summary(json_location,
-                           json_location_type,
-                           use_test_api):
+def upload_results_summary(json_location, json_location_type, use_test_api):
     """
     Upload the results summary json from running pyveg pipeline to download and process data from GEE.
     """
@@ -52,12 +58,14 @@ def upload_results_summary(json_location,
 
     # read in the json
     results_summary = read_results_summary(
-        json_location, input_location_type=json_location_type)
+        json_location, input_location_type=json_location_type
+    )
     if (not results_summary) or (not "metadata" in results_summary.keys()):
         print("Unable to find metadata in json file in {}".format(json_location))
         return False
     filename = construct_filename_from_metadata(
-        results_summary["metadata"], "results_summary.json")
+        results_summary["metadata"], "results_summary.json"
+    )
     tmpdir = tempfile.mkdtemp()
     filepath = os.path.join(tmpdir, filename)
     with open(filepath, "w") as outfile:
@@ -79,27 +87,41 @@ def upload_summary_stats(csv_filepath, use_test_api):
 
 def main():
     parser = argparse.ArgumentParser(description="upload to zenodo")
-    parser.add_argument("--create_deposition",
-                        help="create a new deposition", action="store_true")
     parser.add_argument(
-        "--input_location", help="directory or container with file of interest", required=True)
-    parser.add_argument("--input_location_type",
-                        help="'local' or 'azure'", default="local")
+        "--create_deposition", help="create a new deposition", action="store_true"
+    )
     parser.add_argument(
-        "--test_api", help="use the test API", action="store_true")
+        "--input_location",
+        help="directory or container with file of interest",
+        required=True,
+    )
     parser.add_argument(
-        "--summary_csv", help="upload the summary stats csv rather than the results_summary.json", action="store_true")
+        "--input_location_type", help="'local' or 'azure'", default="local"
+    )
+    parser.add_argument("--test_api", help="use the test API", action="store_true")
+    parser.add_argument(
+        "--summary_csv",
+        help="upload the summary stats csv rather than the results_summary.json",
+        action="store_true",
+    )
     args = parser.parse_args()
     if args.create_deposition:
         repo_string = "sandbox" if args.test_api else "production"
-        confirm = input("""
+        confirm = input(
+            """
 Are you sure you want to create a new deposition on the {} repository?
 We normally do this just once per project.  Please confirm (y/n)
-""".format(repo_string))
+""".format(
+                repo_string
+            )
+        )
         if confirm in ["y", "Y", "yes", "Yes"]:
             deposition_id = create_new_deposition(args.test_api)
-            print("Created new deposition in {} repository with deposition_id={}."
-                  .format(repo_string, deposition_id))
+            print(
+                "Created new deposition in {} repository with deposition_id={}.".format(
+                    repo_string, deposition_id
+                )
+            )
             return
         else:
             print("Confirmation not received - exiting with no action")
@@ -109,9 +131,9 @@ We normally do this just once per project.  Please confirm (y/n)
     if args.summary_csv:
         result = upload_summary_stats(args.input_location, test_api)
     else:
-        result = upload_results_summary(args.input_location,
-                                        args.input_location_type,
-                                        test_api)
+        result = upload_results_summary(
+            args.input_location, args.input_location_type, test_api
+        )
     if result:
         print("Uploaded OK")
     else:

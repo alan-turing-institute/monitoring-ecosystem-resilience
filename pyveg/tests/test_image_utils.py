@@ -29,8 +29,7 @@ def test_image_all_black():
 def test_image_not_all_same():
     img = Image.open(
         os.path.join(
-            os.path.dirname(
-                __file__), "..", "testdata", "black_and_white_diagonal.png"
+            os.path.dirname(__file__), "..", "testdata", "black_and_white_diagonal.png"
         )
     )
     assert not image_all_same_colour(img, (0, 0, 0))
@@ -40,14 +39,12 @@ def test_image_not_all_same():
 def test_compare_same_image():
     img1 = Image.open(
         os.path.join(
-            os.path.dirname(
-                __file__), "..", "testdata", "black_and_white_diagonal.png"
+            os.path.dirname(__file__), "..", "testdata", "black_and_white_diagonal.png"
         )
     )
     img2 = Image.open(
         os.path.join(
-            os.path.dirname(
-                __file__), "..", "testdata", "black_and_white_diagonal.png"
+            os.path.dirname(__file__), "..", "testdata", "black_and_white_diagonal.png"
         )
     )
     assert compare_binary_images(img1, img2) == 1.0
@@ -56,8 +53,7 @@ def test_compare_same_image():
 def test_compare_opposite_images():
     img1 = Image.open(
         os.path.join(
-            os.path.dirname(
-                __file__), "..", "testdata", "black_and_white_diagonal.png"
+            os.path.dirname(__file__), "..", "testdata", "black_and_white_diagonal.png"
         )
     )
     img2 = Image.open(

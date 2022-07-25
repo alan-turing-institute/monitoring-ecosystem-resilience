@@ -10,14 +10,10 @@ from pyveg.src.pattern_generation import PatternGenerator
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate vegetation patterns")
-    parser.add_argument("--rainfall", help="rainfall in mm",
-                        type=float, default=1.0)
-    parser.add_argument(
-        "--input_config", help="input config JSON filename", type=str)
-    parser.add_argument(
-        "--input_csv", help="starting pattern CSV filename", type=str)
+    parser = argparse.ArgumentParser(description="Generate vegetation patterns")
+    parser.add_argument("--rainfall", help="rainfall in mm", type=float, default=1.0)
+    parser.add_argument("--input_config", help="input config JSON filename", type=str)
+    parser.add_argument("--input_csv", help="starting pattern CSV filename", type=str)
     parser.add_argument(
         "--steps", help="number of time steps to run", type=int, default=1000
     )

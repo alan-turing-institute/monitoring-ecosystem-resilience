@@ -28,8 +28,7 @@ def get_region_string(coords, region_size):
     right = coords[0] + region_size / 2
     top = coords[1] + region_size / 2
     bottom = coords[1] - region_size / 2
-    region_string = str([[left, top], [right, top], [
-                        right, bottom], [left, bottom]])
+    region_string = str([[left, top], [right, top], [right, bottom], [left, bottom]])
     return region_string
 
 
@@ -102,10 +101,8 @@ def get_sub_image_coords(coords, region_size, x_parts, y_parts):
             for iy in range(y_parts):
                 sub_image_coords.append(
                     (
-                        left_start + sub_image_size_x /
-                        2 + (ix * sub_image_size_x),
-                        top_start - sub_image_size_y /
-                        2 - (iy * sub_image_size_y),
+                        left_start + sub_image_size_x / 2 + (ix * sub_image_size_x),
+                        top_start - sub_image_size_y / 2 - (iy * sub_image_size_y),
                     )
                 )
     return sub_image_coords
@@ -116,7 +113,10 @@ def lookup_country(latitude, longitude):
     Use the OpenCage API to do reverse geocoding
     """
     r = requests.get(
-        "https://api.opencagedata.com/geocode/v1/json?q={}+{}&key=1a43cea9caa6420a8faf6e3b4bf13abb".format(latitude, longitude))
+        "https://api.opencagedata.com/geocode/v1/json?q={}+{}&key=1a43cea9caa6420a8faf6e3b4bf13abb".format(
+            latitude, longitude
+        )
+    )
     if r.status_code != 200:
         print("Error accessing OpenCage API: {}".format(r.content))
         return "Unknown"

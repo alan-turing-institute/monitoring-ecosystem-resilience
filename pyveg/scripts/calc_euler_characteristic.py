@@ -10,11 +10,13 @@ src/subgraph_centrality.py
 import argparse
 import os
 
-from pyveg.src.subgraph_centrality import (feature_vector_metrics,
-                                           generate_sc_images,
-                                           image_file_to_array,
-                                           subgraph_centrality,
-                                           text_file_to_array)
+from pyveg.src.subgraph_centrality import (
+    feature_vector_metrics,
+    generate_sc_images,
+    image_file_to_array,
+    subgraph_centrality,
+    text_file_to_array,
+)
 
 
 def main():

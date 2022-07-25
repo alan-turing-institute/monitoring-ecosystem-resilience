@@ -18,14 +18,14 @@ metadata_dict = {
         "upload_type": "dataset",
         "description": < description > ,
         "creators": [
-                {"name": < name > , "affiliation": < affiliation > },
+                {"name": < name > , "affiliation": < affiliation >},
         ]
     }
 }
 
 test_api_credentials = {
     "base_url": "https://sandbox.zenodo.org/api/",
-    "api_token": < api_token >,
+    "api_token": < api_token > ,
     "deposition_id": None
 }
 

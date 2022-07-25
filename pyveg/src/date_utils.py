@@ -56,8 +56,7 @@ def slice_time_period_into_n(start_date, end_date, n):
         if i == n - 1:
             chunk_end = end
         output_list.append(
-            (chunk_start.isoformat().split("T")[
-             0], chunk_end.isoformat().split("T")[0])
+            (chunk_start.isoformat().split("T")[0], chunk_end.isoformat().split("T")[0])
         )
     return output_list
 
@@ -86,8 +85,7 @@ def slice_time_period(start_date, end_date, period_length):
     # parse the period_length
     match = re.search("^([\d]+)([dwmy])", period_length)
     if not match:
-        raise RuntimeError(
-            "Period length must be in format '<int><d|w|m|y>', e.g. 30d")
+        raise RuntimeError("Period length must be in format '<int><d|w|m|y>', e.g. 30d")
 
     num, units = match.groups()
     num = int(num)

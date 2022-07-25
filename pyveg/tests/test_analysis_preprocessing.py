@@ -4,8 +4,10 @@ Test the functions in analysis_preprocessing.py
 import json
 import os
 
-from pyveg.src.analysis_preprocessing import (read_json_to_dataframes,
-                                              read_results_summary)
+from pyveg.src.analysis_preprocessing import (
+    read_json_to_dataframes,
+    read_results_summary,
+)
 
 
 def test_read_json_to_dataframes():
