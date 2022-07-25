@@ -442,10 +442,14 @@ class VegetationImageProcessor(ProcessorModule):
     1) Full-size RGB image
     2) Many 50x50 pixel sub-images of RGB image
 
-    Optional outputs can be (if ndvi flag is true):
+    Optional outputs can be
+    (if ndvi flag is true):
     3) Full-size NDVI image (greyscale)
     4) Full-size black+white NDVI image (after processing, thresholding, ...)
     5) Many 50x50 pixel sub-images of black+white NDVI image.
+    (if count flag is true):
+    6) Full-size COUNT image (heatmap)
+    7) Many NxN pixel sub-images of the COUNT image.
 
     """
 
@@ -676,7 +680,7 @@ class VegetationImageProcessor(ProcessorModule):
             )
 
         if self.count:
-            # save the NDVI image
+            # save the COUNT image
             count_tif = self.get_file(
                self.join_path(input_filepath, "download.COUNT.tif"), self.input_location_type
             )

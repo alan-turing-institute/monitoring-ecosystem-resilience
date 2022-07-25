@@ -226,8 +226,9 @@ class DownloaderModule(BaseModule):
 class VegetationDownloader(DownloaderModule):
     """
     Specialization of the DownloaderModule class, to deal with
-    imagery from Sentinel 2 or Landsat 5-8 satellites, and
-    get NDVI band from combining red and near-infra-red.
+    imagery from Sentinel 2 or Landsat 5-8 satellites,
+    get NDVI band from combining red and near-infra-red and create a
+    COUNT band with number of images per pixel in the composite.
     """
 
     def __init__(self, name=None):
@@ -255,7 +256,8 @@ class VegetationDownloader(DownloaderModule):
     def prep_images(self, dataset):
         """
         Take a dataset that has already been filtered by date and location.
-        Then apply specific filters, take the median, and calculate NDVI.
+        Then apply specific filters, take the median, and calculate NDVI and create
+        the COUNT band.
 
         Parameters
         ----------
