@@ -26,7 +26,6 @@ jobs:
     - name: Setup Miniconda with Python ${{ matrix.python-version }}
       uses: conda-incubator/setup-miniconda@v2.1.1
       with:
-        activate-environment: testenv
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
     - name: Configure Conda Env
@@ -34,11 +33,13 @@ jobs:
         conda config --set always_yes yes --set changeps1 no
         # conda update -q conda
         conda info -a
+        python --version
         # conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION pytest rpy2 pytest-cov pyyaml
         # source activate test-env
         # pip install .
+    - name: Install conda dependencies
         conda install pytest rpy2 pytest-cov pyyaml
-    - name: Install dependencies
+    - name: Install pip dependencies
       run: |
         python -m pip install --upgrade pip
         python -m pip install .
