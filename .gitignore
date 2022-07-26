@@ -117,3 +117,6 @@ docs/source/_templates
 
 # Test data
 pyveg/testdata/test_ne_england/
+
+# Virtual Environments
+env/
