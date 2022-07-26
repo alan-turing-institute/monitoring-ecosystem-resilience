@@ -41,4 +41,4 @@ jobs:
     - name: Test with pytest
       run: |
         # Limit to just the most problematic test during debugging
-        pytest --durations=0 pyveg/tests/test_combiner_modules.py::test_combine
+        pytest --durations=0

@@ -6,8 +6,7 @@ e.g. vegetation images and weather, to produce one output json file.
 import json
 import os
 import shutil
-
-import pytest
+import unittest
 
 from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
 
@@ -17,9 +16,10 @@ def test_instantiate_combiner():
     assert VegAndWeatherJsonCombiner
 
 
-@pytest.mark.skip(
-    "Skipping test, waiting on a fix for #19. "
-    "https://github.com/urbangrammarai/gee_pipeline/issues/19"
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a CI - waiting on a fix for #19. "
+    "https://github.com/urbangrammarai/gee_pipeline/issues/19",
 )
 def test_combine():
     input_veg_dir = os.path.join(
