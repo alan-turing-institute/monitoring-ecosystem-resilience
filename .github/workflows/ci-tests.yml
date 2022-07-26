@@ -38,6 +38,7 @@ jobs:
         # source activate test-env
         # pip install .
     - name: Install conda dependencies
+      run: |
         conda install pytest rpy2 pytest-cov pyyaml
     - name: Install pip dependencies
       run: |
