@@ -24,7 +24,7 @@ from pyveg.src.date_utils import (
 )
 from pyveg.src.file_utils import download_and_unzip
 from pyveg.src.coordinate_utils import get_region_string
-from pyveg.src.gee_interface import apply_mask_cloud, add_NDVI, add_count_mosaic
+from pyveg.src.gee_interface import apply_mask_cloud, add_NDVI
 
 from pyveg.src.pyveg_pipeline import BaseModule, logger
 
@@ -285,11 +285,11 @@ class VegetationDownloader(DownloaderModule):
             # create pixel level count image
             count = dataset.count()
             # sum counts on each band into one image
-            image_count = add_count_mosaic(count, self.RGB_bands)
+            image_count = count.select(self.RGB_bands[0]).rename("COUNT")
             # add count image as a band
             image = image.addBands(image_count)
 
-            bands_to_select = bands_to_select+ ['COUNT']
+            bands_to_select = bands_to_select + ['COUNT']
 
         # select relevant bands
         image = image.select(bands_to_select)
