@@ -33,7 +33,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2.1.1
       with:
         python-version: ${{ matrix.python-version }}
-        environment-file: example-environment.yml
+        environment-file: environment.yml
     - name: Configure Conda Env
       run: |
         conda config --set always_yes yes --set changeps1 no
