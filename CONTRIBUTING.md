@@ -11,13 +11,17 @@ Don't let trying to be perfect get in the way of being good - exciting ideas are
 
 ## Table of contents
 
-- [Where to start: issues](#where-to-start-issues)
-- [Making a change with a pull request](#making-a-change-with-a-pull-request)
-  - [1. Comment on an existing issue or open a new issue referencing your addition](#1-comment-on-an-existing-issue-or-open-a-new-issue-referencing-your-addition)
-  - [2. Create a new branch (if you have *write* access to the repository) or fork the repository to your profile (if you don't currently have _write_ access)](#2-create-a-new-branch-or-fork-the-repository-to-your-profile)
-  - [3. Make the changes you've discussed](#3-make-the-changes-youve-discussed)
-  - [4. Submit a pull request](#4-submit-a-pull-request)
-- [Style guide](#style-guide)
+- [Contributing to monitoring-ecosystem-resilience (the repo!)](#contributing-to-monitoring-ecosystem-resilience-the-repo)
+  - [Table of contents](#table-of-contents)
+  - [Where to start: issues](#where-to-start-issues)
+  - [Making a change with a pull request](#making-a-change-with-a-pull-request)
+    - [1. Comment on an existing issue or open a new issue referencing your addition](#1-comment-on-an-existing-issue-or-open-a-new-issue-referencing-your-addition)
+    - [2. Create a new branch to your profile](#2-create-a-new-branch-or-forkgithub-fork-the-monitoring-ecosystem-resilience-repositorymonitoring-ecosystem-resilience-repo-to-your-profile)
+      - [2a) Create a branch](#2a-create-a-branch)
+      - [2b. Fork the repository](#2b-fork-the-repository)
+    - [3. Make the changes you've discussed](#3-make-the-changes-youve-discussed)
+    - [4. Submit a pull request](#4-submit-a-pull-request)
+  - [Style Guide](#style-guide)
 
 ## Where to start: issues
 
@@ -138,8 +142,7 @@ Simply make your edits on their files and open a pull request to their branch!
 
 What happens if the continuous integration (CI) fails (for example, if the pull request notifies you that "Some checks were not successful")?
 The CI could fail for a number of reasons.
-At the bottom of the pull request, where it says whether your build passed or failed, you can click “Details” next to the test, which takes you to the Travis page.
-You can view the log or rerun the checks if you have write access to the repo by clicking the “Restart build” button in the top right (you must be logged in to Travis CI with your GitHub account see the “Restart build” button).
+At the bottom of the pull request, where it says whether your build passed or failed, you can click “Details” next to the test, which takes you to the [GitHub Actions](https://github.com/urbangrammarai/gee_pipeline/actions) page. From there you can view the log or rerun the checks (if you have write-access to the repo).
 
 GitHub has a [nice introduction][github-flow] to the pull request workflow, but please get in touch if you have any questions.
 
