@@ -25,31 +25,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    # - name: Set up Python ${{ matrix.python-version }}
-    #   uses: actions/setup-python@v1
-    #   with:
-    #     python-version: ${{ matrix.python-version }}
     - name: Setup Miniconda with Python ${{ matrix.python-version }}
       uses: conda-incubator/setup-miniconda@v2.1.1
       with:
         python-version: ${{ matrix.python-version }}
         environment-file: environment.yml
         clean-patched-environment-file: false
-    - name: Configure Conda Env
+    - name: Check Conda configuration
       run: |
-        # conda config --set always_yes yes --set changeps1 no
-        # conda update -q conda
         conda info -a
         python --version
-        # conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION pytest rpy2 pytest-cov pyyaml
-        # source activate test-env
-        # pip install .
-    # - name: Install conda dependencies
-    #   run: |
-    #     conda install pytest rpy2 pytest-cov pyyaml
-    - name: Install pip dependencies
+    - name: Install repo using pip
       run: |
-        # python -m pip install --upgrade pip
         python -m pip install .
     - name: Test with pytest
       run: |

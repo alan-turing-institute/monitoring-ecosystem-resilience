@@ -7,6 +7,8 @@ import json
 import os
 import shutil
 
+import pytest
+
 from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
 
 
@@ -15,6 +17,10 @@ def test_instantiate_combiner():
     assert VegAndWeatherJsonCombiner
 
 
+@pytest.mark.skip(
+    "Skipping test, waiting on a fix for #19. "
+    "https://github.com/urbangrammarai/gee_pipeline/issues/19"
+)
 def test_combine():
     input_veg_dir = os.path.join(
         os.path.dirname(__file__), "..", "testdata", "Sentinel2", "test_json"
