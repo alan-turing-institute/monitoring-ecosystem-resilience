@@ -17,6 +17,12 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.7"]
+
+    # Set default shell to allow conda activate env to be passed from one step to the next
+    defaults:
+      run:
+        shell: bash -l {0}
+
     steps:
     - uses: actions/checkout@v2
     # - name: Set up Python ${{ matrix.python-version }}
@@ -27,9 +33,6 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2.1.1
       with:
         python-version: ${{ matrix.python-version }}
-      run: |
-        conda info -a
-        python --version
     - name: Configure Conda Env
       run: |
         conda config --set always_yes yes --set changeps1 no
