@@ -5,8 +5,7 @@ Tests for the modules that process the images downloaded from GEE
 import json
 import os
 import shutil
-
-import pytest
+import unittest
 
 from pyveg.src.processor_modules import (
     NDVICalculator,
