@@ -22,11 +22,24 @@ from pyveg.src.file_utils import consolidate_json_to_list, save_image, save_json
 from pyveg.src.image_utils import (
     check_image_ok,
     convert_to_rgb,
+    create_count_heatmap,
     crop_image_npix,
     pillow_to_numpy,
     process_and_threshold,
     scale_tif,
 )
+
+# from pyveg.src.coordinate_utils import find_coords_string
+# from pyveg.src.date_utils import assign_dates_to_tasks
+# from pyveg.src.file_utils import consolidate_json_to_list, save_image, save_json
+# from pyveg.src.image_utils import (
+#     check_image_ok,y
+#     convert_to_rgb,y
+#     crop_image_npix,y
+#     pillow_to_numpy,y
+#     process_and_threshold,y
+#     scale_tif,y
+# )
 from pyveg.src.pyveg_pipeline import BaseModule, logger
 from pyveg.src.subgraph_centrality import feature_vector_metrics, subgraph_centrality
 
@@ -432,10 +445,14 @@ class VegetationImageProcessor(ProcessorModule):
     1) Full-size RGB image
     2) Many 50x50 pixel sub-images of RGB image
 
-    Optional outputs can be (if ndvi flag is true):
+    Optional outputs can be
+    (if ndvi flag is true):
     3) Full-size NDVI image (greyscale)
     4) Full-size black+white NDVI image (after processing, thresholding, ...)
     5) Many 50x50 pixel sub-images of black+white NDVI image.
+    (if count flag is true):
+    6) Full-size COUNT image (heatmap)
+    7) Many NxN pixel sub-images of the COUNT image.
 
     """
 
@@ -462,6 +479,8 @@ class VegetationImageProcessor(ProcessorModule):
             self.split_RGB_images = True
         if not "ndvi" in vars(self):
             self.ndvi = False
+        if not "count" in vars(self):
+            self.count = True
         # in PROCESSED dir we expect RGB. NDVI, BWNDVI
         self.num_files_per_point = 3
         self.input_location_subdirs = ["RAW"]
@@ -666,6 +685,28 @@ class VegetationImageProcessor(ProcessorModule):
 
             self.split_and_save_sub_images(
                 processed_ndvi, date_string, coords_string, "BWNDVI"
+            )
+
+        if self.count:
+            # save the COUNT image
+            count_tif = self.get_file(
+                self.join_path(input_filepath, "download.COUNT.tif"),
+                self.input_location_type,
+            )
+
+            count_image = create_count_heatmap(count_tif)
+            count_filepath = self.construct_image_savepath(
+                date_string, coords_string, "COUNT"
+            )
+            self.save_image(
+                count_image,
+                os.path.dirname(count_filepath),
+                os.path.basename(count_filepath),
+            )
+
+            # split and save sub-images
+            self.split_and_save_sub_images(
+                count_image, date_string, coords_string, "COUNT"
             )
 
         return True

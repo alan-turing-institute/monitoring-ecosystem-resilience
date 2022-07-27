@@ -168,6 +168,30 @@ def scale_tif(input_filename):
     return new_img
 
 
+def create_count_heatmap(input_filename):
+    """
+    Given only a single band, get a heatmap based on the raw values
+
+    Parameters
+    ==========
+    input_filename: str, location of input image
+
+    Returns
+    =======
+    new_img: pillow Image.
+
+    """
+
+    pix = cv.imread(input_filename, cv.IMREAD_ANYDEPTH)
+
+    image_plt = plt.matshow(pix)
+    scaled_img = (image_plt.get_array() - image_plt.get_clim()[0]) / (
+        image_plt.get_clim()[1] - image_plt.get_clim()[0]
+    )
+    new_image = Image.fromarray(np.uint8(image_plt.get_cmap()(scaled_img) * 255))
+    return new_image
+
+
 def convert_to_rgb(band_dict):
     """
     If we are given three or more bands, interpret the first as red,

@@ -1,10 +1,11 @@
-from pyveg.configs.collections import data_collections
 from pyveg.coordinates import coordinate_store
+from pyveg.configs.collections import data_collections
 
-name = "liverpool"
+name = "birmingham"
 
 # Define location to save all outputs
-output_location = "liverpool-test"
+output_location = "birmingham-test"
+
 #output_location_type = "azure"
 output_location_type = "local"
 
@@ -17,9 +18,9 @@ output_location_type = "local"
 #entry = coordinate_store.loc[coordinate_id]
 #coordinates = (entry.longitude, entry.latitude)
 
-coordinates = (-2.983333, 53.400002)
+coordinates = (-1.898575, 52.489471)
 
-date_range = ["2016-05-01", "2016-08-01"]
+date_range = ["2020-05-01", "2020-08-01"]
 
 # From the dictionary entries in data_collections.py, which shall we use
 # (these will become "Sequences")
@@ -36,7 +37,8 @@ modules_to_use = {
 
 # The following demonstrates how parameters can be set for individual Modules or Sequences:
 special_config = {
-    "Sentinel2": {"time_per_point": "3m", "region_size": 0.10
-                  }     # this is a whole Sequence
-    # and another Module
+    "Sentinel2": {"time_per_point": "3m", "region_size": 0.10,
+
+}     # this is a whole Sequence
+           # and another Module
 }
