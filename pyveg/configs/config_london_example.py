@@ -1,7 +1,7 @@
-from pyveg.coordinates import coordinate_store
 from pyveg.configs.collections import data_collections
+from pyveg.coordinates import coordinate_store
 
-#Name of job
+# Name of job
 name = "london"
 
 # Define location to save all outputs
