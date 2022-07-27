@@ -16,6 +16,11 @@ from pyveg.src.processor_modules import (
 )
 
 
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a CI - waiting on a fix for #20. "
+    "https://github.com/urbangrammarai/gee_pipeline/issues/20",
+)
 def test_Sentinel2_image_processor():
     """
     Should combine tif files into RGB, NDVI, and BWNDVI
