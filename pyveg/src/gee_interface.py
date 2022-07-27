@@ -90,16 +90,6 @@ def add_NDVI(image, red_band, near_infrared_band):
         print("Something went wrong in the NDVI variable construction")
         return image
 
-def add_count_mosaic(image, RGB_bands):
-    try:
-        image_count = image.select(RGB_bands[0]).add(image.select(RGB_bands[1])) \
-            .add(image.select(RGB_bands[2])).rename("COUNT")
-        return image_count
-    except:
-        print("Something went wrong in the COUNT variable construction")
-        return image
-
-
 def ee_prep_data(
     collection_dict, coords, date_range, region_size=0.1, scale=10, mask_cloud=True
 ):
