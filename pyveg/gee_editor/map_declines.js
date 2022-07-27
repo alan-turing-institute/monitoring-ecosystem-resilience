@@ -18,7 +18,7 @@ var precip_bandname = "total_precipitation";
 var precip_before = ee.ImageCollection(precip_collection)
                   .select(precip_bandname)
                   .filter(ee.Filter.date(date_1, date_2)).mean();
-                  
+
 var precip_now = ee.ImageCollection(precip_collection)
                   .select(precip_bandname)
                   .filter(ee.Filter.date(date_3, date_4)).mean();
@@ -27,7 +27,7 @@ var precip_now = ee.ImageCollection(precip_collection)
 var precipitation_change = precip_now
                             .subtract(precip_before)
                             .divide(precip_before);
-                            
+
 // mask regions that are initially too dry or too wet
 var precip_mask = precip_before.gt(0.0001).and(precip_before.lt(0.05));
 precipitation_change = precipitation_change.multiply(precip_mask);
@@ -45,8 +45,8 @@ var veg_bandname = "EVI"; // or "NDVI"
 // calculate mean vegetation index
 var veg_before = ee.ImageCollection(veg_collection)
                   .select(veg_bandname)
-                  .filter(ee.Filter.date(date_1, date_2));  
-                  
+                  .filter(ee.Filter.date(date_1, date_2));
+
 var veg_now = ee.ImageCollection(veg_collection)
                 .select(veg_bandname)
                 .filter(ee.Filter.date(date_3, date_4));
@@ -92,9 +92,9 @@ var vis_grayscale = {
   min: -1.0,
   max: 1.0,
   palette: [
-    '#000000', '#111111', '#222222', '#333333', 
-    '#444444', '#555555', '#666666', '#777777', 
-    '#888888', '#999999', '#AAAAAA', '#BBBBBB', 
+    '#000000', '#111111', '#222222', '#333333',
+    '#444444', '#555555', '#666666', '#777777',
+    '#888888', '#999999', '#AAAAAA', '#BBBBBB',
     '#CCCCCC', '#DDDDDD', '#EEEEEE', '#FFFFFF'
   ].reverse()
 };
@@ -130,7 +130,7 @@ Map.addLayer(
 Map.addLayer(
     sum_changes, vis_grayscale_sum,
     'Sum Change');
-    
+
 Map.addLayer(
     prod_changes, vis_grayscale_prod,
     'Prod Change');

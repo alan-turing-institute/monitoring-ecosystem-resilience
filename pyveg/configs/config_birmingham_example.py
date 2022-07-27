@@ -1,5 +1,5 @@
-from pyveg.coordinates import coordinate_store
 from pyveg.configs.collections import data_collections
+from pyveg.coordinates import coordinate_store
 
 name = "birmingham"
 
@@ -39,6 +39,6 @@ modules_to_use = {
 special_config = {
     "Sentinel2": {"time_per_point": "3m", "region_size": 0.10,
 
-}     # this is a whole Sequence
-           # and another Module
+                  }     # this is a whole Sequence
+    # and another Module
 }

@@ -114,3 +114,9 @@ pyveg/azure_config.py
 docs/build
 docs/source/_static
 docs/source/_templates
+
+# Test data
+pyveg/testdata/test_ne_england/
+
+# Virtual Environments
+env/

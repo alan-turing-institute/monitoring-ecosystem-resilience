@@ -2,8 +2,9 @@
 Tests for the functions and methods in pattern_generation.py
 """
 import os
-import pytest
+
 import numpy as np
+import pytest
 
 from pyveg.src.pattern_generation import PatternGenerator as PG
 

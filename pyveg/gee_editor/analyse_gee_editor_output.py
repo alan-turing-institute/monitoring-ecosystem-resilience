@@ -3,23 +3,23 @@
 """
 Using the `time_series.js` file in this repository, and the GEE editor
 (https://code.earthengine.google.com/), You can download a precipitation
-and NDVI time series for a given location quickly. This script let's you 
+and NDVI time series for a given location quickly. This script let's you
 run the `pyveg` analysis on the downloaded result.
 
 """
 
 
-import os
 import argparse
 import datetime
+import os
 
 import pandas as pd
 
-from pyveg.src.analysis_preprocessing import resample_dataframe, detrend_df
 from pyveg.scripts.analyse_gee_data import (
-    run_time_series_analysis,
     run_early_warnings_resilience_analysis,
+    run_time_series_analysis,
 )
+from pyveg.src.analysis_preprocessing import detrend_df, resample_dataframe
 
 
 def convert_gee_date(gee_date_series):
@@ -60,7 +60,7 @@ def convert_gee_outputs(input_dir):
     Returns
     ----------
     str :
-        Path to single csv file that can be read by the pyveg analysis 
+        Path to single csv file that can be read by the pyveg analysis
         code.
     """
 

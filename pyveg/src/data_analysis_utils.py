@@ -3,27 +3,24 @@ Data analysis code including functions to read the .json results file,
 and functions analyse and plot the data.
 """
 
+import datetime
 import json
 import math
 import os
-import datetime
 
+import ewstools
+import geopandas as gpd
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-from shapely.geometry import Point
-import geopandas as gpd
-
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-
-from scipy.fftpack import fft
-from scipy.stats import sem, t, norm
-from statsmodels.tsa.seasonal import STL
-import ewstools
-
 import scipy
 import scipy.optimize as sco
+from scipy.fftpack import fft
+from scipy.stats import norm, sem, t
+from shapely.geometry import Point
+from statsmodels.tsa.seasonal import STL
+
 
 def convert_to_geopandas(df):
     """
@@ -192,8 +189,8 @@ def coarse_dataframe(geodf, side_square):
                 for j in range(side_square):
 
                     if (
-                            n + n_grids * i + j < n_grids * n_grids
-                            and data_df["category"].iloc[n + n_grids * i + j] == -1
+                        n + n_grids * i + j < n_grids * n_grids
+                        and data_df["category"].iloc[n + n_grids * i + j] == -1
                     ):
                         indexes.append(n + n_grids * i + j)
 
@@ -316,7 +313,7 @@ def fft_series(time_series):
     fourier = fft(ts)
     # x-axis values
     xvals = np.linspace(0.0, 1.0 / (20 * T), N // 20)
-    yvals = 2.0 / N * np.abs(fourier[0: N // 20])
+    yvals = 2.0 / N * np.abs(fourier[0 : N // 20])
     return xvals, yvals
 
 
@@ -372,7 +369,6 @@ def get_AR1_parameter_estimate(ys):
     # more sophisticated models to consider:
     # from statsmodels.tsa.statespace.sarimax import SARIMAX
     # from statsmodels.tsa.arima_model import ARMA
-
     # create and fit the AR(1) model
     if pd.infer_freq(ys.index) is not None:
         # explicitly add frequency to index to prevent warnings
@@ -380,7 +376,8 @@ def get_AR1_parameter_estimate(ys):
         model = AutoReg(ys, lags=1, missing="drop").fit()  # currently warning
     else:
         # remove index
-        model = AutoReg(ys.values, lags=1, missing="drop").fit()  # currently warning
+        # currently warning
+        model = AutoReg(ys.values, lags=1, missing="drop").fit()
 
     # get the single parameter value
     parameter = model.params[1]
@@ -509,13 +506,13 @@ def get_max_lagged_cor(dirname, veg_prefix):
     if veg_prefix + "_offset50_mean_lagged_correlation" in lagged_cor.keys():
         max_corr_unsmoothed = lagged_cor[
             veg_prefix + "_offset50_mean_lagged_correlation"
-            ]
+        ]
     else:
         max_corr_unsmoothed = (np.NaN, np.NaN)
     if veg_prefix + "_offset50_smooth_mean_lagged_correlation" in lagged_cor.keys():
         max_corr_smooth = lagged_cor[
             veg_prefix + "_offset50_smooth_mean_lagged_correlation"
-            ]
+        ]
     else:
         max_corr_smooth = (np.NaN, np.NaN)
 
@@ -573,7 +570,7 @@ def ar1_moving_average_time_series(series, length=1):
 
     for i in range(len(series) - length):
         # print(series[i:(length  + i)])
-        param, se = get_AR1_parameter_estimate(series[i: (length + i)])
+        param, se = get_AR1_parameter_estimate(series[i : (length + i)])
         ar1.append(param)
         ar1_se.append(se)
         index.append(series.index[length + i])
@@ -683,9 +680,9 @@ def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
     # for each step along the moving window
     for i in range(len(series_A) - length):
         # get the slices of the timeseries
-        frame_A = series_A[i: (length + i)]
-        frame_A_lagged = series_A_lagged[i: (length + i)]
-        frame_B = series_B[i: (length + i)]
+        frame_A = series_A[i : (length + i)]
+        frame_A_lagged = series_A_lagged[i : (length + i)]
+        frame_B = series_B[i : (length + i)]
 
         # compute the lagged correlation using the lag
         # which maximises the global correlation
@@ -702,7 +699,7 @@ def get_correlation_lag_ts(series_A, series_B, window_size=0.5):
 
     s = "ndvi" if "ndvi" in series_A else "offest50"
     correlations_mva_series_name = (
-            series_A.name.split("_")[0] + "_" + s + "_precip_corr"
+        series_A.name.split("_")[0] + "_" + s + "_precip_corr"
     )
     mag_max_cors_mw_series_name = series_A.name.split("_")[0] + "_" + s + "_precip_lag"
 
@@ -740,9 +737,9 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
 
         # run moving window analysis veg and precip columns
         if (
-                ("offset50" in column or "ndvi" in column)
-                and "mean" in column
-                or "total_precipitation" in column
+            ("offset50" in column or "ndvi" in column)
+            and "mean" in column
+            or "total_precipitation" in column
         ):
             # reindex time series using data
             time_series = df.set_index("date")[column]
@@ -755,9 +752,9 @@ def moving_window_analysis(df, output_dir, window_size=0.5):
         if "total_precipitation" in column:
             for column_veg in df.columns:
                 if (
-                        ("offset50" in column_veg or "ndvi" in column_veg)
-                        and "mean" in column_veg
-                        and "smooth" not in column_veg
+                    ("offset50" in column_veg or "ndvi" in column_veg)
+                    and "mean" in column_veg
+                    and "smooth" not in column_veg
                 ):
                     mwa_df = mwa_df.merge(
                         get_correlation_lag_ts(
@@ -799,15 +796,15 @@ def get_datetime_xs(df):
 
 
 def early_warnings_sensitivity_analysis(
-        series,
-        indicators=["var", "ac"],
-        winsizerange=[0.10, 0.8],
-        incrwinsize=0.10,
-        smooth="Gaussian",
-        bandwidthrange=[0.05, 1.0],
-        spanrange=[0.05, 1.1],
-        incrbandwidth=0.2,
-        incrspanrange=0.1,
+    series,
+    indicators=["var", "ac"],
+    winsizerange=[0.10, 0.8],
+    incrwinsize=0.10,
+    smooth="Gaussian",
+    bandwidthrange=[0.05, 1.0],
+    spanrange=[0.05, 1.1],
+    incrbandwidth=0.2,
+    incrspanrange=0.1,
 ):
     """
     Function to estimate the sensitivity of the early warnings analysis to
@@ -852,7 +849,7 @@ def early_warnings_sensitivity_analysis(
         if smooth == "Gaussian":
 
             for bw in np.arange(
-                    bandwidthrange[0], bandwidthrange[1] + 0.01, incrbandwidth
+                bandwidthrange[0], bandwidthrange[1] + 0.01, incrbandwidth
             ):
                 bw = round(bw, 3)
                 ews_dic_veg = ewstools.core.ews_compute(
@@ -911,14 +908,14 @@ def early_warnings_sensitivity_analysis(
 
 
 def early_warnings_null_hypothesis(
-        series,
-        indicators=["var", "ac"],
-        roll_window=0.4,
-        smooth="Lowess",
-        span=0.1,
-        band_width=0.2,
-        lag_times=[1],
-        n_simulations=1000,
+    series,
+    indicators=["var", "ac"],
+    roll_window=0.4,
+    smooth="Lowess",
+    span=0.1,
+    band_width=0.2,
+    lag_times=[1],
+    n_simulations=1000,
 ):
     """
     Function to estimate the significance of the early warnings analysis
@@ -1055,15 +1052,15 @@ def early_warnings_null_hypothesis(
 
         # List of EWS that can be used for Kendall tau computation
         ktau_metrics = [
-                           "Variance",
-                           "Standard deviation",
-                           "Skewness",
-                           "Kurtosis",
-                           "Coefficient of variation",
-                           "Smax",
-                           "Smax/Var",
-                           "Smax/Mean",
-                       ] + ["Lag-" + str(i) + " AC" for i in lag_times]
+            "Variance",
+            "Standard deviation",
+            "Skewness",
+            "Kurtosis",
+            "Coefficient of variation",
+            "Smax",
+            "Smax/Var",
+            "Smax/Mean",
+        ] + ["Lag-" + str(i) + " AC" for i in lag_times]
         # Find intersection with this list and EWS computed
         ews_list = df_ews.columns.values.tolist()
         ktau_metrics = list(set(ews_list) & set(ktau_metrics))
@@ -1125,15 +1122,19 @@ def mean_annual_ts(x, resolution=12):
     if len(missing_inds) > 0:
         for i in range(len(missing_inds)):
             print(i)
-            x[missing_inds[i]] = np.mean([x[missing_inds[i] - 1], x[missing_inds[i] + 1]])
+            x[missing_inds[i]] = np.mean(
+                [x[missing_inds[i] - 1], x[missing_inds[i] + 1]]
+            )
 
     mean_cycle = np.repeat(np.nan, resolution, axis=0)
     for i in range(resolution):
-        mean_cycle[i] = np.nanmean(x[np.linspace(start=i, stop=len(x) - 1, num=resolution, dtype=int)])
+        mean_cycle[i] = np.nanmean(
+            x[np.linspace(start=i, stop=len(x) - 1, num=resolution, dtype=int)]
+        )
     return mean_cycle
 
 
-def decay_rate(x, resolution=12, method='basic'):
+def decay_rate(x, resolution=12, method="basic"):
     """
     Calculates the decay rate between the max and min values of a time series.
     Parameters
@@ -1156,9 +1157,9 @@ def decay_rate(x, resolution=12, method='basic'):
 
     annual_cycle = mean_annual_ts(x, resolution)
 
-    if method == 'basic':
+    if method == "basic":
         ts = annual_cycle
-    elif method == 'adjusted':
+    elif method == "adjusted":
         ts = annual_cycle - np.min(annual_cycle) + 1
     else:
         ts = np.nan  # causes fail if method is not specified properly
@@ -1174,7 +1175,7 @@ def decay_rate(x, resolution=12, method='basic'):
     return dr
 
 
-def exp_model_fit(x, resolution=12, method='basic'):
+def exp_model_fit(x, resolution=12, method="basic"):
     """
     Fits an exponential model from the maximum to the minimum of the
     mean annual time series. A raw time series is expected as an input.
@@ -1197,9 +1198,9 @@ def exp_model_fit(x, resolution=12, method='basic'):
     """
     annual_cycle = mean_annual_ts(x, resolution)
 
-    if method == 'basic':
+    if method == "basic":
         ts = annual_cycle
-    elif method == 'adjusted':
+    elif method == "adjusted":
         ts = annual_cycle - np.min(annual_cycle) + 1
     else:
         ts = np.nan  # causes fail if method is not specified properly
@@ -1215,7 +1216,11 @@ def exp_model_fit(x, resolution=12, method='basic'):
     else:
         exp_ts = ts[max_ind:min_ind]
 
-    exp_mod = np.polyfit(np.log(exp_ts), np.linspace(start=0, stop=len(exp_ts) - 1, num=len(exp_ts), dtype=int), 1)
+    exp_mod = np.polyfit(
+        np.log(exp_ts),
+        np.linspace(start=0, stop=len(exp_ts) - 1, num=len(exp_ts), dtype=int),
+        1,
+    )
     return exp_mod
 
 
@@ -1235,7 +1240,7 @@ def reverse_normalise_ts(x):
     """
 
     min_ind = np.where(x == np.min(x))[0][0]
-    arrangex = np.append(x[(min_ind + 1):len(x)], x[0:(min_ind + 1)])
+    arrangex = np.append(x[(min_ind + 1) : len(x)], x[0 : (min_ind + 1)])
     revx = arrangex[::-1]
     normx = (revx - np.min(revx)) / sum(revx - np.min(revx))
     return normx
@@ -1284,10 +1289,16 @@ def cball(x=range(1, 13), alpha=1.5, n=150.0, xbar=8.0, sigma=2.0):
 
     fx = np.repeat(np.nan, len(x), axis=0)
     for i in range(len(x)):
-        if (((x[i] - xbar) / sigma) > -alpha):
-            fx[i] = N(sigma, C(alpha, n), D(alpha)) * np.exp((-(x[i] - xbar) ** 2) / (2 * sigma ** 2))
-        if (((x[i] - xbar) / sigma) <= -alpha):
-            fx[i] = N(sigma, C(alpha, n), D(alpha)) * A(alpha, n) * (B(alpha, n) - (x[i] - xbar) / sigma) ** (-n)
+        if ((x[i] - xbar) / sigma) > -alpha:
+            fx[i] = N(sigma, C(alpha, n), D(alpha)) * np.exp(
+                (-((x[i] - xbar) ** 2)) / (2 * sigma**2)
+            )
+        if ((x[i] - xbar) / sigma) <= -alpha:
+            fx[i] = (
+                N(sigma, C(alpha, n), D(alpha))
+                * A(alpha, n)
+                * (B(alpha, n) - (x[i] - xbar) / sigma) ** (-n)
+            )
     return fx
 
 
@@ -1311,7 +1322,9 @@ def err_func(params, ts):
         Residuals/differences between Crytal Ball pdf and supplied time series
     """
 
-    model_output = cball(range(1, len(ts) + 1), params[0], params[1], params[2], params[3])
+    model_output = cball(
+        range(1, len(ts) + 1), params[0], params[1], params[2], params[3]
+    )
 
     residuals = []
     for i in range(0, len(ts)):
@@ -1321,7 +1334,7 @@ def err_func(params, ts):
     return residuals
 
 
-def cball_parfit(p0, timeseries, plot_name = 'CB_fit.png', output_dir = ''):
+def cball_parfit(p0, timeseries, plot_name="CB_fit.png", output_dir=""):
     """
     Uses least squares regression to optimise the parameters in cball to fit the
     timeseries supplied. The supplied time series should be the original series
@@ -1348,14 +1361,13 @@ def cball_parfit(p0, timeseries, plot_name = 'CB_fit.png', output_dir = ''):
         The residuals from the best CB fit
     """
     try:
-        mean_ts= timeseries.groupby(timeseries.index.month).mean()
+        mean_ts = timeseries.groupby(timeseries.index.month).mean()
 
-        if min(mean_ts)<0 and max(mean_ts)<0:
+        if min(mean_ts) < 0 and max(mean_ts) < 0:
             mean_ts = mean_ts - min(mean_ts)
-            p0 = [1.5,150,8.5,1.1]
+            p0 = [1.5, 150, 8.5, 1.1]
     except:
-        raise RuntimeError('Input time series for CB fit must have a datetime index')
-
+        raise RuntimeError("Input time series for CB fit must have a datetime index")
 
     ts = reverse_normalise_ts(mean_ts)
 
@@ -1363,9 +1375,13 @@ def cball_parfit(p0, timeseries, plot_name = 'CB_fit.png', output_dir = ''):
     for i in range(5):
         params, success = sco.leastsq(err_func, p0, args=ts)
         residuals = sum(err_func(params, ts))
-        plt.plot(ts, 'k.', label='data')
-        plt.plot(cball(range(1, len(ts) + 1), params[0], params[1], params[2], params[3]), 'r',
-                 label='Crystal ball fit', linewidth=1)
+        plt.plot(ts, "k.", label="data")
+        plt.plot(
+            cball(range(1, len(ts) + 1), params[0], params[1], params[2], params[3]),
+            "r",
+            label="Crystal ball fit",
+            linewidth=1,
+        )
         if residuals < residuals_min:
             residuals_min = residuals
             p0 = params
@@ -1373,20 +1389,42 @@ def cball_parfit(p0, timeseries, plot_name = 'CB_fit.png', output_dir = ''):
             final_sucess = success
 
     fig, ax = plt.subplots()
-    plt.plot(ts, 'k.', label='data')
-    plt.plot(cball(range(1, len(ts) + 1), final_params[0], final_params[1], final_params[2], final_params[3]), 'r', label='Crystal ball fit', linewidth=1)
-    plt.legend(loc='upper right')
+    plt.plot(ts, "k.", label="data")
+    plt.plot(
+        cball(
+            range(1, len(ts) + 1),
+            final_params[0],
+            final_params[1],
+            final_params[2],
+            final_params[3],
+        ),
+        "r",
+        label="Crystal ball fit",
+        linewidth=1,
+    )
+    plt.legend(loc="upper right")
     ax.set_xticks(np.arange(len(ts)))
-    labels = ['Dec', 'Nov','Oct','Sep','Aug','Jul','Jun','May','Apr','Mar','Feb','Jan']
+    labels = [
+        "Dec",
+        "Nov",
+        "Oct",
+        "Sep",
+        "Aug",
+        "Jul",
+        "Jun",
+        "May",
+        "Apr",
+        "Mar",
+        "Feb",
+        "Jan",
+    ]
     ax.set_xticklabels(labels)
     # Rotate the tick labels and set their alignment.
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-             rotation_mode="anchor")
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
 
-    plt.xlabel('Month (reversed)')
-    plt.ylabel('PDF')
-    plt.title('Crystal ball fit for ' + plot_name)
-    plt.savefig(os.path.join(output_dir, "fit_ts_CB_"+plot_name+".png"))
+    plt.xlabel("Month (reversed)")
+    plt.ylabel("PDF")
+    plt.title("Crystal ball fit for " + plot_name)
+    plt.savefig(os.path.join(output_dir, "fit_ts_CB_" + plot_name + ".png"))
 
     return final_params, final_sucess, residuals_min
-

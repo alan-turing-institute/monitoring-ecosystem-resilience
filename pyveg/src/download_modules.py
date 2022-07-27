@@ -2,34 +2,33 @@
 Classes for modules that download from GEE
 """
 
+import logging
 import os
-import requests
-from datetime import datetime, timedelta
-import dateparser
-import tempfile
 import subprocess
+import tempfile
+from datetime import datetime, timedelta
 
-from geetools import cloud_mask
 import cv2 as cv
-
+import dateparser
 import ee
+import requests
+from geetools import cloud_mask
 
-ee.Initialize()
-
+from pyveg.src.coordinate_utils import get_region_string
 from pyveg.src.date_utils import (
     find_mid_period,
     get_num_n_day_slices,
-    slice_time_period_into_n,
     slice_time_period,
+    slice_time_period_into_n,
 )
 from pyveg.src.file_utils import download_and_unzip
-from pyveg.src.coordinate_utils import get_region_string
-from pyveg.src.gee_interface import apply_mask_cloud, add_NDVI
-
+from pyveg.src.gee_interface import add_NDVI, apply_mask_cloud
 from pyveg.src.pyveg_pipeline import BaseModule, logger
 
+ee.Initialize()
+
 # silence google API WARNING
-import logging
+
 
 logging.getLogger("googleapiclient.discovery_cache").setLevel(logging.ERROR)
 
@@ -54,8 +53,7 @@ class DownloaderModule(BaseModule):
             ("output_location_type", [str]),
             ("replace_existing_files", [bool]),
             ("ndvi", [bool]),
-            ("count", [bool])
-
+            ("count", [bool]),
         ]
         return
 
@@ -157,7 +155,6 @@ class DownloaderModule(BaseModule):
             )
         return url_list
 
-
     def download_data(self, download_urls, download_location):
         """
         Download zip file(s) from GEE to configured output location.
@@ -196,7 +193,9 @@ class DownloaderModule(BaseModule):
         for date_range in date_ranges:
             mid_date = find_mid_period(date_range[0], date_range[1])
             location = self.join_path(self.output_location, mid_date, "RAW")
-            logger.debug("{} Will check for existing files in {}".format(self.name, location))
+            logger.debug(
+                "{} Will check for existing files in {}".format(self.name, location)
+            )
             if not self.replace_existing_files and self.check_for_existing_files(
                 location, self.num_files_per_point
             ):
@@ -208,11 +207,19 @@ class DownloaderModule(BaseModule):
             downloaded_ok = self.download_data(urls, location)
             if downloaded_ok:
                 self.run_status["succeeded"] += 1
-                logger.info("{}: download succeeded for date range {}".format(self.name, date_range))
+                logger.info(
+                    "{}: download succeeded for date range {}".format(
+                        self.name, date_range
+                    )
+                )
                 download_locations.append(location)
             else:
                 self.run_status["failed"] += 1
-                logger.error("{}: download did not succeed for date range {}".format(self.name, date_range))
+                logger.error(
+                    "{}: download did not succeed for date range {}".format(
+                        self.name, date_range
+                    )
+                )
         self.is_finished = True
         return self.run_status
 
@@ -289,7 +296,7 @@ class VegetationDownloader(DownloaderModule):
             # add count image as a band
             image = image.addBands(image_count)
 
-            bands_to_select = bands_to_select + ['COUNT']
+            bands_to_select = bands_to_select + ["COUNT"]
 
         # select relevant bands
         image = image.select(bands_to_select)

@@ -3,48 +3,45 @@ Class for holding analysis modules
 that can be chained together to build a sequence.
 """
 
+import datetime
 import os
 import re
 import shutil
 import tempfile
-import datetime
 import time
-
-import numpy as np
-
-from PIL import Image
-import cv2 as cv
-
 from multiprocessing import Pool
 
+import cv2 as cv
+import numpy as np
+from PIL import Image
+
+from pyveg.src import azure_utils, batch_utils
+from pyveg.src.coordinate_utils import find_coords_string
+from pyveg.src.date_utils import assign_dates_to_tasks
+from pyveg.src.file_utils import consolidate_json_to_list, save_image, save_json
 from pyveg.src.image_utils import (
-    convert_to_rgb,
     check_image_ok,
+    convert_to_rgb,
+    create_count_heatmap,
     crop_image_npix,
-    scale_tif,
-    process_and_threshold,
     pillow_to_numpy,
-    create_count_heatmap
-)
-from pyveg.src.file_utils import (
-    save_image,
-    save_json,
-    consolidate_json_to_list
-)
-from pyveg.src.coordinate_utils import (
-    find_coords_string
-)
-from pyveg.src.date_utils import (
-    assign_dates_to_tasks
+    process_and_threshold,
+    scale_tif,
 )
 
-from pyveg.src.subgraph_centrality import (
-    subgraph_centrality,
-    feature_vector_metrics,
-)
-from pyveg.src import azure_utils
-from pyveg.src import batch_utils
+# from pyveg.src.coordinate_utils import find_coords_string
+# from pyveg.src.date_utils import assign_dates_to_tasks
+# from pyveg.src.file_utils import consolidate_json_to_list, save_image, save_json
+# from pyveg.src.image_utils import (
+#     check_image_ok,y
+#     convert_to_rgb,y
+#     crop_image_npix,y
+#     pillow_to_numpy,y
+#     process_and_threshold,y
+#     scale_tif,y
+# )
 from pyveg.src.pyveg_pipeline import BaseModule, logger
+from pyveg.src.subgraph_centrality import feature_vector_metrics, subgraph_centrality
 
 
 class ProcessorModule(BaseModule):
@@ -62,7 +59,7 @@ class ProcessorModule(BaseModule):
             ("dates_to_process", [list, tuple]),
             ("run_mode", [str]),  # batch or local
             ("n_batch_tasks", [int]),
-            ("timeout", [int]) # timeout in mins for waiting for batch jobs
+            ("timeout", [int]),  # timeout in mins for waiting for batch jobs
         ]
 
     def set_default_parameters(self):
@@ -84,11 +81,11 @@ class ProcessorModule(BaseModule):
         if not "run_mode" in vars(self):
             self.run_mode = "local"
         if not "n_batch_tasks" in vars(self):
-            self.n_batch_tasks = -1 # as many as we need
+            self.n_batch_tasks = -1  # as many as we need
         if not "batch_task_dict" in vars(self):
             self.batch_task_dict = {}
         if not "timeout" in vars(self):
-            self.timeout = 30 # 1/2 hour, with nothing changing
+            self.timeout = 30  # 1/2 hour, with nothing changing
 
     def check_input_data_exists(self, date_string):
         """
@@ -275,7 +272,9 @@ class ProcessorModule(BaseModule):
                     sys.stdout.flush()
                     time.sleep(1)
                 task_dependencies.update(dependency_module.batch_task_dict)
-        logger.info("{} return task_dependencies {}".format(self.name, task_dependencies))
+        logger.info(
+            "{} return task_dependencies {}".format(self.name, task_dependencies)
+        )
         return task_dependencies
 
     def create_task_dict(self, task_id, date_list, dependencies=[]):
@@ -288,7 +287,7 @@ class ProcessorModule(BaseModule):
         return task_dict
 
     def run_batch(self):
-        """"
+        """ "
         Write a config json file for each set of dates.
         If this module depends on another module running in batch, we first
         get the tasks on which this modules tasks will depend on.
@@ -317,7 +316,9 @@ class ProcessorModule(BaseModule):
             date_strings = [
                 ds for ds in date_strings if self.check_input_data_exists(ds)
             ]
-            logger.info("number of date strings with input data {}".format(len(date_strings)))
+            logger.info(
+                "number of date strings with input data {}".format(len(date_strings))
+            )
             date_strings = [
                 ds for ds in date_strings if not self.check_output_data_exists(ds)
             ]
@@ -339,7 +340,9 @@ class ProcessorModule(BaseModule):
                 task_dict = self.create_task_dict(
                     "{}_{}".format(self.name, i), dates_per_task[i]
                 )
-                logger.debug("{} adding task_dict {} to list".format(self.name, task_dict))
+                logger.debug(
+                    "{} adding task_dict {} to list".format(self.name, task_dict)
+                )
                 task_dicts.append(task_dict)
         else:
             # we have a bunch of tasks from the previous Module in the Sequence
@@ -377,8 +380,9 @@ class ProcessorModule(BaseModule):
         """
         See how long since task_status last changed.
         """
-        if not ("previous_task_status" in vars(self) \
-           and "previous_task_status_change") in vars(self):
+        if not (
+            "previous_task_status" in vars(self) and "previous_task_status_change"
+        ) in vars(self):
             self.previous_task_status = task_status
             self.previous_task_status_change = datetime.datetime.now()
             return False
@@ -386,11 +390,11 @@ class ProcessorModule(BaseModule):
             # task status has not changed
             # see how long it has been since last change
             time_now = datetime.datetime.now()
-            if time_now > self.previous_task_status_change \
-               + datetime.timedelta(minutes=self.timeout):
+            if time_now > self.previous_task_status_change + datetime.timedelta(
+                minutes=self.timeout
+            ):
                 logger.info(
-                    "{}: reached timeout of {} minutes since last change. Aborting"\
-                    .format(
+                    "{}: reached timeout of {} minutes since last change. Aborting".format(
                         self.name, self.timeout
                     )
                 )
@@ -401,15 +405,12 @@ class ProcessorModule(BaseModule):
             self.previous_task_status_change = datetime.datetime.now()
         return False
 
-
     def check_if_finished(self):
         if self.run_mode == "local":
             return self.is_finished
         elif self.parent and self.parent.batch_job_id:
             job_id = self.parent.batch_job_id
-            task_status = batch_utils.check_tasks_status(
-                job_id, self.name
-            )
+            task_status = batch_utils.check_tasks_status(job_id, self.name)
 
             logger.info(
                 "{} job status: success: {} failed: {} running: {} waiting: {} cannot_run: {}".format(
@@ -418,14 +419,16 @@ class ProcessorModule(BaseModule):
                     task_status["num_failed"],
                     task_status["num_running"],
                     task_status["num_waiting"],
-                    task_status["num_cannot_run"]
+                    task_status["num_cannot_run"],
                 )
             )
             self.run_status["succeeded"] = task_status["num_success"]
-            self.run_status["failed"] = task_status["num_failed"] + task_status["num_cannot_run"]
+            self.run_status["failed"] = (
+                task_status["num_failed"] + task_status["num_cannot_run"]
+            )
             num_incomplete = task_status["num_running"] + task_status["num_waiting"]
             self.run_status["incomplete"] = num_incomplete
-            self.is_finished = (num_incomplete == 0)
+            self.is_finished = num_incomplete == 0
 
             # if we have exceeded timeout, say that we are finished.
             if self.check_timeout(task_status):
@@ -459,7 +462,7 @@ class VegetationImageProcessor(ProcessorModule):
             ("region_size", [float]),
             ("RGB_bands", [list]),
             ("split_RGB_images", [bool]),
-            ("ndvi",[bool])
+            ("ndvi", [bool]),
         ]
 
     def set_default_parameters(self):
@@ -651,14 +654,17 @@ class VegetationImageProcessor(ProcessorModule):
         if self.ndvi:
             # save the NDVI image
             ndvi_tif = self.get_file(
-               self.join_path(input_filepath, "download.NDVI.tif"), self.input_location_type
+                self.join_path(input_filepath, "download.NDVI.tif"),
+                self.input_location_type,
             )
             ndvi_image = scale_tif(ndvi_tif)
             ndvi_filepath = self.construct_image_savepath(
                 date_string, coords_string, "NDVI"
             )
             self.save_image(
-                ndvi_image, os.path.dirname(ndvi_filepath), os.path.basename(ndvi_filepath)
+                ndvi_image,
+                os.path.dirname(ndvi_filepath),
+                os.path.basename(ndvi_filepath),
             )
 
             # preprocess and threshold the NDVI image
@@ -673,7 +679,9 @@ class VegetationImageProcessor(ProcessorModule):
             )
 
             # split and save sub-images
-            self.split_and_save_sub_images(ndvi_image, date_string, coords_string, "NDVI")
+            self.split_and_save_sub_images(
+                ndvi_image, date_string, coords_string, "NDVI"
+            )
 
             self.split_and_save_sub_images(
                 processed_ndvi, date_string, coords_string, "BWNDVI"
@@ -682,7 +690,8 @@ class VegetationImageProcessor(ProcessorModule):
         if self.count:
             # save the COUNT image
             count_tif = self.get_file(
-               self.join_path(input_filepath, "download.COUNT.tif"), self.input_location_type
+                self.join_path(input_filepath, "download.COUNT.tif"),
+                self.input_location_type,
             )
 
             count_image = create_count_heatmap(count_tif)
@@ -690,13 +699,15 @@ class VegetationImageProcessor(ProcessorModule):
                 date_string, coords_string, "COUNT"
             )
             self.save_image(
-                count_image, os.path.dirname(count_filepath), os.path.basename(count_filepath)
+                count_image,
+                os.path.dirname(count_filepath),
+                os.path.basename(count_filepath),
             )
 
             # split and save sub-images
-            self.split_and_save_sub_images(count_image, date_string, coords_string, "COUNT")
-
-
+            self.split_and_save_sub_images(
+                count_image, date_string, coords_string, "COUNT"
+            )
 
         return True
 
@@ -744,7 +755,8 @@ class WeatherImageToJSON(ProcessorModule):
                 name_variable = (filename.split("."))[1]
                 variable_array = cv.imread(
                     self.get_file(
-                        self.join_path(input_location, filename), self.input_location_type
+                        self.join_path(input_location, filename),
+                        self.input_location_type,
                     ),
                     cv.IMREAD_ANYDEPTH,
                 )

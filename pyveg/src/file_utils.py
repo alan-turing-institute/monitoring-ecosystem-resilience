@@ -1,12 +1,12 @@
-import os
 import datetime
-import dateparser
 import json
-import requests
+import os
 import re
 import subprocess
+from zipfile import BadZipFile, ZipFile
 
-from zipfile import ZipFile, BadZipFile
+import dateparser
+import requests
 
 from .date_utils import find_mid_period
 
@@ -54,7 +54,7 @@ def get_filepath_after_directory(path, dirname, include_dirname=False):
     dirname_found = False
     for part in path_parts:
         if part == dirname:
-            dirname_found=True
+            dirname_found = True
             if include_dirname:
                 output_parts.append(part)
         else:
@@ -83,14 +83,15 @@ def download_and_unzip(url, output_tmpdir):
     # GET the URL
     r = requests.get(url)
     if not r.status_code == 200:
-        raise RuntimeError(" HTTP Error {} getting download link {}".format(r.status_code,
-                                                                            url))
+        raise RuntimeError(
+            " HTTP Error {} getting download link {}".format(r.status_code, url)
+        )
     os.makedirs(output_tmpdir, exist_ok=True)
     output_zipfile = os.path.join(output_tmpdir, "gee.zip")
     with open(output_zipfile, "wb") as outfile:
         outfile.write(r.content)
-    ## catch zipfile-related exceptions here, and if they arise,
-    ## write the name of the zipfile and the url to a logfile
+    # catch zipfile-related exceptions here, and if they arise,
+    # write the name of the zipfile and the url to a logfile
     try:
         with ZipFile(output_zipfile, "r") as zip_obj:
             zip_obj.extractall(path=output_tmpdir)
@@ -205,7 +206,7 @@ def get_tag():
     """
     Get the git tag currently checked out.
     """
-    p=subprocess.Popen(["git","describe","--tags"],stdout=subprocess.PIPE)
+    p = subprocess.Popen(["git", "describe", "--tags"], stdout=subprocess.PIPE)
     tag = p.communicate()[0].decode("utf-8").strip()
     return tag
 
@@ -220,12 +221,16 @@ def construct_filename_from_metadata(metadata, suffix):
         filename = metadata["coords_id"]
     else:
         filename = "coords"
-    filename += "_{}N_{}E_{}_freq-{}".format(metadata["latitude"], metadata["longitude"],
-                                        metadata["collection"], metadata["time_per_point"])
+    filename += "_{}N_{}E_{}_freq-{}".format(
+        metadata["latitude"],
+        metadata["longitude"],
+        metadata["collection"],
+        metadata["time_per_point"],
+    )
     if "region_size" in metadata.keys():
         filename += "region-{}".format(region_size)
     if "tag" in metadata.keys():
         filename += "_{}".format(metadata["tag"])
     filename += "_{}".format(suffix)
-    filename = filename.replace("/","")
+    filename = filename.replace("/", "")
     return filename

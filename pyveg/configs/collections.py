@@ -11,7 +11,7 @@ data_collections = {
         "cloudy_pix_flag": "CLOUDY_PIXEL_PERCENTAGE",
         "min_date": "2016-01-01",
         "max_date": "2022-01-01",  # Get to current year.
-#        "max_date": time.strftime("%Y-%m-%d"),
+        #        "max_date": time.strftime("%Y-%m-%d"),
         "time_per_point": "1m",
     },
     "Landsat8": {

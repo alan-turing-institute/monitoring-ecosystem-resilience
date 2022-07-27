@@ -1,39 +1,51 @@
 import os
 import shutil
+import unittest
 
 import pytest
-import unittest
 
 if os.name == "posix":
     TMPDIR = "/tmp/"
 else:
     TMPDIR = "%TMP%"
 
-if not os.environ.get("TRAVIS") == "true":
+if not os.environ.get("CI") == "true":
     from pyveg.src.download_modules import VegetationDownloader, WeatherDownloader
 
 
-@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a Continuous Integration environment.",
+)
 def test_instantiate_vegetation_downloader():
     veg_downloader = VegetationDownloader("Sentinel2")
     assert isinstance(veg_downloader, VegetationDownloader)
 
 
-@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a Continuous Integration environment.",
+)
 def test_veg_downloader_unconfigured_exception():
     veg_downloader = VegetationDownloader("Sentinel2")
     with pytest.raises(RuntimeError):
         veg_downloader.run()
 
 
-@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a Continuous Integration environment.",
+)
 def test_veg_downloader_variables_not_set_exception():
     veg_downloader = VegetationDownloader("Sentinel2")
     with pytest.raises(RuntimeError):
         veg_downloader.configure()
 
 
-@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a Continuous Integration environment.",
+)
 def test_veg_downloader_configure_sentinel2():
     veg_downloader = VegetationDownloader("Sentinel2")
     veg_downloader.data_type = "vegetation"
@@ -51,7 +63,10 @@ def test_veg_downloader_configure_sentinel2():
     assert veg_downloader.is_configured == True
 
 
-@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a Continuous Integration environment.",
+)
 def test_veg_downloader_run_sentinel2():
     veg_downloader = VegetationDownloader("Sentinel2")
     veg_downloader.data_type = "vegetation"
@@ -79,27 +94,39 @@ def test_veg_downloader_run_sentinel2():
     shutil.rmtree(tif_dir, ignore_errors=True)
 
 
-@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a Continuous Integration environment.",
+)
 def test_instantiate_weather_downloader():
     weather_downloader = WeatherDownloader("ERA5")
     assert isinstance(weather_downloader, WeatherDownloader)
 
 
-@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a Continuous Integration environment.",
+)
 def test_weather_downloader_unconfigured_exception():
     weather_downloader = WeatherDownloader("ERA5")
     with pytest.raises(RuntimeError):
         weather_downloader.run()
 
 
-@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a Continuous Integration environment.",
+)
 def test_weather_downloader_variables_not_set_exception():
     weather_downloader = WeatherDownloader("ERA5")
     with pytest.raises(RuntimeError):
         weather_downloader.configure()
 
 
-@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a Continuous Integration environment.",
+)
 def test_weather_downloader_configure_era5():
     weather_downloader = WeatherDownloader("ERA5")
     weather_downloader.data_type = "weather"
@@ -113,7 +140,10 @@ def test_weather_downloader_configure_era5():
     assert weather_downloader.is_configured == True
 
 
-@unittest.skipIf(os.environ.get("TRAVIS") == "true", "Skipping this test on Travis CI.")
+@unittest.skipIf(
+    os.environ.get("CI") == "true",
+    "Skipping this test in a Continuous Integration environment.",
+)
 def test_weather_downloader_run_era5():
     weather_downloader = WeatherDownloader("ERA5")
     weather_downloader.data_type = "weather"

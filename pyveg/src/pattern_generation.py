@@ -1,11 +1,11 @@
 """
 Translation of Matlab code to model patterned vegetation in semi-arid landscapes.
 """
+import json
 import os
 import random
-import json
-import numpy as np
 
+import numpy as np
 from matplotlib import pyplot as plt
 
 
@@ -128,12 +128,15 @@ class PatternGenerator(object):
         self.surface_water_frac = self.config[
             "alpha"
         ]  # proportion of surface water available for infiltration (d-1)
-        self.bare_soil_infiltration = self.config["W0"]  # Bare soil infiltration (-)
-        self.grazing_loss = self.config["beta"]  # Plant loss rate due to grazing (d-1)
+        # Bare soil infiltration (-)
+        self.bare_soil_infiltration = self.config["W0"]
+        # Plant loss rate due to grazing (d-1)
+        self.grazing_loss = self.config["beta"]
         self.soil_water_loss = self.config[
             "rw"
         ]  # Soil water loss rate due to seepage and evaporation (d-1)
-        self.plant_uptake = self.config["c"]  # Plant uptake constant (g.mm-1.m-2)
+        # Plant uptake constant (g.mm-1.m-2)
+        self.plant_uptake = self.config["c"]
         self.plant_growth = self.config[
             "gmax"
         ]  # Plant growth constant (mm.g-1.m-2.d-1)

@@ -1,29 +1,25 @@
-import os
 import io
 import json
-
-import arrow
+import os
 import re
 import tempfile
+
+import arrow
+from azure.common import AzureMissingResourceHttpError
+from azure.storage.blob import BlockBlobService, ContainerPermissions, PublicAccess
 from PIL import Image
 
 from pyveg.src.file_utils import split_filepath
 
-AZURE_CONFIG_FOUND=False
+AZURE_CONFIG_FOUND = False
 
 # load the azure configuration if we have the azure_config.py file
 try:
     from pyveg.azure_config import config
-    AZURE_CONFIG_FOUND=True
+
+    AZURE_CONFIG_FOUND = True
 except:
     pass
-
-from azure.storage.blob import (
-    BlockBlobService,
-    PublicAccess,
-    ContainerPermissions
-)
-from azure.common import AzureMissingResourceHttpError
 
 
 def sanitize_container_name(orig_name):
@@ -43,7 +39,7 @@ def sanitize_container_name(orig_name):
             sanitized_name += character.lower()
             previous_character = character
     if "\\" in sanitized_name:
-        sanitized_name = sanitized_name.replace("\\","/")
+        sanitized_name = sanitized_name.replace("\\", "/")
 
     return sanitized_name
 

@@ -1,12 +1,12 @@
 """
 Test the functions in analysis_preprocessing.py
 """
-import os
 import json
+import os
 
 from pyveg.src.analysis_preprocessing import (
-    read_results_summary,
     read_json_to_dataframes,
+    read_results_summary,
 )
 
 

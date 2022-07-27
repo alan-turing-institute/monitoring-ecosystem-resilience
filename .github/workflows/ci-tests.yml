@@ -1,0 +1,44 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Unit tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+  # Run on main because caches are inherited from parent branches
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.7"]
+
+    # Set default shell to allow conda activate env to be passed from one step to the next
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Miniconda with Python ${{ matrix.python-version }}
+      uses: conda-incubator/setup-miniconda@v2.1.1
+      with:
+        python-version: ${{ matrix.python-version }}
+        environment-file: environment.yml
+        clean-patched-environment-file: false
+    - name: Check Conda configuration
+      run: |
+        conda info -a
+        python --version
+    - name: Install repo using pip
+      run: |
+        python -m pip install .
+    - name: Test with pytest
+      run: |
+        # Limit to just the most problematic test during debugging
+        pytest --durations=0

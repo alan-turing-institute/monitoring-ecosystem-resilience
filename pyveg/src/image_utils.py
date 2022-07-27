@@ -6,24 +6,22 @@ pip install --upgrade pillow
 ```
 """
 
+import json
 import os
 import sys
-import json
-
-import pandas as pd
-import numpy as np
 
 import cv2 as cv
-from PIL import Image
 import imageio
-
 import matplotlib
-
-matplotlib.use("PS")
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from PIL import Image
 
 from .coordinate_utils import get_sub_image_coords
 from .file_utils import save_image
+
+matplotlib.use("PS")
 
 
 def image_from_array(input_array, output_size=None, sel_val=200):
@@ -114,7 +112,7 @@ def combine_tif(band_dict):
             int(
                 band_dict[col]["pix_vals"][ix, iy]
                 * 255
-                / (overall_max + 1)  #                   band_dict[col]["max_val"]
+                / (overall_max + 1)  # band_dict[col]["max_val"]
             ),
         )
 
@@ -169,6 +167,7 @@ def scale_tif(input_filename):
             )
     return new_img
 
+
 def create_count_heatmap(input_filename):
     """
     Given only a single band, get a heatmap based on the raw values
@@ -186,9 +185,12 @@ def create_count_heatmap(input_filename):
     pix = cv.imread(input_filename, cv.IMREAD_ANYDEPTH)
 
     image_plt = plt.matshow(pix)
-    scaled_img = (image_plt.get_array() - image_plt.get_clim()[0]) / (image_plt.get_clim()[1] - image_plt.get_clim()[0])
+    scaled_img = (image_plt.get_array() - image_plt.get_clim()[0]) / (
+        image_plt.get_clim()[1] - image_plt.get_clim()[0]
+    )
     new_image = Image.fromarray(np.uint8(image_plt.get_cmap()(scaled_img) * 255))
     return new_image
+
 
 def convert_to_rgb(band_dict):
     """
@@ -332,7 +334,6 @@ def crop_and_convert_to_bw(
 
 
 def create_gif_from_images(directory_path, output_name, string_in_filename=""):
-
     """
         Loop through a directory and convert all images in it into a gif chronologically
 

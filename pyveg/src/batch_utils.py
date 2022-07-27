@@ -2,19 +2,18 @@
 Functions for submitting batch jobs.  Currently only support Azure Batch.
 Largely taken from https://github.com/Azure-Samples/batch-python-quickstart
 """
+import datetime
+import json
 import os
 import sys
-import json
 import tempfile
-import datetime
 import time
 
-import azure.storage.blob as azureblob
-import azure.batch.batch_service_client as batch
 import azure.batch.batch_auth as batch_auth
+import azure.batch.batch_service_client as batch
 import azure.batch.models as batchmodels
+import azure.storage.blob as azureblob
 from azure.storage.blob import BlockBlobService
-
 
 try:
     from pyveg.azure_config import config
@@ -262,14 +261,16 @@ def check_task_failed_dependencies(task, job_id, batch_service_client=None):
         return False
     for dependency in dependencies:
         dep_task = batch_service_client.task.get(job_id, dependency)
-        if dep_task.state == batchmodels.TaskState.completed and \
-           dep_task.execution_info.exit_code != 0:
+        if (
+            dep_task.state == batchmodels.TaskState.completed
+            and dep_task.execution_info.exit_code != 0
+        ):
             # return True if any of the dependencies failed
             return True
         # use this a recursive function
-        dep_dep_failed = check_task_failed_dependencies(dep_task,
-                                                        job_id,
-                                                        batch_service_client)
+        dep_dep_failed = check_task_failed_dependencies(
+            dep_task, job_id, batch_service_client
+        )
         if dep_dep_failed:
             return True
 
@@ -298,8 +299,12 @@ def check_tasks_status(job_id, task_name_prefix="", batch_service_client=None):
         tasks = [task for task in tasks if task.id.startswith(task_name_prefix)]
 
     running_tasks = [
-        task for task in tasks if (task.state == batchmodels.TaskState.running \
-        or task.state == batchmodels.TaskState.preparing)
+        task
+        for task in tasks
+        if (
+            task.state == batchmodels.TaskState.running
+            or task.state == batchmodels.TaskState.preparing
+        )
     ]
     num_running = len(running_tasks)
 
@@ -326,7 +331,7 @@ def check_tasks_status(job_id, task_name_prefix="", batch_service_client=None):
         "num_failed": len(task_success) - num_success,
         "num_running": num_running,
         "num_waiting": num_waiting,
-        "num_cannot_run": num_cannot_run
+        "num_cannot_run": num_cannot_run,
     }
 
 

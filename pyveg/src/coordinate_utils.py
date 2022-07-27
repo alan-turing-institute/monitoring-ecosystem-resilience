@@ -4,6 +4,7 @@ and their string representations.,
 """
 
 import re
+
 import requests
 
 
@@ -46,7 +47,7 @@ def coords_dict_to_coords_string(coords):
     rounding to 2 decimal places.
     """
     longitude, latitude = None, None
-    for k,v in coords.items():
+    for k, v in coords.items():
         if "at" in k:
             latitude = v
         if "ong" in k:
@@ -107,13 +108,15 @@ def get_sub_image_coords(coords, region_size, x_parts, y_parts):
     return sub_image_coords
 
 
-
-
 def lookup_country(latitude, longitude):
     """
     Use the OpenCage API to do reverse geocoding
     """
-    r = requests.get("https://api.opencagedata.com/geocode/v1/json?q={}+{}&key=1a43cea9caa6420a8faf6e3b4bf13abb".format(latitude, longitude))
+    r = requests.get(
+        "https://api.opencagedata.com/geocode/v1/json?q={}+{}&key=1a43cea9caa6420a8faf6e3b4bf13abb".format(
+            latitude, longitude
+        )
+    )
     if r.status_code != 200:
         print("Error accessing OpenCage API: {}".format(r.content))
         return "Unknown"

@@ -5,14 +5,15 @@ Functions to help interface with GEE, in particular to download images.
 import os
 import shutil
 from datetime import datetime
-from geetools import cloud_mask
-import cv2 as cv
 
+import cv2 as cv
 import ee
+from geetools import cloud_mask
+
+from .file_utils import download_and_unzip
 
 ee.Initialize()
 
-from .file_utils import download_and_unzip
 
 if os.name == "posix":
     TMPDIR = "/tmp/"
@@ -89,6 +90,7 @@ def add_NDVI(image, red_band, near_infrared_band):
     except:
         print("Something went wrong in the NDVI variable construction")
         return image
+
 
 def ee_prep_data(
     collection_dict, coords, date_range, region_size=0.1, scale=10, mask_cloud=True

@@ -1,0 +1,41 @@
+---
+# Adapted from https://github.com/alan-turing-institute/Python-quality-tools
+name: pre-commit action
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+  # Run on main because caches are inherited from parent branches
+env:
+  # This should be the default but we'll be explicit
+  PRE_COMMIT_HOME: ~/.caches/pre-commit
+jobs:
+  pre-commit_job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.7"
+      - name: Install Pre-Commit
+        shell: bash
+        run: |
+          python -m pip install pre-commit
+      - name: Cache Pre-Commit Hooks
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.PRE_COMMIT_HOME }}
+          key: ${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Install Pre-Commit Hooks
+        shell: bash
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          pre-commit install-hooks
+      - name: Run Pre-Commit Hooks
+        shell: bash
+        run: |
+          pre-commit run --all-files

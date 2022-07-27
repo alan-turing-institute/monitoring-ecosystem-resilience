@@ -16,15 +16,15 @@ running pyveg_run_pipeline.
 
 """
 
-import os
-import tempfile
 import argparse
+import os
 import subprocess
+import tempfile
 
 from azure.storage.blob import BlockBlobService
 
-from pyveg.src.azure_utils import download_summary_json, download_rgb
 from pyveg.azure_config import config
+from pyveg.src.azure_utils import download_rgb, download_summary_json
 
 
 def create_zip_archive(temp_dir, output_zipname, json_dir=None, rgb_dir=None):
@@ -36,9 +36,9 @@ def create_zip_archive(temp_dir, output_zipname, json_dir=None, rgb_dir=None):
 
     """
     if json_dir:
-        subprocess.run(["cp","-r",json_dir, temp_dir])
+        subprocess.run(["cp", "-r", json_dir, temp_dir])
     if rgb_dir:
-        subprocess.run(["cp","-r",rgb_dir, temp_dir])
+        subprocess.run(["cp", "-r", rgb_dir, temp_dir])
     subprocess.run(["zip", "-r", os.path.basename(output_zipname), "."], cwd=temp_dir)
     subprocess.run(
         ["cp", os.path.join(temp_dir, os.path.basename(output_zipname)), output_zipname]
@@ -52,18 +52,12 @@ def main():
     parser.add_argument(
         "--container", help="name of blob storage container", required=True
     )
+    parser.add_argument("--output_dir", help="name of output_directory", required=True)
     parser.add_argument(
-        "--output_dir", help="name of output_directory", required=True
+        "--summary_json", help="download results_summary.json?", action="store_true"
     )
-    parser.add_argument(
-        "--summary_json", help="download results_summary.json?", action='store_true'
-    )
-    parser.add_argument(
-        "--rgb", help="download RGB images?", action='store_true'
-    )
-    parser.add_argument(
-        "--output_zipfile", help="name of zipfile to write to"
-    )
+    parser.add_argument("--rgb", help="download RGB images?", action="store_true")
+    parser.add_argument("--output_zipfile", help="name of zipfile to write to")
     args = parser.parse_args()
 
     if args.output_dir:

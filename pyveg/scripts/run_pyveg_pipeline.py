@@ -2,16 +2,16 @@
 Build and run a pyveg pipeline based on a configuration json file.
 """
 
-import os
-import sys
-import time
-import json
 import argparse
+import datetime
 import importlib.util
 import inspect
-from shutil import copyfile
+import json
+import os
 import re
-import datetime
+import sys
+import time
+from shutil import copyfile
 
 import ee
 
@@ -23,14 +23,13 @@ try:
 except (ee.ee_exception.EEException):
     print("Earth Engine not initialized - will not be able to download from GEE")
     pass
+from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
 from pyveg.src.processor_modules import (
-    VegetationImageProcessor,
-    NetworkCentralityCalculator,
     NDVICalculator,
+    NetworkCentralityCalculator,
+    VegetationImageProcessor,
     WeatherImageToJSON,
 )
-
-from pyveg.src.combiner_modules import VegAndWeatherJsonCombiner
 
 
 def build_pipeline(config_file, from_cache=False):

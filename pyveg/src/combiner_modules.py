@@ -2,11 +2,11 @@
 Modules that can consolidate inputs from different sources
 and produce combined output file (typically JSON).
 """
-import os
 import json
+import os
 
-from pyveg.src.file_utils import save_json, get_tag
 from pyveg.src.date_utils import get_date_strings_for_time_period
+from pyveg.src.file_utils import get_tag, save_json
 from pyveg.src.pyveg_pipeline import BaseModule, logger
 
 
@@ -34,7 +34,6 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             ("veg_collection", [str]),
             ("output_filename", [str]),
         ]
-
 
     def set_default_parameters(self):
         """
@@ -94,7 +93,7 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             return None
         elif len(json_lists) == 1:
             return json_lists[0]
-        ## any way to do this without a huge nested loop?
+        # any way to do this without a huge nested loop?
 
         # loop over all the lists apart from the first, which we will add to
         for jlist in json_lists[1:]:
@@ -169,7 +168,9 @@ class VegAndWeatherJsonCombiner(CombinerModule):
                 )
                 # list the JSON subdirectories and find any .json files in them
                 dir_contents = self.list_directory(
-                    self.join_path(self.input_veg_location, date_string, "JSON", subdir),
+                    self.join_path(
+                        self.input_veg_location, date_string, "JSON", subdir
+                    ),
                     self.input_veg_location_type,
                 )
                 json_files = [
@@ -224,9 +225,11 @@ class VegAndWeatherJsonCombiner(CombinerModule):
         weather_dates = output_dict[self.weather_collection]["time-series-data"].keys()
         for date in veg_dates:
 
-            if output_dict[self.veg_collection]["time-series-data"][date] \
-               and date in weather_dates \
-               and output_dict[self.weather_collection]["time-series-data"][date]:
+            if (
+                output_dict[self.veg_collection]["time-series-data"][date]
+                and date in weather_dates
+                and output_dict[self.weather_collection]["time-series-data"][date]
+            ):
                 self.run_status["succeeded"] += 1
         return
 
@@ -279,9 +282,9 @@ class VegAndWeatherJsonCombiner(CombinerModule):
             self.output_location_type,
         )
 
-        logger.info("{}: Wrote output to {}".format(
-            self.name,
-            self.join_path(self.output_location, self.output_filename)
-        )
+        logger.info(
+            "{}: Wrote output to {}".format(
+                self.name, self.join_path(self.output_location, self.output_filename)
+            )
         )
         self.is_finished = True

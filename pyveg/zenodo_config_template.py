@@ -13,24 +13,24 @@ structure containing the png files that are the output of the time series analys
 
 
 metadata_dict = {
-        "metadata": {
-            "title": <title>
-            "upload_type": "dataset",
-            "description": <description>,
-            "creators": [
-                {"name": <name>, "affiliation": <affiliation>},
-            ]
-        }
+    "metadata": {
+        "title": < title >
+        "upload_type": "dataset",
+        "description": < description > ,
+        "creators": [
+                {"name": < name > , "affiliation": < affiliation >},
+        ]
+    }
 }
 
 test_api_credentials = {
     "base_url": "https://sandbox.zenodo.org/api/",
-    "api_token": <api_token>,
+    "api_token": < api_token > ,
     "deposition_id": None
 }
 
 prod_api_credentials = {
     "base_url": "https://zenodo.org/api/",
-    "api_token":  <api_token>
+    "api_token": < api_token >
     "deposition_id": None
 }

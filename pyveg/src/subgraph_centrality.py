@@ -14,13 +14,14 @@ Estrada et.al. "Subgraph Centrality in Complex Networks"
 https://arxiv.org/pdf/cond-mat/0504730.pdf
 """
 
+import argparse
+
+import igraph
 import numpy as np
 from PIL import Image
 from scipy import spatial
-import argparse
-import igraph
 
-from .image_utils import image_from_array, image_file_to_array
+from .image_utils import image_file_to_array, image_from_array
 
 
 def make_graph(adj_matrix):

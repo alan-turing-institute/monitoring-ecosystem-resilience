@@ -1,7 +1,7 @@
 import unittest
-import pytest
-import PIL
 
+import PIL
+import pytest
 
 from pyveg.src.azure_utils import *
 

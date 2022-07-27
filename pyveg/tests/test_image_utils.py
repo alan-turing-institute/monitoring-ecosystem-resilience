@@ -3,9 +3,11 @@ Test the functions in subgraph_centrality.py
 """
 
 import os
-import numpy as np
-from pyveg.src.image_utils import *
+
 import igraph
+import numpy as np
+
+from pyveg.src.image_utils import *
 
 
 def test_image_all_white():

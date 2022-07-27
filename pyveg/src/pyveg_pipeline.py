@@ -13,13 +13,15 @@ A special type of MODULE may be placed at the end of a PIPELINE to combine
 the results of the different SEQUENCES into one output file.
 """
 
-import os
 import json
+import logging
+import os
 import subprocess
 import time
-
-import logging
 from logging.handlers import RotatingFileHandler
+from shutil import copyfile
+
+from pyveg.src.file_utils import save_json
 
 logger = logging.getLogger("pyveg_logger")
 formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
@@ -29,7 +31,8 @@ c_handler = logging.StreamHandler()
 c_handler.setFormatter(formatter)
 f_handler = RotatingFileHandler(
     "pyveg_{}.log".format(time.strftime("%Y-%m-%d_%H-%M-%S")),
-    maxBytes=5 * 1024 * 1024, backupCount=10
+    maxBytes=5 * 1024 * 1024,
+    backupCount=10,
 )
 f_handler.setFormatter(formatter)
 
@@ -37,15 +40,8 @@ logger.addHandler(f_handler)
 logger.addHandler(c_handler)
 
 
-
-
-from pyveg.src.file_utils import save_json
-
-from shutil import copyfile
-
 try:
-    from pyveg.src import azure_utils
-    from pyveg.src import batch_utils
+    from pyveg.src import azure_utils, batch_utils
 except:
     print("Azure utils could not be imported - is Azure SDK installed?")
 
@@ -144,7 +140,6 @@ class Pipeline(object):
         """
         for sequence in self.sequences:
             sequence.cleanup()
-
 
 
 class Sequence(object):
@@ -271,15 +266,14 @@ class Sequence(object):
                     dependencies_finished = num_seq_finished == len(self.depends_on)
                     logger.info(
                         "{}: {} / {} dependencies finished".format(
-                            self.name,
-                            num_seq_finished, len(self.depends_on)
+                            self.name, num_seq_finished, len(self.depends_on)
                         )
                     )
                 time.sleep(10)
 
         self.create_batch_job_if_needed()
         for module in self.modules:
-            self.run_status[module.name] =  module.run()
+            self.run_status[module.name] = module.run()
 
     def __repr__(self):
         if not self.is_configured:
@@ -527,8 +521,10 @@ class BaseModule(object):
                         for ending in file_endings:
                             if filename.endswith(ending):
 
-                                copyfile(os.path.join(root,filename),
-                                         os.path.join(output_location,filename))
+                                copyfile(
+                                    os.path.join(root, filename),
+                                    os.path.join(output_location, filename),
+                                )
                     else:
                         subprocess.run(
                             [
@@ -651,7 +647,6 @@ class BaseModule(object):
             json.dump(config_dict, output_json)
         logger.info("{}: wrote config to {}".format(self.name, config_location))
 
-
     def print_run_status(self):
         """
         Print out how many jobs succeeded or failed
@@ -661,6 +656,6 @@ class BaseModule(object):
                 self.name,
                 self.run_status["succeeded"],
                 self.run_status["failed"],
-                self.run_status["incomplete"]
-                )
+                self.run_status["incomplete"],
             )
+        )

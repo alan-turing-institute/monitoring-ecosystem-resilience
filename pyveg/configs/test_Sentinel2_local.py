@@ -1,5 +1,5 @@
-from pyveg.coordinates import coordinate_store
 from pyveg.configs.collections import data_collections
+from pyveg.coordinates import coordinate_store
 
 name = "pyvegtest"
 
@@ -38,8 +38,9 @@ modules_to_use = {
 
 # The following demonstrates how parameters can be set for individual Modules or Sequences:
 special_config = {
-    "Sentinel2": {"time_per_point": "1m"},             # this is a whole Sequence
-    "VegetationImageProcessor": {"run_type": "local"}, # this is a Module
+    # this is a whole Sequence
+    "Sentinel2": {"time_per_point": "1m"},
+    "VegetationImageProcessor": {"run_type": "local"},  # this is a Module
     "NetworkCentralityCalculator": {                   # also a Module
         "n_sub_images": 10,
         "n_threads": 4,

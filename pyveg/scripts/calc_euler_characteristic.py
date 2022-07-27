@@ -7,15 +7,15 @@ The code that does the actual calculations is in
 src/subgraph_centrality.py
 """
 
-import os
 import argparse
+import os
 
 from pyveg.src.subgraph_centrality import (
-    subgraph_centrality,
     feature_vector_metrics,
     generate_sc_images,
-    text_file_to_array,
     image_file_to_array,
+    subgraph_centrality,
+    text_file_to_array,
 )
 
 
