@@ -53,7 +53,9 @@ class DownloaderModule(BaseModule):
             ("output_location", [str]),
             ("output_location_type", [str]),
             ("replace_existing_files", [bool]),
-            ("ndvi",[bool])
+            ("ndvi", [bool]),
+            ("count", [bool])
+
         ]
         return
 
@@ -76,7 +78,8 @@ class DownloaderModule(BaseModule):
             self.replace_existing_files = False
         if not "ndvi" in vars(self):
             self.ndvi = False
-
+        if not "count" in vars(self):
+            self.count = True
 
         return
 
@@ -223,8 +226,9 @@ class DownloaderModule(BaseModule):
 class VegetationDownloader(DownloaderModule):
     """
     Specialization of the DownloaderModule class, to deal with
-    imagery from Sentinel 2 or Landsat 5-8 satellites, and
-    get NDVI band from combining red and near-infra-red.
+    imagery from Sentinel 2 or Landsat 5-8 satellites,
+    get NDVI band from combining red and near-infra-red and create a
+    COUNT band with number of images per pixel in the composite.
     """
 
     def __init__(self, name=None):
@@ -252,7 +256,8 @@ class VegetationDownloader(DownloaderModule):
     def prep_images(self, dataset):
         """
         Take a dataset that has already been filtered by date and location.
-        Then apply specific filters, take the median, and calculate NDVI.
+        Then apply specific filters, take the median, and calculate NDVI and create
+        the COUNT band.
 
         Parameters
         ----------
@@ -268,15 +273,25 @@ class VegetationDownloader(DownloaderModule):
         dataset = apply_mask_cloud(dataset, self.collection_name, self.cloudy_pix_flag)
         # Take median
         image = dataset.median()
+        bands_to_select = self.RGB_bands
 
         if self.ndvi:
             # Calculate NDVI
             image = add_NDVI(image, self.RGB_bands[0], self.NIR_band)
             # select only RGB + NDVI bands to download
-            bands_to_select = self.RGB_bands + ["NDVI"]
-        else:
-            bands_to_select = self.RGB_bands
+            bands_to_select = bands_to_select + ["NDVI"]
 
+        if self.count:
+            # create pixel level count image
+            count = dataset.count()
+            # sum counts on each band into one image
+            image_count = count.select(self.RGB_bands[0]).rename("COUNT")
+            # add count image as a band
+            image = image.addBands(image_count)
+
+            bands_to_select = bands_to_select + ['COUNT']
+
+        # select relevant bands
         image = image.select(bands_to_select)
         return [image]
 
