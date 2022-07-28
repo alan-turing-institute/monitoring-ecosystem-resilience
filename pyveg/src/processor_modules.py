@@ -464,6 +464,7 @@ class VegetationImageProcessor(ProcessorModule):
             ("split_RGB_images", [bool]),
             ("ndvi", [bool]),
             ("count", [bool]),
+            ("sub_image_npix", [int]),  # number of pixels of each side of sub image
         ]
 
     def set_default_parameters(self):
@@ -482,6 +483,9 @@ class VegetationImageProcessor(ProcessorModule):
             self.ndvi = False
         if not "count" in vars(self):
             self.count = True
+        if not "sub_image_npix" in vars(self):
+            self.sub_image_npix = 32  # 32 x 32 pixels
+
         # in PROCESSED dir we expect RGB. NDVI, BWNDVI
         self.num_files_per_point = 3
         self.input_location_subdirs = ["RAW"]
@@ -536,7 +540,9 @@ class VegetationImageProcessor(ProcessorModule):
             rgb_image, os.path.dirname(rgb_filepath), os.path.basename(rgb_filepath)
         )
         if self.split_RGB_images:
-            self.split_and_save_sub_images(rgb_image, date_string, coords_string, "RGB")
+            self.split_and_save_sub_images(
+                rgb_image, date_string, coords_string, "RGB", self.sub_image_npix
+            )
         return True
 
     def split_and_save_sub_images(
@@ -644,7 +650,6 @@ class VegetationImageProcessor(ProcessorModule):
             band_dict[col] = {"band": band, "filename": filename}
 
         logger.info(filenames)
-        tif_filebase = self.join_path(input_filepath, filenames[0].split(".")[0])
 
         # save the rgb image
         rgb_ok = self.save_rgb_image(band_dict, date_string, coords_string)
@@ -681,11 +686,15 @@ class VegetationImageProcessor(ProcessorModule):
 
             # split and save sub-images
             self.split_and_save_sub_images(
-                ndvi_image, date_string, coords_string, "NDVI"
+                ndvi_image, date_string, coords_string, "NDVI", self.sub_image_npix
             )
 
             self.split_and_save_sub_images(
-                processed_ndvi, date_string, coords_string, "BWNDVI"
+                processed_ndvi,
+                date_string,
+                coords_string,
+                "BWNDVI",
+                self.sub_image_npix,
             )
 
         if self.count:
@@ -707,7 +716,7 @@ class VegetationImageProcessor(ProcessorModule):
 
             # split and save sub-images
             self.split_and_save_sub_images(
-                count_image, date_string, coords_string, "COUNT"
+                count_image, date_string, coords_string, "COUNT", self.sub_image_npix
             )
 
         return True
