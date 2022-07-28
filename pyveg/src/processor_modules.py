@@ -18,7 +18,12 @@ from PIL import Image
 from pyveg.src import azure_utils, batch_utils
 from pyveg.src.coordinate_utils import find_coords_string
 from pyveg.src.date_utils import assign_dates_to_tasks
-from pyveg.src.file_utils import consolidate_json_to_list, save_image, save_json
+from pyveg.src.file_utils import (
+    consolidate_json_to_list,
+    save_array,
+    save_image,
+    save_json,
+)
 from pyveg.src.image_utils import (
     check_image_ok,
     convert_to_rgb,
@@ -581,6 +586,13 @@ class VegetationImageProcessor(ProcessorModule):
             output_filename += "{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
             output_filename += "_{}".format(date_string)
             output_filename += "_{}".format(image_type)
+
+            if self.output_location_type == "local":
+                # function only implemented locally for now.
+                save_array(
+                    sub_image, output_location, output_filename, ".npy", verbose=False
+                )
+
             output_filename += ".png"
             self.save_image(sub_image, output_location, output_filename, verbose=False)
         return True
