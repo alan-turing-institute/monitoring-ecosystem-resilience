@@ -463,6 +463,7 @@ class VegetationImageProcessor(ProcessorModule):
             ("RGB_bands", [list]),
             ("split_RGB_images", [bool]),
             ("ndvi", [bool]),
+            ("count", [bool]),
         ]
 
     def set_default_parameters(self):
