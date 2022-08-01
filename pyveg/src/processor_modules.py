@@ -443,21 +443,21 @@ class ProcessorModule(BaseModule):
 
 class VegetationImageProcessor(ProcessorModule):
     """
-    Class to convert tif files downloaded from GEE into png files
+    Class to convert tif files downloaded from GEE into .png and array files
     that can be looked at or used as input to further analysis.
 
     Current default is to output:
     1) Full-size RGB image
-    2) Many 50x50 pixel sub-images of RGB image
+    2) Many 50x50 pixel sub-images of RGB image (by default the array is saved, but .png files can be saved as an option).
 
     Optional outputs can be
     (if ndvi flag is true):
     3) Full-size NDVI image (greyscale)
     4) Full-size black+white NDVI image (after processing, thresholding, ...)
-    5) Many 50x50 pixel sub-images of black+white NDVI image.
+    5) Many 50x50 pixel sub-images of black+white NDVI image. (by default the array is saved, but .png files can be saved as an option).
     (if count flag is true):
     6) Full-size COUNT image (heatmap)
-    7) Many NxN pixel sub-images of the COUNT image.
+    7) Many NxN pixel sub-images of the COUNT image. (by default the array is saved, but .png files can be saved as an option).
 
     """
 
@@ -470,6 +470,10 @@ class VegetationImageProcessor(ProcessorModule):
             ("ndvi", [bool]),
             ("count", [bool]),
             ("sub_image_npix", [int]),  # number of pixels of each side of sub image
+            (
+                "save_split_image",
+                [int],
+            ),  # by defaul array is saved, but if true the image will be saved as png.
         ]
 
     def set_default_parameters(self):
@@ -490,6 +494,8 @@ class VegetationImageProcessor(ProcessorModule):
             self.count = True
         if not "sub_image_npix" in vars(self):
             self.sub_image_npix = 32  # 32 x 32 pixels
+        if not "save_split_image" in vars(self):
+            self.save_split_image = False  # not saving .png files
 
         # in PROCESSED dir we expect RGB. NDVI, BWNDVI
         self.num_files_per_point = 3
@@ -592,9 +598,14 @@ class VegetationImageProcessor(ProcessorModule):
                 save_array(
                     sub_image, output_location, output_filename, ".npy", verbose=False
                 )
+            else:
+                raise NotImplementedError("Array saving is not implemented in Azure")
 
-            output_filename += ".png"
-            self.save_image(sub_image, output_location, output_filename, verbose=False)
+            if self.save_split_image:
+                output_filename += ".png"
+                self.save_image(
+                    sub_image, output_location, output_filename, verbose=False
+                )
         return True
 
     def process_single_date(self, date_string):

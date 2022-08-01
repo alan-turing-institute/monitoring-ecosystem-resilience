@@ -358,7 +358,6 @@ def create_gif_from_images(directory_path, output_name, string_in_filename=""):
 
         # only use images with certain name (optional)
         if string_in_filename in filename:
-
             images.append(imageio.imread(os.path.join(directory_path, filename)))
 
             # the name of each file should end with the date of the image
