@@ -14,7 +14,7 @@ import ee
 import requests
 from geetools import cloud_mask
 
-from pyveg.src.coordinate_utils import get_region_string
+from pyveg.src.coordinate_utils import get_coords, get_region_string
 from pyveg.src.date_utils import (
     find_mid_period,
     get_num_n_day_slices,
@@ -45,15 +45,14 @@ class DownloaderModule(BaseModule):
         # some parameters that are common to all Downloaders
         self.params += [
             ("collection_name", [str]),
-            ("coords", [list, tuple]),
             ("date_range", [list, tuple]),
-            ("region_size", [float]),
             ("scale", [int]),
             ("output_location", [str]),
             ("output_location_type", [str]),
             ("replace_existing_files", [bool]),
             ("ndvi", [bool]),
             ("count", [bool]),
+            ("bounds", [list, tuple]),
         ]
         return
 
@@ -64,8 +63,6 @@ class DownloaderModule(BaseModule):
         or by calling configure() with a configuration dictionary.
         """
         super().set_default_parameters()
-        if not "region_size" in vars(self):
-            self.region_size = 0.08
         if not "scale" in vars(self):
             self.scale = 10
         if not "output_location" in vars(self):
@@ -78,13 +75,15 @@ class DownloaderModule(BaseModule):
             self.ndvi = False
         if not "count" in vars(self):
             self.count = True
+        if not "bounds" in vars(self):
+            self.bounds = []
 
         return
 
     def set_output_location(self, output_location=None):
         """
         If provided an output directory name, set it here,
-        otherwise, construct one from coords and collection name.
+        otherwise, construct one from bounds and collection name.
 
         Parameters
         ==========
@@ -94,9 +93,9 @@ class DownloaderModule(BaseModule):
         if output_location:
             self.output_location = output_location[0]
 
-        elif ("coords" in vars(self)) and ("collection_name" in vars(self)):
+        elif ("bounds" in vars(self)) and ("collection_name" in vars(self)):
             self.output_location = (
-                f"gee_{self.coords[0]}_{self.coords[1]}"
+                f"gee_{self.bounds[0]}_{self.bounds[1]}_{self.bounds[2]}_{self.bounds[3]}"
                 + "_"
                 + self.collection_name.replace("/", "-")
             )
@@ -104,7 +103,7 @@ class DownloaderModule(BaseModule):
         else:
             raise RuntimeError(
                 """
-            {}: need to set collection_name and coords before calling set_output_location()
+            {}: need to set collection_name and bounds before calling set_output_location()
             """.format(
                     self.name
                 )
@@ -126,11 +125,11 @@ class DownloaderModule(BaseModule):
         -------
         url_list:  a list of URLs from which zipfiles can be downloaded from GEE.
         """
-        region = get_region_string(self.coords, self.region_size)
+        region = get_region_string(self.bounds)
         start_date, end_date = date_range
 
         image_coll = ee.ImageCollection(self.collection_name)
-        geom = ee.Geometry.Point(self.coords)
+        geom = ee.Geometry.Point(get_coords(self.bounds))
 
         dataset = image_coll.filterBounds(geom).filterDate(start_date, end_date)
         dataset_size = dataset.size().getInfo()
@@ -171,7 +170,7 @@ class DownloaderModule(BaseModule):
         bool, True if downloaded something, False otherwise
         """
         if len(download_urls) == 0:
-            logger.info("{}: No URLs found for {}".format(self.name, self.coords))
+            logger.info("{}: No URLs found for {}".format(self.name, self.bounds))
             return False
 
         # download files and unzip to temporary directory

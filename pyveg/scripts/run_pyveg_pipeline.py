@@ -65,11 +65,11 @@ def build_pipeline(config_file, from_cache=False):
                 "Will use original output_location from {}.".format(config_file),
             )
     p.output_location_type = config.output_location_type
-    p.coords = config.coordinates
+    p.bounds = config.bounds
     p.date_range = config.date_range
     # if an id of a row in coordinates.py has been specified, add it here
-    if "coords_id" in vars(config):
-        p.coords_id = config.coords_id
+    if "bounds_id" in vars(config):
+        p.bounds_id = config.bounds_id
     # if we have a pattern_type description, add it to the pipeline
     if "pattern_type" in vars(config):
         p.pattern_type = config.pattern_type

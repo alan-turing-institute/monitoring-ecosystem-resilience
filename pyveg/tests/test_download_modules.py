@@ -52,7 +52,7 @@ def test_veg_downloader_configure_sentinel2():
     veg_downloader.collection_name = "COPERNICUS/S2"
     veg_downloader.RGB_bands = ["B4", "B3", "B2"]
     veg_downloader.NIR_band = "B8"
-    veg_downloader.coords = (11.45, 27.5)
+    veg_downloader.bounds = [-3.0183, 53.3649, -2.9482, 53.4350]
     veg_downloader.date_range = ["2017-03-03", "2018-12-01"]
     veg_downloader.time_per_point = "1m"
     veg_downloader.do_network_centrality = True
@@ -73,7 +73,7 @@ def test_veg_downloader_run_sentinel2():
     veg_downloader.collection_name = "COPERNICUS/S2"
     veg_downloader.RGB_bands = ["B4", "B3", "B2"]
     veg_downloader.NIR_band = "B8"
-    veg_downloader.coords = (11.45, 27.5)
+    veg_downloader.bounds = [-3.0183, 53.3649, -2.9482, 53.4350]
     veg_downloader.date_range = ["2017-01-01", "2017-02-01"]
     veg_downloader.time_per_point = "1m"
     veg_downloader.do_network_centrality = True
@@ -133,7 +133,7 @@ def test_weather_downloader_configure_era5():
     weather_downloader.collection_name = "ECMWF/ERA5/MONTHLY"
     weather_downloader.precipitation_band = ["total_precipitation"]
     weather_downloader.temperature_band = ["mean_2m_air_temperature"]
-    weather_downloader.coords = (11.45, 27.5)
+    weather_downloader.bounds = [-3.0183, 53.3649, -2.9482, 53.4350]
     weather_downloader.date_range = ["2017-03-03", "2018-12-01"]
     weather_downloader.time_per_point = "1m"
     weather_downloader.configure()
@@ -150,7 +150,7 @@ def test_weather_downloader_run_era5():
     weather_downloader.collection_name = "ECMWF/ERA5/MONTHLY"
     weather_downloader.precipitation_band = ["total_precipitation"]
     weather_downloader.temperature_band = ["mean_2m_air_temperature"]
-    weather_downloader.coords = (11.45, 27.5)
+    weather_downloader.bounds = [-3.0183, 53.3649, -2.9482, 53.4350]
     weather_downloader.date_range = ["2017-01-01", "2017-02-01"]
     weather_downloader.time_per_point = "1m"
     weather_downloader.output_location = os.path.join(TMPDIR, "testweather")

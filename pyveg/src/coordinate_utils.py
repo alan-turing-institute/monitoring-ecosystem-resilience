@@ -8,10 +8,29 @@ import re
 import requests
 
 
-def get_region_string(coords, region_size):
+def get_coords(bounds):
     """
-    Given a set of (long,lat) coordinates, and the size
-    of a square region in long,lat space, return
+    Given a bounding box of coordinates,  return
+    the centre point coordinates.
+
+    Parameters
+    ==========
+    region_bounds: list of lists with coordinates, e.g.  [left, bottom, right, top]]
+
+    Returns
+    =======
+    coords: list of floats, [longitude,latitude]
+    """
+
+    x = (bounds[0] - bounds[2]) / 2 + bounds[0]
+    y = (bounds[3] - bounds[1]) / 2 + bounds[1]
+
+    return [x, y]
+
+
+def get_region_string(bounds):
+    """
+    Given a set of bounding coordinates ([left, bottom, right, top]), return
     a string in the format expected by GEE.
 
     Parameters
@@ -24,10 +43,10 @@ def get_region_string(coords, region_size):
     region_string: str, string representation of list of four coordinates,
                    representing four corners of the region.
     """
-    left = coords[0] - region_size / 2
-    right = coords[0] + region_size / 2
-    top = coords[1] + region_size / 2
-    bottom = coords[1] - region_size / 2
+    left = bounds[0]
+    right = bounds[2]
+    top = bounds[3]
+    bottom = bounds[1]
     region_string = str([[left, top], [right, top], [right, bottom], [left, bottom]])
     return region_string
 
