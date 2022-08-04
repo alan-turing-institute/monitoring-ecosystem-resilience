@@ -145,7 +145,9 @@ class DownloaderModule(BaseModule):
         for image in image_list:
             # get a URL from which we can download the resulting data
             try:
-                url = image.getDownloadURL({"region": region, "scale": self.scale})
+                url = image.getDownloadURL(
+                    {"region": region, "scale": self.scale, "crs": "EPSG:27700"}
+                )
                 url_list.append(url)
             except Exception as e:
                 logger.info("Unable to get URL: {}".format(e))

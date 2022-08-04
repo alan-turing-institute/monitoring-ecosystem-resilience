@@ -18,7 +18,12 @@ from PIL import Image
 from pyveg.src import azure_utils, batch_utils
 from pyveg.src.coordinate_utils import find_coords_string
 from pyveg.src.date_utils import assign_dates_to_tasks
-from pyveg.src.file_utils import consolidate_json_to_list, save_image, save_json
+from pyveg.src.file_utils import (
+    consolidate_json_to_list,
+    save_array,
+    save_image,
+    save_json,
+)
 from pyveg.src.image_utils import (
     check_image_ok,
     convert_to_rgb,
@@ -438,21 +443,21 @@ class ProcessorModule(BaseModule):
 
 class VegetationImageProcessor(ProcessorModule):
     """
-    Class to convert tif files downloaded from GEE into png files
+    Class to convert tif files downloaded from GEE into .png and array files
     that can be looked at or used as input to further analysis.
 
     Current default is to output:
     1) Full-size RGB image
-    2) Many 50x50 pixel sub-images of RGB image
+    2) Many 50x50 pixel sub-images of RGB image (by default the array is saved, but .png files can be saved as an option).
 
     Optional outputs can be
     (if ndvi flag is true):
     3) Full-size NDVI image (greyscale)
     4) Full-size black+white NDVI image (after processing, thresholding, ...)
-    5) Many 50x50 pixel sub-images of black+white NDVI image.
+    5) Many 50x50 pixel sub-images of black+white NDVI image. (by default the array is saved, but .png files can be saved as an option).
     (if count flag is true):
     6) Full-size COUNT image (heatmap)
-    7) Many NxN pixel sub-images of the COUNT image.
+    7) Many NxN pixel sub-images of the COUNT image. (by default the array is saved, but .png files can be saved as an option).
 
     """
 
@@ -463,6 +468,12 @@ class VegetationImageProcessor(ProcessorModule):
             ("RGB_bands", [list]),
             ("split_RGB_images", [bool]),
             ("ndvi", [bool]),
+            ("count", [bool]),
+            ("sub_image_npix", [int]),  # number of pixels of each side of sub image
+            (
+                "save_split_image",
+                [int],
+            ),  # by defaul array is saved, but if true the image will be saved as png.
         ]
 
     def set_default_parameters(self):
@@ -481,6 +492,11 @@ class VegetationImageProcessor(ProcessorModule):
             self.ndvi = False
         if not "count" in vars(self):
             self.count = True
+        if not "sub_image_npix" in vars(self):
+            self.sub_image_npix = 32  # 32 x 32 pixels
+        if not "save_split_image" in vars(self):
+            self.save_split_image = False  # not saving .png files
+
         # in PROCESSED dir we expect RGB. NDVI, BWNDVI
         self.num_files_per_point = 3
         self.input_location_subdirs = ["RAW"]
@@ -535,7 +551,9 @@ class VegetationImageProcessor(ProcessorModule):
             rgb_image, os.path.dirname(rgb_filepath), os.path.basename(rgb_filepath)
         )
         if self.split_RGB_images:
-            self.split_and_save_sub_images(rgb_image, date_string, coords_string, "RGB")
+            self.split_and_save_sub_images(
+                rgb_image, date_string, coords_string, "RGB", self.sub_image_npix
+            )
         return True
 
     def split_and_save_sub_images(
@@ -574,8 +592,20 @@ class VegetationImageProcessor(ProcessorModule):
             output_filename += "{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
             output_filename += "_{}".format(date_string)
             output_filename += "_{}".format(image_type)
-            output_filename += ".png"
-            self.save_image(sub_image, output_location, output_filename, verbose=False)
+
+            if self.output_location_type == "local":
+                # function only implemented locally for now.
+                save_array(
+                    sub_image, output_location, output_filename, ".npy", verbose=False
+                )
+            else:
+                raise NotImplementedError("Array saving is not implemented in Azure")
+
+            if self.save_split_image:
+                output_filename += ".png"
+                self.save_image(
+                    sub_image, output_location, output_filename, verbose=False
+                )
         return True
 
     def process_single_date(self, date_string):
@@ -643,7 +673,6 @@ class VegetationImageProcessor(ProcessorModule):
             band_dict[col] = {"band": band, "filename": filename}
 
         logger.info(filenames)
-        tif_filebase = self.join_path(input_filepath, filenames[0].split(".")[0])
 
         # save the rgb image
         rgb_ok = self.save_rgb_image(band_dict, date_string, coords_string)
@@ -680,11 +709,15 @@ class VegetationImageProcessor(ProcessorModule):
 
             # split and save sub-images
             self.split_and_save_sub_images(
-                ndvi_image, date_string, coords_string, "NDVI"
+                ndvi_image, date_string, coords_string, "NDVI", self.sub_image_npix
             )
 
             self.split_and_save_sub_images(
-                processed_ndvi, date_string, coords_string, "BWNDVI"
+                processed_ndvi,
+                date_string,
+                coords_string,
+                "BWNDVI",
+                self.sub_image_npix,
             )
 
         if self.count:
@@ -706,7 +739,7 @@ class VegetationImageProcessor(ProcessorModule):
 
             # split and save sub-images
             self.split_and_save_sub_images(
-                count_image, date_string, coords_string, "COUNT"
+                count_image, date_string, coords_string, "COUNT", self.sub_image_npix
             )
 
         return True
