@@ -232,7 +232,7 @@ def plot_band_values(input_filebase, bands=["B4", "B3", "B2"]):
     plt.show()
 
 
-def crop_image_npix(input_image, n_pix_x, n_pix_y=None, region_size=None, coords=None):
+def crop_image_npix(input_image, n_pix_x, n_pix_y=None, bounds=None):
     """
     Divide an image into smaller sub-images with fixed pixel size.
     If region_size and coordinates are provided, we want to return the
@@ -247,7 +247,7 @@ def crop_image_npix(input_image, n_pix_x, n_pix_y=None, region_size=None, coords
     y_parts = int(ysize // n_pix_y)
 
     # if we are given coords, calculate coords for all sub-regions
-    sub_image_coords = get_sub_image_coords(coords, region_size, x_parts, y_parts)
+    sub_image_coords = get_sub_image_coords(bounds, x_parts, y_parts)
 
     # now do the actual cropping
     sub_images = []

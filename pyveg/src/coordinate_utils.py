@@ -15,7 +15,7 @@ def get_coords(bounds):
 
     Parameters
     ==========
-    region_bounds: list of lists with coordinates, e.g.  [left, bottom, right, top]]
+    bounds: list of lists with coordinates, e.g.  [left, bottom, right, top]]
 
     Returns
     =======
@@ -94,15 +94,14 @@ def find_coords_string(file_path):
     return coords_string
 
 
-def get_sub_image_coords(coords, region_size, x_parts, y_parts):
+def get_sub_image_coords(bounds, x_parts, y_parts):
     """
     If an image is divided into sub_images, return a list of coordinates
     for all the sub-images.
 
     Parameters
     ==========
-    coords: list of floats, [long,lat]
-    region_size: float, size of square image in degrees long,loat
+    bounds: list of lists with coordinates, e.g.  [left, bottom, right, top]
     x_parts: int, number of sub-images in x-direction
     y_parts: int, number of sub-images in y-direction
 
@@ -111,11 +110,11 @@ def get_sub_image_coords(coords, region_size, x_parts, y_parts):
     sub_image_coords: list, of lists of floats [[long,lat],...]
     """
     sub_image_coords = []
-    if coords and region_size:
-        left_start = coords[0] - region_size / 2
-        top_start = coords[1] + region_size / 2
-        sub_image_size_x = region_size / x_parts
-        sub_image_size_y = region_size / y_parts
+    if bounds:
+        left_start = bounds[0]
+        top_start = bounds[3]
+        sub_image_size_x = (bounds[2] - bounds[0]) / x_parts
+        sub_image_size_y = (bounds[3] - bounds[1]) / y_parts
         for ix in range(x_parts):
             for iy in range(y_parts):
                 sub_image_coords.append(
