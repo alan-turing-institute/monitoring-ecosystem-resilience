@@ -97,11 +97,11 @@ def find_coords_string(file_path):
 def get_sub_image_coords(bounds, x_parts, y_parts):
     """
     If an image is divided into sub_images, return a list of coordinates
-    for all the sub-images.
+    for all the sub-images. Coordinates will be defined as the bottom left corner of each image.
 
     Parameters
     ==========
-    bounds: list of lists with coordinates, e.g.  [left, bottom, right, top]
+    bounds: list with coordinates, e.g.  [left, bottom, right, top]
     x_parts: int, number of sub-images in x-direction
     y_parts: int, number of sub-images in y-direction
 
@@ -119,8 +119,8 @@ def get_sub_image_coords(bounds, x_parts, y_parts):
             for iy in range(y_parts):
                 sub_image_coords.append(
                     (
-                        left_start + sub_image_size_x / 2 + (ix * sub_image_size_x),
-                        top_start - sub_image_size_y / 2 - (iy * sub_image_size_y),
+                        left_start + (ix * sub_image_size_x),
+                        top_start - sub_image_size_y - (iy * sub_image_size_y),
                     )
                 )
     return sub_image_coords
