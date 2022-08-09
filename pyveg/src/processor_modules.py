@@ -592,12 +592,12 @@ class VegetationImageProcessor(ProcessorModule):
         for i, sub in enumerate(sub_images):
             # sub will be a tuple (image, coords) - unpack it here
             sub_image, sub_coords = sub
-            output_filename = f"sub{i}_"
-            output_filename += "{:0>6}_{:0>7}_{:0>3}".format(
-                sub_coords[0], sub_coords[1], npix * 10
+            output_filename = "{:0>6}_{:0>7}_{:0>3}".format(
+                round(sub_coords[0]), round(sub_coords[1]), round(npix * 10)
             )
             output_filename += "_{}".format(date_string)
             output_filename += "_{}".format(image_type)
+            output_filename += f"_sub{i}"
 
             if self.output_location_type == "local":
                 # function only implemented locally for now.
@@ -717,8 +717,11 @@ class VegetationImageProcessor(ProcessorModule):
         )
 
         self.bounds = get_bounds(band_tiff)
-        bounds_string = "{}_{}_{}_{}".format(
-            self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]
+        bounds_string = "{:0>6}_{:0>7}_{:0>6}_{:0>7}".format(
+            round(self.bounds[0]),
+            round(self.bounds[1]),
+            round(self.bounds[2]),
+            round(self.bounds[3]),
         )
 
         # save the rgb image
