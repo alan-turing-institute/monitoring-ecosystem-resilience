@@ -16,6 +16,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import rasterio
 from PIL import Image
 
 from .coordinate_utils import get_sub_image_coords
@@ -621,3 +622,14 @@ def check_image_ok(rgb_image, black_pix_threshold=0.05):
         return False
     else:
         return True
+
+
+def get_bounds(tiff_file):
+    rio_file = rasterio.open(tiff_file)
+    bounds = [
+        rio_file.bounds.left,
+        rio_file.bounds.bottom,
+        rio_file.bounds.right,
+        rio_file.bounds.top,
+    ]
+    return bounds
