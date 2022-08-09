@@ -557,7 +557,13 @@ class VegetationImageProcessor(ProcessorModule):
         return True
 
     def split_and_save_sub_images(
-        self, image, date_string, bounds_string, image_type, npix=50
+        self,
+        image,
+        date_string,
+        bounds_string,
+        image_type,
+        npix=50,
+        save_summary_stats=False,
     ):
         """
         Split the full-size image into lots of small sub-images
@@ -595,9 +601,38 @@ class VegetationImageProcessor(ProcessorModule):
 
             if self.output_location_type == "local":
                 # function only implemented locally for now.
-                save_array(
-                    sub_image, output_location, output_filename, ".npy", verbose=False
-                )
+
+                if save_summary_stats:
+                    metrics_dict = {}
+                    sub_image_array = np.array(sub_image)
+                    metrics_dict["mean"] = sub_image_array.mean().astype(np.float64)
+                    metrics_dict["stdev"] = sub_image_array.std().astype(np.float64)
+                    metrics_dict["median"] = np.median(sub_image_array).astype(
+                        np.float64
+                    )
+                    metrics_dict["min"] = sub_image_array.min().astype(np.float64)
+                    metrics_dict["max"] = sub_image_array.max().astype(np.float64)
+                    metrics_dict["25pc"] = np.percentile(sub_image_array, 25).astype(
+                        np.float64
+                    )
+                    metrics_dict["75pc"] = np.percentile(sub_image_array, 75).astype(
+                        np.float64
+                    )
+
+                    self.save_json(
+                        metrics_dict,
+                        output_filename + ".json",
+                        output_location,
+                        self.output_location_type,
+                    )
+                else:
+                    save_array(
+                        sub_image,
+                        output_location,
+                        output_filename,
+                        ".npy",
+                        verbose=False,
+                    )
             else:
                 raise NotImplementedError("Array saving is not implemented in Azure")
 
@@ -751,7 +786,12 @@ class VegetationImageProcessor(ProcessorModule):
 
             # split and save sub-images
             self.split_and_save_sub_images(
-                count_image, date_string, bounds_string, "COUNT", self.sub_image_npix
+                count_image,
+                date_string,
+                bounds_string,
+                "COUNT",
+                self.sub_image_npix,
+                save_summary_stats=True,
             )
 
         return True
