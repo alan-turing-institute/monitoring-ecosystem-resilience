@@ -192,7 +192,9 @@ class DownloaderModule(BaseModule):
         date_ranges = slice_time_period(start_date, end_date, self.time_per_point)
         download_locations = []
         for date_range in date_ranges:
-            mid_date = find_mid_period(date_range[0], date_range[1])
+            mid_date = "{}_{}".format(
+                date_range[0], date_range[1]
+            )  # find_mid_period(date_range[0], date_range[1])
             location = self.join_path(self.output_location, mid_date, "RAW")
             logger.debug(
                 "{} Will check for existing files in {}".format(self.name, location)
