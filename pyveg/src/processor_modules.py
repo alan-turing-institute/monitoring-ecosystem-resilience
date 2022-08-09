@@ -30,6 +30,7 @@ from pyveg.src.image_utils import (
     convert_to_rgb,
     create_count_heatmap,
     crop_image_npix,
+    get_bounds,
     pillow_to_numpy,
     process_and_threshold,
     scale_tif,
@@ -586,7 +587,9 @@ class VegetationImageProcessor(ProcessorModule):
             # sub will be a tuple (image, coords) - unpack it here
             sub_image, sub_coords = sub
             output_filename = f"sub{i}_"
-            output_filename += "{0:.3f}_{1:.3f}".format(sub_coords[0], sub_coords[1])
+            output_filename += "{:0>6}_{:0>7}_{:0>3}".format(
+                sub_coords[0], sub_coords[1], npix * 10
+            )
             output_filename += "_{}".format(date_string)
             output_filename += "_{}".format(image_type)
 
@@ -673,6 +676,16 @@ class VegetationImageProcessor(ProcessorModule):
 
         logger.info(filenames)
 
+        band_tiff = self.get_file(
+            self.join_path(input_filepath, "download.{}.tif".format(band)),
+            self.input_location_type,
+        )
+
+        self.bounds = get_bounds(band_tiff)
+        bounds_string = "{}_{}_{}_{}".format(
+            self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]
+        )
+
         # save the rgb image
         rgb_ok = self.save_rgb_image(band_dict, date_string, bounds_string)
         if not rgb_ok:
@@ -742,17 +755,6 @@ class VegetationImageProcessor(ProcessorModule):
             )
 
         return True
-
-    def get_bounds(self, tiff_file):
-
-        rio_file = rasterio.open(tiff_file)
-
-        self.bounds = [
-            rio_file.bounds.left,
-            rio_file.bounds.left.bottom,
-            rio_file.bounds.left.right,
-            rio_file.bounds.left.top,
-        ]
 
 
 class WeatherImageToJSON(ProcessorModule):
