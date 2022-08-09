@@ -85,7 +85,7 @@ def test_veg_downloader_run_sentinel2():
     veg_downloader.output_location = os.path.join(TMPDIR, "testveg")
     veg_downloader.configure()
     veg_downloader.run()
-    tif_dir = os.path.join(TMPDIR, "testveg", "2017-01-16", "RAW")
+    tif_dir = os.path.join(TMPDIR, "testveg", "2017-01-01_2017-02-01", "RAW")
     assert os.path.exists(tif_dir)
     tif_files = [
         filename for filename in os.listdir(tif_dir) if filename.endswith(".tif")
@@ -156,7 +156,7 @@ def test_weather_downloader_run_era5():
     weather_downloader.output_location = os.path.join(TMPDIR, "testweather")
     weather_downloader.configure()
     weather_downloader.run()
-    tif_dir = os.path.join(TMPDIR, "testweather", "2017-01-16", "RAW")
+    tif_dir = os.path.join(TMPDIR, "testweather", "2017-01-01_2017-02-01", "RAW")
     assert os.path.exists(tif_dir)
     tif_files = [
         filename for filename in os.listdir(tif_dir) if filename.endswith(".tif")

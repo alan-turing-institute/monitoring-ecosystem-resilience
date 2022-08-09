@@ -8,7 +8,8 @@ name = "london"
 output_location = "london-test"
 output_location_type = "local"
 
-coordinates = (0.0029564, 51.4825565)
+bounds = [-0.0509564, 51.4425565, 0.0509564, 51.5225565]
+
 
 date_range = ["2017-05-01", "2017-09-01"]
 
@@ -26,5 +27,5 @@ modules_to_use = {
 
 # The following demonstrates how parameters can be set for individual Modules or Sequences:
 special_config = {
-    "Sentinel2": {"time_per_point": "3m", "region_size": 0.10}
+    "Sentinel2": {"time_per_point": "3m"}
 }

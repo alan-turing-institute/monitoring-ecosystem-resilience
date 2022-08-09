@@ -52,7 +52,7 @@ class DownloaderModule(BaseModule):
             ("replace_existing_files", [bool]),
             ("ndvi", [bool]),
             ("count", [bool]),
-            ("bounds", [list, tuple]),
+            ("bounds", [list]),
         ]
         return
 
