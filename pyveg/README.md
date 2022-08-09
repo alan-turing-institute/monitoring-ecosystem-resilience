@@ -90,7 +90,7 @@ pyveg_run_pipeline --config_file <path to config>
 
 The download job is fully specified by a configuration file, which you point to using the `--config_file` argument. A sample config file with relevant functionality for the urban grammar project is found at `pyveg/configs/config_liverpool_example.py`. You can also optionally specify a string to identify the download job using the `--name` argument.
 
-Note that we use the GEE convention for coordinates, i.e. `(longitude,latitude)`.
+Note that we use the GEE convention for coordinates, i.e. `(longitude,latitude)` and we set bounds for regions to download in the convention `(left, bottom, right, top)`.
 
 #### Generating a download configuration file
 
