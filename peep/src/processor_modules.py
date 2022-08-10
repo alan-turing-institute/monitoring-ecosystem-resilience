@@ -11,6 +11,8 @@ import time
 
 import cv2 as cv
 import numpy as np
+
+# import rasterio
 from PIL import Image
 
 from peep.src import azure_utils, batch_utils
