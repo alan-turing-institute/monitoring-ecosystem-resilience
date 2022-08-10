@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timedelta
 from itertools import product
 
@@ -65,6 +66,24 @@ def get_chip_id(x, y, chip_dimension):
     return "{:0>6}_{:0>7}_{:0>3}".format(x, y, chip_dimension)
 
 
+def get_image_id_from_chip(chip_id: str, chip_dimension: int):
+    result = re.match("(?P<x>\d{6})_(?P<y>\d{7})_(?P<d>\d+)", chip_id)
+    x_source = int(result.group("x"))
+    y_source = int(result.group("y"))
+    d_source = int(result.group("d"))
+    ic(x_source, y_source)
+
+    if d_source > chip_dimension:
+        raise ValueError(
+            "Cannot derive chip_id of a chip which is smaller than the source id"
+        )
+
+    x_dest = x_source - (x_source % chip_dimension)
+    y_dest = y_source - (y_source % chip_dimension)
+    ic(x_dest, y_dest)
+    return get_chip_id(x_dest, y_dest, chip_dimension)
+
+
 def coastline_to_coastpoly(path_to_coastline=None):
     if path_to_coastline is None:
         path_to_coastline = "zip://strtgi_essh_gb.zip!strtgi_essh_gb/data/coastline.shp"
@@ -100,6 +119,17 @@ def coastline_to_coastpoly(path_to_coastline=None):
 
 
 if __name__ == "__main__":
+
+    # ic(get_image_id_from_chip("001536_0002048_032", 512))
+    # ic(get_image_id_from_chip("001536_0002048_016", 512))
+    # ic(get_image_id_from_chip("001536_0002048_032", 1024))
+    # ic(get_image_id_from_chip("001536_0002048_016", 1024))
+    # ic(get_image_id_from_chip("123456_1234567_032", 1024))
+    # ic(get_image_id_from_chip("123456_1234567_016", 1024))
+
+    # # This case should fail
+    # ic(get_image_id_from_chip("123456_1234567_032", 16))
+
     polys_gdf = coastline_to_coastpoly()
     # chip_px_width = 32
     options = {
@@ -108,7 +138,7 @@ if __name__ == "__main__":
         32 * 16: "images_0512",
         32 * 32: "images_1024",
     }
-    options = {32 * 32: "images_1024", 32 * 16: "images_0512"}
+    # options = {32 * 32: "images_1024", 32 * 16: "images_0512"}
 
     all_grids = {}
 
