@@ -2,6 +2,7 @@
 Classes for modules that download from GEE
 """
 
+import imp
 import logging
 import os
 import subprocess
@@ -13,6 +14,7 @@ import dateparser
 import ee
 import requests
 from geetools import cloud_mask
+from icecream import ic
 
 from pyveg.src.coordinate_utils import get_coords, get_region_string
 from pyveg.src.date_utils import (
@@ -126,10 +128,24 @@ class DownloaderModule(BaseModule):
         url_list:  a list of URLs from which zipfiles can be downloaded from GEE.
         """
         region = get_region_string(self.bounds)
+        ic(self.bounds)
+        ic(region)
         start_date, end_date = date_range
 
         image_coll = ee.ImageCollection(self.collection_name)
-        geom = ee.Geometry.Point(get_coords(self.bounds))
+        geom = ee.Geometry.Point(ic(get_coords(self.bounds)), proj="EPSG:27700")
+        ll_point = ee.Geometry.Point(
+            (self.bounds[0], self.bounds[1]), proj="EPSG:27700"
+        )
+        tr_point = ee.Geometry.Point(
+            (self.bounds[2], self.bounds[3]), proj="EPSG:27700"
+        )
+        # geom = ee.Geometry.Rectangle(self.bounds, proj= "EPSG:27700")
+        geom = ee.Geometry.Rectangle(
+            coords=(ll_point, tr_point), proj="EPSG:27700", evenOdd=False
+        )
+        # (ic(get_coords(self.bounds)), proj= "EPSG:27700")
+        ic(geom)
 
         dataset = image_coll.filterBounds(geom).filterDate(start_date, end_date)
         dataset_size = dataset.size().getInfo()
@@ -142,10 +158,12 @@ class DownloaderModule(BaseModule):
         image_list = self.prep_images(dataset)
         url_list = []
         for image in image_list:
+            ic(image)
             # get a URL from which we can download the resulting data
             try:
                 url = image.getDownloadURL(
-                    {"region": region, "scale": self.scale, "crs": "EPSG:27700"}
+                    {"region": geom, "scale": self.scale, "crs": "EPSG:27700"}
+                    # {"region": region, "crs": "EPSG:27700"}
                 )
                 url_list.append(url)
             except Exception as e:
