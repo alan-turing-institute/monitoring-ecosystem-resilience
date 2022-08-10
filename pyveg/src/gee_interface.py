@@ -3,14 +3,16 @@ Functions to help interface with GEE, in particular to download images.
 """
 
 import os
-import shutil
-from datetime import datetime
 
-import cv2 as cv
+# import cv2 as cv
 import ee
 from geetools import cloud_mask
 
 from .file_utils import download_and_unzip
+
+# import shutil
+# from datetime import datetime
+
 
 ee.Initialize()
 

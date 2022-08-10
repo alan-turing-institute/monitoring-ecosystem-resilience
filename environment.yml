@@ -1,9 +1,10 @@
-name: gee_pipeline
+name: gee_pipeline2
 channels:
   - defaults
   - conda-forge
 dependencies:
   - python=3.7
   - earthengine-api
+  - geetools
   - rasterio
   - coverage
