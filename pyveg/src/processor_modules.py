@@ -13,7 +13,6 @@ from multiprocessing import Pool
 
 import cv2 as cv
 import numpy as np
-import rasterio
 from PIL import Image
 
 from pyveg.src import azure_utils, batch_utils
@@ -35,18 +34,6 @@ from pyveg.src.image_utils import (
     process_and_threshold,
     scale_tif,
 )
-
-# from pyveg.src.coordinate_utils import find_coords_string
-# from pyveg.src.date_utils import assign_dates_to_tasks
-# from pyveg.src.file_utils import consolidate_json_to_list, save_image, save_json
-# from pyveg.src.image_utils import (
-#     check_image_ok,y
-#     convert_to_rgb,y
-#     crop_image_npix,y
-#     pillow_to_numpy,y
-#     process_and_threshold,y
-#     scale_tif,y
-# )
 from pyveg.src.pyveg_pipeline import BaseModule, logger
 from pyveg.src.subgraph_centrality import feature_vector_metrics, subgraph_centrality
 
@@ -667,7 +654,7 @@ class VegetationImageProcessor(ProcessorModule):
         bounds_string = find_coords_string(self.input_location)
         # if not though, we might have coords set explicitly
         if (not bounds_string) and "bounds" in vars(self):
-            bounds_string = "{}_{}_{}_{}".format(
+            bounds_string = "{:.0f}_{:.0f}_{:.0f}_{:.0f}".format(
                 self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]
             )
 

@@ -8,7 +8,6 @@ import tempfile
 
 import ee
 
-from pyveg.src.coordinate_utils import get_coords, get_region_string
 from pyveg.src.date_utils import slice_time_period
 from pyveg.src.file_utils import download_and_unzip
 from pyveg.src.gee_interface import add_NDVI, apply_mask_cloud
