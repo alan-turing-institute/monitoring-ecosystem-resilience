@@ -29,11 +29,11 @@ def test_add_sequence_to_pipeline():
 def test_configure_sequence():
     s = Sequence("testseq")
     assert s.is_configured == False
-    s.bounds = [-3.01, 53.36, -2.94, 53.43]
+    s.bounds = [532480.0, 174080.0, 542720.0, 184320.0]
     s.date_range = ["2001-01-01", "2020-01-01"]
     s.configure()
     assert s.is_configured == True
-    assert s.output_location == "gee_-3.01_53.36_-2.94_53.43_testseq"
+    assert s.output_location == "gee_532480_0174080_542720_0184320_testseq"
 
 
 def test_configure_sequence_from_dict():
@@ -68,7 +68,7 @@ def test_add_module_to_sequence():
 
 def test_configure_pipeline():
     p = Pipeline("testpipe")
-    p.bounds = [-3.0183, 53.3649, -2.9482, 53.4350]
+    p.bounds = [532480.0, 174080.0, 542720.0, 184320.0]
     p.date_range = ["2001-01-01", "2020-01-01"]
     p.output_location = "/tmp"
     p.output_location_type = "local"
