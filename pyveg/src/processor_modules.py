@@ -777,17 +777,18 @@ class VegetationImageProcessor(ProcessorModule):
                 self.input_location_type,
             )
 
-            count_image = create_count_heatmap(count_tif)
+            count_heatmap = create_count_heatmap(count_tif)
             count_filepath = self.construct_image_savepath(
                 date_string, bounds_string, "COUNT"
             )
             self.save_image(
-                count_image,
+                count_heatmap,
                 os.path.dirname(count_filepath),
                 os.path.basename(count_filepath),
             )
 
             # split and save sub-images
+            count_image = Image.fromarray(cv.imread(count_tif, cv.IMREAD_ANYDEPTH))
             self.split_and_save_sub_images(
                 count_image,
                 date_string,
