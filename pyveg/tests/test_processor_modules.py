@@ -36,13 +36,13 @@ def test_Sentinel2_image_processor():
     vip.input_location = dir_path
     vip.output_location = tmp_png_path
     vip.ndvi = True
-    vip.coords = [11.58, 27.95]
+    vip.bounds = [-3.0183, 53.3649, -2.9482, 53.4350]
     vip.configure()
     vip.run()
     assert os.path.exists(os.path.join(tmp_png_path, "2018-03-01", "PROCESSED"))
     assert len(os.listdir(os.path.join(tmp_png_path, "2018-03-01", "PROCESSED"))) == 3
     assert os.path.exists(os.path.join(tmp_png_path, "2018-03-01", "SPLIT"))
-    assert len(os.listdir(os.path.join(tmp_png_path, "2018-03-01", "SPLIT"))) == 1452
+    assert len(os.listdir(os.path.join(tmp_png_path, "2018-03-01", "SPLIT"))) == 3468
     shutil.rmtree(tmp_png_path, ignore_errors=True)
 
 
@@ -60,7 +60,7 @@ def test_ERA5_image_to_json():
     wip = WeatherImageToJSON()
     wip.input_location = dir_path
     wip.output_location = tmp_json_path
-    wip.coords = [11.58, 27.95]
+    wip.bounds = [-3.0183, 53.3649, -2.9482, 53.4350]
     wip.configure()
     wip.run()
     assert os.path.exists(

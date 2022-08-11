@@ -120,3 +120,5 @@ pyveg/testdata/test_ne_england/
 
 # Virtual Environments
 env/
+liverpool-bng__*/
+pyveg/testdata/Sentinel2/tmp_png/

@@ -2,25 +2,13 @@
 Classes for modules that download from GEE
 """
 
+import imp
 import logging
-import os
-import subprocess
 import tempfile
-from datetime import datetime, timedelta
 
-import cv2 as cv
-import dateparser
 import ee
-import requests
-from geetools import cloud_mask
 
-from pyveg.src.coordinate_utils import get_region_string
-from pyveg.src.date_utils import (
-    find_mid_period,
-    get_num_n_day_slices,
-    slice_time_period,
-    slice_time_period_into_n,
-)
+from pyveg.src.date_utils import slice_time_period
 from pyveg.src.file_utils import download_and_unzip
 from pyveg.src.gee_interface import add_NDVI, apply_mask_cloud
 from pyveg.src.pyveg_pipeline import BaseModule, logger
@@ -45,15 +33,15 @@ class DownloaderModule(BaseModule):
         # some parameters that are common to all Downloaders
         self.params += [
             ("collection_name", [str]),
-            ("coords", [list, tuple]),
             ("date_range", [list, tuple]),
-            ("region_size", [float]),
             ("scale", [int]),
             ("output_location", [str]),
             ("output_location_type", [str]),
             ("replace_existing_files", [bool]),
             ("ndvi", [bool]),
             ("count", [bool]),
+            ("bounds", [list]),
+            ("projection", [str]),
         ]
         return
 
@@ -64,8 +52,6 @@ class DownloaderModule(BaseModule):
         or by calling configure() with a configuration dictionary.
         """
         super().set_default_parameters()
-        if not "region_size" in vars(self):
-            self.region_size = 0.08
         if not "scale" in vars(self):
             self.scale = 10
         if not "output_location" in vars(self):
@@ -78,13 +64,17 @@ class DownloaderModule(BaseModule):
             self.ndvi = False
         if not "count" in vars(self):
             self.count = True
+        if not "bounds" in vars(self):
+            self.bounds = []
+        if not "projection" in vars(self):
+            self.projection = "EPSG:27700"
 
         return
 
     def set_output_location(self, output_location=None):
         """
         If provided an output directory name, set it here,
-        otherwise, construct one from coords and collection name.
+        otherwise, construct one from bounds and collection name.
 
         Parameters
         ==========
@@ -94,9 +84,15 @@ class DownloaderModule(BaseModule):
         if output_location:
             self.output_location = output_location[0]
 
-        elif ("coords" in vars(self)) and ("collection_name" in vars(self)):
+        elif ("bounds" in vars(self)) and ("collection_name" in vars(self)):
+
             self.output_location = (
-                f"gee_{self.coords[0]}_{self.coords[1]}"
+                "gee_{:0>6}_{:0>7}_{:0>6}_{:0>7}".format(
+                    round(self.bounds[0]),
+                    round(self.bounds[1]),
+                    round(self.bounds[2]),
+                    round(self.bounds[3]),
+                )
                 + "_"
                 + self.collection_name.replace("/", "-")
             )
@@ -104,7 +100,7 @@ class DownloaderModule(BaseModule):
         else:
             raise RuntimeError(
                 """
-            {}: need to set collection_name and coords before calling set_output_location()
+            {}: need to set collection_name and bounds before calling set_output_location()
             """.format(
                     self.name
                 )
@@ -126,11 +122,18 @@ class DownloaderModule(BaseModule):
         -------
         url_list:  a list of URLs from which zipfiles can be downloaded from GEE.
         """
-        region = get_region_string(self.coords, self.region_size)
         start_date, end_date = date_range
 
         image_coll = ee.ImageCollection(self.collection_name)
-        geom = ee.Geometry.Point(self.coords)
+        ll_point = ee.Geometry.Point(
+            (self.bounds[0], self.bounds[1]), proj=self.projection
+        )
+        tr_point = ee.Geometry.Point(
+            (self.bounds[2], self.bounds[3]), proj=self.projection
+        )
+        geom = ee.Geometry.Rectangle(
+            coords=(ll_point, tr_point), proj=self.projection, evenOdd=False
+        )
 
         dataset = image_coll.filterBounds(geom).filterDate(start_date, end_date)
         dataset_size = dataset.size().getInfo()
@@ -146,7 +149,7 @@ class DownloaderModule(BaseModule):
             # get a URL from which we can download the resulting data
             try:
                 url = image.getDownloadURL(
-                    {"region": region, "scale": self.scale, "crs": "EPSG:27700"}
+                    {"region": geom, "scale": self.scale, "crs": self.projection}
                 )
                 url_list.append(url)
             except Exception as e:
@@ -171,7 +174,7 @@ class DownloaderModule(BaseModule):
         bool, True if downloaded something, False otherwise
         """
         if len(download_urls) == 0:
-            logger.info("{}: No URLs found for {}".format(self.name, self.coords))
+            logger.info("{}: No URLs found for {}".format(self.name, self.bounds))
             return False
 
         # download files and unzip to temporary directory
@@ -193,7 +196,9 @@ class DownloaderModule(BaseModule):
         date_ranges = slice_time_period(start_date, end_date, self.time_per_point)
         download_locations = []
         for date_range in date_ranges:
-            mid_date = find_mid_period(date_range[0], date_range[1])
+            mid_date = "{}_{}".format(
+                date_range[0], date_range[1]
+            )  # find_mid_period(date_range[0], date_range[1])
             location = self.join_path(self.output_location, mid_date, "RAW")
             logger.debug(
                 "{} Will check for existing files in {}".format(self.name, location)
