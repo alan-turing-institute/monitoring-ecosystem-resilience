@@ -202,13 +202,23 @@ class Sequence(object):
             self.output_location_type = self.parent.output_location_type
             self.output_location = self.join_path(
                 self.parent.output_location,
-                f"gee_{self.bounds[0]}_{self.bounds[1]}_{self.bounds[2]}_{self.bounds[3]}"
+                "gee_{:0>6}_{:0>7}_{:0>6}_{:0>7}".format(
+                    round(self.bounds[0]),
+                    round(self.bounds[1]),
+                    round(self.bounds[2]),
+                    round(self.bounds[3]),
+                )
                 + "_"
                 + self.name.replace("/", "-"),
             )
         else:
             self.output_location = (
-                f"gee_{self.bounds[0]}_{self.bounds[1]}_{self.bounds[2]}_{self.bounds[3]}"
+                "gee_{:0>6}_{:0>7}_{:0>6}_{:0>7}".format(
+                    round(self.bounds[0]),
+                    round(self.bounds[1]),
+                    round(self.bounds[2]),
+                    round(self.bounds[3]),
+                )
                 + "_"
                 + self.name.replace("/", "-")
             )

@@ -572,7 +572,7 @@ class VegetationImageProcessor(ProcessorModule):
         ===========
         image: pillow Image
         date_string: str, format YYYY-MM-DD
-        bounds_string: str, format long_lat
+        bounds_string: str, format eastings northings
         image_type: str, typically 'RGB' or 'BWNDVI'
         npix: dimension in pixels of side of sub-image.  Default is 50x50
 
