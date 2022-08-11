@@ -632,4 +632,5 @@ def get_bounds(tiff_file):
         rio_file.bounds.right,
         rio_file.bounds.top,
     ]
-    return bounds
+
+    return bounds, [rio_file.width, rio_file.height]

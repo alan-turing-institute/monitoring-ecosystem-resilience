@@ -716,13 +716,21 @@ class VegetationImageProcessor(ProcessorModule):
             self.input_location_type,
         )
 
-        self.bounds = get_bounds(band_tiff)
-        bounds_string = "{:0>6}_{:0>7}_{:0>6}_{:0>7}".format(
-            round(self.bounds[0]),
-            round(self.bounds[1]),
-            round(self.bounds[2]),
-            round(self.bounds[3]),
-        )
+        downloaded_bounds, npix = get_bounds(band_tiff)
+
+        logger.info("Downloaded bounds {}".format(downloaded_bounds))
+        logger.info("Input bounds {}".format(self.bounds))
+
+        if downloaded_bounds != self.bounds:
+            logger.info("Downloaded bounds are not the same as input")
+            return False
+
+        if npix != [
+            (self.bounds[2] - self.bounds[0]) / 10,
+            (self.bounds[3] - self.bounds[1]) / 10,
+        ]:
+            logger.info("Tiff file has wrong shape {}, instead of {}".format(npix))
+            return False
 
         # save the rgb image
         rgb_ok = self.save_rgb_image(band_dict, date_string, bounds_string)
