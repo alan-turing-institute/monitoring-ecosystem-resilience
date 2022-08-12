@@ -8,3 +8,4 @@ dependencies:
   - rasterio
   - coverage
   - icecream
+  - gdal
