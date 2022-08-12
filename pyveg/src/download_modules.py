@@ -4,7 +4,6 @@ Classes for modules that download from GEE
 
 import imp
 import logging
-
 import tempfile
 
 import ee
