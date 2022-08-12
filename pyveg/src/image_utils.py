@@ -16,6 +16,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import rasterio
 from PIL import Image
 
 from .coordinate_utils import get_sub_image_coords
@@ -232,7 +233,7 @@ def plot_band_values(input_filebase, bands=["B4", "B3", "B2"]):
     plt.show()
 
 
-def crop_image_npix(input_image, n_pix_x, n_pix_y=None, region_size=None, coords=None):
+def crop_image_npix(input_image, n_pix_x, n_pix_y=None, bounds=None):
     """
     Divide an image into smaller sub-images with fixed pixel size.
     If region_size and coordinates are provided, we want to return the
@@ -247,7 +248,7 @@ def crop_image_npix(input_image, n_pix_x, n_pix_y=None, region_size=None, coords
     y_parts = int(ysize // n_pix_y)
 
     # if we are given coords, calculate coords for all sub-regions
-    sub_image_coords = get_sub_image_coords(coords, region_size, x_parts, y_parts)
+    sub_image_coords = get_sub_image_coords(bounds, x_parts, y_parts)
 
     # now do the actual cropping
     sub_images = []
@@ -358,7 +359,6 @@ def create_gif_from_images(directory_path, output_name, string_in_filename=""):
 
         # only use images with certain name (optional)
         if string_in_filename in filename:
-
             images.append(imageio.imread(os.path.join(directory_path, filename)))
 
             # the name of each file should end with the date of the image
@@ -622,3 +622,15 @@ def check_image_ok(rgb_image, black_pix_threshold=0.05):
         return False
     else:
         return True
+
+
+def get_bounds(tiff_file):
+    rio_file = rasterio.open(tiff_file)
+    bounds = [
+        rio_file.bounds.left,
+        rio_file.bounds.bottom,
+        rio_file.bounds.right,
+        rio_file.bounds.top,
+    ]
+
+    return bounds, [rio_file.width, rio_file.height]

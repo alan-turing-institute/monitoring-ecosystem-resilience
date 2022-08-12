@@ -8,10 +8,29 @@ import re
 import requests
 
 
-def get_region_string(coords, region_size):
+def get_coords(bounds):
     """
-    Given a set of (long,lat) coordinates, and the size
-    of a square region in long,lat space, return
+    Given a bounding box of coordinates,  return
+    the centre point coordinates.
+
+    Parameters
+    ==========
+    bounds: list of lists with coordinates, e.g.  [left, bottom, right, top]]
+
+    Returns
+    =======
+    coords: list of floats, [longitude,latitude]
+    """
+
+    x = (bounds[0] - bounds[2]) / 2 + bounds[0]
+    y = (bounds[3] - bounds[1]) / 2 + bounds[1]
+
+    return [x, y]
+
+
+def get_region_string(bounds):
+    """
+    Given a set of bounding coordinates ([left, bottom, right, top]), return
     a string in the format expected by GEE.
 
     Parameters
@@ -24,10 +43,10 @@ def get_region_string(coords, region_size):
     region_string: str, string representation of list of four coordinates,
                    representing four corners of the region.
     """
-    left = coords[0] - region_size / 2
-    right = coords[0] + region_size / 2
-    top = coords[1] + region_size / 2
-    bottom = coords[1] - region_size / 2
+    left = bounds[0]
+    right = bounds[2]
+    top = bounds[3]
+    bottom = bounds[1]
     region_string = str([[left, top], [right, top], [right, bottom], [left, bottom]])
     return region_string
 
@@ -75,15 +94,14 @@ def find_coords_string(file_path):
     return coords_string
 
 
-def get_sub_image_coords(coords, region_size, x_parts, y_parts):
+def get_sub_image_coords(bounds, x_parts, y_parts):
     """
     If an image is divided into sub_images, return a list of coordinates
-    for all the sub-images.
+    for all the sub-images. Coordinates will be defined as the bottom left corner of each image.
 
     Parameters
     ==========
-    coords: list of floats, [long,lat]
-    region_size: float, size of square image in degrees long,loat
+    bounds: list with coordinates, e.g.  [left, bottom, right, top]
     x_parts: int, number of sub-images in x-direction
     y_parts: int, number of sub-images in y-direction
 
@@ -92,17 +110,17 @@ def get_sub_image_coords(coords, region_size, x_parts, y_parts):
     sub_image_coords: list, of lists of floats [[long,lat],...]
     """
     sub_image_coords = []
-    if coords and region_size:
-        left_start = coords[0] - region_size / 2
-        top_start = coords[1] + region_size / 2
-        sub_image_size_x = region_size / x_parts
-        sub_image_size_y = region_size / y_parts
+    if bounds:
+        left_start = bounds[0]
+        top_start = bounds[3]
+        sub_image_size_x = (bounds[2] - bounds[0]) / x_parts
+        sub_image_size_y = (bounds[3] - bounds[1]) / y_parts
         for ix in range(x_parts):
             for iy in range(y_parts):
                 sub_image_coords.append(
                     (
-                        left_start + sub_image_size_x / 2 + (ix * sub_image_size_x),
-                        top_start - sub_image_size_y / 2 - (iy * sub_image_size_y),
+                        left_start + (ix * sub_image_size_x),
+                        top_start - sub_image_size_y - (iy * sub_image_size_y),
                     )
                 )
     return sub_image_coords

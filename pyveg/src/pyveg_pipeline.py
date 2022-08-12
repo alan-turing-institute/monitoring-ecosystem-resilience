@@ -56,7 +56,7 @@ class Pipeline(object):
     def __init__(self, name):
         self.name = name
         self.sequences = []
-        self.coords = None
+        self.bounds = None
         self.date_range = None
         self.output_location = None
         self.output_location_type = None
@@ -78,7 +78,7 @@ class Pipeline(object):
         """
         output = "\n[Pipeline]: {} \n".format(self.name)
         output += "=======================\n"
-        output += "coordinates: {}\n".format(self.coords)
+        output += "bound coordinates: {}\n".format(self.bounds)
         output += "date_range:  {}\n".format(self.date_range)
         output += "output_location:  {}\n".format(self.output_location)
         output += "output_location_type:  {}\n".format(self.output_location_type)
@@ -100,7 +100,7 @@ class Pipeline(object):
         """
         Configure all the sequences in this pipeline.
         """
-        for var in ["coords", "date_range", "output_location", "output_location_type"]:
+        for var in ["bounds", "date_range", "output_location", "output_location_type"]:
             if (not var in vars(self)) or (not self.__getattribute__(var)):
                 raise RuntimeError(
                     "{}: need to set {} before calling configure()".format(
@@ -113,8 +113,8 @@ class Pipeline(object):
             self.output_location = container_name
 
         for sequence in self.sequences:
-            if not "coords" in vars(sequence):
-                sequence.coords = self.coords
+            if not "bounds" in vars(sequence):
+                sequence.bounds = self.bounds
             if not "date_range" in vars(sequence):
                 sequence.date_range = self.date_range
             sequence.configure()
@@ -202,13 +202,23 @@ class Sequence(object):
             self.output_location_type = self.parent.output_location_type
             self.output_location = self.join_path(
                 self.parent.output_location,
-                f"gee_{self.coords[0]}_{self.coords[1]}"
+                "gee_{:0>6}_{:0>7}_{:0>6}_{:0>7}".format(
+                    round(self.bounds[0]),
+                    round(self.bounds[1]),
+                    round(self.bounds[2]),
+                    round(self.bounds[3]),
+                )
                 + "_"
                 + self.name.replace("/", "-"),
             )
         else:
             self.output_location = (
-                f"gee_{self.coords[0]}_{self.coords[1]}"
+                "gee_{:0>6}_{:0>7}_{:0>6}_{:0>7}".format(
+                    round(self.bounds[0]),
+                    round(self.bounds[1]),
+                    round(self.bounds[2]),
+                    round(self.bounds[3]),
+                )
                 + "_"
                 + self.name.replace("/", "-")
             )
@@ -221,9 +231,9 @@ class Sequence(object):
 
     def configure(self):
 
-        if (not self.coords) or (not self.date_range):
+        if (not self.bounds) or (not self.date_range):
             raise RuntimeError(
-                "{}: Need to set coords and date range before calling configure()".format(
+                "{}: Need to set bounds and date range before calling configure()".format(
                     self.name
                 )
             )
@@ -238,7 +248,7 @@ class Sequence(object):
                 module.input_location_type = self.modules[i - 1].output_location_type
                 # modules will depend on the previous module in the sequence
                 module.depends_on.append(self.modules[i - 1].name)
-            module.coords = self.coords
+            module.bounds = self.bounds
             module.date_range = self.date_range
             module.configure()
         self.is_configured = True

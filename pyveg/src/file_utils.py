@@ -6,6 +6,7 @@ import subprocess
 from zipfile import BadZipFile, ZipFile
 
 import dateparser
+import numpy as np
 import requests
 
 from .date_utils import find_mid_period
@@ -146,6 +147,26 @@ def save_image(image, output_dir, output_filename, verbose=False):
         os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, output_filename)
     image.save(output_path)
+    if verbose:
+        print("Saved image '{}'".format(output_path))
+
+
+def save_array(image, output_dir, output_filename, file_extension, verbose=False):
+    """
+    Given a PIL.Image (list of pixel values), save
+    as an array to requested filename - note that the file extension
+    will determine the output file type, can be .npy, .npyz,
+    probably others...
+    """
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+    output_filename += file_extension
+    output_path = os.path.join(output_dir, output_filename)
+    if file_extension == ".npy":
+        np.save(output_path, np.array(image))
+    elif file_extension == ".npyz":
+        np.savez(output_path, np.array(image))
+
     if verbose:
         print("Saved image '{}'".format(output_path))
 

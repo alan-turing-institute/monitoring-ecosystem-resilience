@@ -1,10 +1,10 @@
 from pyveg.configs.collections import data_collections
 from pyveg.coordinates import coordinate_store
 
-name = "liverpool"
+name = "greenwich"
 
 # Define location to save all outputs
-output_location = "liverpool-test"
+output_location = "greenwich-bng"
 #output_location_type = "azure"
 output_location_type = "local"
 
@@ -17,8 +17,9 @@ output_location_type = "local"
 #entry = coordinate_store.loc[coordinate_id]
 #coordinates = (entry.longitude, entry.latitude)
 
-bounds = [-3.0183, 53.3649, -2.9482, 53.4350]
-
+# bounds = [ 327771, 384988, 339052, 395656 ]
+# bounds = [297566, 345093, 387814, 430437]
+bounds = [532480.0, 174080.0, 542720.0, 184320.0]
 date_range = ["2016-05-01", "2016-08-01"]
 
 # From the dictionary entries in data_collections.py, which shall we use

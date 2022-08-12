@@ -15,7 +15,7 @@ output_location = "OUTPUT_LOCATION"
 output_location_type = "OUTPUT_LOCATION_TYPE"
 
 # parse selection. Note (long, lat) GEE convention.
-coordinates = (LONGITUDE, LATITUDE)
+coordinates = [LEFT, BOTTOM, RIGHT, TOP]
 
 # optional coords_id setting
 COORDS_ID_STRING

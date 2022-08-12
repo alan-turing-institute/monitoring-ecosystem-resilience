@@ -18,7 +18,7 @@ output_location_type = "local"
 #entry = coordinate_store.loc[coordinate_id]
 #coordinates = (entry.longitude, entry.latitude)
 
-coordinates = (-1.133333, 52.633331)
+bounds = [-1.133333, 52.633331, -1.033333, 52.733331]
 date_range = ["2020-05-01", "2020-08-01"]
 
 # From the dictionary entries in data_collections.py, which shall we use
@@ -36,7 +36,7 @@ modules_to_use = {
 
 # The following demonstrates how parameters can be set for individual Modules or Sequences:
 special_config = {
-    "Sentinel2": {"time_per_point": "3m", "region_size": 0.10,
+    "Sentinel2": {"time_per_point": "3m",
 
                   }     # this is a whole Sequence
     # and another Module
