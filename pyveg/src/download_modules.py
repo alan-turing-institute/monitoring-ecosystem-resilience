@@ -13,6 +13,9 @@ from pyveg.src.file_utils import download_and_unzip
 from pyveg.src.gee_interface import add_NDVI, apply_mask_cloud
 from pyveg.src.pyveg_pipeline import BaseModule, logger
 
+# from datetime import datetime, timedelta
+
+
 ee.Initialize()
 
 # silence google API WARNING
@@ -146,6 +149,7 @@ class DownloaderModule(BaseModule):
         image_list = self.prep_images(dataset)
         url_list = []
         for image in image_list:
+            ic(image)
             # get a URL from which we can download the resulting data
             try:
                 url = image.getDownloadURL(

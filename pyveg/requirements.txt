@@ -12,7 +12,7 @@ pytest
 requests
 dateparser
 python-igraph
-pandas==1.1.1
+pandas
 geopandas
 earthengine-api
 geetools

@@ -13,6 +13,8 @@ from multiprocessing import Pool
 
 import cv2 as cv
 import numpy as np
+
+# import rasterio
 from PIL import Image
 
 from pyveg.src import azure_utils, batch_utils
