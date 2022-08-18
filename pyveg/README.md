@@ -64,9 +64,19 @@ The download job is fully specified by a configuration file, which you point to 
 
 Note that we use the [BNG convention](https://britishnationalgrid.uk/) for coordinates, i.e. `(eastings,northings)` and we set bounds for regions to download in the convention `(left, bottom, right, top)`.
 
-#### Generating a download configuration file
+### Downloading data on a loop from multiple configuration files
 
-**TODO: To be updated with peep instructions!**
+You might want to download images from several configuration files in one go. This can be done with the following command:
+
+```
+pyveg_run_pipeline_loop --config_dir configs
+```
+
+where `config_dir` is the path to a directory where all the config files you want to run are found. The script runs a loop and
+exectues the `pyveg_run_pipeline` command on each available file found in that path.
+
+
+#### Generating a download configuration file
 
 To create a configuration file for use in the pyveg pipeline described above, use the command
 ```
@@ -83,11 +93,13 @@ this allows the user to specify various characteristics of the data they want to
     *    Landsat5: [Available from 1984-03-10 to 2013-01-31 at 60m resolution.](https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LT05_C01_T1)
     *    Landsat4: [Available from 1982-07-16 to 1993-12-14 at 60m resolution.](https://developers.google.com/earth-engine/datasets/catalog/LANDSAT_LT04_C01_T1)
 
-* `--latitude`: The latitude (in degrees north) of the centre point of the image collection.
+* `--left`: The left bound of the region to be downloaded (in Easting BNG coordinates) .
 
-* `--longitude`: The longitude (in degrees east) of the centre point of the image collection.
+* `--bottom`: The bottom bound of the region to be downloaded (in Northing BNG coordinates) .
 
-* `--country`: The country (for the file name) can either be entered, or use the specified coordinates to look up the country name from the OpenCage database.
+* `--right`: The right bound of the region to be downloaded (in Easting BNG coordinates) .
+
+* `--top`: The top bound of the region to be downloaded (in Northing BNG coordinates) .
 
 * `--start_date`: The start date in the format ‘YYYY-MM-DD’, the default is ‘2015-01-01’ (or ‘2019-01-01’ for a test config file).
 
@@ -95,36 +107,48 @@ this allows the user to specify various characteristics of the data they want to
 
 * `--time_per_point`: The option to run the image collection either monthly (‘1m’) or weekly (‘1w’), with the default being monthly.
 
-* `--run_mode`: The option to run time-consuming functions on Azure (‘batch’) or running locally on your own computer (‘local’). The default is local. For info about running on Azure go [here](UsingAzure.md).
-
 * `--output_dir`: The option to write the output to a specified directory, with the default being the current directory.
-
-* `--test_mode`: The option to make a test config file, containing fewer months and a subset of sub-images, with a default option to have a normal config file.
-    *    By choosing the test config file, the start and end dates (see below) are defaulted to cover a smaller time span.
-    *    It is recommended that the test config option should be used purely to determine if the options specified by the user are correct.
-
-
-* `--n_threads`:  Finally, how many threads the user would like to use for the time-consuming processes, either 4 (default) or 8.
 
 For example:
 ```
- pyveg_generate_config --configs_dir "pyveg/configs" --collection_name "Sentinel2" --latitude 11.58 --longitude 27.94 --start_date "2016-01-01" --end_date "2020-06-30" --time_per_point "1m" --run_mode "local" --n_threads 4
+ pyveg_generate_config --configs_dir "pyveg/configs" --collection_name "Sentinel2" --left 419840 --bottom 0235520 --right 430080 --top 0245760 --start_date "2016-01-01" --end_date "2016-02-01" --time_per_point "1m"
 ```
 
-This generates a file named `config_Sentinel2_11.58N_27.94E_Sudan_2016-01-01_2020-06-30_1m_local.py` along with instructions on how to use this configuration file to download data through the pipeline, in this case the following:
+This generates a file named `config_Sentinel2_419840_0235520_430080_0245760_2016-01-01_2016-02-01_1m_local.py` along with instructions on how to use this configuration file to download data through the pipeline, in this case the following:
 
 ```
-pyveg_run_pipeline --config_file pyveg/configs/config_Sentinel2_11.58N_27.94E_Sudan_2016-01-01_2020-06-30_1m_local.py
+pyveg_run_pipeline --config_file pyveg/configs/config_Sentinel2_419840_0235520_430080_0245760_2016-01-01_2016-02-01_1m_local.py
 ```
 
 Individual options can be specified by the user via prompt. The options for this can be found by typing ```pyveg_generate_config --help```.
 
+#### Generating many configuration files from a geoparquet file
+
+If you want to generate a large number of configuration files from a dataset of geometries you can do this using the command  `pyveg_generate_config` and
+a [geoparquet](https://pypi.org/project/geoparquet/) file (`bounds_file`).
+
+The geoparquet file must contain a column named `geometry`, and each row correspond to an individual geometry (an example of this
+file can be found as `images_1024.parquet` on the `testdata` directory).  If provided
+the `--bounds_file` flag, the `pyveg_generate_config` script will read the geoparquet file, loop over its rows creating a config file
+for each geometry.
+
+If a column `on_land` is available in the geoparquet file, the script will filter only rows where the column is True.
+If not this column is not found, the scrip will loop over all rows of the data.
+
+Flags such as `start_date`, `end_date`, `time_per_point` must be provided as well, and it will be used for all the config files created.
+
+Flags such as `configs_dir`, `output_dir` are optional, defining to write the output of the config files or downloads to a specified directory
+with the default being the current directory.
+
+An example:
+
+```
+pyveg_generate_config --bounds_file testdata/images_1024.parquet  --start_date 2018-04-02 --end_date 2018-10-01 --time_per_point 5m --configs_dir configs --output_dir output_dowloads
+```
 
 ### More Details on Downloading
 
-During the download job, `pyveg` will break up your specified date range into a time series, and download data at each point in the series. Note that by default the vegetation images downloaded from GEE will be split up into 50x50 pixel images, vegetation metrics are then calculated on the sub-image level. Both colour (RGB) and Normalised Difference Vegetation Index (NDVI) images are downloaded and stored. Vegetation metrics include the mean NDVI pixel intensity across sub-images, and also network centrality metrics, discussed in more detail below.
-
-For weather collections e.g. the ERA5, due to coarser resolution, the precipitation and temperature "images" are averaged into a single value at each point in the time series.
+During the download job, `pyveg` will break up your specified date range into a time series defined by the `time_per_point` flag , and download data at each point in the series. Note that by default the images downloaded from GEE will be split up into 32x32 pixel images. Both colour (RGB) and a mosaic with counts of images used in the composite (COUNT) images are downloaded and stored.
 
 ### Rerunning partially succeeded jobs
 

@@ -26,6 +26,7 @@ setup(
             "pyveg_generate_config=pyveg.scripts.generate_config_file:main",
             "pyveg_create_analysis_report=pyveg.scripts.create_analysis_report:main",
             "pyveg_analysis_summary_data=pyveg.scripts.analyse_pyveg_summary_data:main",
+            "pyveg_run_pipeline_loop=pyveg.scripts.run_pipeline_loop:main",
         ]
     },
 )

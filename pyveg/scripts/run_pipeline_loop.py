@@ -36,7 +36,7 @@ def run_pipeline(config_directory):
 
     # Build a list of commands to reproject each file individually
     cmds = []
-    for input_fpath in full_paths[:5]:
+    for input_fpath in full_paths:
         safe_input = shlex.quote(str(input_fpath))
 
         cmds.append(f"pyveg_run_pipeline --config_file {safe_input}")
