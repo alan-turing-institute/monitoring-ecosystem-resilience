@@ -62,17 +62,6 @@ def test_compare_opposite_images():
     assert compare_binary_images(img1, img2) < 0.1
 
 
-def test_create_gif_from_images():
-    path_dir = os.path.join(os.path.dirname(__file__), "..", "testdata/")
-    create_gif_from_images(path_dir, "test", "black_and_white")
-    list_png_files = [
-        f
-        for f in os.listdir(path_dir)
-        if (os.path.isfile(os.path.join(path_dir, f)) and f == "test.gif")
-    ]
-    assert len(list_png_files) == 1
-
-
 def test_pillow_to_numpy():
     img = Image.open(
         os.path.join(os.path.dirname(__file__), "..", "testdata", "white.png")
