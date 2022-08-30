@@ -2,11 +2,6 @@
 Test the functions in subgraph_centrality.py
 """
 
-import os
-
-import igraph
-import numpy as np
-
 from pyveg.src.image_utils import *
 
 

@@ -2,7 +2,6 @@
 Test the utility functions that manipulate date strings
 """
 
-from datetime import datetime
 
 from pyveg.src.date_utils import *
 
