@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# run a single pyveg Module, with config supplied in argument $1,
+# run a single peep Module, with config supplied in argument $1,
 # on a Linux (Ubuntu-18.04) VM.
 
 # this script should be called via
