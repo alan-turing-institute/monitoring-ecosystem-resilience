@@ -248,8 +248,6 @@ def construct_filename_from_metadata(metadata, suffix):
         metadata["collection"],
         metadata["time_per_point"],
     )
-    if "region_size" in metadata.keys():
-        filename += "region-{}".format(region_size)
     if "tag" in metadata.keys():
         filename += "_{}".format(metadata["tag"])
     filename += "_{}".format(suffix)

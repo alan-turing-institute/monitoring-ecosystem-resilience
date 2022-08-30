@@ -7,12 +7,7 @@ import os
 import shutil
 import unittest
 
-from peep.src.processor_modules import (
-    ImageProcessor,
-    NDVICalculator,
-    NetworkCentralityCalculator,
-    WeatherImageToJSON,
-)
+from peep.src.processor_modules import ImageProcessor, WeatherImageToJSON
 
 
 @unittest.skipIf(
@@ -80,42 +75,4 @@ def test_ERA5_image_to_json():
     assert "total_precipitation" in results.keys()
     assert isinstance(results["mean_2m_air_temperature"], float)
     assert isinstance(results["total_precipitation"], float)
-    shutil.rmtree(tmp_json_path)
-
-
-def test_NDVICalculator():
-    """
-    Test that we can go from a directory containing some 50x50 BWNVI images
-    to a json file containing network centrality values.
-    """
-    dir_path = os.path.join(
-        os.path.dirname(__file__), "..", "testdata", "Sentinel2", "test_png"
-    )
-    tmp_json_path = os.path.join(
-        os.path.dirname(__file__), "..", "testdata", "Sentinel2", "tmp_json"
-    )
-    ndvic = NDVICalculator()
-    ndvic.input_location = dir_path
-    ndvic.output_location = tmp_json_path
-    ndvic.configure()
-    ndvic.run()
-    assert os.path.exists(
-        os.path.join(tmp_json_path, "2018-03-01", "JSON", "NDVI", "ndvi_values.json")
-    )
-    nc_json = json.load(
-        open(
-            os.path.join(
-                tmp_json_path, "2018-03-01", "JSON", "NDVI", "ndvi_values.json"
-            )
-        )
-    )
-    assert isinstance(nc_json, list)
-    assert isinstance(nc_json[0], dict)
-    # test float values
-    for key in ["latitude", "longitude", "ndvi", "ndvi_veg"]:
-        assert key in nc_json[0].keys()
-        assert isinstance(nc_json[0][key], float)
-        assert nc_json[0][key] != 0.0
-    assert "date" in nc_json[0].keys()
-    assert isinstance(nc_json[0]["date"], str)
     shutil.rmtree(tmp_json_path)
