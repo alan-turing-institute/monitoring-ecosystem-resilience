@@ -13,11 +13,11 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../../pyveg"))
+sys.path.insert(0, os.path.abspath("../../peep"))
 
 # -- Project information -----------------------------------------------------
 
-project = "pyveg"
+project = "peep"
 copyright = "2020, Nick Barlow, Camila Rangel Smith, Samuel Van Stroud, Jesse F. Abrams, Chris Boulton, Joshua Buxton."
 author = "Nick Barlow, Camila Rangel Smith, Samuel Van Stroud, Jesse F. Abrams, Chris Boulton, Joshua Buxton."
 

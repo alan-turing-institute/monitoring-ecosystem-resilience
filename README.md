@@ -21,7 +21,7 @@ For legacy reasons (related to the parent monitoring-ecosystem-resilience repo) 
 
 ### Python
 
-The tasks above are all implemented in Python in the *pyveg* package. See the [README.md](pyveg/README.md) in the `pyveg` subdirectory for details on installation and usage.
+The tasks above are all implemented in Python in the *pyveg* package. See the [README.md](peep/README.md) in the `pyveg` subdirectory for details on installation and usage.
 
 ### R
 

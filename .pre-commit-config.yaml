@@ -19,7 +19,7 @@ repos:
     rev: 22.3.0
     hooks:
     -   id: black
-        exclude: (^pyveg/configs|^pyveg/zenodo_config_template.py|^pyveg/azure_config_template.py)
+        exclude: (^peep/configs|^peep/zenodo_config_template.py|^peep/azure_config_template.py)
 -   repo: https://github.com/pre-commit/mirrors-autopep8
     rev: 'v1.6.0'  # Use the sha / tag you want to point at
     hooks:
