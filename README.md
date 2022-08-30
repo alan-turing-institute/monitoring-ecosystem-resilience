@@ -16,13 +16,8 @@ The code in this repository is intended to perform three inter-related tasks:
 * Generate cloud-free composite images from Sentinel-2 for each year since 2016.
 * Generate "chips" (or patches) suitable for input into the inference model.
 
-For legacy reasons (related to the parent monitoring-ecosystem-resilience repo) the python and R packages are currently named `pyveg` and `rveg` respectively. These names are likely to be changed in due course.
 
 
 ### Python
 
-The tasks above are all implemented in Python in the *pyveg* package. See the [README.md](peep/README.md) in the `pyveg` subdirectory for details on installation and usage.
-
-### R
-
-The pattern-generation and graph-modelling are implemented in R in the *rveg* package.  See the [README.md](rveg/README.md) in the `rveg` directory for further details.
+The tasks above are all implemented in Python in the *peep* package. See the [README.md](peep/README.md) in the `peep` subdirectory for details on installation and usage.

@@ -1,8 +1,8 @@
-# The `pyveg` Package
+# The `peep` Package
 
 ## Introduction
 
-The `pyveg` package is developed to study the evolution of vegetation patterns in semi-arid environments using data downloaded from Google Earth Engine.
+The `peep` package is developed to study the evolution of vegetation patterns in semi-arid environments using data downloaded from Google Earth Engine.
 
 The code in this repository is intended to perform two main tasks:
 
@@ -19,7 +19,7 @@ This page contains an installation guide, and some usage examples for this packa
 
 ## Installation
 
-`pyveg` requires Python 3.6 or greater. To install, start by creating a fresh `conda` environment.
+`peep` requires Python 3.6 or greater. To install, start by creating a fresh `conda` environment.
 ```
 conda create -n veg python=3.7
 conda activate veg
@@ -49,18 +49,18 @@ If you are using `gcloud`, it will initialize automatically.
 
 ### Google Earth Engine
 
-[Google Earth Engine](https://earthengine.google.com) (GEE) is a powerful tool for obtaining and analysing satellite imagery. This directory contains some useful scripts for interacting with the Earth Engine API. The earth engine API is installed automatically as part of the `pyveg` package installation. If you wish to install it separately, you can follow the instructions [here](https://developers.google.com/earth-engine/python_install_manual).
+[Google Earth Engine](https://earthengine.google.com) (GEE) is a powerful tool for obtaining and analysing satellite imagery. This directory contains some useful scripts for interacting with the Earth Engine API. The earth engine API is installed automatically as part of the `peep` package installation. If you wish to install it separately, you can follow the instructions [here](https://developers.google.com/earth-engine/python_install_manual).
 
-## Downloading data from GEE with ``pyveg``
+## Downloading data from GEE with ``peep``
 
 ### Downloading data from GEE using the CLI
 
-To run a `pyveg` download job, use
+To run a `peep` download job, use
 ```
-pyveg_run_pipeline --config_file <path to config>
+peep_run_pipeline --config_file <path to config>
 ```
 
-The download job is fully specified by a configuration file, which you point to using the `--config_file` argument. A sample config file with relevant functionality for the urban grammar project is found at `pyveg/configs/config_liverpool_example.py`. You can also optionally specify a string to identify the download job using the `--name` argument.
+The download job is fully specified by a configuration file, which you point to using the `--config_file` argument. A sample config file with relevant functionality for the urban grammar project is found at `peep/configs/config_liverpool_example.py`. You can also optionally specify a string to identify the download job using the `--name` argument.
 
 Note that we use the [BNG convention](https://britishnationalgrid.uk/) for coordinates, i.e. `(eastings,northings)` and we set bounds for regions to download in the convention `(left, bottom, right, top)`.
 
@@ -69,22 +69,22 @@ Note that we use the [BNG convention](https://britishnationalgrid.uk/) for coord
 You might want to download images from several configuration files in one go. This can be done with the following command:
 
 ```
-pyveg_run_pipeline_loop --config_dir configs
+peep_run_pipeline_loop --config_dir configs
 ```
 
 where `config_dir` is the path to a directory where all the config files you want to run are found. The script runs a loop and
-exectues the `pyveg_run_pipeline` command on each available file found in that path.
+exectues the `peep_run_pipeline` command on each available file found in that path.
 
 
 #### Generating a download configuration file
 
-To create a configuration file for use in the pyveg pipeline described above, use the command
+To create a configuration file for use in the peep pipeline described above, use the command
 ```
-pyveg_generate_config
+peep_generate_config
 ```
 this allows the user to specify various characteristics of the data they want to download via prompts. The list in order is as follows:
 
-* `--configs_dir`: The path to the directory containing the config file, with a default option `pyveg/configs`.
+* `--configs_dir`: The path to the directory containing the config file, with a default option `peep/configs`.
 
 * `--collection_name`: The name of the dataset used in the collection, either Sentinel2, or Landsat 8, 7, 5 or 4.
     *    Sentinel2: [Available from 2015-06-23 at 10m resolution.](https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2)
@@ -111,25 +111,25 @@ this allows the user to specify various characteristics of the data they want to
 
 For example:
 ```
- pyveg_generate_config --configs_dir "pyveg/configs" --collection_name "Sentinel2" --left 419840 --bottom 0235520 --right 430080 --top 0245760 --start_date "2016-01-01" --end_date "2016-02-01" --time_per_point "1m"
+ peep_generate_config --configs_dir "peep/configs" --collection_name "Sentinel2" --left 419840 --bottom 0235520 --right 430080 --top 0245760 --start_date "2016-01-01" --end_date "2016-02-01" --time_per_point "1m"
 ```
 
 This generates a file named `config_Sentinel2_419840_0235520_430080_0245760_2016-01-01_2016-02-01_1m_local.py` along with instructions on how to use this configuration file to download data through the pipeline, in this case the following:
 
 ```
-pyveg_run_pipeline --config_file pyveg/configs/config_Sentinel2_419840_0235520_430080_0245760_2016-01-01_2016-02-01_1m_local.py
+peep_run_pipeline --config_file peep/configs/config_Sentinel2_419840_0235520_430080_0245760_2016-01-01_2016-02-01_1m_local.py
 ```
 
-Individual options can be specified by the user via prompt. The options for this can be found by typing ```pyveg_generate_config --help```.
+Individual options can be specified by the user via prompt. The options for this can be found by typing ```peep_generate_config --help```.
 
 #### Generating many configuration files from a geoparquet file
 
-If you want to generate a large number of configuration files from a dataset of geometries you can do this using the command  `pyveg_generate_config` and
+If you want to generate a large number of configuration files from a dataset of geometries you can do this using the command  `peep_generate_config` and
 a [geoparquet](https://pypi.org/project/geoparquet/) file (`bounds_file`).
 
 The geoparquet file must contain a column named `geometry`, and each row correspond to an individual geometry (an example of this
 file can be found as `images_1024.parquet` on the `testdata` directory).  If provided
-the `--bounds_file` flag, the `pyveg_generate_config` script will read the geoparquet file, loop over its rows creating a config file
+the `--bounds_file` flag, the `peep_generate_config` script will read the geoparquet file, loop over its rows creating a config file
 for each geometry.
 
 If a column `on_land` is available in the geoparquet file, the script will filter only rows where the column is True.
@@ -143,22 +143,22 @@ with the default being the current directory.
 An example:
 
 ```
-pyveg_generate_config --bounds_file testdata/images_1024.parquet  --start_date 2018-04-02 --end_date 2018-10-01 --time_per_point 5m --configs_dir configs --output_dir output_dowloads
+peep_generate_config --bounds_file testdata/images_1024.parquet  --start_date 2018-04-02 --end_date 2018-10-01 --time_per_point 5m --configs_dir configs --output_dir output_dowloads
 ```
 
 ### More Details on Downloading
 
-During the download job, `pyveg` will break up your specified date range into a time series defined by the `time_per_point` flag , and download data at each point in the series. Note that by default the images downloaded from GEE will be split up into 32x32 pixel images. Both colour (RGB) and a mosaic with counts of images used in the composite (COUNT) images are downloaded and stored.
+During the download job, `peep` will break up your specified date range into a time series defined by the `time_per_point` flag , and download data at each point in the series. Note that by default the images downloaded from GEE will be split up into 32x32 pixel images. Both colour (RGB) and a mosaic with counts of images used in the composite (COUNT) images are downloaded and stored.
 
 ### Rerunning partially succeeded jobs
 
 The output location of a download job is datestamped with the time that the job was launched.  The configuration file used will also be copied and datestamped, to aid reproducibility.  For example if you run the job
 ```
-pyveg_run_pipeline --config_file pyveg/configs/my_config.py
+peep_run_pipeline --config_file peep/configs/my_config.py
 ```
-there will be a copy of `my_config.py` saved as `pyveg/configs/cached_configs/my_config_<datestamp>.py`. This also means that if a job crashes or timeouts partway through, it is possible to rerun, writing to the same output location and skipping parts that are already done by using this cached config file.  However, in order to avoid a second datestamp being appended to the output location, use the ```--from_cache``` argument.  So for the above example, the command to rerun the job filling in any failed/incomplete parts would be:
+there will be a copy of `my_config.py` saved as `peep/configs/cached_configs/my_config_<datestamp>.py`. This also means that if a job crashes or timeouts partway through, it is possible to rerun, writing to the same output location and skipping parts that are already done by using this cached config file.  However, in order to avoid a second datestamp being appended to the output location, use the ```--from_cache``` argument.  So for the above example, the command to rerun the job filling in any failed/incomplete parts would be:
 ```
-pyveg_run_pipeline --config_file pyveg/configs/cached_configs/my_config_<datestamp>.py --from_cache
+peep_run_pipeline --config_file peep/configs/cached_configs/my_config_<datestamp>.py --from_cache
 ```
 
 ### Using Azure for downloading/processing data
