@@ -19,15 +19,15 @@ from peep.src.date_utils import get_date_range_for_collection
 from peep.src.peep_pipeline import Pipeline, Sequence
 
 try:
-    from peep.src.download_modules import VegetationDownloader, WeatherDownloader
+    from peep.src.download_modules import ImageDownloader, WeatherDownloader
 except (ee.ee_exception.EEException):
     print("Earth Engine not initialized - will not be able to download from GEE")
     pass
 from peep.src.combiner_modules import VegAndWeatherJsonCombiner
 from peep.src.processor_modules import (
+    ImageProcessor,
     NDVICalculator,
     NetworkCentralityCalculator,
-    VegetationImageProcessor,
     WeatherImageToJSON,
 )
 

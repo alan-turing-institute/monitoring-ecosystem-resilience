@@ -27,8 +27,8 @@ collections_to_use = ["COLLECTION_NAME"]
 
 modules_to_use = {
     "COLLECTION_NAME": [
-        "VegetationDownloader",
-        "VegetationImageProcessor",
+        "ImageDownloader",
+        "ImageProcessor",
     ],
 }
 

@@ -20,8 +20,8 @@ collections_to_use = ["Sentinel2"]
 # Dictionary defining what Modules should run in each Sequence.
 modules_to_use = {
     "Sentinel2": [
-        "VegetationDownloader",
-        "VegetationImageProcessor",
+        "ImageDownloader",
+        "ImageProcessor",
     ],
 }
 

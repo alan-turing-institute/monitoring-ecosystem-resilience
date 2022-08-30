@@ -237,7 +237,7 @@ class DownloaderModule(BaseModule):
 ##############################################################################
 
 
-class VegetationDownloader(DownloaderModule):
+class ImageDownloader(DownloaderModule):
     """
     Specialization of the DownloaderModule class, to deal with
     imagery from Sentinel 2 or Landsat 5-8 satellites,

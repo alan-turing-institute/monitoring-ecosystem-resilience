@@ -9,7 +9,7 @@ import sys
 import ee
 
 try:
-    from peep.src.download_modules import VegetationDownloader, WeatherDownloader
+    from peep.src.download_modules import ImageDownloader, WeatherDownloader
 except (ee.ee_exception.EEException):
     print("Earth Engine not initialized - will not be able to download from GEE")
     pass

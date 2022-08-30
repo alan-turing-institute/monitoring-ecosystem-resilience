@@ -8,9 +8,9 @@ import shutil
 import unittest
 
 from peep.src.processor_modules import (
+    ImageProcessor,
     NDVICalculator,
     NetworkCentralityCalculator,
-    VegetationImageProcessor,
     WeatherImageToJSON,
 )
 
@@ -32,7 +32,7 @@ def test_Sentinel2_image_processor():
         os.path.dirname(__file__), "..", "testdata", "Sentinel2", "tmp_png"
     )
 
-    vip = VegetationImageProcessor()
+    vip = ImageProcessor()
     vip.input_location = dir_path
     vip.output_location = tmp_png_path
     vip.ndvi = True

@@ -429,7 +429,7 @@ class ProcessorModule(BaseModule):
         return self.is_finished
 
 
-class VegetationImageProcessor(ProcessorModule):
+class ImageProcessor(ProcessorModule):
     """
     Class to convert tif files downloaded from GEE into .png and array files
     that can be looked at or used as input to further analysis.

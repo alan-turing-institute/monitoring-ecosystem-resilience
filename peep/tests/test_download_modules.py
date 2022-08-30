@@ -10,7 +10,7 @@ else:
     TMPDIR = "%TMP%"
 
 if not os.environ.get("CI") == "true":
-    from peep.src.download_modules import VegetationDownloader, WeatherDownloader
+    from peep.src.download_modules import ImageDownloader, WeatherDownloader
 
 
 @unittest.skipIf(
@@ -18,8 +18,8 @@ if not os.environ.get("CI") == "true":
     "Skipping this test in a Continuous Integration environment.",
 )
 def test_instantiate_vegetation_downloader():
-    veg_downloader = VegetationDownloader("Sentinel2")
-    assert isinstance(veg_downloader, VegetationDownloader)
+    veg_downloader = ImageDownloader("Sentinel2")
+    assert isinstance(veg_downloader, ImageDownloader)
 
 
 @unittest.skipIf(
@@ -27,7 +27,7 @@ def test_instantiate_vegetation_downloader():
     "Skipping this test in a Continuous Integration environment.",
 )
 def test_veg_downloader_unconfigured_exception():
-    veg_downloader = VegetationDownloader("Sentinel2")
+    veg_downloader = ImageDownloader("Sentinel2")
     with pytest.raises(RuntimeError):
         veg_downloader.run()
 
@@ -37,7 +37,7 @@ def test_veg_downloader_unconfigured_exception():
     "Skipping this test in a Continuous Integration environment.",
 )
 def test_veg_downloader_variables_not_set_exception():
-    veg_downloader = VegetationDownloader("Sentinel2")
+    veg_downloader = ImageDownloader("Sentinel2")
     with pytest.raises(RuntimeError):
         veg_downloader.configure()
 
@@ -47,7 +47,7 @@ def test_veg_downloader_variables_not_set_exception():
     "Skipping this test in a Continuous Integration environment.",
 )
 def test_veg_downloader_configure_sentinel2():
-    veg_downloader = VegetationDownloader("Sentinel2")
+    veg_downloader = ImageDownloader("Sentinel2")
     veg_downloader.data_type = "vegetation"
     veg_downloader.collection_name = "COPERNICUS/S2"
     veg_downloader.RGB_bands = ["B4", "B3", "B2"]
@@ -68,7 +68,7 @@ def test_veg_downloader_configure_sentinel2():
     "Skipping this test in a Continuous Integration environment.",
 )
 def test_veg_downloader_run_sentinel2():
-    veg_downloader = VegetationDownloader("Sentinel2")
+    veg_downloader = ImageDownloader("Sentinel2")
     veg_downloader.data_type = "vegetation"
     veg_downloader.collection_name = "COPERNICUS/S2"
     veg_downloader.RGB_bands = ["B4", "B3", "B2"]
