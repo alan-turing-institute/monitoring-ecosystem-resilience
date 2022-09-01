@@ -6,10 +6,8 @@ that can be chained together to build a sequence.
 import datetime
 import os
 import re
-import shutil
-import tempfile
+import sys
 import time
-from multiprocessing import Pool
 
 import cv2 as cv
 import numpy as np

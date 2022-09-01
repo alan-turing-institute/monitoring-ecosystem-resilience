@@ -6,23 +6,6 @@ Test the utility functions that manipulate date strings
 from peep.src.date_utils import *
 
 
-def test_get_num_n_day_slices():
-
-    start_date = "2015-01-01"
-    end_date = "2016-01-01"
-    days_per_chunk = 30
-    assert get_num_n_day_slices(start_date, end_date, days_per_chunk) == 12
-
-
-def test_slice_time_period_into_n():
-    start_date = "2015-01-01"
-    end_date = "2016-01-01"
-    for n_chunks in range(2, 20):
-        sub_periods = slice_time_period_into_n(start_date, end_date, n_chunks)
-        assert isinstance(sub_periods, list)
-        assert len(sub_periods) == n_chunks
-
-
 def test_slice_time_period_by_days():
     start_date = "2015-01-01"
     end_date = "2016-01-01"
@@ -115,10 +98,3 @@ def test_assign_dates_to_tasks_more_tasks_than_dates():
     assert len(date_lists) == len(dates)
     for dl in date_lists:
         assert len(dl) == 1
-
-
-def test_get_time_diff():
-    start_date = "1986-01-01"
-    end_date = "2016-01-01"
-    diff = get_time_diff(start_date, end_date)
-    assert diff == -30

@@ -6,7 +6,6 @@ pip install --upgrade pillow
 ```
 """
 
-import json
 import os
 import sys
 

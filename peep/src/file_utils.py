@@ -1,11 +1,9 @@
 import datetime
 import json
 import os
-import re
 import subprocess
 from zipfile import BadZipFile, ZipFile
 
-import dateparser
 import numpy as np
 import requests
 
