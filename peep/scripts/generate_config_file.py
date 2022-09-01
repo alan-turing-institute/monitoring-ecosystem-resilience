@@ -157,7 +157,9 @@ def main():
         """
     )
     parser.add_argument(
-        "--bounds_file", help="Path to parket file with coordinate chips", type=str
+        "--bounds_file",
+        help="Path to a geoparket file. The file should include a geometry column (named 'geometry'). A config file will be created for each row in the geoparket file.",
+        type=str,
     )
     parser.add_argument(
         "--configs_dir", help="path to directory containing config files"
@@ -269,16 +271,16 @@ def main():
     bottom = None
     top = None
     if bounds_file:
-        chips_gdf = geopandas.read_parquet(bounds_file)
-        chips_gdf.to_crs("EPSG:27700")
+        bounds_gdf = geopandas.read_parquet(bounds_file)
+        bounds_gdf.to_crs("EPSG:27700")
 
-        if "on_land" in chips_gdf:
-            index = chips_gdf[chips_gdf["on_land"] == True].index
+        if "on_land" in bounds_gdf:
+            index = bounds_gdf[bounds_gdf["on_land"] == True].index
         else:
-            index = chips_gdf.index
+            index = bounds_gdf.index
 
         for i in index:
-            row = chips_gdf.iloc[i]
+            row = bounds_gdf.iloc[i]
             bottom = int(row["geometry"].bounds[1])
             left = int(row["geometry"].bounds[0])
             right = int(row["geometry"].bounds[2])
