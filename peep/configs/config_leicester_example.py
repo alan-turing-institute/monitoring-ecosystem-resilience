@@ -1,5 +1,4 @@
 from peep.configs.collections import data_collections
-from peep.coordinates import coordinate_store
 
 name = "leicester"
 
@@ -8,15 +7,6 @@ output_location = "leicester-test"
 
 #output_location_type = "azure"
 output_location_type = "local"
-
-# parse selection. Note (long, lat) GEE convention.
-#entry = coordinate_store.loc[coordinate_id]
-# modify this line to set coords based on entries in `coordinates.py`
-#coordinate_id = "00"
-
-# parse selection. Note (long, lat) GEE convention.
-#entry = coordinate_store.loc[coordinate_id]
-#coordinates = (entry.longitude, entry.latitude)
 
 bounds = [-1.133333, 52.633331, -1.033333, 52.733331]
 date_range = ["2020-05-01", "2020-08-01"]

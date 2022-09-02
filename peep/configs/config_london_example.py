@@ -1,5 +1,4 @@
 from peep.configs.collections import data_collections
-from peep.coordinates import coordinate_store
 
 # Name of job
 name = "london"

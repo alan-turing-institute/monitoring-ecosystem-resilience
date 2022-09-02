@@ -7,15 +7,6 @@ output_location = "greenwich-bng"
 #output_location_type = "azure"
 output_location_type = "local"
 
-# parse selection. Note (long, lat) GEE convention.
-#entry = coordinate_store.loc[coordinate_id]
-# modify this line to set coords based on entries in `coordinates.py`
-#coordinate_id = "00"
-
-# parse selection. Note (long, lat) GEE convention.
-#entry = coordinate_store.loc[coordinate_id]
-#coordinates = (entry.longitude, entry.latitude)
-
 # bounds = [ 327771, 384988, 339052, 395656 ]
 # bounds = [297566, 345093, 387814, 430437]
 bounds = [532480.0, 174080.0, 542720.0, 184320.0]
