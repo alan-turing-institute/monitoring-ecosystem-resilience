@@ -115,10 +115,12 @@ docs/build
 docs/source/_static
 docs/source/_templates
 
-# Test data
-pyveg/testdata/test_ne_england/
-
 # Virtual Environments
 env/
+
+# Test data
+pyveg/testdata/test_ne_england/
+birmingham-test__2022-*/
+Sentinel2-52.50N-1.90W-birmingham-reproject-test__2022-*/
+pyveg/testdata/Sentinel2/tmp_png/*
 liverpool-bng__*/
-pyveg/testdata/Sentinel2/tmp_png/
