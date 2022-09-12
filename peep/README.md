@@ -21,8 +21,8 @@ This page contains an installation guide, and some usage examples for this packa
 
 `peep` requires Python 3.6 or greater. To install, start by creating a fresh `conda` environment.
 ```
-conda create -n veg python=3.7
-conda activate veg
+conda create -n gee_pipeline python=3.7
+conda activate gee_pipeline
 ```
 Get the source.
 ```
@@ -44,7 +44,6 @@ To authenticate for the first time open python and run
 ee.Initialize()
 ```
 If you are using `gcloud`, it will initialize automatically.
-
 
 
 ### Google Earth Engine
@@ -133,7 +132,7 @@ the `--bounds_file` flag, the `peep_generate_config` script will read the geopar
 for each geometry.
 
 If a column `on_land` is available in the geoparquet file, the script will filter only rows where the column is True.
-If not this column is not found, the scrip will loop over all rows of the data.
+If not this column is not found, the script will loop over all rows of the data.
 
 Flags such as `start_date`, `end_date`, `time_per_point` must be provided as well, and it will be used for all the config files created.
 
@@ -143,7 +142,7 @@ with the default being the current directory.
 An example:
 
 ```
-peep_generate_config --bounds_file testdata/images_1024.parquet  --start_date 2018-04-02 --end_date 2018-10-01 --time_per_point 5m --configs_dir configs --output_dir output_dowloads
+peep_generate_config --bounds_file testdata/images_1024.parquet  --start_date 2018-04-01 --end_date 2018-10-01 --time_per_point 6m --configs_dir configs --output_dir output_dowloads
 ```
 
 ### More Details on Downloading
@@ -163,7 +162,8 @@ peep_run_pipeline --config_file peep/configs/cached_configs/my_config_<datestamp
 
 ### Using Azure for downloading/processing data
 
-If you have access to Microsoft Azure cloud computing facilities, downloading and processing data can be sped up enormously by using batch computing to run many subjobs in parallel.  See [here](UsingAzure.md) for more details.
+If you have access to Microsoft Azure cloud computing facilities, downloading and processing data can be sped up enormously by using batch computing to run many subjobs in parallel.  This version of the code hasn't been tested on Azure, but legacy code from
+[pyveg](https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/tree/master/pyveg) has been kept to facilitate the Azure implementation if needed. See [here](UsingAzure.md) for more details on how Azure is used in [pyveg](https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/tree/master/pyveg).
 
 ### Uploading results to the Zenodo open source repository
 
