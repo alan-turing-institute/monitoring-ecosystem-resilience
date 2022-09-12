@@ -4,19 +4,19 @@
 We're excited you're here and want to contribute.
 
 We hope that these guidelines make it as easy as possible to get involved.
-If you have any questions that aren't discussed below, please let us know by opening an [issue](https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/issues).
+If you have any questions that aren't discussed below, please let us know by opening an [issue](https://github.com/urbangrammarai/gee_pipeline/issues).
 
 We welcome all contributions from documentation to testing to writing code.
 Don't let trying to be perfect get in the way of being good - exciting ideas are more important than perfect pull requests.
 
 ## Table of contents
 
-- [Contributing to monitoring-ecosystem-resilience (the repo!)](#contributing-to-monitoring-ecosystem-resilience-the-repo)
+- [Contributing to gee_pipeline (the repo!)](#contributing-to-gee_pipeline-the-repo)
   - [Table of contents](#table-of-contents)
   - [Where to start: issues](#where-to-start-issues)
   - [Making a change with a pull request](#making-a-change-with-a-pull-request)
     - [1. Comment on an existing issue or open a new issue referencing your addition](#1-comment-on-an-existing-issue-or-open-a-new-issue-referencing-your-addition)
-    - [2. Create a new branch to your profile](#2-create-a-new-branch-or-forkgithub-fork-the-monitoring-ecosystem-resilience-repositorymonitoring-ecosystem-resilience-repo-to-your-profile)
+    - [2. Create a new branch to your profile](#2-create-a-new-branch-or-forkgithub-fork-the-gee-pipeline-repositorygee-pipeline-repo-to-your-profile)
       - [2a) Create a branch](#2a-create-a-branch)
       - [2b. Fork the repository](#2b-fork-the-repository)
     - [3. Make the changes you've discussed](#3-make-the-changes-youve-discussed)
@@ -29,7 +29,7 @@ Don't let trying to be perfect get in the way of being good - exciting ideas are
 A general guideline: if you find yourself tempted to write a great big issue that
 is difficult to describe as one unit of work, please consider splitting it into two or more issues.
 
-Before you open a new issue, please check if any of our [open issues](https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/issues) covers your idea already.
+Before you open a new issue, please check if any of our [open issues](https://github.com/urbangrammarai/gee_pipeline/issues) covers your idea already.
 
 The list of labels for current issues includes:
 
@@ -57,10 +57,10 @@ The list of labels for current issues includes:
 
 ## Making a change with a pull request
 
-We appreciate all contributions to monitoring-ecosystem-resilience.
+We appreciate all contributions to gee_pipeline.
 **THANK YOU** for helping us.
 
-All project management, conversations and questions related to the project happens here in the [monitoring-ecosystem-resilience repository][monitoring-ecosystem-resilience-repo].
+All project management, conversations and questions related to the project happens here in the [gee_pipeline repository][gee_pipeline-repo].
 
 In brief, the structure for making a contribution is as follows:
 1. Identify a specific change that needs to be made to the repository. Open a new issue (after checking one does not already exist!) and describe the change, include why you are making it.
@@ -72,13 +72,13 @@ When a significant milestone has been reached, and the `develop` branch is known
 
 The following steps are a more detailed guide to help you contribute in a way that will be easy for everyone to review and accept with ease.
 
-### 1. Comment on an [existing issue](https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/issues) or open a new issue referencing your addition
+### 1. Comment on an [existing issue](https://github.com/urbangrammarai/gee_pipeline/issues) or open a new issue referencing your addition
 
 This allows other members of the team to confirm that you aren't overlapping with work that's currently underway and that everyone is on the same page with the goal of the work you're going to carry out.
 
 [This blog](https://www.igvita.com/2011/12/19/dont-push-your-pull-requests/) is a nice explanation of why putting this work in up front is so useful to everyone involved.
 
-### 2. Create a new [branch][github-branches] or [Fork][github-fork] the [monitoring-ecosystem-resilience repository][monitoring-ecosystem-resilience-repo] to your profile
+### 2. Create a new [branch][github-branches] or [Fork][github-fork] the [gee_pipeline repository][gee_pipeline-repo] to your profile
 
 #### 2a) Create a branch
 If you are a collaborator on the repository with write access, then you can make a [new branch][github-branches].  We recommend that you start from the latest version of the `develop` branch, and create a new one from there. This is the branch we use for active deleopment of the repository, while stable (but not cutting edge) versions are in the `master` branch. The name of your new branch should ideally be in the format: `<feature|bugfix>/<issue-number>-<short-description>`. For example, if you were addressing Issue number 111 which was about incorrect JSON filenames, it could be something like:
@@ -133,11 +133,11 @@ A member of the team will then review your changes to confirm that they can be m
 A [review][github-review] will probably consist of a few questions to help clarify the work you've done.
 Keep an eye on your GitHub notifications and be prepared to join in that conversation.
 
-You can update your [fork][github-fork] of the [repository][monitoring-ecosystem-resilience-repo] and the pull request will automatically update with those changes.
+You can update your [fork][github-fork] of the [repository][gee_pipeline-repo] and the pull request will automatically update with those changes.
 You don't need to submit a new pull request when you make a change in response to a review.
 
 You can also submit pull requests to other contributors' branches!
-Do you see an [open pull request](https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/pulls) that you find interesting and want to contribute to?
+Do you see an [open pull request](https://github.com/alan-turing-institute/gee_pipeline/pulls) that you find interesting and want to contribute to?
 Simply make your edits on their files and open a pull request to their branch!
 
 What happens if the continuous integration (CI) fails (for example, if the pull request notifies you that "Some checks were not successful")?
@@ -157,8 +157,8 @@ The python code itself should follow [PEP8][link_pep8] convention whenever possi
 
 _These Contributing Guidelines have been adapted from the [Contributing Guidelines](https://github.com/bids-standard/bids-starter-kit/blob/master/CONTRIBUTING.md) of [The Turing Way](https://github.com/alan-turing-institute/the-turing-way)! (License: MIT)_
 
-[monitoring-ecosystem-resilience-repo]: https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/
-[monitoring-ecosystem-resilience-issues]: https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/issues
+[gee-pipeline-repo]: https://github.com/urbangrammarai/gee_pipeline/
+[gee-pipeline-issues]: https://github.com/urbangrammarai/gee_pipeline/issues
 [git]: https://git-scm.com
 [github]: https://github.com
 [github-branches]: https://help.github.com/articles/creating-and-deleting-branches-within-your-repository
@@ -168,11 +168,11 @@ _These Contributing Guidelines have been adapted from the [Contributing Guidelin
 [github-pullrequest]: https://help.github.com/articles/creating-a-pull-request
 [github-review]: https://help.github.com/articles/about-pull-request-reviews
 [github-syncfork]: https://help.github.com/articles/syncing-a-fork
-[labels-bug]: https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/labels/bug
-[labels-enhancement]: https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/labels/enhancement
-[labels-firstissue]: https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/labels/good%20first%20issue
-[labels-helpwanted]: https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/labels/help%20wanted
-[labels-project-management]: https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/labels/project%20management
-[labels-question]: https://github.com/alan-turing-institute/monitoring-ecosystem-resilience/labels/question
+[labels-bug]: https://github.com/alan-turing-institute/gee-pipeline/labels/bug
+[labels-enhancement]: https://github.com/alan-turing-institute/gee-pipeline/labels/enhancement
+[labels-firstissue]: https://github.com/alan-turing-institute/gee-pipeline/labels/good%20first%20issue
+[labels-helpwanted]: https://github.com/alan-turing-institute/gee-pipeline/labels/help%20wanted
+[labels-project-management]: https://github.com/alan-turing-institute/gee-pipeline/labels/project%20management
+[labels-question]: https://github.com/alan-turing-institute/gee-pipeline/labels/question
 [link_numpydoc]: https://numpydoc.readthedocs.io/en/latest/format.html
 [link_pep8]: https://www.python.org/dev/peps/pep-0008/

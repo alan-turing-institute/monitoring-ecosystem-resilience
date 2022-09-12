@@ -1,6 +1,5 @@
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/urbangrammarai/gee_pipeline/master?labpath=notebooks)
 
-[![Documentation Status](https://readthedocs.org/projects/pyveg/badge/?version=latest)](https://pyveg.readthedocs.io/en/latest/?badge=latest)
 
 # Google Earth Engine Pipeline
 
