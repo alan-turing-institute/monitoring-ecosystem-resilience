@@ -2,7 +2,7 @@ import pytest
 from icecream import ic
 from matplotlib.pyplot import gci
 
-import pyveg.src.grid_creator as grid_creator
+import peep.src.grid_creator as grid_creator
 
 
 def test_create_grid_of_chips():
