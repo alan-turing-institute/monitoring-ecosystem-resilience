@@ -6,9 +6,9 @@ with open("peep/requirements.txt", "r") as f:
 setup(
     name="peep",
     version="1.0",
-    description="Vegetation patterns study.",
-    url="https://github.com/alan-turing-institute/monitoring-ecosystem-resilience",
-    author="Nick Barlow, Camila Rangel Smith and Samuel Van Stroud",
+    description="Google Earth Engine Pipelines.",
+    url="https://github.com/urbangrammarai/gee_pipeline/",
+    author="Camila Rangel Smith, Andy Smith, based on code from https://github.com/alan-turing-institute/monitoring-ecosystem-resilience",
     license="MIT",
     include_package_data=True,
     packages=["peep", "peep.src", "peep.scripts", "peep.configs"],
