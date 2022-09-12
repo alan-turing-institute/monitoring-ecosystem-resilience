@@ -16,12 +16,7 @@ from PIL import Image
 from peep.src import azure_utils, batch_utils
 from peep.src.coordinate_utils import find_coords_string
 from peep.src.date_utils import assign_dates_to_tasks
-from peep.src.file_utils import (
-    consolidate_json_to_list,
-    save_array,
-    save_image,
-    save_json,
-)
+from peep.src.file_utils import save_array, save_image
 from peep.src.image_utils import (
     check_image_ok,
     convert_to_rgb,
