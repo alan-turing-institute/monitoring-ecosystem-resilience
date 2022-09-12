@@ -23,6 +23,7 @@ try:
 except (ee.ee_exception.EEException):
     print("Earth Engine not initialized - will not be able to download from GEE")
     pass
+from peep.src.processor_modules import ImageProcessor, WeatherImageToJSON
 
 
 def build_pipeline(config_file, from_cache=False):
