@@ -31,13 +31,13 @@ def test_Sentinel2_image_processor():
     vip.input_location = dir_path
     vip.output_location = tmp_png_path
     vip.ndvi = True
-    vip.bounds = [-3.0183, 53.3649, -2.9482, 53.4350]
+    vip.bounds = [10240.0, 890880.0, 20480.0, 901120.0]
     vip.configure()
     vip.run()
     assert os.path.exists(os.path.join(tmp_png_path, "2018-03-01", "PROCESSED"))
-    assert len(os.listdir(os.path.join(tmp_png_path, "2018-03-01", "PROCESSED"))) == 3
+    assert len(os.listdir(os.path.join(tmp_png_path, "2018-03-01", "PROCESSED"))) == 4
     assert os.path.exists(os.path.join(tmp_png_path, "2018-03-01", "SPLIT"))
-    assert len(os.listdir(os.path.join(tmp_png_path, "2018-03-01", "SPLIT"))) == 3468
+    assert len(os.listdir(os.path.join(tmp_png_path, "2018-03-01", "SPLIT"))) == 4360
     shutil.rmtree(tmp_png_path, ignore_errors=True)
 
 
