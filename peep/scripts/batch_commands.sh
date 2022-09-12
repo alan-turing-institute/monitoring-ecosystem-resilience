@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # run a single peep Module, with config supplied in argument $1,
-# on a Linux (Ubuntu-18.04) VM.
+# on a Linux (Ubuntu-18.04) VM in Azure.
 
 # this script should be called via
 #   /bin/bash batch_commands.sh <task_config_json> <azure_config.py>
@@ -20,13 +20,13 @@ source ~/.bashrc
 conda activate pyvegenv
 
 # clone repo
-git clone https://github.com/alan-turing-institute/monitoring-ecosystem-resilience
+git clone https://github.com/urbangrammarai/gee_pipeline
 # copy task config file to working directory
-mv $1 monitoring-ecosystem-resilience
+mv $1 gee_pipeline
 # copy azure config file to working directory
-mv $2 monitoring-ecosystem-resilience/pyveg
+mv $2 gee_pipeline/peep
 # change to working directory and checkout branch
-cd monitoring-ecosystem-resilience
+cd gee_pipeline
 git checkout develop
 # install python code to local site-packages
 python -m pip install .
