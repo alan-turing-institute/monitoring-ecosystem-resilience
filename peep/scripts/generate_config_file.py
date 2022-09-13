@@ -172,10 +172,10 @@ def main():
     parser.add_argument(
         "--output_dir", help="Directory for local output data", type=str
     )
-    parser.add_argument("--left", help="left bound in Eastings", type=float)
-    parser.add_argument("--right", help="right bound in Eastings", type=float)
-    parser.add_argument("--bottom", help="bottom bound in Nothings", type=float)
-    parser.add_argument("--top", help="top bound in Nothings", type=float)
+    parser.add_argument("--left", help="left bound in Eastings", type=int)
+    parser.add_argument("--right", help="right bound in Eastings", type=int)
+    parser.add_argument("--bottom", help="bottom bound in Nothings", type=int)
+    parser.add_argument("--top", help="top bound in Nothings", type=int)
     parser.add_argument("--start_date", help="start date, format YYYY-MM-DD", type=str)
     parser.add_argument("--end_date", help="end date, format YYYY-MM-DD", type=str)
     parser.add_argument(
@@ -195,7 +195,8 @@ def main():
 
     # configs_dir
     configs_dir = args.configs_dir if args.configs_dir else ""
-    while not os.path.exists(configs_dir):
+
+    if configs_dir == "":
         if os.path.exists(os.path.join("peep", "configs")):
             default_configs_dir = os.path.join("peep", "configs")
         elif os.path.exists("configs"):
@@ -209,6 +210,10 @@ def main():
         )
         if len(configs_dir) == 0:
             configs_dir = default_configs_dir
+
+    else:
+        if not os.path.exists(configs_dir):
+            os.makedirs(configs_dir, exist_ok=False)
 
     # collection name
     collection_name = args.collection_name if args.collection_name else None
@@ -350,7 +355,7 @@ def main():
             left = args.left if args.left else 0
 
             while not (
-                isinstance(left, float)
+                isinstance(left, int)
                 and left >= left_bound[0]
                 and left <= left_bound[1]
             ):
@@ -364,7 +369,7 @@ def main():
         if not right:
             right = args.right if args.right else 0
             while not (
-                isinstance(right, float)
+                isinstance(right, int)
                 and right >= right_bound[0]
                 and right <= right_bound[1]
             ):
@@ -378,7 +383,7 @@ def main():
         if not top:
             top = args.top if args.top else 0
             while not (
-                isinstance(top, float) and top >= top_bound[0] and top <= top_bound[1]
+                isinstance(top, int) and top >= top_bound[0] and top <= top_bound[1]
             ):
                 top = float(
                     input(
@@ -390,7 +395,7 @@ def main():
         if not bottom:
             bottom = args.bottom if args.bottom else 0
             while not (
-                isinstance(bottom, float)
+                isinstance(bottom, int)
                 and bottom >= bottom_bound[0]
                 and top <= bottom_bound[1]
             ):
