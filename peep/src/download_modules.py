@@ -148,7 +148,6 @@ class DownloaderModule(BaseModule):
         image_list = self.prep_images(dataset)
         url_list = []
         for image in image_list:
-            ic(image)
             # get a URL from which we can download the resulting data
             try:
                 url = image.getDownloadURL(
