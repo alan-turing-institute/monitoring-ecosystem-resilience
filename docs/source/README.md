@@ -1,1 +1,0 @@
-../../pyveg/README.md
