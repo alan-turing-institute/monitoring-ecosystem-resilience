@@ -1,0 +1,12 @@
+pyveg/
+pyveg.egg-info/
+peep.egg-info/
+notebooks/
+.github/
+.mypy_cache/
+.pytest_cache/
+binder/
+build/
+env/
+htmlcov/
+ImageLabeller/
