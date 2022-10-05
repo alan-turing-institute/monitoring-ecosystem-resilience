@@ -8,8 +8,13 @@ WORKDIR /gee_pipeline
 COPY ./environment.yml .
 RUN conda env create -n peep -f ./environment.yml
 
-# SHELL ["/bin/bash", "-c"]
-# ENTRYPOINT
+# Install Google Cloud SDK (to obtain `gcloud` cmd)
+COPY ./install_gcloud.sh .
+RUN ./install_gcloud.sh
+ENV PATH="${PATH}:/gee_pipeline/google-cloud-sdk/bin"
+
+# # SHELL ["/bin/bash", "-c"]
+# # ENTRYPOINT
 SHELL ["conda", "run", "-n", "peep", "/bin/bash", "-c"]
 
 # SHELL ["/bin/bash", "-c"]
@@ -19,11 +24,7 @@ COPY . .
 
 RUN python -m pip install .
 
-# Download and install gcloud CLI
-https://storage.cloud.google.com/cloud-sdk-release/google-cloud-cli-376.0.0-linux-arm.tar.gz
-
-
-SHELL ["/bin/bash", "-c"]
+# SHELL ["/bin/bash", "-c"]
 ENTRYPOINT tail -f /dev/null
 
 # RUN python -m pip install /gee_pipeline

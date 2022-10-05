@@ -20,3 +20,42 @@ The code in this repository is intended to perform three inter-related tasks:
 ### Python
 
 The tasks above are all implemented in Python in the *peep* package. See the [README.md](peep/README.md) in the `peep` subdirectory for details on installation and usage.
+
+
+
+## Using the Docker image
+
+There is a Docker image with `peep` and its dependencies preinstalled.
+
+
+
+
+### Authenticating the Google Earth Engine
+
+
+It is not possible authenticate the google earth engine client directly from with the docker container
+
+In a shell in the docker container:
+
+`earthengine authenticate --quiet`
+
+
+On your own computer
+
+```
+gcloud auth application-default login --remote-bootstrap="https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.apps.googleusercontent.com&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fearthengine+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdevstorage.full_control+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Faccounts.reauth&state=aSWZIEfr47wX483XfpU8EbT2kp1oQG&access_type=offline&code_challenge=yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy&code_challenge_method=S256&token_usage=remote"
+DO NOT PROCEED UNLESS YOU ARE BOOTSTRAPPING GCLOUD ON A TRUSTED MACHINE WITHOUT A WEB BROWSER AND THE ABOVE COMMAND WAS THE OUTPUT OF `gcloud auth application-default
+login --no-browser` FROM THE TRUSTED MACHINE.
+```
+
+<-- Add screenshots here -->
+
+
+details are saved here:
+[/root/.config/gcloud/application_default_credentials.json]
+
+
+You should be able to run this command without any errors (no output indicates success)
+```
+python -c "import ee; ee.Initialize()"
+```
